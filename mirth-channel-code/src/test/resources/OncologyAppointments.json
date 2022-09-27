@@ -1,0 +1,138 @@
+[
+  {
+    "resourceType" : "Appointment",
+    "id" : "apposnd-39010",
+    "extension" : [
+      {
+        "url" : "http://projectronin.com/fhir/us/ronin/StructureDefinition/partnerDepartmentReference",
+        "valueReference" : {
+          "reference" : "Organization/apposnd-10501116"
+        }
+      }
+    ],
+    "identifier" : [
+      {
+        "type" : {
+          "coding" : [
+            {
+              "system" : "http://projectronin.com/fhir/us/ronin",
+              "code" : "RONIN_ID",
+              "display" : "Ronin ID"
+            }
+          ],
+          "text" : "Ronin ID"
+        },
+        "system" : "http://projectronin.com/fhir/us/ronin",
+        "value" : "apposnd-39010"
+      },
+      {
+        "type" : {
+          "coding" : [
+            {
+              "system" : "http://projectronin.com/id/tenantId",
+              "code" : "TID",
+              "display" : "Ronin-specified Tenant Identifier"
+            }
+          ],
+          "text" : "Tenant ID"
+        },
+        "system" : "http://projectronin.com/id/tenantId",
+        "value" : "apposnd"
+      }
+    ],
+    "status" : "pending",
+    "appointmentType" : {
+      "text" : "OFFICE VISIT"
+    },
+    "start" : "2022-05-11T23:15:00Z",
+    "end" : "2022-05-11T23:30:00Z",
+    "minutesDuration" : 15,
+    "comment" : "aa",
+    "participant" : [
+      {
+        "actor" : {
+          "reference" : "Practitioner/apposnd-eTgFGDJLQb3Ksn.PgWOnRsQ3",
+          "type" : "Practitioner",
+          "display" : "Physician Video Visit, MD"
+        },
+        "status" : "accepted"
+      },
+      {
+        "actor" : {
+          "reference" : "Patient/apposnd-euFxjFiAhx6Z0L3r75XPnKA3",
+          "type" : "Patient",
+          "display" : "TEST,Blah"
+        },
+        "status" : "accepted"
+      }
+    ]
+  },
+  {
+    "resourceType" : "Appointment",
+    "id" : "apposnd-39013",
+    "extension" : [
+      {
+        "url" : "http://projectronin.com/fhir/us/ronin/StructureDefinition/partnerDepartmentReference",
+        "valueReference" : {
+          "reference" : "Organization/apposnd-10501116"
+        }
+      }
+    ],
+    "identifier" : [
+      {
+        "type" : {
+          "coding" : [
+            {
+              "system" : "http://projectronin.com/fhir/us/ronin",
+              "code" : "RONIN_ID",
+              "display" : "Ronin ID"
+            }
+          ],
+          "text" : "Ronin ID"
+        },
+        "system" : "http://projectronin.com/fhir/us/ronin",
+        "value" : "apposnd-39013"
+      },
+      {
+        "type" : {
+          "coding" : [
+            {
+              "system" : "http://projectronin.com/id/tenantId",
+              "code" : "TID",
+              "display" : "Ronin-specified Tenant Identifier"
+            }
+          ],
+          "text" : "Tenant ID"
+        },
+        "system" : "http://projectronin.com/id/tenantId",
+        "value" : "apposnd"
+      }
+    ],
+    "status" : "pending",
+    "appointmentType" : {
+      "text" : "OFFICE VISIT"
+    },
+    "start" : "2022-05-12T18:00:00Z",
+    "end" : "2022-05-12T18:15:00Z",
+    "minutesDuration" : 15,
+    "comment" : "bc",
+    "participant" : [
+      {
+        "actor" : {
+          "reference" : "Practitioner/apposnd-eTgFGDJLQb3Ksn.PgWOnRsQ3",
+          "type" : "Practitioner",
+          "display" : "Physician Video Visit, MD"
+        },
+        "status" : "accepted"
+      },
+      {
+        "actor" : {
+          "reference" : "Patient/apposnd-euFxjFiAhx6Z0L3r75XPnKA3",
+          "type" : "Patient",
+          "display" : "TEST,Blah"
+        },
+        "status" : "accepted"
+      }
+    ]
+  }
+]

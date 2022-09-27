@@ -1,0 +1,221 @@
+## Mirth and Aidbox (Devbox) running in the same docker compose.
+services:
+
+  ## Mirth
+  mc:
+    image: docker-proxy.devops.projectronin.io/ronin/base/mirth-base:3.11.0
+    container_name: mirth-connect
+    environment:
+      - DATABASE=postgres
+      - DATABASE_URL=jdbc:postgresql://mirth-db:5433/mirthdb
+      - DATABASE_MAX_CONNECTIONS=20
+      - DATABASE_USERNAME=mirthdb
+      - DATABASE_PASSWORD=mirthdb
+      - DATABASE_MAX_RETRY=2
+      - DATABASE_RETRY_WAIT=10000
+      - KEYSTORE_STOREPASS=docker_storepass
+      - KEYSTORE_KEYPASS=docker_keypass
+      - VMOPTIONS=-Xmx512m
+      - AO_SANDBOX_KEY
+      - AIDBOX_CLIENT_ID=${AIDBOX_CLIENT_ID}
+      - AIDBOX_CLIENT_SECRET=${AIDBOX_CLIENT_SECRET}
+      - AIDBOX_REST_URL=http://devbox:${AIDBOX_PORT}
+      - TENANT_DB_URL=jdbc:mysql://mockehrmysql:3306/interop-ehr
+      - TENANT_DB_USERNAME=ehr
+      - TENANT_DB_PASSWORD=secret
+      - QUEUE_DB_URL=jdbc:mysql://mockehrmysql:3306/interop-queue
+      - QUEUE_DB_USERNAME=queue
+      - QUEUE_DB_PASSWORD=secret
+    ports: # Mirth and Mirth Admin UI
+      - 8080:8080/tcp
+      - 8443:8443/tcp
+    volumes: # Do not modify
+      - "./appdata:/opt/connect/appdata"       # Mirth general use
+      - "./custom-lib:/opt/connect/custom-lib" # Mirth general use
+      - "./custom-ext:/opt/connect/custom-extensions"   # Mirth plug-ins or extensions
+      - "./doc:/opt/connect/doc"                        # Mirth server configuration (i.e. Java 9+)
+      - "./conf/log4j.properties:/opt/connect/conf/log4j.properties"    # Mirth logging settings
+      - "./interop:/opt/connect/interop"       # Ronin interop JAR and other interop resources
+      - "./xml/read:/data/xml/read"            # Ronin DiagramChannel
+      - "./xml/done:/data/xml/done"            # Ronin DiagramChannel
+      - "./xml/error:/data/xml/error"          # Ronin DiagramChannel
+      - "./xml/write:/data/xml/write"          # Ronin DiagramChannel
+    depends_on:
+      mirth-db:
+        condition: service_started
+      devbox:
+        condition: service_healthy
+      mockehrmysql:
+        condition: service_healthy
+      liquibase-ehr:
+        condition: service_completed_successfully
+      liquibase-queue:
+        condition: service_completed_successfully
+      mockehr:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "curl", "-k", "-X", "GET", "https://mc:8443/api/server/resources", "-H", "\"X-Requested-With: OpenAPI\"", "-u", "admin:admin" ]
+      timeout: 5s
+      retries: 10
+
+  mirth-db:
+    image: postgres
+    container_name: mirth-db
+    environment:
+      - POSTGRES_USER=mirthdb
+      - POSTGRES_PASSWORD=mirthdb
+      - POSTGRES_DB=mirthdb
+    volumes:
+      - ./data-mcpg:/data  # Avoid collision with "data" folder used by devbox and devbox-db
+    expose:
+      - 5433
+    command: -p 5433 # Avoid collision with default port 5432 used by devbox-db
+
+  ## Aidbox (Devbox)
+  devbox:
+    image: "${AIDBOX_IMAGE}"
+    container_name: mirth-devbox
+    depends_on:
+      - "devbox-db"
+    links:
+      - "devbox-db:database"
+    ports:
+      - "${AIDBOX_PORT}:${AIDBOX_PORT}"
+    env_file:
+      - .env
+    environment:
+      AIDBOX_CONFIG: /var/config/config.edn
+      PGHOST: database
+      AIDBOX_LICENSE_ID:
+      AIDBOX_LICENSE_KEY:
+    volumes:
+      - ./config:/var/config
+      - ./data:/data # Avoid collision with "data" folder used by devbox-db and mirth-db
+    healthcheck:
+      test: [ "CMD", "curl", "-H", "\"Content-Type: application/json\"", "-H", "\"Accept: application/json\"", "-X", "POST", "-d", "\"{\\\"query\\\":\\\"query { PractitionerList { id } }\\\"}\"", "http://localhost:8888/$$graphql", "-u", "client:secret" ]
+      timeout: 5s
+      retries: 10
+
+  devbox-db:
+    image: "${PGIMAGE}"
+    container_name: mirth-devbox-db
+    ports:
+      - "${PGHOSTPORT}:${PGPORT}"
+    volumes:
+      - ./data-dbpg:/data # Avoid collision with "data" folder used by devbox and mirth-db
+    environment:
+      - POSTGRES_USER=${PGUSER}
+      - POSTGRES_PASSWORD=${PGPASSWORD}
+      - POSTGRES_DB=${PGDATABASE}
+
+  # MySQL Database.
+  # It is name "mockehrmysql" due to the mock-ehr-init script requiring this name
+  # Creates multiple DB schemas and users, which can be seen in db/init/01-databases.sql
+  mockehrmysql:
+    image: mysql/mysql-server
+    container_name: mirth-mysql-db
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "ehr", "-psecret" ]
+      timeout: 5s
+      retries: 20
+
+  ## Schema updates + starter data
+  liquibase-ehr:
+    image: docker-proxy.devops.projectronin.io/interop-ehr-liquibase:dev
+    container_name: mirth-ehr-liquibase
+    environment:
+      - JDBC_URL=jdbc:mysql://ehr:secret@mockehrmysql:3306/interop-ehr
+      - DATA_LOAD=db/changelog/insertTestData.yaml
+      - AO_SANDBOX_KEY
+    volumes:
+      - ./db/changelog/:/liquibase/changelog/db/changelog
+    depends_on:
+      mockehrmysql:
+        condition: service_healthy
+
+  mockehr:
+    restart: on-failure
+    image: docker-proxy.devops.projectronin.io/interop-mock-ehr:latest
+    container_name: mirth-mock-ehr
+    environment:
+      - MOCK_EHR_DB_HOST=mockehrmysql
+      - MOCK_EHR_DB_PORT=33060
+      - MOCK_EHR_DB_NAME=mock_ehr_db
+      - MOCK_EHR_DB_USER=springuser
+      - MOCK_EHR_DB_PASS=ThePassword
+    ports:
+      - "8081:8080" # HTTP Port
+      - "1011:1011" # TCP Port
+    depends_on:
+      mockehrmysql:
+        condition: service_healthy
+      mockehrinit:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD", "curl", "-k", "-X", "GET", "localhost:8080/fhir/r4/metadata", "-H", "\accept: application/fhir+json", ]
+      timeout: 5s
+      retries: 10
+
+  mockehrinit:
+    restart: "no"
+    image: docker-proxy.devops.projectronin.io/interop-mock-ehr-init:latest
+    container_name: mirth-mock-ehr-setup
+    depends_on:
+      mockehrmysql:
+        condition: service_healthy
+
+  liquibase-queue:
+    image: docker-repo.devops.projectronin.io/interop-queue-liquibase:1.1.1
+    container_name: mirth-queue-liquibase
+    environment:
+      - JDBC_URL=jdbc:mysql://queue:secret@mockehrmysql:3306/interop-queue
+    depends_on:
+      mockehrmysql:
+        condition: service_healthy
+
+  local-proxy:
+    image: docker-proxy.devops.projectronin.io/interop-proxy-server:latest
+    container_name: mirth-proxy-sever
+    environment:
+      - SPRING_QUEUE_DATASOURCE_JDBCURL=jdbc:mysql://queue:secret@mockehrmysql:3306/interop-queue
+      - SPRING_EHR_DATASOURCE_JDBCURL=jdbc:mysql://ehr:secret@mockehrmysql:3306/interop-ehr
+      - RONIN_SERVER_AUTH_M2M_ISSUER=https://ronin-dev.auth0.com/
+      - RONIN_SERVER_AUTH_M2M_AUDIENCE=https://interop-proxy-server.dev.projectronin.io
+      - AO_SANDBOX_KEY
+      - SERVICE_CALL_JWT_SECRET
+    ports:
+      - 8082:8080
+    volumes:
+      - ./proxy/:/config
+    depends_on:
+      liquibase-queue:
+        condition: service_completed_successfully
+      mockehrmysql:
+        condition: service_healthy
+      liquibase-ehr:
+        condition: service_completed_successfully
+    healthcheck:
+      test: [ "CMD", "curl", "-k", "-X", "GET", "localhost:8080/actuator/health" ]
+      timeout: 5s
+      retries: 10
+
+  # This is just to force servers to be healthy before completion. The docker compose up --wait functionality appears to fail due to the stopped containers.
+  wait:
+    image: hello-world:latest
+    depends_on:
+      mc:
+        condition: service_healthy
+      local-proxy:
+        condition: service_healthy
+      mockehr:
+        condition: service_healthy
+      devbox:
+        condition: service_healthy
+
+secrets:
+  mcserver_vmoptions:
+    file: ./jvm-options/mcservice-java9+.vmoptions

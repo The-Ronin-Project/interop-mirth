@@ -1,0 +1,45 @@
+io_ehr:
+  - io_ehr_id: 101
+    instance_name: "Epic"
+    name: "EPIC"
+    client_id: "12345"
+    public_key: "public"
+    private_key: "private"
+
+io_tenant:
+  - io_tenant_id: 1001
+    mnemonic: "mdaoc"
+    full_name: "Test Tenant"
+    io_ehr_id: 101
+    available_batch_start: "22:00:00"
+    available_batch_end: "06:00:00"
+  - io_tenant_id: 1002
+    mnemonic: "psj"
+    full_name: "Alternate Test Tenant"
+    io_ehr_id: 101
+    available_batch_start: "22:00:00"
+    available_batch_end: "06:00:00"
+
+io_tenant_epic:
+  - io_tenant_id: 1001
+    release_version: "2021.10"
+    service_endpoint: "https://placeholder/"
+    auth_endpoint: "https://placeholder/oauth2/token"
+    ehr_user_id: "RONIN"
+    message_type: "Ronin Alerts"
+    practitioner_provider_system: "urn:oid:1.2.840.114350.1.13.0.1.7.2.836982"
+    practitioner_user_system: "urn:oid:1.2.840.114350.1.13.0.1.7.2.697780"
+    mrn_system: "urn:oid:mrn.system"
+    patient_internal_system: "urn:oid:internal.system"
+
+io_mirth_tenant_config:
+  - io_tenant_id: 1001
+    location_ids: "aaa,bbb,ccc"
+
+io_tenant_server:
+  - io_server_id: 1
+    io_tenant_id: 1001
+    message_type: "MDM"
+    address: "ProjectRonin.biz.gov.co.uk.com"
+    port: 10
+    server_type: "TRAINING"

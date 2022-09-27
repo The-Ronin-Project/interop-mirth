@@ -1,0 +1,117 @@
+[
+  {
+    "appOrchardAppointment" : {
+      "AppointmentDuration" : "15",
+      "AppointmentNotes" : [
+        "Test visit"
+      ],
+      "AppointmentStartTime" : " 2:00 PM",
+      "AppointmentStatus" : "Scheduled",
+      "ContactIDs" : [
+        {
+          "ID" : "39073",
+          "Type" : "CSN"
+        },
+        {
+          "ID" : "39073",
+          "Type" : "ASN"
+        }
+      ],
+      "Date" : "5/10/2022",
+      "PatientIDs" : [
+        {
+          "ID" : "     Z7102",
+          "Type" : "Internal"
+        },
+        {
+          "ID" : "E5030",
+          "Type" : "ExternalKey"
+        }
+      ],
+      "PatientName" : "TEST,VITEL",
+      "Providers" : [
+        {
+          "DepartmentIDs" : [
+            {
+              "ID" : "10501116",
+              "Type" : "Internal"
+            },
+            {
+              "ID" : "140836",
+              "Type" : "CID"
+            }
+          ],
+          "DepartmentName" : "EMC URGENT CARE",
+          "Duration" : "15",
+          "ProviderIDs" : [
+            {
+              "ID" : "      61",
+              "Type" : "Internal"
+            },
+            {
+              "ID" : "1402672",
+              "Type" : "CID"
+            }
+          ],
+          "ProviderName" : "Physician Video Visit, MD",
+          "Time" : " 2:00 PM"
+        }
+      ],
+      "VisitTypeIDs" : [
+        {
+          "ID" : "     258",
+          "Type" : "Internal"
+        },
+        {
+          "ID" : "1402235",
+          "Type" : "CID"
+        }
+      ],
+      "VisitTypeName" : "VITEL VIDEO VISIT"
+    },
+    "providerIDMap" : [
+      {
+        "key" : {
+          "DepartmentIDs" : [
+            {
+              "ID" : "10501116",
+              "Type" : "Internal"
+            },
+            {
+              "ID" : "140836",
+              "Type" : "CID"
+            }
+          ],
+          "DepartmentName" : "EMC URGENT CARE",
+          "Duration" : "15",
+          "ProviderIDs" : [
+            {
+              "ID" : "      61",
+              "Type" : "Internal"
+            },
+            {
+              "ID" : "1402672",
+              "Type" : "CID"
+            }
+          ],
+          "ProviderName" : "Physician Video Visit, MD",
+          "Time" : " 2:00 PM"
+        },
+        "value" : {
+          "system" : "urn:oid:1.2.840.114350.1.13.0.1.7.2.836982",
+          "element" : {
+            "ID" : "      61",
+            "Type" : "Internal"
+          }
+        }
+      }
+    ],
+    "patientIdentifier" : {
+      "system" : null,
+      "element" : {
+        "ID" : "     Z7102",
+        "Type" : "Internal"
+      }
+    }
+  }
+]

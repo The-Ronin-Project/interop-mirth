@@ -1,0 +1,147 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "name": [
+          {
+            "given": [
+              "MDM"
+            ],
+            "family": "Test"
+          }
+        ],
+        "birthDate": "1973-07-21",
+        "resourceType": "Patient",
+        "id": "ronin-MDMQueueTestPatient",
+        "identifier": [
+          {
+            "type": {
+              "text": "Tenant ID",
+              "coding": [
+                {
+                  "code": "TID",
+                  "system": "http://projectronin.com/id/tenantId",
+                  "display": "Ronin-specified Tenant Identifier"
+                }
+              ]
+            },
+            "value": "ronin",
+            "system": "http://projectronin.com/id/tenantId"
+          },
+          {
+            "type": {
+              "text": "MRN",
+              "coding": [
+                {
+                  "code": "MR",
+                  "system": "http://projectronin.com/id/mrn",
+                  "display": "Medical Record Number"
+                }
+              ]
+            },
+            "value": "MDMQueueTestPatient",
+            "system": "http://projectronin.com/id/mrn"
+          },
+          {
+            "type": {
+              "text": "FHIR STU3",
+              "coding": [
+                {
+                  "code": "STU3",
+                  "system": "http://projectronin.com/id/fhir",
+                  "display": "FHIR STU3 ID"
+                }
+              ]
+            },
+            "value": "MDMQueueTestPatient",
+            "system": "http://projectronin.com/id/fhir"
+          }
+        ],
+        "telecom": [
+          {
+            "use": "work",
+            "value": "jane.doe@projectronin.com",
+            "system": "email"
+          }
+        ],
+        "gender": "female",
+        "maritalStatus": {
+          "text": "Married",
+          "coding": [
+            {
+              "code": "M",
+              "system": "http://terminology.hl7.org/CodeSystem/v3-MaritalStatus"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "resource": {
+        "name": [
+          {
+            "given": [
+              "MDMPract"
+            ],
+            "family": "Test"
+          }
+        ],
+        "identifier": [
+          {
+            "type": {
+              "text": "Tenant ID",
+              "coding": [
+                {
+                  "code": "TID",
+                  "system": "http://projectronin.com/id/tenantId",
+                  "display": "Ronin-specified Tenant Identifier"
+                }
+              ]
+            },
+            "value": "ronin",
+            "system": "http://projectronin.com/id/tenantId"
+          },
+          {
+            "type": {
+              "text": "FHIR STU3",
+              "coding": [
+                {
+                  "code": "STU3",
+                  "system": "http://projectronin.com/id/fhir",
+                  "display": "FHIR STU3 ID"
+                }
+              ]
+            },
+            "value": "MDMQueueTestPractitioner",
+            "system": "http://projectronin.com/id/fhir"
+          },
+          {
+            "use": "usual",
+            "type": {
+              "text": "EXTERNAL"
+            },
+            "value": "external-value",
+            "system": "external-system"
+          },
+          {
+            "use": "usual",
+            "type": {
+              "text": "INTERNAL"
+            },
+            "value": "internal-value",
+            "system": "internal-system"
+          }
+        ],
+        "id": "ronin-MDMQueueTestPractitioner",
+        "resourceType": "Practitioner",
+        "meta": {
+          "lastUpdated": "2022-07-20T23:19:15.557022Z",
+          "createdAt": "2022-07-20T21:57:46.584450Z",
+          "versionId": "589"
+        }
+      }
+    }
+  ]
+}

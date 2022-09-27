@@ -1,0 +1,2562 @@
+{
+	"info": {
+		"_postman_id": "06a1f1b7-603f-42c9-9053-211c6e2d711b",
+		"name": "ObservationLoad",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18428610"
+	},
+	"item": [
+		{
+			"name": "0 Channel Ready",
+			"item": [
+				{
+					"name": "Setup: Get Channel ID",
+					"item": [
+						{
+							"name": "0 Setup: Channel ID from Name",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var tenant = pm.environment.get(\"tenant_mnemonic\");",
+											"var channelName = pm.environment.get(\"channel_name\");",
+											"var configuredChannelName = tenant + \"-\" + channelName;",
+											"",
+											"var jsonData = pm.response.json();",
+											"var channels = jsonData.list.channel;",
+											"var found = false;",
+											"if (Array.isArray(channels)) {",
+											"    for (var i = 0; !found && (i < jsonData.list.channel.length); i++) {",
+											"        var channel = jsonData.list.channel[i];",
+											"        if (channel.name == configuredChannelName) {",
+											"            pm.environment.set(\"channel_id\", channel.id.substring(tenant.length + 1));",
+											"            found = true;",
+											"        }",
+											"    }",
+											"}",
+											"else {",
+											"    if (jsonData.list.channel.name == configuredChannelName) {",
+											"        pm.environment.set(\"channel_id\", channel.id.substring(tenant.length + 1));",
+											"    }",
+											"}",
+											"if (!found) {",
+											"    console.log(\"The channel to test is not in Mirth: \" + configuredChannelName);",
+											"    console.log(\"Remaining tests in this collection should fail.\");",
+											"}",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Clean: Channel is in a Good State and Stopped",
+					"item": [
+						{
+							"name": "0 Setup: Deploy Channel with Good Config",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/_deploy",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"_deploy"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "0 Setup: Stop Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "channelId",
+											"value": "{{tenant_mnemonic}}-{{channel_id}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{mirth_url}}/channels/_stop",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"_stop"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "0 Setup: Channel is Safely Stopped",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"pm.test(\"channel is stopped\", function () {",
+											"    pm.expect(jsonData.dashboardStatus.state).to.eql(\"STOPPED\");",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/status",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"status"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "0 Setup: Enable Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/enabled/true",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"enabled",
+										"true"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Test: Channel Definition",
+					"item": [
+						{
+							"name": "0 Test: Channel Definition",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var tenant = pm.environment.get(\"tenant_mnemonic\");",
+											"var channelName = pm.environment.get(\"channel_name\");",
+											"pm.test(\"name = \" + channelName, function () {",
+											"    pm.expect(jsonData.channel.name).to.eql(tenant + \"-\" + channelName);",
+											"});",
+											"",
+											"var channelId = pm.environment.get(\"channel_id\");",
+											"pm.test(\"id = \" + channelId, function () {",
+											"    pm.expect(jsonData.channel.id).to.eql(tenant + \"-\" + channelId);",
+											"});",
+											"",
+											"pm.test(\"channel polls on start\", function () {",
+											"   pm.expect(jsonData.channel.sourceConnector.properties.pollConnectorProperties.pollOnStart).to.eql(true);",
+											"});",
+											"",
+											"var entry = jsonData.channel.properties.resourceIds.entry;",
+											"if (Array.isArray(entry)) {",
+											"    pm.test(\"channel has the Interop resource configured\", function () {",
+											"        pm.expect(entry[0].string[1]).to.eql(\"Interop\");",
+											"    });",
+											"}",
+											"else {",
+											"    pm.test(\"channel has the Interop resource configured\", function () {",
+											"        pm.expect(entry.string[1]).to.eql(\"Interop\");  ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"sourceConnector is JavaScript\", function () {",
+											"   pm.expect(jsonData.channel.sourceConnector.properties[\"@class\"]).to.eql(\"com.mirth.connect.connectors.js.JavaScriptReceiverProperties\");",
+											"});",
+											"",
+											"pm.test(\"sourceConnector has correct javascript\", function () {",
+											"   pm.expect(jsonData.channel.sourceConnector.properties.script).contains(\"return sourceReader()\");",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "1 Backup Tenant Data",
+			"item": [
+				{
+					"name": "Clean: Backup and Delete Tenant Data",
+					"item": [
+						{
+							"name": "1 Setup: Aidbox Backup Tenant Practitioners",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var practitioners = [];",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"for (i in jsonData.entry) {",
+											"    practitioners.push(jsonData.entry[i]);",
+											"}",
+											"pm.environment.set(\"practitioners_original\", practitioners);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Practitioner?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Practitioner"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "1 Setup: Aidbox Delete Tenant Practitioners",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"pm.test(\"delete leaves 0 Practitioners (actually \" + entries + \")\", function () {",
+											"    pm.expect(entries).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var practitioners = pm.environment.get(\"practitioners_original\");",
+											"for (i in practitioners) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Practitioner/\" + practitioners[i].resource.id,",
+											"            method: 'DELETE',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            }",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"var entries = practitioners.length;",
+											"pm.test(\"deleting \" + entries + \" Practitioners\", function () {",
+											"    true",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Practitioner?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Practitioner"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "1 Setup: Aidbox Backup Tenant Patients",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var patients = [];",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"for (i in jsonData.entry) {",
+											"    patients.push(jsonData.entry[i]);",
+											"}",
+											"pm.environment.set(\"patients_original\", patients);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Patient?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Patient"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "1 Setup: Aidbox Delete Tenant Patients",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"pm.test(\"delete leaves 0 Patients (actually \" + entries + \")\", function () {",
+											"    pm.expect(entries).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var patients = pm.environment.get(\"patients_original\");",
+											"for (i in patients) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Patient/\" + patients[i].resource.id,",
+											"            method: 'DELETE',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            }",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"var entries = patients.length;",
+											"pm.test(\"deleting \" + entries + \" Patient(s)\", function () {",
+											"    true",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Patient?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Patient"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "1 Setup: Aidbox Backup Tenant Observations",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var observations = [];",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"for (i in jsonData.entry) {",
+											"    observations.push(jsonData.entry[i]);",
+											"}",
+											"pm.environment.set(\"observations_original\", observations);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Observation?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Observation"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "1 Setup: Aidbox Delete Tenant Observations",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"pm.test(\"delete leaves 0 Observations (actually \" + entries + \")\", function () {",
+											"    pm.expect(entries).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var observations = pm.environment.get(\"observations_original\");",
+											"for (i in observations) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Observation/\" + observations[i].resource.id,",
+											"            method: 'DELETE',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            }",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"var entries = observations.length;",
+											"pm.test(\"deleting \" + entries + \" Observation(s)\", function () {",
+											"    true",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Observation?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Observation"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "2 Add Test Data",
+			"item": [
+				{
+					"name": "Setup: Mock EHR",
+					"item": [
+						{
+							"name": "2 Observation ivQ3-3e6d",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status is 201 Created (actually \" + pm.response.status + \")\", function () {",
+											"    pm.expect(pm.response.status).to.eql('Created');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"resourceType\": \"Observation\",\n  \"id\": \"3f1af7cb-a47e-4e1e-a8e3-d18e0d073e6d\",\n  \"status\": \"final\",\n  \"category\": [\n    {\n      \"coding\": [\n        {\n          \"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\",\n          \"code\": \"vital-signs\",\n          \"display\": \"Vital Signs\"\n        }\n      ]\n    }\n  ],\n  \"code\": {\n    \"coding\": [\n      {\n        \"system\": \"http://loinc.org\",\n        \"code\": \"29463-7\",\n        \"display\": \"Body Weight\"\n      },\n      {\n        \"system\": \"http://loinc.org\",\n        \"code\": \"3141-9\",\n        \"display\": \"Body weight Measured\"\n      },\n      {\n        \"system\": \"http://snomed.info/sct\",\n        \"code\": \"27113001\",\n        \"display\": \"Body weight\"\n      },\n      {\n        \"system\": \"http://acme.org/devices/clinical-codes\",\n        \"code\": \"body-weight\",\n        \"display\": \"Body Weight\"\n      }\n    ]\n  },\n  \"subject\": {\n    \"reference\": \"Patient/eJzlzKe3KPzAV5TtkxmNivQ3\"\n  },\n  \"effectiveDateTime\": \"2016-03-28\",\n  \"valueQuantity\": {\n    \"value\": 185,\n    \"unit\": \"lbs\",\n    \"system\": \"http://unitsofmeasure.org\",\n    \"code\": \"[lb_av]\"\n  }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{mockehr_url}}/fhir/r4/Observation",
+									"host": [
+										"{{mockehr_url}}"
+									],
+									"path": [
+										"fhir",
+										"r4",
+										"Observation"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2 Observation ivQ3-e215-UhKX",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status is 201 Created (actually \" + pm.response.status + \")\", function () {",
+											"    pm.expect(pm.response.status).to.eql('Created');",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"resourceType\": \"Observation\",\n  \"id\": \"ivQ3-eAMXUhKX\",\n  \"status\": \"final\",\n  \"category\": [\n    {\n      \"coding\": [\n        {\n          \"system\": \"http://snomed.info/sct\",\n          \"code\": \"252275004\",\n          \"display\": \"Hematology test (procedure)\"\n        }\n      ],\n      \"text\": \"Hematology test (procedure)\"\n    },\n    {\n      \"coding\": [\n        {\n          \"system\": \"http://terminology.hl7.org/CodeSystem/observation-category\",\n          \"code\": \"laboratory\",\n          \"display\": \"Laboratory\"\n        }\n      ],\n      \"text\": \"Laboratory\"\n    },\n    {\n      \"coding\": [\n        {\n          \"system\": \"urn:oid:1.2.840.114350.1.13.5325.1.7.10.798268.30\",\n          \"code\": \"Lab\",\n          \"display\": \"Lab\"\n        }\n      ],\n      \"text\": \"Lab\"\n    }\n  ],\n  \"code\": {\n    \"coding\": [\n      {\n        \"system\": \"urn:oid:1.2.840.114350.1.13.5325.1.7.5.737384.188\",\n        \"code\": \"68\"\n      },\n      {\n        \"system\": \"urn:oid:1.2.840.114350.1.13.5325.1.7.5.737384.431\",\n        \"code\": \"AF-GLUKOOSI\"\n      },\n      {\n        \"system\": \"urn:oid:1.2.840.114350.1.13.5325.1.7.5.737384.430\",\n        \"code\": \"1459\"\n      },\n      {\n        \"system\": \"urn:oid:1.2.840.114350.1.13.5325.1.7.2.768282\",\n        \"code\": \"68\",\n        \"display\": \"GLUCOSE\"\n      }\n    ],\n    \"text\": \"GLUCOSE\"\n  },\n  \"subject\": {\n    \"reference\": \"Patient/eJzlzKe3KPzAV5TtkxmNivQ3\"\n  },\n  \"effectiveDateTime\": \"2021-09-02T18:41:00Z\",\n  \"issued\": \"2021-09-02T19:10:25Z\",\n  \"performer\": [\n    {\n      \"reference\": \"Practitioner/06d7feb3-3326-4276-9535-83a622d8e215\",\n      \"display\": \"Dr Adam Careful\"\n    }\n  ],\n  \"valueQuantity\": {\n    \"value\": 95,\n    \"unit\": \"mmol/L\",\n    \"system\": \"http://unitsofmeasure.org\",\n    \"code\": \"mmol/L\"\n  },\n  \"referenceRange\": [\n    {\n      \"low\": {\n        \"value\": 80,\n        \"unit\": \"mmol/L\",\n        \"system\": \"http://unitsofmeasure.org\",\n        \"code\": \"mmol/L\"\n      },\n      \"high\": {\n        \"value\": 110,\n        \"unit\": \"mmol/L\",\n        \"system\": \"http://unitsofmeasure.org\",\n        \"code\": \"mmol/L\"\n      },\n      \"text\": \"80 - 110 mmol/L\"\n    }\n  ]\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{mockehr_url}}/fhir/r4/Observation",
+									"host": [
+										"{{mockehr_url}}"
+									],
+									"path": [
+										"fhir",
+										"r4",
+										"Observation"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Setup: Aidbox",
+					"item": [
+						{
+							"name": "2 Setup: Ensure Practitioner e215 Exists",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201 (or resource already exists)\", function () {",
+											"    pm.expect(pm.response.status).to.be.oneOf([\"Created\", \"Conflict\"]);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n \"name\": [\n  {\n   \"given\": [\n    \"Adam\"\n   ],\n   \"family\": \"Careful\",\n   \"prefix\": [\n    \"Dr\"\n   ]\n  }\n ],\n \"active\": true,\n \"address\": [\n  {\n   \"use\": \"home\",\n   \"city\": \"PleasantVille\",\n   \"line\": [\n    \"534 Erewhon St\"\n   ],\n   \"state\": \"WA\",\n   \"postalCode\": \"33999\"\n  }\n ],\n \"identifier\": [\n  {\n   \"type\": {\n    \"text\": \"External\"\n   },\n   \"value\": \"IPMD\",\n   \"system\": \"mockEHRProviderSystem\"\n  },\n  {\n   \"type\": {\n    \"text\": \"Tenant ID\",\n    \"coding\": [\n     {\n      \"code\": \"TID\",\n      \"system\": \"http://projectronin.com/id/tenantId\",\n      \"display\": \"Ronin-specified Tenant Identifier\"\n     }\n    ]\n   },\n   \"value\": \"ronin\",\n   \"system\": \"http://projectronin.com/id/tenantId\"\n  }\n ],\n \"qualification\": [\n  {\n   \"code\": {\n    \"text\": \"Bachelor of Science\",\n    \"coding\": [\n     {\n      \"code\": \"BS\",\n      \"system\": \"http://terminology.hl7.org/CodeSystem/v2-0360/2.7\",\n      \"display\": \"Bachelor of Science\"\n     }\n    ]\n   },\n   \"issuer\": {\n    \"display\": \"Example University\"\n   },\n   \"period\": {\n    \"start\": \"1995\"\n   },\n   \"identifier\": [\n    {\n     \"value\": \"12345\",\n     \"system\": \"http://example.org/UniversityIdentifier\"\n    }\n   ]\n  }\n ],\n \"id\": \"ronin-06d7feb3-3326-4276-9535-83a622d8e215\",\n \"resourceType\": \"Practitioner\",\n \"meta\": {\n  \"lastUpdated\": \"2022-05-25T18:20:59.944042Z\",\n  \"createdAt\": \"2022-05-25T17:59:04.925651Z\",\n  \"versionId\": \"8927\"\n }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Practitioner",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Practitioner"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2 Setup: Aidbox: +1 Tenant Practitioner",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var total = jsonData.total;",
+											"pm.test(\"1 Practitioner (actually \" + total + \")\", function () {",
+											"    pm.expect(total).to.eql(1);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Practitioner?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Practitioner"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2 Setup: Ensure Patient ivQ3 Exists",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 201 (or resource already exists)\", function () {",
+											"    pm.expect(pm.response.status).to.be.oneOf([\"Created\", \"Conflict\"]);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"address\": [\n        {\n        \"city\": \"Madison\",\n        \"line\": [\n            \"123 Main St.\"\n        ],\n        \"postalCode\": \"53703\",\n        \"state\": \"WI\",\n        \"use\": \"old\"\n        },\n        {\n        \"city\": \"Madison\",\n        \"line\": [\n            \"123 Main St.\"\n        ],\n        \"postalCode\": \"53703\",\n        \"state\": \"WI\",\n        \"use\": \"home\"\n        }\n    ],\n    \"meta\": {\n        \"lastUpdated\": \"2022-07-15T14:51:19.583391Z\",\n        \"versionId\": \"17849\",\n        \"extension\": [\n        {\n            \"url\": \"ex:createdAt\",\n            \"valueInstant\": \"2022-07-15T14:51:19.583391Z\"\n        }\n        ]\n    },\n    \"name\": [\n       {\n            \"family\": \"Mychart\",\n            \"given\": [\n                \"Ali\"\n            ],\n            \"use\": \"old\"\n        },\n        {\n            \"family\": \"Mychart\",\n            \"given\": [\n                \"Allison\"\n            ],\n            \"use\": \"official\"\n        },\n        {\n            \"family\": \"Mychart\",\n            \"given\": [\n                \"Ali\"\n            ],\n            \"use\": \"usual\"\n        }\n    ],\n    \"birthDate\": \"1987-01-15\",\n    \"resourceType\": \"Patient\",\n    \"id\": \"ronin-eJzlzKe3KPzAV5TtkxmNivQ3\",\n    \"identifier\": [\n        {\n            \"system\": \"mockEHRMRNSystem\",\n            \"value\": \"202497\"\n        },\n        {\n            \"type\": {\n                \"text\": \"external\"\n            },\n            \"system\": \"urn:oid:1.2.840.114350.1.13.0.1.7.2.698084\",\n            \"value\": \"Z4572\"\n        },\n        {\n            \"system\": \"http://open.epic.com/FHIR/StructureDefinition/patient-dstu2-fhir-id\",\n            \"value\": \"TJgJ7wgwgI32QvHx3YBhDm4egjwdyhmAhfdtE7bQsPYYB\"\n        },\n        {\n            \"system\": \"http://open.epic.com/FHIR/StructureDefinition/patient-fhir-id\",\n            \"value\": \"eJzlzKe3KPzAV5TtkxmNivQ3\"\n        },\n        {\n            \"system\": \"mockPatientInternalSystem\",\n            \"type\": {\n                \"text\": \"Internal\"\n            },\n            \"value\": \"     Z4572\"\n        },\n        {\n            \"system\": \"urn:oid:1.2.840.114350.1.13.0.1.7.5.737384.14\",\n            \"type\": {\n                \"text\": \"MRN\"\n            },\n            \"value\": \"202497\"\n        },\n        {\n            \"system\": \"urn:oid:1.2.840.114350.1.13.0.1.7.3.878082.110\",\n            \"value\": \"MYCHARTALLISON\"\n        },\n        {\n            \"system\": \"urn:oid:1.2.840.114350.1.13.0.1.7.2.878082\",\n            \"value\": \"16\"\n        },\n        {\n            \"system\": \"https://open.epic.com/FHIR/StructureDefinition/PayerMemberId\",\n            \"value\": \"987654321A\"\n        },\n        {\n            \"system\": \"https://open.epic.com/FHIR/StructureDefinition/PayerMemberId\",\n            \"value\": \"BC654\"\n        },\n        {\n            \"type\": {\n                \"text\": \"Tenant ID\",\n                \"coding\": [\n                    {\n                        \"code\": \"TID\",\n                        \"system\": \"http://projectronin.com/id/tenantId\",\n                        \"display\": \"Ronin-specified Tenant Identifier\"\n                    }\n                ]\n            },\n            \"value\": \"ronin\",\n            \"system\": \"http://projectronin.com/id/tenantId\"\n        },\n        {\n        \"type\": {\n            \"text\": \"FHIR STU3\",\n            \"coding\": [\n                {\n                    \"code\": \"STU3\",\n                    \"system\": \"http://projectronin.com/id/fhir\",\n                    \"display\": \"FHIR STU3 ID\"\n                }\n            ]\n        },\n            \"value\": \"eJzlzKe3KPzAV5TtkxmNivQ3\",\n            \"system\": \"http://projectronin.com/id/fhir\"\n        },\n        {\n            \"type\": {\n                \"text\": \"MRN\",\n                \"coding\": [\n                    {\n                        \"code\": \"MR\",\n                        \"system\": \"http://projectronin.com/id/mrn\",\n                        \"display\": \"Medical Record Number\"\n                    }\n                ]\n            },\n            \"value\": \"202497\",\n            \"system\": \"http://projectronin.com/id/mrn\"\n        }\n    ],\n    \"telecom\": [\n        {\n            \"system\": \"phone\",\n            \"use\": \"home\",\n            \"value\": \"608-123-4567\"\n        },\n        {\n            \"system\": \"email\",\n            \"use\": null,\n            \"value\": \"beau@beau.com\"\n        }\n    ],\n    \"gender\": \"female\",\n    \"maritalStatus\": {\n        \"coding\": [\n            {\n                \"code\": \"NI\",\n                \"system\": \"http://terminology.hl7.org/CodeSystem/v3-NullFlavor\",\n                \"display\": \"NoInformation\"\n            }\n        ]\n    }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Patient/",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Patient",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2 Setup: Aidbox: +1 Tenant Patient",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var total = jsonData.total;",
+											"pm.test(\"1 Patient (actually \" + total + \")\", function () {",
+											"    pm.expect(total).to.eql(1);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Patient?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Patient"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "3 Setup Mirth for Test Counts",
+			"item": [
+				{
+					"name": "3 Deploy Channel",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 204\", function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"strictSSL": false
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Requested-With",
+								"value": "OpenAPI",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/_deploy",
+							"host": [
+								"{{mirth_url}}"
+							],
+							"path": [
+								"channels",
+								"{{tenant_mnemonic}}-{{channel_id}}",
+								"_deploy"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3 Setup: Message Count",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Correct Message Numbers\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var stats = jsonData.channelStatistics;",
+									"    var totalMessages = stats.received + stats.sent + stats.error + stats.filtered + stats.queued;",
+									"    pm.environment.set(\"channel_message_count\", totalMessages);",
+									"    pm.environment.set(\"received_message_count\", stats.received);",
+									"    pm.environment.set(\"sent_message_count\", stats.sent);",
+									"    pm.environment.set(\"error_message_count\", stats.error);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"strictSSL": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Requested-With",
+								"value": "OpenAPI",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/statistics",
+							"host": [
+								"{{mirth_url}}"
+							],
+							"path": [
+								"channels",
+								"{{tenant_mnemonic}}-{{channel_id}}",
+								"statistics"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4 Happy Path with Observations",
+			"item": [
+				{
+					"name": "Test: Happy Path with Results",
+					"item": [
+						{
+							"name": "4 Start Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "channelId",
+											"value": "{{tenant_mnemonic}}-{{channel_id}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{mirth_url}}/channels/_start",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"_start"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "4 Setup: (After a Pause) Channel Starts, Polls Copy",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"pm.test(\"channel is started\", function () {",
+											"    pm.expect(jsonData.dashboardStatus.state).to.eql(\"STARTED\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.test(\"during a collection run, pause to ensure final result\", function () {",
+											"    setTimeout(function () {}, 15000);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/status",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"status"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "4 Test: (After a Pause) New Messages Exist",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var stats = jsonData.channelStatistics;",
+											"var total = stats.received + stats.sent + stats.error + stats.filtered + stats.queued;",
+											"var diffTotal = total - pm.environment.get(\"channel_message_count\");",
+											"var diffReceived = stats.received - pm.environment.get(\"received_message_count\");",
+											"var diffSent = stats.sent - pm.environment.get(\"sent_message_count\");",
+											"var diffError = stats.error - pm.environment.get(\"error_message_count\");",
+											"",
+											"pm.test(\"New messages: \" + diffTotal, function () {",
+											"    pm.expect(diffTotal).to.be.gt(0);",
+											"});",
+											"",
+											"pm.test(\"Received messages: \" + diffReceived, function () {",
+											"    pm.expect(diffReceived).to.be.gt(0);",
+											"});",
+											"",
+											"pm.test(\"Sent messages: \" + diffSent, function () {",
+											"    pm.expect(diffSent).to.be.gt(0);",
+											"});",
+											"",
+											"pm.test(\"Errored messages: \" + diffError, function () {",
+											"    pm.expect(diffError).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.test(\"during a collection run, pause to ensure final result\", function () {",
+											"    setTimeout(function () {}, 15000);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/statistics",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"statistics"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "4 Test: Aidbox >0 Tenant Observations",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var total = jsonData.total;",
+											"pm.test(total + \" Observation(s) is greater than 0\", function () {    ",
+											"    pm.expect(total).to.be.gt(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Observation?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Observation"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "5 Return to Original State",
+			"item": [
+				{
+					"name": "Clean: Stop Channel",
+					"item": [
+						{
+							"name": "5 After: Stop Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "channelId",
+											"value": "{{tenant_mnemonic}}-{{channel_id}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{mirth_url}}/channels/_stop",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"_stop"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Clean: Aidbox Delete Data from the Test",
+					"item": [
+						{
+							"name": "5 Setup: Aidbox Get Test Practitioners",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var practitionerIds = [];",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"for (i in jsonData.entry) {",
+											"    practitionerIds.push(jsonData.entry[i].resource.id);",
+											"}",
+											"pm.collectionVariables.set(\"test_practitioners_ids\", practitionerIds);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Practitioner?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Practitioner"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "5 Setup: Aidbox Delete Test Practitioners",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"pm.test(\"delete leaves 0 Practitioners (actually \" + entries + \")\", function () {",
+											"    pm.expect(entries).to.eql(0);",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var practitionerIds = pm.collectionVariables.get(\"test_practitioners_ids\");",
+											"for (i in practitionerIds) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Practitioner/\" + practitionerIds[i],",
+											"            method: 'DELETE',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            }",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"deleting \" + practitionerIds.length + \" Practitioners\", function () {",
+											"    true",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Practitioner?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Practitioner"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "5 Setup: Aidbox Get Test Patients",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var patientIds = [];",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"for (i in jsonData.entry) {",
+											"    patientIds.push(jsonData.entry[i].resource.id);",
+											"}",
+											"pm.collectionVariables.set(\"test_patients_ids\", patientIds);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Patient?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Patient"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "5 Setup: Aidbox Delete Test Patients",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"pm.test(\"delete leaves 0 Patients (actually \" + entries + \")\", function () {",
+											"    pm.expect(entries).to.eql(0);",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var patientIds = pm.collectionVariables.get(\"test_patients_ids\");",
+											"for (i in patientIds) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Patient/\" + patientIds[i],",
+											"            method: 'DELETE',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            }",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"deleting \" + patientIds.length + \" Patients\", function () {",
+											"    true",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Patient?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Patient"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "5 Setup: Aidbox Get Test Observations",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var observationIds = [];",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"for (i in jsonData.entry) {",
+											"    observationIds.push(jsonData.entry[i].resource.id);",
+											"}",
+											"pm.collectionVariables.set(\"test_observations_ids\", observationIds);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Observation?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Observation"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "5 Setup: Aidbox Delete Test Observations",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"pm.test(\"delete leaves 0 Observations (actually \" + entries + \")\", function () {",
+											"    pm.expect(entries).to.eql(0);",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var observationIds = pm.collectionVariables.get(\"test_observations_ids\");",
+											"for (i in observationIds) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Observation/\" + observationIds[i],",
+											"            method: 'DELETE',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            }",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"deleting \" + observationIds.length + \" Observations\", function () {",
+											"    true",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Observation?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Observation"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Clean: Aidbox Restore Original Data",
+					"item": [
+						{
+							"name": "5 Setup: Aidbox Restore Tenant Practitioners",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var practitioners = pm.environment.get(\"practitioners_original\");",
+											"for (i in practitioners) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Practitioner/\" + practitioners[i].resource.id,",
+											"            method: 'POST',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            },",
+											"            body: practitioners[i]",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"Restoring \" + practitioners.length + \" Practitioner(s)\", function () {",
+											"    true",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Practitioner?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Practitioner"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "5 Setup: Aidbox Restore Tenant Patients",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var patients = pm.environment.get(\"patients_original\");",
+											"for (i in patients) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Patient/\" + patients[i].resource.id,",
+											"            method: 'POST',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            },",
+											"            body: patients[i]",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"Restoring \" + patients.length + \" Patient(s)\", function () {",
+											"    true",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Patient?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Patient"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "5 Setup: Aidbox Restore Tenant Observations",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var observations = pm.environment.get(\"observations_original\");",
+											"for (i in observations) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Observation/\" + observations[i].resource.id,",
+											"            method: 'POST',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            },",
+											"            body: observations[i]",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"Restoring \" + observations.length + \" Observation(s)\", function () {",
+											"    true",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Condition?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Condition"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "{{mirth_pass}}",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "{{mirth_user}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "resource_id",
+			"value": "8ebe738c-e6b9-4656-a1c0-c77c4e70f37b",
+			"type": "string"
+		},
+		{
+			"key": "collection_tries",
+			"value": "5",
+			"type": "string"
+		},
+		{
+			"key": "patients_total",
+			"value": ""
+		},
+		{
+			"key": "previous_patient_total",
+			"value": ""
+		},
+		{
+			"key": "patients_delete_goal",
+			"value": ""
+		},
+		{
+			"key": "patients_to_delete",
+			"value": ""
+		},
+		{
+			"value": "",
+			"disabled": true
+		},
+		{
+			"value": "",
+			"disabled": true
+		},
+		{
+			"key": "patients",
+			"value": ""
+		},
+		{
+			"key": "previous_patients_total",
+			"value": ""
+		},
+		{
+			"key": "appointments_total",
+			"value": ""
+		},
+		{
+			"key": "previous_appointments_total",
+			"value": ""
+		},
+		{
+			"key": "appointments_delete_goal",
+			"value": ""
+		},
+		{
+			"key": "appointments_to_delete",
+			"value": ""
+		},
+		{
+			"key": "appointments",
+			"value": ""
+		},
+		{
+			"key": "conditions_total",
+			"value": ""
+		},
+		{
+			"key": "previous_conditions_total",
+			"value": ""
+		},
+		{
+			"key": "conditions_delete_goal",
+			"value": ""
+		},
+		{
+			"key": "conditions_to_delete",
+			"value": ""
+		},
+		{
+			"key": "conditions",
+			"value": ""
+		},
+		{
+			"key": "test_patients_ids",
+			"value": ""
+		},
+		{
+			"key": "test_conditions_ids",
+			"value": ""
+		},
+		{
+			"key": "test_appointments_ids",
+			"value": ""
+		},
+		{
+			"key": "test_practitioners_ids",
+			"value": ""
+		},
+		{
+			"key": "test_observations_ids",
+			"value": ""
+		}
+	]
+}

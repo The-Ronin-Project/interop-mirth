@@ -1,0 +1,1215 @@
+{
+	"info": {
+		"_postman_id": "8c8925b3-ec06-401e-abf9-e8df837e90e2",
+		"name": "ConditionQueue",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18428610"
+	},
+	"item": [
+		{
+			"name": "0 Channel Ready",
+			"item": [
+				{
+					"name": "Test: Channel is in Mirth",
+					"item": [
+						{
+							"name": "0 Test: Get Channel ID from Mirth",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var tenant = pm.environment.get(\"tenant_mnemonic\");",
+											"var channelName = pm.environment.get(\"channel_name\");",
+											"var configuredChannelName = tenant + \"-\" + channelName;",
+											"",
+											"var jsonData = pm.response.json();",
+											"var channels = jsonData.list.channel;",
+											"var found = false;",
+											"if (Array.isArray(channels)) {",
+											"    for (var i = 0; !found && (i < jsonData.list.channel.length); i++) {",
+											"        var channel = jsonData.list.channel[i];",
+											"        if (channel.name == configuredChannelName) {",
+											"            pm.environment.set(\"channel_id\", channel.id.substring(tenant.length + 1));",
+											"            found = true;",
+											"        }",
+											"    }",
+											"}",
+											"else {",
+											"    if (jsonData.list.channel.name == configuredChannelName) {",
+											"        pm.environment.set(\"channel_id\", channel.id.substring(tenant.length + 1));",
+											"    }",
+											"}",
+											"if (!found) {",
+											"    console.log(\"The channel to test is not in Mirth: \" + configuredChannelName);",
+											"    console.log(\"Remaining tests in this collection should fail.\");",
+											"}",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Clean: Channel is in a Good State and Stopped",
+					"item": [
+						{
+							"name": "0 Setup: Deploy Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/_deploy",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"_deploy"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "0 Setup: Stop Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "channelId",
+											"value": "{{tenant_mnemonic}}-{{channel_id}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{mirth_url}}/channels/_stop",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"_stop"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "0 Setup: Channel is Safely Stopped",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"pm.test(\"channel is stopped\", function () {",
+											"    pm.expect(jsonData.dashboardStatus.state).to.eql(\"STOPPED\");",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/status",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"status"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "0 Setup: Enable Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/enabled/true",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"enabled",
+										"true"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Test: Channel Definition",
+					"item": [
+						{
+							"name": "0 Test: Channel Definition",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var tenant = pm.environment.get(\"tenant_mnemonic\");",
+											"var channelName = pm.environment.get(\"channel_name\");",
+											"pm.test(\"name = \" + tenant + \"-\" +channelName, function () {",
+											"    pm.expect(jsonData.channel.name).to.eql(tenant + \"-\" + channelName);",
+											"});",
+											"",
+											"var channelId = pm.environment.get(\"channel_id\");",
+											"pm.test(\"id = \" + tenant + \"-\" +channelId, function () {",
+											"    pm.expect(jsonData.channel.id).to.eql(tenant + \"-\" + channelId);",
+											"});",
+											"",
+											"pm.test(\"channel polls on start\", function () {",
+											"   pm.expect(jsonData.channel.sourceConnector.properties.pollConnectorProperties.pollOnStart).to.eql(true);",
+											"});",
+											"",
+											"var entry = jsonData.channel.properties.resourceIds.entry;",
+											"if (Array.isArray(entry)) {",
+											"    pm.test(\"channel has the Interop resource configured\", function () {",
+											"        pm.expect(entry[0].string[1]).to.eql(\"Interop\");",
+											"    });",
+											"}",
+											"else {",
+											"    pm.test(\"channel has the Interop resource configured\", function () {",
+											"        pm.expect(entry.string[1]).to.eql(\"Interop\");  ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"sourceConnector is JavaScript\", function () {",
+											"   pm.expect(jsonData.channel.sourceConnector.properties[\"@class\"]).to.eql(\"com.mirth.connect.connectors.js.JavaScriptReceiverProperties\");",
+											"});",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "1 Channel Processes New Condition from Queue",
+			"item": [
+				{
+					"name": "Setup: Backup and Delete Tenant Data",
+					"item": [
+						{
+							"name": "1 Setup: Aidbox Backup Tenant Conditions",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var conditions = [];",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"for (i in jsonData.entry) {",
+											"    conditions.push(jsonData.entry[i]);",
+											"}",
+											"pm.environment.set(\"conditions_original\", conditions);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Condition?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Condition"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "1 Setup: Aidbox Delete Tenant Conditions",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"pm.test(\"delete leaves 0 Conditions (actually \" + entries + \")\", function () {",
+											"    pm.expect(entries).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var conditions = pm.environment.get(\"conditions_original\");",
+											"for (i in conditions) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Condition/\" + conditions[i].resource.id,",
+											"            method: 'DELETE',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            }",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"var entries = conditions.length;",
+											"pm.test(\"deleting \" + entries + \" Conditions\", function () {",
+											"    true",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Condition?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Condition"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Test: Add Condition",
+					"item": [
+						{
+							"name": "1 Setup: Deploy Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/_deploy",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"_deploy"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "1 Setup: Stop Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "channelId",
+											"value": "{{tenant_mnemonic}}-{{channel_id}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{mirth_url}}/channels/_stop",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"_stop"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "1 Setup: New Condition Retrieved and Queued",
+							"event": [
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = pm.response.json();",
+											"var conditionCount = (jsonData.data && jsonData.data.conditionsByPatientAndCategory) ? jsonData.data.conditionsByPatientAndCategory.length : 0;",
+											"pm.test(conditionCount + \" Condition(s) queued\", function () {",
+											"    pm.expect(conditionCount).to.be.gt(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{seki_auth_ronin}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "query($tenantId: String!, $patientFhirId: String!, $conditionCategoryCode : ConditionCategoryCode!) {\n    conditionsByPatientAndCategory(\n    tenantId: $tenantId, \n    patientFhirId: $patientFhirId, \n    conditionCategoryCode: $conditionCategoryCode)\n    {id}\n}",
+										"variables": "{\n    \"tenantId\": \"ronin\",\n    \"patientFhirId\": \"eJzlzKe3KPzAV5TtkxmNivQ3\",\n    \"conditionCategoryCode\" : \"PROBLEM_LIST_ITEM\"\n}"
+									}
+								},
+								"url": {
+									"raw": "{{proxy_url}}/graphql",
+									"host": [
+										"{{proxy_url}}"
+									],
+									"path": [
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "1 Test: Start Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "channelId",
+											"value": "{{tenant_mnemonic}}-{{channel_id}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{mirth_url}}/channels/_start",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"_start"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "1 Test: (After Pause) Aidbox +1 Tenant Condition",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var requestTotal = pm.response.json() ? pm.response.json().total : 0;",
+											"pm.test(requestTotal + \" Condition\", function () {    ",
+											"    pm.expect(requestTotal).to.eql(1);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"pm.test(\"during a collection run, pause to ensure final result\", function () {",
+											"    setTimeout(function () {}, 15000);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Condition?_ilike={{tenant_mnemonic}}",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Condition"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "2 Return to Original State",
+			"item": [
+				{
+					"name": "Stop Channel",
+					"item": [
+						{
+							"name": "5 After: Stop Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "channelId",
+											"value": "{{tenant_mnemonic}}-{{channel_id}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{mirth_url}}/channels/_stop",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"_stop"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Remove Test Data",
+					"item": [
+						{
+							"name": "5 Setup: Aidbox Get Test Conditions",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var conditionIds = [];",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"for (i in jsonData.entry) {",
+											"    conditionIds.push(jsonData.entry[i].resource.id);",
+											"}",
+											"pm.collectionVariables.set(\"test_conditions_ids\", conditionIds);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Condition?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Condition"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "5 Setup: Aidbox Delete Test Conditions",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"pm.test(\"delete leaves 0 Conditions (actually \" + entries + \")\", function () {",
+											"    pm.expect(entries).to.eql(0);",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var conditionIds = pm.collectionVariables.get(\"test_conditions_ids\");",
+											"for (i in conditionIds) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Condition/\" + conditionIds[i],",
+											"            method: 'DELETE',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            }",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"deleting \" + conditionIds.length + \" Conditions\", function () {",
+											"    true",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Condition?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Condition"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Restore Tenant Data",
+					"item": [
+						{
+							"name": "5 Setup: Aidbox Restore Tenant Conditions",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var conditions = pm.environment.get(\"conditions_original\");",
+											"for (i in conditions) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Condition/\" + conditions[i].resource.id,",
+											"            method: 'POST',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            },",
+											"            body: conditions[i]",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"Restoring \" + conditions.length + \" Condition(s)\", function () {",
+											"    true",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Condition?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Condition"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "{{mirth_pass}}",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "{{mirth_user}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "mirth_channel_id",
+			"value": "ronin-d90aa9f3-b609-4067-b715-9a0b34",
+			"type": "string"
+		},
+		{
+			"key": "test_conditions_ids",
+			"value": ""
+		}
+	]
+}
