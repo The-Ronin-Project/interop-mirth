@@ -1,4 +1,4 @@
-name: Mirth Channel Config Test
+name: Mirth Channel Config Tests
 on:
   push:
     branches: [ master ]

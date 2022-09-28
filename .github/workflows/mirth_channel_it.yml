@@ -26,9 +26,9 @@ jobs:
 
       - name: Prepare dev-env
         run: |
-          mkdir dev-env/appdata
-          mkdir dev-env/interop
-          chmod -R +rwx dev-env
+          mkdir ./mirth-channel-code/dev-env/appdata
+          mkdir ./mirth-channel-code/dev-env/interop
+          chmod -R +rwx ./mirth-channel-code/dev-env
 
       - name: Stand up Mirth environment
         run: ./gradlew :mirth-channel-config:mirth
