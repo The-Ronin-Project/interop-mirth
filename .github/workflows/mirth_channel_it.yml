@@ -28,7 +28,7 @@ jobs:
         run: |
           mkdir mirth-channel-config/dev-env/appdata
           mkdir mirth-channel-config/dev-env/interop
-          chmod -R +rwx mirth-channel-code/dev-env
+          chmod -R +rwx mirth-channel-config/dev-env
 
       - name: Stand up Mirth environment
         run: ./gradlew :mirth-channel-config:mirth
