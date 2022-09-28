@@ -1,7 +1,7 @@
 plugins {
     id("com.projectronin.interop.gradle.version")
     id("com.projectronin.interop.gradle.publish")
-
+    id("com.projectronin.interop.gradle.junit")
     // Plugin exposing shadowJar task for creating fat JAR
     id("com.github.johnrengelman.shadow")
 }

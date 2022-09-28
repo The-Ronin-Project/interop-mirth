@@ -48,7 +48,7 @@ class MirthPlugin : Plugin<Project> {
         }
 
         val copyMirthChannelCodeTask = project.tasks.register<CopyMirthChannelCodeTask>("copyChannelCode") {
-            dependsOn(":mirth-channel-code:build")
+            dependsOn(":mirth-channel-code:jar")
             finalizedBy(reloadMirthResourceTask)
         }
 
