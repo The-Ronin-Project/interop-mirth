@@ -10,7 +10,7 @@ import java.util.UUID
 /**
  * Task for copying the Mirth Connector to the Interop resource directory.
  */
-open class CopyMirthConnectorTask : BaseMirthTask() {
+open class CopyMirthChannelCodeTask : BaseMirthTask() {
     private val downloadConfiguration = project.configurations.create("download")
 
     init {
@@ -27,15 +27,15 @@ open class CopyMirthConnectorTask : BaseMirthTask() {
     fun copy() {
         val resourceDirectory = project.mirth().dockerDirectory.get().dir(INTEROP_DIRECTORY)
 
-        logger.lifecycle("Removing any existing Mirth Connector from the interop resource folder")
+        logger.lifecycle("Removing any existing Channel Code Jar from the interop resource folder")
         val filesToRemove =
             resourceDirectory.asFileTree.files.filter {
-                it.name.startsWith("interop-mirth-connector")
+                it.name.startsWith("mirth-channel-code")
             }
         filesToRemove.forEach { it.delete() }
         logger.lifecycle("Removed ${filesToRemove.size} old files")
 
-        logger.lifecycle("Copying Mirth Connector to interop resource folder")
+        logger.lifecycle("Copying Channel Code Jar to interop resource folder")
         project.copy {
             fileMode = 0b110110110 // Results are wonky with a regular base 10 integer
             from(downloadConfiguration.singleFile)

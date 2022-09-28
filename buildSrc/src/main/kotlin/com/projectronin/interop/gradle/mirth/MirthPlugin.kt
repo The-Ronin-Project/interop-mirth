@@ -2,7 +2,7 @@ package com.projectronin.interop.gradle.mirth
 
 import com.projectronin.interop.gradle.mirth.task.AddCodeTemplatesTask
 import com.projectronin.interop.gradle.mirth.task.AddInteropDirectoryResourceTask
-import com.projectronin.interop.gradle.mirth.task.CopyMirthConnectorTask
+import com.projectronin.interop.gradle.mirth.task.CopyMirthChannelCodeTask
 import com.projectronin.interop.gradle.mirth.task.DockerComposeTask
 import com.projectronin.interop.gradle.mirth.task.InstallAidboxResources
 import com.projectronin.interop.gradle.mirth.task.InstallAllChannelsTask
@@ -47,7 +47,7 @@ class MirthPlugin : Plugin<Project> {
             dependsOn(addInteropDirectoryResourceTask)
         }
 
-        val copyMirthConnectorTask = project.tasks.register<CopyMirthConnectorTask>("copyMirthConnector") {
+        val copyMirthChannelCodeTask = project.tasks.register<CopyMirthChannelCodeTask>("copyChannelCode") {
             dependsOn(":mirth-channel-code:build")
             finalizedBy(reloadMirthResourceTask)
         }
@@ -80,7 +80,7 @@ class MirthPlugin : Plugin<Project> {
             dependsOn(dockerComposeTask)
             dependsOn(setupUserTask)
             dependsOn(addInteropDirectoryResourceTask)
-            dependsOn(copyMirthConnectorTask)
+            dependsOn(copyMirthChannelCodeTask)
             dependsOn(reloadMirthResourceTask)
             dependsOn(addCodeTemplatesTask)
             dependsOn(installAllChannelsTask)
