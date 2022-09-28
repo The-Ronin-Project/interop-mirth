@@ -35,7 +35,7 @@ class TenantRestClient(private val httpClient: HttpClient) {
         /**
          * Creates a TenantRestClient for the [auth] settings.
          */
-        fun createClient(auth: com.projectronin.interop.gradle.mirth.TenantConfigAuthExtension) = TenantRestClient(
+        fun createClient(auth: TenantConfigAuthExtension) = TenantRestClient(
             HttpClient(CIO) {
                 // Setup JSON
                 install(ContentNegotiation) {

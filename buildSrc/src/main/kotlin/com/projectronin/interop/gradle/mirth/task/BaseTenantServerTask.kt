@@ -17,14 +17,9 @@ abstract class BaseTenantServerTask : BaseMirthTask() {
         logger.lifecycle("Updating tenant server information")
 
         val allTenantConfigs = loadTenantConfigs()
-        logger.lifecycle("tenant server 1")
         val tenantConfig = project.mirth().channel.tenantConfig
         val defaultMnemonic = tenantConfig.defaultMnemonic
-        logger.lifecycle("tenant server 2")
-        logger.lifecycle(tenantConfig.toString())
-        logger.lifecycle(tenantConfig.defaultMnemonic)
         val client = TenantRestClient.createClient(tenantConfig.auth)
-        logger.lifecycle("tenant server 3")
 
         for ((tenantName, config) in allTenantConfigs) {
             val tenantMnemonic = if (tenantName == "default") defaultMnemonic else tenantName
