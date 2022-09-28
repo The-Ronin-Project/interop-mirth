@@ -12,6 +12,9 @@ open class UpdateTenantConfigTask : BaseTenantServerTask() {
     override val subfolder = "mirth-config"
 
     override fun updateConfig(tenantMnemonic: String, client: TenantRestClient, config: Map<String, String>) {
+        logger.lifecycle("starting update")
+        logger.lifecycle("$client")
+        logger.lifecycle("$config")
         val currentConfig = client.getMirthTenantConfig(tenantMnemonic)
         logger.lifecycle(currentConfig.toString())
         val status = if (currentConfig == null) {
