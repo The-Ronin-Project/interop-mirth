@@ -26,8 +26,8 @@ jobs:
 
       - name: Prepare dev-env
         run: |
-          mkdir mirth-channel-code/dev-env/appdata
-          mkdir mirth-channel-code/dev-env/interop
+          mkdir mirth-channel-config/dev-env/appdata
+          mkdir mirth-channel-config/dev-env/interop
           chmod -R +rwx mirth-channel-code/dev-env
 
       - name: Stand up Mirth environment
