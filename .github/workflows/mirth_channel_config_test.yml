@@ -1,4 +1,4 @@
-name: Tests
+name: Mirth Channel Config
 on:
   push:
     branches: [ master ]
@@ -17,7 +17,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Gradlew Test
-        run: ./gradlew test
+        run: ./gradlew :mirth-channel-config:test
       - name: Upload Coverage
         uses: codecov/codecov-action@v2
         with:
