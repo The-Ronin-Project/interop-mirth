@@ -10,38 +10,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v2
         with:
           java-version: 17
-          distribution: zulu
-      - uses: gradle/gradle-build-action@v2
-      - name: Install Docker Compose
-        run: |
-          sudo mkdir -p /etc/apt/keyrings
-          curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          sudo apt-get update
-          sudo apt-get install docker-compose-plugin
-      - name: Prepare dev-env
-        run: |
-          mkdir mirth-channels-config/dev-env/appdata
-          mkdir mirth-channels-config/dev-env/interop
-          chmod -R +rwx mirth-channels-config/dev-env
+          distribution: 'zulu'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
       - name: Gradlew Test
-        run: ./gradlew :mirth-channels-config:test
-        env:
-          AIDBOX_CLIENT_ID: client
-          AIDBOX_CLIENT_SECRET: secret
-          AIDBOX_LICENSE_ID: ${{ secrets.ORG_AIDBOX_LICENSE_ID }}
-          AIDBOX_LICENSE_KEY: ${{ secrets.ORG_AIDBOX_LICENSE_KEY }}
-          SEKI_AUTH_CLIENT_ID: ${{ secrets.SEKI_AUTH_CLIENT_ID }}
-          SEKI_AUTH_CLIENT_SECRET: ${{ secrets.SEKI_AUTH_CLIENT_SECRET }}
-          AO_SANDBOX_KEY: ${{ secrets.AO_SANDBOX_KEY }}
-
-
-      - name: Archive postman test output
-        if: success() || failure()
-        uses: actions/upload-artifact@v3
+        run: ./gradlew :mirth-channel-code:test
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v2
         with:
-          name: postman-results
-          path: /runner/_work/mirth-channels-config/mirth-channels-config/build/postman-tests
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+          file: ./mirth-channel-code/codecov/test/jacocoTestReport.xml
+          flags: mirth-channel-code
