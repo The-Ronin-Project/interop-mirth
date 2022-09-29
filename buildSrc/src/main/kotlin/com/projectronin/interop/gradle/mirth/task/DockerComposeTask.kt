@@ -15,8 +15,7 @@ open class DockerComposeTask @Inject constructor(private val execOperations: Exe
         execOperations.exec {
             workingDir(project.mirth().dockerDirectory.get())
             isIgnoreExitValue = true
-            commandLine("docker compose version".split(" "))
-            // commandLine("docker compose rm -f -v mockehrinit".split(" "))
+            commandLine("docker compose rm --force --volumes mockehrinit".split(" "))
         }
         logger.lifecycle("Running Docker compose")
         execOperations.exec {
