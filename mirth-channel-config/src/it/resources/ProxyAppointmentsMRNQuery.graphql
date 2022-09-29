@@ -1,0 +1,5 @@
+{
+    appointmentsByMRNAndDate (endDate: "__END_DATE__", mrn: "__MRN__", startDate: "__START_DATE__", tenantId: "__TENANT__") {
+        id
+    }
+}

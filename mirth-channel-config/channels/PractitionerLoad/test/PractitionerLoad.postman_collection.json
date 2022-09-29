@@ -1,0 +1,2333 @@
+{
+	"info": {
+		"_postman_id": "063056c7-7822-4e0b-b045-a700a92c0119",
+		"name": "PractitionerLoad",
+		"description": "**PractitionerLoad-IN**\n\n*   Collection to integration-test the PractitionerLoad-IN channel and validate the channel definition.\n*   Sets up and tests cases by sending REST API requests to **Mirth and Devbox on a local dev-env**.\n*   Does CRUD operations on Practitioner, PractitionerRole, and Location resources in the local Devbox.\n*   CRUD is limited to the tenant_mnemonic identified in the Postman environment configuration.\n*   The tenant_mnemonic should be a value that works, but is not equal to any real tenant, i.e.. **apposnd**\n*   When done, the channel is stopped and all of the above resources are deleted for that tenant.\n    \n\n**Setup**\n\n*   Import and choose the Postman environment called “PractitionerLoad-IN\".\n*   The expectation is that the channel has been imported and deployed in Mirth in the local dev-env.\n*   Authentication details for all Mirth and Devbox calls are inherited from the parent collection.\n*   The “PractitionerLoad-IN\" environment should match an Interops local dev-env, out-of-the-box, as long as you are using the common docker-compose.\n*   Rarely, over time, some docker-compose.yaml setting, or the guid for the Mirth channel id, may change. If that has happened, edit the environment. If appropriate, export and archive the updated environment.\n    \n\n**Usage**\n\n*   Choose the collection and choose \"Run\". Use Postman test features like iteration, summary view, etc.\n*   The HTTP requests run in their display order in the collection from top to bottom with nice screen output.\n*   HTTP requests are grouped in folders. Be aware that, when tests run, only the request names display.\n*   For this reason, there are some naming conventions and a \"End of Test\" convention to clarify output.\n*   So, significant names start with a number n to show they're in the the same test (3 Setup and 3 Test).\n*   There are scripts (JavaScript) in the “Pre-request” and “Test” tabs, per HTTP request in the collection.\n*   For each HTTP request, this synchronous order is assured: \"Pre-request\" script, HTTP, then \"Test\" script.\n*   *Within* each “Pre-request” or “Test” are mini-tests that display correct results, but display order *may* vary.\n    \n\n**Outline of Tests**\n\n*   Happy (tenant and location IDs supplied)\n*   Missing/bad/empty location IDs",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18428610"
+	},
+	"item": [
+		{
+			"name": "0 Channel Ready",
+			"item": [
+				{
+					"name": "Test: Channel is in Mirth",
+					"item": [
+						{
+							"name": "0 Test: Get Channel ID from Mirth",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var tenant = pm.environment.get(\"tenant_mnemonic\");",
+											"var channelName = pm.environment.get(\"channel_name\");",
+											"var configuredChannelName = tenant + \"-\" + channelName;",
+											"",
+											"var jsonData = pm.response.json();",
+											"var channels = jsonData.list.channel;",
+											"var found = false;",
+											"if (Array.isArray(channels)) {",
+											"    for (var i = 0; !found && (i < jsonData.list.channel.length); i++) {",
+											"        var channel = jsonData.list.channel[i];",
+											"        if (channel.name == configuredChannelName) {",
+											"            pm.environment.set(\"channel_id\", channel.id.substring(tenant.length + 1));",
+											"            found = true;",
+											"        }",
+											"    }",
+											"}",
+											"else {",
+											"    if (jsonData.list.channel.name == configuredChannelName) {",
+											"        pm.environment.set(\"channel_id\", channel.id.substring(tenant.length + 1));",
+											"    }",
+											"}",
+											"if (!found) {",
+											"    console.log(\"The channel to test is not in Mirth: \" + configuredChannelName);",
+											"    console.log(\"Remaining tests in this collection should fail.\");",
+											"}",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Clean: Channel is in a Good State and Stopped",
+					"item": [
+						{
+							"name": "0 Setup: Deploy Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/_deploy",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"_deploy"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "0 Setup: Stop Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "channelId",
+											"value": "{{tenant_mnemonic}}-{{channel_id}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{mirth_url}}/channels/_stop",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"_stop"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "0 Setup: Channel is Safely Stopped",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"pm.test(\"channel is stopped\", function () {",
+											"    pm.expect(jsonData.dashboardStatus.state).to.eql(\"STOPPED\");",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/status",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"status"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "0 Setup: Enable Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/enabled/true",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"enabled",
+										"true"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Test: Channel Definition",
+					"item": [
+						{
+							"name": "0 Test: Channel Definition",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var tenant = pm.environment.get(\"tenant_mnemonic\");",
+											"var channelName = pm.environment.get(\"channel_name\");",
+											"pm.test(\"name = \" + tenant + \"-\" +channelName, function () {",
+											"    pm.expect(jsonData.channel.name).to.eql(tenant + \"-\" + channelName);",
+											"});",
+											"",
+											"var channelId = pm.environment.get(\"channel_id\");",
+											"pm.test(\"id = \" + tenant + \"-\" +channelId, function () {",
+											"    pm.expect(jsonData.channel.id).to.eql(tenant + \"-\" + channelId);",
+											"});",
+											"",
+											"pm.test(\"channel polls on start\", function () {",
+											"   pm.expect(jsonData.channel.sourceConnector.properties.pollConnectorProperties.pollOnStart).to.eql(true);",
+											"});",
+											"",
+											"var entry = jsonData.channel.properties.resourceIds.entry;",
+											"if (Array.isArray(entry)) {",
+											"    pm.test(\"channel has the Interop resource configured\", function () {",
+											"        pm.expect(entry[0].string[1]).to.eql(\"Interop\");",
+											"    });",
+											"}",
+											"else {",
+											"    pm.test(\"channel has the Interop resource configured\", function () {",
+											"        pm.expect(entry.string[1]).to.eql(\"Interop\");  ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"sourceConnector is JavaScript\", function () {",
+											"   pm.expect(jsonData.channel.sourceConnector.properties[\"@class\"]).to.eql(\"com.mirth.connect.connectors.js.JavaScriptReceiverProperties\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "1 Clean: Backup and Delete Tenant Data",
+			"item": [
+				{
+					"name": "1 Setup: Aidbox Backup Tenant Practitioners",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var practitioners = [];",
+									"var jsonData = pm.response.json();",
+									"var entries = jsonData.total;",
+									"for (i in jsonData.entry) {",
+									"    practitioners.push(jsonData.entry[i]);",
+									"}",
+									"pm.environment.set(\"practitioners_original\", practitioners);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{devbox_client_pass}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{devbox_client}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{devbox_url}}/fhir/Practitioner?_ilike={{tenant_mnemonic}}-",
+							"host": [
+								"{{devbox_url}}"
+							],
+							"path": [
+								"fhir",
+								"Practitioner"
+							],
+							"query": [
+								{
+									"key": "_ilike",
+									"value": "{{tenant_mnemonic}}-"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "1 Setup: Aidbox Delete Tenant Practitioners",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"var entries = jsonData.total;",
+									"pm.test(\"delete leaves 0 Practitioners (actually \" + entries + \")\", function () {",
+									"    pm.expect(entries).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var devboxUrl = pm.environment.get(\"devbox_url\");",
+									"var practitioners = pm.environment.get(\"practitioners_original\");",
+									"for (i in practitioners) {",
+									"    pm.sendRequest(",
+									"        {",
+									"            url: devboxUrl + \"/fhir/Practitioner/\" + practitioners[i].resource.id,",
+									"            method: 'DELETE',",
+									"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+									"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+									"            }",
+									"        }, function (err, response) {            ",
+									"    });",
+									"}",
+									"",
+									"var entries = practitioners.length;",
+									"pm.test(\"deleting \" + entries + \" Practitioner(s)\", function () {",
+									"    true",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{devbox_client_pass}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{devbox_client}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{devbox_url}}/fhir/Practitioner?_ilike={{tenant_mnemonic}}-",
+							"host": [
+								"{{devbox_url}}"
+							],
+							"path": [
+								"fhir",
+								"Practitioner"
+							],
+							"query": [
+								{
+									"key": "_ilike",
+									"value": "{{tenant_mnemonic}}-"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "1 Setup: Aidbox Backup Tenant PractitionerRoles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var practitionerRoles = [];",
+									"var jsonData = pm.response.json();",
+									"var entries = jsonData.total;",
+									"for (i in jsonData.entry) {",
+									"    practitionerRoles.push(jsonData.entry[i]);",
+									"}",
+									"pm.environment.set(\"practitioner_roles_original\", practitionerRoles);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{devbox_client_pass}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{devbox_client}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{devbox_url}}/fhir/PractitionerRole?_ilike={{tenant_mnemonic}}-",
+							"host": [
+								"{{devbox_url}}"
+							],
+							"path": [
+								"fhir",
+								"PractitionerRole"
+							],
+							"query": [
+								{
+									"key": "_ilike",
+									"value": "{{tenant_mnemonic}}-"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "1 Setup: Aidbox Delete Tenant PractitionerRoles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"var entries = jsonData.total;",
+									"pm.test(\"delete leaves 0 PractitionerRoles (actually \" + entries + \")\", function () {",
+									"    pm.expect(entries).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var devboxUrl = pm.environment.get(\"devbox_url\");",
+									"var practitionerRoles = pm.environment.get(\"practitioner_roles_original\");",
+									"for (i in practitionerRoles) {",
+									"    pm.sendRequest(",
+									"        {",
+									"            url: devboxUrl + \"/fhir/PractitionerRole/\" + practitionerRoles[i].resource.id,",
+									"            method: 'DELETE',",
+									"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+									"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+									"            }",
+									"        }, function (err, response) {            ",
+									"    });",
+									"}",
+									"",
+									"var entries = practitionerRoles.length;",
+									"pm.test(\"deleting \" + entries + \" PractitionerRole(s)\", function () {",
+									"    true",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{devbox_client_pass}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{devbox_client}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{devbox_url}}/fhir/PractitionerRole?_ilike={{tenant_mnemonic}}-",
+							"host": [
+								"{{devbox_url}}"
+							],
+							"path": [
+								"fhir",
+								"PractitionerRole"
+							],
+							"query": [
+								{
+									"key": "_ilike",
+									"value": "{{tenant_mnemonic}}-"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "1 Setup: Aidbox Backup Tenant Locations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var locations = [];",
+									"var jsonData = pm.response.json();",
+									"var entries = jsonData.total;",
+									"for (i in jsonData.entry) {",
+									"    locations.push(jsonData.entry[i]);",
+									"}",
+									"pm.environment.set(\"locations_original\", locations);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{devbox_client_pass}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{devbox_client}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{devbox_url}}/fhir/Location?_ilike={{tenant_mnemonic}}-",
+							"host": [
+								"{{devbox_url}}"
+							],
+							"path": [
+								"fhir",
+								"Location"
+							],
+							"query": [
+								{
+									"key": "_ilike",
+									"value": "{{tenant_mnemonic}}-"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "1 Setup: Aidbox Delete Tenant Locations",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"var jsonData = pm.response.json();",
+									"var entries = jsonData.total;",
+									"pm.test(\"delete leaves 0 Locations (actually \" + entries + \")\", function () {",
+									"    pm.expect(entries).to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"var devboxUrl = pm.environment.get(\"devbox_url\");",
+									"var locations = pm.environment.get(\"locations_original\");",
+									"for (i in locations) {",
+									"    pm.sendRequest(",
+									"        {",
+									"            url: devboxUrl + \"/fhir/Location/\" + locations[i].resource.id,",
+									"            method: 'DELETE',",
+									"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+									"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+									"            }",
+									"        }, function (err, response) {            ",
+									"    });",
+									"}",
+									"",
+									"var entries = locations.length;",
+									"pm.test(\"deleting \" + entries + \" Location(s)\", function () {",
+									"    true",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{devbox_client_pass}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{devbox_client}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{devbox_url}}/fhir/Location?_ilike={{tenant_mnemonic}}-",
+							"host": [
+								"{{devbox_url}}"
+							],
+							"path": [
+								"fhir",
+								"Location"
+							],
+							"query": [
+								{
+									"key": "_ilike",
+									"value": "{{tenant_mnemonic}}-"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2 Test: Load Practitioners, Roles, and Locations",
+			"item": [
+				{
+					"name": "Test: Good Configuration",
+					"item": [
+						{
+							"name": "2 Setup: Config MockEHR Location IDs",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var confirmedLocationCount = 0;",
+											"",
+											"var headers = pm.request.getHeaders();",
+											"console.log(headers);",
+											"pm.sendRequest(",
+											"    {",
+											"        url: pm.environment.get(\"proxy_url\") + \"/tenants/\" + pm.environment.get(\"tenant_mnemonic\") +\"/mirth-config\",",
+											"        method: 'GET',",
+											"        header: headers",
+											"    },  (err, response) => {    ",
+											"        var configIds = [];",
+											"        var result = response.json();",
+											"        console.log(result)",
+											"        confirmedLocationCount = result.locationIds.length",
+											"        pm.test(\"Confirm location ids are updated\", function () {",
+											"            pm.expect(confirmedLocationCount).to.equal(5);",
+											"        });",
+											"    }",
+											");",
+											"",
+											""
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"const echoPostRequest = {",
+											"  url: pm.environment.get('auth_url'),",
+											"  method: 'POST',",
+											"  header: 'Content-Type:application/json',",
+											"  body: {",
+											"    mode: 'application/json',",
+											"    raw: JSON.stringify(",
+											"        {",
+											"        \tclient_id:pm.environment.get('client_id'),",
+											"        \tclient_secret:pm.environment.get('client_secret'),",
+											"        \taudience: pm.environment.get('audience'),",
+											"        \tgrant_type:'client_credentials'",
+											"        })",
+											"  }",
+											"};",
+											"",
+											"var getToken = true;",
+											"console.log(pm.environment.get('accessTokenExpiry'))",
+											"console.log((new Date()).getTime())",
+											"",
+											"if (!pm.environment.get('accessTokenExpiry') || ",
+											"    !pm.environment.get('currentAccessToken')) {",
+											"    console.log('Token or expiry date are missing, getting a new token')",
+											"} else if (pm.environment.get('accessTokenExpiry') <= (new Date()).getTime()) {",
+											"    console.log('Token is expired, getting a new token')",
+											"} else {",
+											"    getToken = false;",
+											"    console.log('Token and expiry date are all good, using existing token');",
+											"}",
+											"",
+											"if (getToken === true) {",
+											"    pm.sendRequest(echoPostRequest, function (err, res) {",
+											"    console.log(err ? err : res.json());",
+											"        if (err === null) {",
+											"            console.log('Saving the token and expiry date')",
+											"            var responseJson = res.json();",
+											"            pm.environment.set('currentAccessToken', responseJson.access_token)",
+											"    ",
+											"            var expiryDate = new Date();",
+											"            expiryDate.setSeconds(expiryDate.getSeconds() + (responseJson.expires_in/1000));",
+											"            pm.environment.set('accessTokenExpiry', expiryDate.getTime());",
+											"        }",
+											"    });",
+											"}"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "bearer",
+									"bearer": [
+										{
+											"key": "token",
+											"value": "{{currentAccessToken}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "PUT",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									},
+									{
+										"key": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"locationIds\": [\n        \"3f1af7cb-a47e-4e1e-a8e3-d18e0d073e6c\",\n        \"e4W4rmGe9QzuGm2Dy4NBqVc0KDe6yGld6HW95UuN-Qd03\",\n        \"e6gRswU5WJtj7msgU7NZiYw3\",\n        \"e-ihfN9W6NFF9fqHMGzRyBw3\",\n        \"EHRFHIRIDLocation01Test\"\n    ]\n}\n",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{proxy_url}}/tenants/{{tenant_mnemonic}}/mirth-config",
+									"host": [
+										"{{proxy_url}}"
+									],
+									"path": [
+										"tenants",
+										"{{tenant_mnemonic}}",
+										"mirth-config"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2 Setup: Deploy Channel with Good Config",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/_deploy",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"_deploy"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2 Setup: Start Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "channelId",
+											"value": "{{tenant_mnemonic}}-{{channel_id}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{mirth_url}}/channels/_start",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"_start"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2 Test: Channel Starts, Polls",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"pm.test(\"channel is started\", function () {",
+											"    pm.expect(jsonData.dashboardStatus.state).to.eql(\"STARTED\");",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{mirth_url}}/channels/{{tenant_mnemonic}}-{{channel_id}}/status",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"{{tenant_mnemonic}}-{{channel_id}}",
+										"status"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Test: Practitoners are Loaded to Aidbox",
+					"item": [
+						{
+							"name": "2 Test: (After a Pause) Aidbox: Added Practitioners for Tenant",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var total = jsonData.total;",
+											"pm.test(\"Now: \" + total + \" Practitioner(s) in Aidbox\", function () {",
+											"    pm.expect(total).to.be.gt(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"setTimeout(function () {}, 9000);"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Practitioner?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Practitioner"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2 Test: Aidbox: Added Roles for Tenant",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var total = jsonData.total;",
+											"pm.test(\"Now: \" + total + \" PractitionerRole(s) in Aidbox\", function () {",
+											"    pm.expect(total).to.be.gt(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/PractitionerRole?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"PractitionerRole"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "2 Test: Aidbox: Added Locations for Tenant",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"",
+											"var jsonData = pm.response.json();",
+											"var total = jsonData.total;",
+											"pm.test(\"Now: \" + total + \" Location(s) in Aidbox\", function () {",
+											"    pm.expect(total).to.be.gt(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Location?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Location"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "3 Return to Original State",
+			"item": [
+				{
+					"name": "Stop Channel",
+					"item": [
+						{
+							"name": "3 After: Stop Channel",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 204\", function () {",
+											"    pm.response.to.have.status(204);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Accept",
+										"value": "application/json",
+										"type": "text"
+									},
+									{
+										"key": "X-Requested-With",
+										"value": "OpenAPI",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "channelId",
+											"value": "{{tenant_mnemonic}}-{{channel_id}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{mirth_url}}/channels/_stop",
+									"host": [
+										"{{mirth_url}}"
+									],
+									"path": [
+										"channels",
+										"_stop"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Remove Test Data",
+					"item": [
+						{
+							"name": "3 After: Aidbox Get Test Practitioners",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var practitioners = [];",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"for (i in jsonData.entry) {",
+											"    practitioners.push(jsonData.entry[i].resource.id);",
+											"}",
+											"pm.collectionVariables.set(\"practitioners_to_delete\", practitioners);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Practitioner?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Practitioner"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3 After: Aidbox Delete Tenant Practitioners",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"pm.test(\"delete leaves 0 Practitioners (actually \" + entries + \")\", function () {",
+											"    pm.expect(entries).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var practitioners = pm.collectionVariables.get(\"practitioners_to_delete\");",
+											"var deleted = 0",
+											"for (i in practitioners) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Practitioner/\" + practitioners[i],",
+											"            method: 'DELETE',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            }",
+											"        }, function (err, response) {            ",
+											"    });",
+											"    deleted++",
+											"}",
+											"",
+											"pm.test(\"deleting \" + deleted + \" Practitioner(s)\", function () {",
+											"    true",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Practitioner?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Practitioner"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3 After: Aidbox Get Test PractitionerRoles",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var practitionerRoles = [];",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"for (i in jsonData.entry) {",
+											"    practitionerRoles.push(jsonData.entry[i].resource.id);",
+											"}",
+											"pm.collectionVariables.set(\"practitioner_roles_to_delete\", practitionerRoles);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/PractitionerRole?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"PractitionerRole"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3 After: Aidbox Delete Test PractitionerRoles",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"pm.test(\"delete leaves 0 PractitionerRoles (actually \" + entries + \")\", function () {",
+											"    pm.expect(entries).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var practitionerRoles = pm.collectionVariables.get(\"practitioner_roles_to_delete\");",
+											"var deleted = 0",
+											"for (i in practitionerRoles) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/PractitionerRole/\" + practitionerRoles[i],",
+											"            method: 'DELETE',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            }",
+											"        }, function (err, response) {            ",
+											"    });",
+											"    deleted++",
+											"}",
+											"",
+											"pm.test(\"deleting \" + deleted + \" PractitionerRole(s)\", function () {",
+											"    true",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/PractitionerRole?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"PractitionerRole"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3 After: Aidbox Get Test Locations",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var locations = [];",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"for (i in jsonData.entry) {",
+											"    locations.push(jsonData.entry[i].resource.id);",
+											"}",
+											"pm.collectionVariables.set(\"locations_to_delete\", locations);"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Location?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Location"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3 After: Aidbox Delete Test Locations",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"var entries = jsonData.total;",
+											"pm.test(\"delete leaves 0 Locations (actually \" + entries + \")\", function () {",
+											"    pm.expect(entries).to.eql(0);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var locations = pm.collectionVariables.get(\"locations_to_delete\");",
+											"var deleted = 0",
+											"for (i in locations) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Location/\" + locations[i],",
+											"            method: 'DELETE',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            }",
+											"        }, function (err, response) {            ",
+											"    });",
+											"    deleted++",
+											"}",
+											"",
+											"pm.test(\"deleting \" + deleted + \" Location(s)\", function () {",
+											"    true",
+											"});",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"strictSSL": false
+							},
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Location?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Location"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Restore Tenant Data",
+					"item": [
+						{
+							"name": "3 After: Aidbox Restore Tenant Practitioners",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var practitioners = pm.environment.get(\"practitioners_original\");",
+											"for (i in practitioners) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Practitioner/\" + practitioners[i].resource.id,",
+											"            method: 'POST',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            },",
+											"            body: practitioners[i]",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"Restoring \" + practitioners.length + \" Practitioner(s)\", function () {",
+											"    true",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Practitioner?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Practitioner"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3 After: Aidbox Restore Tenant PractitionerRoles",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var practitionerRoles = pm.environment.get(\"practitioner_roles_original\");",
+											"for (i in practitionerRoles) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/PractitionerRole/\" + practitionerRoles[i].resource.id,",
+											"            method: 'POST',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            },",
+											"            body: practitionerRoles[i]",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"Restoring \" + practitionerRoles.length + \" PractitionerRole(s)\", function () {",
+											"    true",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/PractitionerRole?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"PractitionerRole"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "3 After: Aidbox Restore Tenant Locations",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								},
+								{
+									"listen": "prerequest",
+									"script": {
+										"exec": [
+											"var devboxUrl = pm.environment.get(\"devbox_url\");",
+											"var locations = pm.environment.get(\"locations_original\");",
+											"for (i in locations) {",
+											"    pm.sendRequest(",
+											"        {",
+											"            url: devboxUrl + \"/fhir/Location/\" + locations[i].resource.id,",
+											"            method: 'POST',",
+											"            header: { // Y2xpZW50OnNlY3JldA== is a base-64 hash of {{devbox_client}}:{{devbox_client_pass}}",
+											"                'Authorization': 'Basic Y2xpZW50OnNlY3JldA=='",
+											"            },",
+											"            body: locations[i]",
+											"        }, function (err, response) {            ",
+											"    });",
+											"}",
+											"",
+											"pm.test(\"Restoring \" + locations.length + \" Location(s)\", function () {",
+											"    true",
+											"});"
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
+							"request": {
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{devbox_client_pass}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{devbox_client}}",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{devbox_url}}/fhir/Location?_ilike={{tenant_mnemonic}}-",
+									"host": [
+										"{{devbox_url}}"
+									],
+									"path": [
+										"fhir",
+										"Location"
+									],
+									"query": [
+										{
+											"key": "_ilike",
+											"value": "{{tenant_mnemonic}}-"
+										}
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "basic",
+		"basic": [
+			{
+				"key": "password",
+				"value": "{{mirth_pass}}",
+				"type": "string"
+			},
+			{
+				"key": "username",
+				"value": "{{mirth_user}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "practitioner_total",
+			"value": ""
+		},
+		{
+			"key": "previous_practitioner_total",
+			"value": ""
+		},
+		{
+			"key": "practitioner_delete_goal",
+			"value": ""
+		},
+		{
+			"key": "practitioners_to_delete",
+			"value": ""
+		},
+		{
+			"key": "practitioner_location_total",
+			"value": ""
+		},
+		{
+			"key": "previous_practitioner_location_total",
+			"value": ""
+		},
+		{
+			"key": "practitioner_location_delete_goal",
+			"value": ""
+		},
+		{
+			"key": "practitioner_locations_to_delete",
+			"value": ""
+		},
+		{
+			"key": "practitionerrole_total",
+			"value": ""
+		},
+		{
+			"key": "previous_practitionerrole_total",
+			"value": ""
+		},
+		{
+			"key": "practitionerrole_delete_goal",
+			"value": ""
+		},
+		{
+			"key": "practitionerroles_to_delete",
+			"value": ""
+		},
+		{
+			"key": "practitioner_ids",
+			"value": ""
+		},
+		{
+			"key": "practitioners",
+			"value": ""
+		},
+		{
+			"key": "practitioner_original",
+			"value": ""
+		},
+		{
+			"key": "location_original",
+			"value": ""
+		},
+		{
+			"key": "location_total",
+			"value": ""
+		},
+		{
+			"key": "locations",
+			"value": ""
+		},
+		{
+			"key": "location_ids",
+			"value": ""
+		},
+		{
+			"key": "practitioner_role_original",
+			"value": ""
+		},
+		{
+			"key": "practitioner_role_total",
+			"value": ""
+		},
+		{
+			"key": "practitioner_roles",
+			"value": ""
+		},
+		{
+			"key": "practitioner_role_ids",
+			"value": ""
+		},
+		{
+			"key": "practitioners_original",
+			"value": ""
+		},
+		{
+			"key": "practitioners_original_ids",
+			"value": ""
+		},
+		{
+			"key": "practitioner_roles_original",
+			"value": ""
+		},
+		{
+			"key": "practitioner_roles_original_ids",
+			"value": ""
+		},
+		{
+			"key": "config_location_ids_original",
+			"value": ""
+		},
+		{
+			"key": "locations_original",
+			"value": ""
+		},
+		{
+			"key": "config_location_ids",
+			"value": ""
+		},
+		{
+			"key": "test_practitioners_ids",
+			"value": ""
+		},
+		{
+			"key": "test_practitioner_roles_ids",
+			"value": ""
+		},
+		{
+			"key": "test_locations_ids",
+			"value": ""
+		},
+		{
+			"key": "config_location_ids_original_count",
+			"value": ""
+		},
+		{
+			"key": "config_location_ids_original_string",
+			"value": ""
+		},
+		{
+			"key": "practitioner_roles_to_delete",
+			"value": ""
+		},
+		{
+			"key": "lcoations_to_delete",
+			"value": ""
+		},
+		{
+			"key": "locations_to_delete",
+			"value": ""
+		}
+	]
+}

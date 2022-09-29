@@ -1,0 +1,53 @@
+[libraries]
+interop-aidbox = "com.projectronin.interop.publish:interop-aidbox:4.0.2"
+interop-common = "com.projectronin.interop:interop-common:3.0.1"
+interop-commonHttp = "com.projectronin.interop:interop-common-http:3.0.1"
+interop-commonJackson = "com.projectronin.interop:interop-common-jackson:3.0.1"
+interop-commonTestDb = "com.projectronin.interop:interop-common-test-db:3.0.1"
+interop-ehr-api = "com.projectronin.interop.ehr:interop-ehr:4.1.3"
+interop-ehr-fhir-ronin = "com.projectronin.interop.ehr:interop-fhir-ronin:4.1.3"
+interop-ehr-epic = "com.projectronin.interop.ehr:interop-ehr-epic:4.1.3"
+interop-ehr-liquibase = "com.projectronin.interop.ehr:interop-ehr-liquibase:4.1.3"
+interop-publishers = "com.projectronin.interop.publish:interop-publishers:4.0.2"
+interop-fhir = "com.projectronin.interop.fhir:interop-fhir:3.1.0"
+interop-fhir-core = "com.projectronin.interop.fhir:interop-fhir:3.1.0"
+interop-fhir-ronin = "com.projectronin.interop.ehr:interop-fhir-ronin:4.1.3"
+interop-queue-api = "com.projectronin.interop.queue:interop-queue:1.2.0"
+interop-queue-db = "com.projectronin.interop.queue:interop-queue-db:1.2.0"
+interop-queue-liquibase = "com.projectronin.interop.queue:interop-queue-liquibase:1.2.0"
+interop-tenant = "com.projectronin.interop.ehr:interop-tenant:4.1.3"
+jackson-annotations = "com.fasterxml.jackson.core:jackson-annotations:2.13.2"
+jackson-core = "com.fasterxml.jackson.core:jackson-core:2.13.2"
+jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.13.2.2"
+jackson-dataformat-xml = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.13.2"
+jackson-dataformat-yaml = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.13.2"
+jackson-datatype-jsr310 = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.2"
+jackson-module-kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:2.13.2"
+junit-pioneer = "org.junit-pioneer:junit-pioneer:1.7.1"
+javafaker = "com.github.javafaker:javafaker:1.0.2"
+ktor-client-auth = "io.ktor:ktor-client-auth:2.0.2"
+ktor-client-cio = "io.ktor:ktor-client-cio:2.0.2"
+ktor-client-content-negotiation = "io.ktor:ktor-client-content-negotiation:2.0.2"
+ktor-client-core = "io.ktor:ktor-client-core:2.0.2"
+ktor-client-logging = "io.ktor:ktor-client-logging:2.0.2"
+ktor-serialization-jackson = "io.ktor:ktor-serialization-jackson:2.0.2"
+ktorm-core = "org.ktorm:ktorm-core:3.5.0"
+ktorm-support-mysql = "org.ktorm:ktorm-support-mysql:3.5.0"
+mockk = "io.mockk:mockk:1.12.7"
+mysql-connector-java = "mysql:mysql-connector-java:8.0.30"
+okhttp3-mockwebserver = "com.squareup.okhttp3:mockwebserver:4.10.0"
+rider-junit = "com.github.database-rider:rider-junit5:1.34.0"
+snakeyaml = "org.yaml:snakeyaml:1.32"
+testcontainers-mysql = "org.testcontainers:mysql:1.17.3"
+xerces = "xerces:xercesImpl:2.12.2"
+
+
+[bundles]
+test-mysql = ["mysql-connector-java", "testcontainers-mysql"]
+jackson = ["jackson-annotations", "jackson-core", "jackson-databind", "jackson-dataformat-xml", "jackson-dataformat-yaml", "jackson-datatype-jsr310", "jackson-module-kotlin"]
+ktor = ["ktor-client-auth", "ktor-client-cio", "ktor-client-content-negotiation", "ktor-client-core", "ktor-client-logging", "ktor-serialization-jackson"]
+
+
+
+
+

@@ -1,0 +1,303 @@
+<codeTemplateLibrary version="3.11.0">
+  <id>fc461d5a-b070-422f-b1c6-c5aa4256eed6</id>
+  <name>Standard Functions</name>
+  <revision>1</revision>
+  <lastModified>
+    <time>1658174816203</time>
+    <timezone>Etc/UTC</timezone>
+  </lastModified>
+  <description></description>
+  <includeNewChannels>true</includeNewChannels>
+  <enabledChannelIds>
+    <string>698bd306-9112-4d77-baa6-c15b1462f67f</string>
+    <string>ronin-ea1af8ef-ab0e-469f-8011-c43917</string>
+    <string>ea1af8ef-ab0e-469f-8011-c43917cb3bcf</string>
+    <string>14ca4dbf-5e1d-4760-a978-fd56b2562ecc</string>
+    <string>1ad1b43a-207d-4efa-bc96-3c19bde2b7a5</string>
+    <string>ronin-1ad1b43a-207d-4efa-bc96-3c19bd</string>
+    <string>ronin-26ab27c7-31b7-4c61-9403-6f4e61</string>
+    <string>ronin-0f0aec05-3c59-4fd5-8b60-b0d9c4</string>
+    <string>ronin-d90aa9f3-b609-4067-b715-9a0b34</string>
+    <string>9da3eedc-7405-4805-899c-9b9e4c55260c</string>
+    <string>50968316-2e13-41f7-b5dd-1d6a46d17c62</string>
+    <string>d90aa9f3-b609-4067-b715-9a0b348228fb</string>
+    <string>ronin-14ca4dbf-5e1d-4760-a978-fd56b2</string>
+    <string>26ab27c7-31b7-4c61-9403-6f4e61b789e0</string>
+    <string>0f0aec05-3c59-4fd5-8b60-b0d9c441e6ed</string>
+    <string>6b98c9ba-262f-44e9-8370-f662e5db4fba</string>
+  </enabledChannelIds>
+  <disabledChannelIds/>
+  <codeTemplates>
+    <codeTemplate version="3.11.0">
+      <id>e1d808c8-23b1-4ccc-aa36-9a42e92b4776</id>
+      <name>Destination Filter</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1658174814237</time>
+        <timezone>Etc/UTC</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Standard Destination Filter
+
+	@param {String} destinationName - the key to lookup the destination name by
+	@return {Boolean}
+*/
+function destinationFilter(destinationName) {
+	var filtered = $gc(&quot;channelService&quot;).destinations.get(destinationName).destinationFilter(channelName, msg, sourceMap, channelMap)
+	channelMap.putAll(filtered.dataMap);
+	return filtered.result;
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="3.11.0">
+      <id>e0751f00-ebe9-47a3-8402-2d25e155c899</id>
+      <name>Destination Transform</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1658174814651</time>
+        <timezone>Etc/UTC</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Standard Destination Transform
+
+	@param {String} destinationName - the key to lookup the destination name by
+*/
+function destinationTransform(destinationName) {
+	var transformedMessage = $gc(&quot;channelService&quot;).destinations.get(destinationName).destinationTransformer(channelName, msg, sourceMap, channelMap)
+	channelMap.putAll(transformedMessage.dataMap);
+	msg = transformedMessage.message
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="3.11.0">
+      <id>064699d6-67d0-447d-9afe-a06fafbb875e</id>
+      <name>Destination Writer</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1658174814896</time>
+        <timezone>Etc/UTC</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Standard Destination Writer
+
+	@param {String} destinationName - the key to lookup the destination name by
+	@return {Response}
+	
+*/
+function destinationWriter(destinationName) {
+	var responseData = $gc(&quot;channelService&quot;).destinations.get(destinationName).destinationWriter(channelName, connectorMessage.getEncodedData(), connectorMessage.getSourceMap(), connectorMessage.getChannelMap());
+	channelMap.putAll(responseData.dataMap);
+	return new Response(Status.valueOf(responseData.status.toString()), responseData.detailedMessage, responseData.message);
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="3.11.0">
+      <id>0a49a2f2-efa2-4092-b3e4-771d0c9e7445</id>
+      <name>On Deploy</name>
+      <revision>8</revision>
+      <lastModified>
+        <time>1658269497188</time>
+        <timezone>Etc/UTC</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>CHANNEL_POSTPROCESSOR</contextType>
+          <contextType>CHANNEL_BATCH</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>CHANNEL_PREPROCESSOR</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>CHANNEL_ATTACHMENT</contextType>
+          <contextType>CHANNEL_UNDEPLOY</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Standard On Deploy
+*/
+function onDeploy(channelService) {
+	$gc(&quot;channelService&quot;, channelService);
+	var serviceMap = channelService.onDeploy(channelName, configurationMap);
+	$gc(&quot;serviceMap&quot;, serviceMap);
+	globalChannelMap.putAll(serviceMap)
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="3.11.0">
+      <id>5947202c-fb91-45f7-969c-d2369f34de13</id>
+      <name>Source Error Check</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1658174815316</time>
+        <timezone>Etc/UTC</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Checks for and throws any an error message from the source reader
+*/
+function checkForErrorMessage() {
+	if(sourceMap.get(&quot;isError&quot;) == true){
+		logger.error(msg)
+		throw Error(msg)
+	}
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="3.11.0">
+      <id>1caa5f49-4a91-4c6d-af47-5aae1dc85eb8</id>
+      <name>Source Filter</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1658174815562</time>
+        <timezone>Etc/UTC</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Standard Source Filter
+	
+	@return {Boolean}
+*/
+function sourceFilter() {
+	checkForErrorMessage()	
+	var filtered = $gc(&quot;channelService&quot;).sourceFilter(channelName, msg, sourceMap, channelMap)
+	channelMap.putAll(filtered.dataMap);
+	return filtered.result;
+}</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="3.11.0">
+      <id>b9d0ac8a-da20-4205-bd00-04b98eb8ffb7</id>
+      <name>Source Reader</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1658174815777</time>
+        <timezone>Etc/UTC</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Stancdard Source Reader
+	@return {List&lt;RawMessage&gt;} 
+*/
+function sourceReader() {
+	try{
+		return messageArrayList($gc(&quot;channelService&quot;).sourceReader(channelName, $gc(&quot;serviceMap&quot;)));
+	} catch(e){
+		logger.error(e.message)
+		var errorMessage =  new RawMessage(e.message);
+		errorMessage.setSourceMap(Maps.map(&quot;isError&quot;, true));
+		return errorMessage;
+	}
+}
+
+function messageArrayList(messageList) {
+	var messageArrayList = new Packages.java.util.ArrayList();
+	for each (var i = 0; i &lt; messageList.size(); i++) {
+		var item = messageList.get(i);
+		var newMessage = RawMessage(item.message);
+		newMessage.setSourceMap(item.dataMap);
+		messageArrayList.add(newMessage);
+	}
+	return messageArrayList;
+}
+</code>
+      </properties>
+    </codeTemplate>
+    <codeTemplate version="3.11.0">
+      <id>eaf8ca4c-56c5-432f-872a-51884dd879f4</id>
+      <name>Source Transform</name>
+      <revision>1</revision>
+      <lastModified>
+        <time>1658174815927</time>
+        <timezone>Etc/UTC</timezone>
+      </lastModified>
+      <contextSet>
+        <delegate>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+        </delegate>
+      </contextSet>
+      <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
+        <type>FUNCTION</type>
+        <code>/**
+	Standard Source Transform 	
+*/
+function sourceTransform() {
+	checkForErrorMessage()
+	var transformedMessage = $gc(&quot;channelService&quot;).sourceTransformer(channelName, msg, sourceMap, channelMap);
+	channelMap.putAll(transformedMessage.dataMap);
+	msg = transformedMessage.message
+}</code>
+      </properties>
+    </codeTemplate>
+  </codeTemplates>
+</codeTemplateLibrary>

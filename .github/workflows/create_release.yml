@@ -1,0 +1,99 @@
+name: Create Release
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to release'
+        type: string
+        required: true
+        default: 'master'
+      version:
+        description: 'Specific version to release as. Leave unset if discoverable'
+        type: string
+        required: false
+      skip_publish:
+        description: 'Skip publishing (use if changelog failed)'
+        type: boolean
+        required: false
+        default: false
+
+env:
+  ronin.release: true
+
+jobs:
+  tag:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.inputs.branch }}
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          distribution: 'zulu'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Execute build
+        if: ${{ github.event.inputs.skip_publish == 'false' }}
+        run: ./gradlew build
+
+      - name: Get version
+        id: get-version
+        run: |
+          if [ ${{ github.event.inputs.version }} ]
+          then
+             VERSION=${{ github.event.inputs.version }}
+          else 
+             VERSION=$(./gradlew currentVersion | awk '{ if(/Project version:/) { print $3; exit } }' | cut -d\- -f1)
+          fi
+          echo "::set-output name=version::$VERSION"
+
+      - name: Axion Release
+        id: release
+        if: ${{ github.event.inputs.skip_publish == 'false' }}
+        run: |
+          ./gradlew release \
+             -Prelease.forceVersion=${{ steps.get-version.outputs.version }} \
+             -Prelease.customUsername=${{ github.actor }} \
+             -Prelease.customPassword=${{ github.token }}
+    outputs:
+      tag: ${{ steps.get-version.outputs.version }}
+
+  release:
+    runs-on: self-hosted
+    needs: tag
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: "refs/tags/${{ needs.tag.outputs.tag }}"
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: 11
+          distribution: 'zulu'
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Publish
+        if: ${{ github.event.inputs.skip_publish == 'false' }}
+        run: ./gradlew publish
+        env:
+          NEXUS_USER: ${{ secrets.NEXUS_MAVEN_USER }}
+          NEXUS_TOKEN: ${{ secrets.NEXUS_MAVEN_TOKEN }}
+
+      - name: Generate Changelog
+        id: changelog
+        uses: gandarez/changelog-action@v1.2.0
+
+      - name: Generate Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ needs.tag.outputs.tag }}
+          body: ${{ steps.changelog.outputs.changelog }}
+          artifacts: "**/build/libs/*.jar"
