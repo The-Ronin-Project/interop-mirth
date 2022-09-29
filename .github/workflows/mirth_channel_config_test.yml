@@ -24,11 +24,11 @@ jobs:
           sudo apt-get install docker-compose-plugin
       - name: Prepare dev-env
         run: |
-          mkdir mirth-channels-config/dev-env/appdata
-          mkdir mirth-channels-config/dev-env/interop
+          mkdir mirth-channel-config/dev-env/appdata
+          mkdir mirth-channel-config/dev-env/interop
           chmod -R +rwx mirth-channels-config/dev-env
       - name: Gradlew Test
-        run: ./gradlew :mirth-channels-config:test
+        run: ./gradlew :mirth-channel-config:test
         env:
           AIDBOX_CLIENT_ID: client
           AIDBOX_CLIENT_SECRET: secret
@@ -44,4 +44,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: postman-results
-          path: /runner/_work/mirth-channels-config/mirth-channels-config/build/postman-tests
+          path: /runner/_work/mirth-channel-config/mirth-channel-config/build/postman-tests
