@@ -41,4 +41,5 @@ jobs:
           pullRequestsMax: ${{ github.event.inputs.maxPRs || '5' }}
           pullRequestLabels: "dependencies"
           pullRequestAssignee: "arssycro"
+          baseBranch: "main"
 
