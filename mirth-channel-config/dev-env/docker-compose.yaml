@@ -187,6 +187,9 @@ services:
       - RONIN_SERVER_AUTH_M2M_AUDIENCE=https://interop-proxy-server.dev.projectronin.io
       - AO_SANDBOX_KEY
       - SERVICE_CALL_JWT_SECRET
+      - AIDBOX_URL=http://devbox:${AIDBOX_PORT}
+      - AIDBOX_CLIENT_ID
+      - AIDBOX_CLIENT_SECRET
     ports:
       - 8082:8080
     volumes:

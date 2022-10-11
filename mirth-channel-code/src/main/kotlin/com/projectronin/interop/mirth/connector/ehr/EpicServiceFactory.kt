@@ -5,6 +5,7 @@ import com.projectronin.interop.ehr.epic.EpicConditionService
 import com.projectronin.interop.ehr.epic.EpicIdentifierService
 import com.projectronin.interop.ehr.epic.EpicLocationService
 import com.projectronin.interop.ehr.epic.EpicMedicationService
+import com.projectronin.interop.ehr.epic.EpicMedicationStatementService
 import com.projectronin.interop.ehr.epic.EpicMessageService
 import com.projectronin.interop.ehr.epic.EpicObservationService
 import com.projectronin.interop.ehr.epic.EpicPatientService
@@ -42,6 +43,7 @@ internal object EpicServiceFactory {
     private val observationService = EpicObservationService(epicClient, 1)
     private val locationService = EpicLocationService(epicClient)
     private val medicationService = EpicMedicationService(epicClient, 5)
+    private val medicationStatementService = EpicMedicationStatementService(epicClient)
 
     val epicVendorFactory = EpicVendorFactory(
         patientService,
@@ -52,6 +54,7 @@ internal object EpicServiceFactory {
         identifierService,
         observationService,
         locationService,
-        medicationService
+        medicationService,
+        medicationStatementService
     )
 }

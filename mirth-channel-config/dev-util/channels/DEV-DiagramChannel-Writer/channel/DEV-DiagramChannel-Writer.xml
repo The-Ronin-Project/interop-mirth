@@ -1,0 +1,3272 @@
+<channel version="3.11.0">
+  <id>698bd306-9112-4d77-baa6-c15b1462f67f</id>
+  <nextMetaDataId>9</nextMetaDataId>
+  <name>DEV-DiagramChannel-Writer</name>
+  <description>Version 1.0.0 
+
+Outputs an HTML overview of the channel that includes an SVG diagram similar to the one in the NextGen PDF User Guide.
+
+Of the many channel segments, only those important to the specific channel are highlighted with 
+deep color and annotated for clarity about how each segment of the channel works. 
+Other channel components are shown dimmed (light gray).
+
+Below the diagram is a table of information about each channel segment and step, in sequence.
+ 
+Where the channel author has used the convention @apiinfo &quot;&quot;&quot;Put API callout information (or other notes) here&quot;&quot;&quot; 
+in code comments, this information is prominently displayed in the table. 
+One @apiinfo comment per code block is supported in SQL, JavaScript, and XSLT code blocks for the channel.
+
+The channel&apos;s ID, revision number, description text, NextGen® version, and a link to the NextGen® User Guide complete the document.
+</description>
+  <revision>2</revision>
+  <sourceConnector version="3.11.0">
+    <metaDataId>0</metaDataId>
+    <name>sourceConnector</name>
+    <properties class="com.mirth.connect.connectors.file.FileReceiverProperties" version="3.11.0">
+      <pluginProperties/>
+      <pollConnectorProperties version="3.11.0">
+        <pollingType>INTERVAL</pollingType>
+        <pollOnStart>false</pollOnStart>
+        <pollingFrequency>5000</pollingFrequency>
+        <pollingHour>0</pollingHour>
+        <pollingMinute>0</pollingMinute>
+        <cronJobs/>
+        <pollConnectorPropertiesAdvanced>
+          <weekly>true</weekly>
+          <inactiveDays>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+            <boolean>false</boolean>
+          </inactiveDays>
+          <dayOfMonth>1</dayOfMonth>
+          <allDay>true</allDay>
+          <startingHour>8</startingHour>
+          <startingMinute>0</startingMinute>
+          <endingHour>17</endingHour>
+          <endingMinute>0</endingMinute>
+        </pollConnectorPropertiesAdvanced>
+      </pollConnectorProperties>
+      <sourceConnectorProperties version="3.11.0">
+        <responseVariable>None</responseVariable>
+        <respondAfterProcessing>true</respondAfterProcessing>
+        <processBatch>false</processBatch>
+        <firstResponse>false</firstResponse>
+        <processingThreads>1</processingThreads>
+        <resourceIds class="linked-hash-map">
+          <entry>
+            <string>5b2a20a1-fdc5-43bd-9663-8a867cdfa51b</string>
+            <string>Stubs</string>
+          </entry>
+        </resourceIds>
+        <queueBufferSize>1000</queueBufferSize>
+      </sourceConnectorProperties>
+      <scheme>FILE</scheme>
+      <host>/data/xml/read</host>
+      <fileFilter>*.xml</fileFilter>
+      <regex>false</regex>
+      <directoryRecursion>false</directoryRecursion>
+      <ignoreDot>true</ignoreDot>
+      <anonymous>true</anonymous>
+      <username>anonymous</username>
+      <password>anonymous</password>
+      <timeout>10000</timeout>
+      <secure>true</secure>
+      <passive>true</passive>
+      <validateConnection>true</validateConnection>
+      <afterProcessingAction>MOVE</afterProcessingAction>
+      <moveToDirectory>/data/xml/done/${channelName}</moveToDirectory>
+      <moveToFileName>${originalFilename}</moveToFileName>
+      <errorReadingAction>NONE</errorReadingAction>
+      <errorResponseAction>MOVE</errorResponseAction>
+      <errorMoveToDirectory>/data/xml/error/${channelName}</errorMoveToDirectory>
+      <errorMoveToFileName>${originalFilename}</errorMoveToFileName>
+      <checkFileAge>true</checkFileAge>
+      <fileAge>1000</fileAge>
+      <fileSizeMinimum>0</fileSizeMinimum>
+      <fileSizeMaximum></fileSizeMaximum>
+      <ignoreFileSizeMaximum>true</ignoreFileSizeMaximum>
+      <sortBy>date</sortBy>
+      <binary>false</binary>
+      <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
+    </properties>
+    <transformer version="3.11.0">
+      <elements>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.11.0">
+          <name>Channel Name for Code Review</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>var name = String(sourceMap.get(&apos;originalFilename&apos;));
+var output = name.split(&apos;.xml&apos;)[0];
+channelMap.put(&apos;exportchannelname&apos;, output);</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+          <name>Milliseconds for Code Review</name>
+          <sequenceNumber>1</sequenceNumber>
+          <enabled>true</enabled>
+          <sourceXml>connectorMessage.getRawData()</sourceXml>
+          <resultVariable>exportlastmodified</resultVariable>
+          <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+	
+	&lt;xsl:output omit-xml-declaration=&quot;yes&quot; /&gt;
+	
+	&lt;xsl:template match=&quot;/&quot; &gt;
+		&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;lastmodified&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;/channel&quot; mode=&quot;lastmodified&quot;&gt;
+		&lt;xsl:value-of select=&quot;exportData/metadata/lastModified/time/text()&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;*|text()&quot; mode=&quot;lastmodified&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;</template>
+          <useCustomFactory>false</useCustomFactory>
+          <customFactory></customFactory>
+        </com.mirth.connect.plugins.xsltstep.XsltStep>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.11.0">
+          <name>Date for Code Review</name>
+          <sequenceNumber>2</sequenceNumber>
+          <enabled>true</enabled>
+          <script>var dateString = String(channelMap.get(&apos;exportlastmodified&apos;));
+var output = new Date(parseInt(dateString)).toString();
+channelMap.put(&apos;exportlastmodified&apos;, output);</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+        <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+          <name>Deploy Script for Code Review</name>
+          <sequenceNumber>3</sequenceNumber>
+          <enabled>true</enabled>
+          <sourceXml>connectorMessage.getRawData()</sourceXml>
+          <resultVariable>scriptdeploy</resultVariable>
+          <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+	&lt;xsl:output omit-xml-declaration=&quot;yes&quot; /&gt;
+	
+	&lt;xsl:template match=&quot;/&quot; &gt;
+		&lt;xsl:apply-templates select=&quot;channel/deployScript&quot; mode=&quot;scriptdeploy&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;/channel/deployScript&quot; mode=&quot;scriptdeploy&quot;&gt;
+		&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+			&lt;xsl:with-param name=&quot;script&quot; select=&quot;text()&quot; /&gt;
+		&lt;/xsl:call-template&gt;
+	&lt;/xsl:template&gt;	
+
+	&lt;xsl:template name=&quot;unescape&quot;&gt;
+		&lt;xsl:output method=&quot;text&quot; /&gt;
+		&lt;xsl:param name=&quot;script&quot; /&gt;
+		&lt;xsl:value-of select=&quot;$script&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;*|text()&quot; mode=&quot;scriptdeploy&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+          <useCustomFactory>false</useCustomFactory>
+          <customFactory></customFactory>
+        </com.mirth.connect.plugins.xsltstep.XsltStep>
+        <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+          <name>Undeploy Script for Code Review</name>
+          <sequenceNumber>4</sequenceNumber>
+          <enabled>true</enabled>
+          <sourceXml>connectorMessage.getRawData()</sourceXml>
+          <resultVariable>scriptundeploy</resultVariable>
+          <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+	
+	&lt;xsl:output omit-xml-declaration=&quot;yes&quot; /&gt;
+	
+	&lt;xsl:template match=&quot;/&quot; &gt;
+		&lt;xsl:apply-templates select=&quot;channel/undeployScript&quot; mode=&quot;scriptundeploy&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;/channel/undeployScript&quot; mode=&quot;scriptundeploy&quot;&gt;
+		&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+			&lt;xsl:with-param name=&quot;script&quot; select=&quot;text()&quot; /&gt;
+		&lt;/xsl:call-template&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template name=&quot;unescape&quot;&gt;
+		&lt;xsl:output method=&quot;text&quot; /&gt;
+		&lt;xsl:param name=&quot;script&quot; /&gt;
+		&lt;xsl:value-of select=&quot;$script&quot; /&gt;
+	&lt;/xsl:template&gt;
+		
+	&lt;xsl:template match=&quot;*|text()&quot; mode=&quot;scriptundeploy&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+          <useCustomFactory>false</useCustomFactory>
+          <customFactory></customFactory>
+        </com.mirth.connect.plugins.xsltstep.XsltStep>
+        <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+          <name>Preprocessor Script for Code Review</name>
+          <sequenceNumber>5</sequenceNumber>
+          <enabled>true</enabled>
+          <sourceXml>connectorMessage.getRawData()</sourceXml>
+          <resultVariable>scriptpre</resultVariable>
+          <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+	&lt;xsl:output omit-xml-declaration=&quot;yes&quot; /&gt;
+	
+	&lt;xsl:template match=&quot;/&quot; &gt;
+		&lt;xsl:apply-templates select=&quot;channel/preprocessingScript&quot; mode=&quot;scriptpre&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;/channel/preprocessingScript&quot; mode=&quot;scriptpre&quot;&gt;
+		&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+			&lt;xsl:with-param name=&quot;script&quot; select=&quot;text()&quot; /&gt;
+		&lt;/xsl:call-template&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template name=&quot;unescape&quot;&gt;
+		&lt;xsl:output method=&quot;text&quot; /&gt;
+		&lt;xsl:param name=&quot;script&quot; /&gt;
+		&lt;xsl:value-of select=&quot;$script&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;*|text()&quot; mode=&quot;scriptpre&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+          <useCustomFactory>false</useCustomFactory>
+          <customFactory></customFactory>
+        </com.mirth.connect.plugins.xsltstep.XsltStep>
+        <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+          <name>Postprocessor Script for Code Review</name>
+          <sequenceNumber>6</sequenceNumber>
+          <enabled>true</enabled>
+          <sourceXml>connectorMessage.getRawData()</sourceXml>
+          <resultVariable>scriptpost</resultVariable>
+          <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+	&lt;xsl:output omit-xml-declaration=&quot;yes&quot; /&gt;
+	
+	&lt;xsl:template match=&quot;/&quot; &gt;
+		&lt;xsl:apply-templates select=&quot;channel/postprocessingScript&quot; mode=&quot;scriptpost&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;/channel/postprocessingScript&quot; mode=&quot;scriptpost&quot;&gt;
+		&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+			&lt;xsl:with-param name=&quot;script&quot; select=&quot;text()&quot; /&gt;
+		&lt;/xsl:call-template&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template name=&quot;unescape&quot;&gt;
+		&lt;xsl:output method=&quot;text&quot; /&gt;
+		&lt;xsl:param name=&quot;script&quot; /&gt;
+		&lt;xsl:value-of select=&quot;$script&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;*|text()&quot; mode=&quot;scriptpost&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+          <useCustomFactory>false</useCustomFactory>
+          <customFactory></customFactory>
+        </com.mirth.connect.plugins.xsltstep.XsltStep>
+        <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+          <name>Source Connector Scripts for Code Review</name>
+          <sequenceNumber>7</sequenceNumber>
+          <enabled>true</enabled>
+          <sourceXml>connectorMessage.getRawData()</sourceXml>
+          <resultVariable>scriptsrcconn</resultVariable>
+          <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+	
+	&lt;xsl:output omit-xml-declaration=&quot;yes&quot; /&gt;
+	
+	&lt;xsl:template match=&quot;/&quot;&gt;
+		&lt;xsl:apply-templates select=&quot;channel/sourceConnector&quot; mode=&quot;scriptsrcconn&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;/channel/sourceConnector&quot; mode=&quot;scriptsrcconn&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;properties/@class&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:choose&gt;
+			&lt;xsl:when test=&quot;(contains($type, &apos;JavaScriptReceiver&apos;))&quot;&gt;
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;properties/script/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:when&gt;
+			&lt;xsl:when test=&quot;(contains($type, &apos;DatabaseReceiver&apos;))&quot;&gt;				
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;properties/select/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;properties/update/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:when&gt;
+			&lt;xsl:otherwise&gt;&lt;/xsl:otherwise&gt;
+		&lt;/xsl:choose&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template name=&quot;unescape&quot;&gt;
+		&lt;xsl:output method=&quot;text&quot; /&gt;
+		&lt;xsl:param name=&quot;script&quot; /&gt;
+		&lt;xsl:value-of select=&quot;$script&quot; /&gt;
+	&lt;/xsl:template&gt;
+		
+	&lt;xsl:template match=&quot;*|text()&quot; mode=&quot;scriptsrcconn&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+          <useCustomFactory>false</useCustomFactory>
+          <customFactory></customFactory>
+        </com.mirth.connect.plugins.xsltstep.XsltStep>
+        <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+          <name>Source Filter Scripts for Code Review</name>
+          <sequenceNumber>8</sequenceNumber>
+          <enabled>true</enabled>
+          <sourceXml>connectorMessage.getRawData()</sourceXml>
+          <resultVariable>scriptsrcfil</resultVariable>
+          <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+	&lt;xsl:output omit-xml-declaration=&quot;yes&quot; /&gt;
+	
+	&lt;xsl:template match=&quot;/&quot; &gt;
+		&lt;xsl:apply-templates select=&quot;channel/sourceConnector/filter/elements&quot; mode=&quot;scriptsrcfil&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;/channel/sourceConnector/filter/elements&quot; mode=&quot;scriptsrcfil&quot; &gt;
+		&lt;xsl:apply-templates select=&quot;*&quot; mode=&quot;scriptsrcfil&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;/channel/sourceConnector/filter/elements/*&quot; mode=&quot;scriptsrcfil&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;local-name()&quot; /&gt;&lt;/xsl:variable&gt;		
+&lt;xsl:text&gt;
+
+____________________________________________________________
+Rule &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;sequenceNumber/text()&quot; /&gt;&lt;xsl:text&gt; &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;name/text()&quot; /&gt;&lt;xsl:text&gt;		
+
+
+&lt;/xsl:text&gt;
+		&lt;xsl:choose&gt;
+			&lt;xsl:when test=&quot;(contains($type, &apos;JavaScript&apos;))&quot;&gt;
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;script/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:when&gt;
+			&lt;xsl:when test=&quot;(contains($type, &apos;Xslt&apos;))&quot;&gt;
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;template/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:when&gt;
+			&lt;xsl:otherwise&gt;
+				&lt;xsl:value-of select=&quot;$type&quot; /&gt;&lt;xsl:text&gt; rules are not exported for code review.&lt;/xsl:text&gt;
+			&lt;/xsl:otherwise&gt;
+		&lt;/xsl:choose&gt;	
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template name=&quot;unescape&quot;&gt;
+		&lt;xsl:output method=&quot;text&quot; /&gt;
+		&lt;xsl:param name=&quot;script&quot; /&gt;
+		&lt;xsl:value-of select=&quot;$script&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;*|text()&quot; mode=&quot;scriptsrcfil&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+          <useCustomFactory>false</useCustomFactory>
+          <customFactory></customFactory>
+        </com.mirth.connect.plugins.xsltstep.XsltStep>
+        <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+          <name>Source Transformer Scripts for Code Review</name>
+          <sequenceNumber>9</sequenceNumber>
+          <enabled>true</enabled>
+          <sourceXml>connectorMessage.getRawData()</sourceXml>
+          <resultVariable>scriptsrcxform</resultVariable>
+          <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+	&lt;xsl:output omit-xml-declaration=&quot;yes&quot; /&gt;
+
+	&lt;xsl:template match=&quot;/&quot; &gt;
+		&lt;xsl:apply-templates select=&quot;channel/sourceConnector/transformer/elements&quot; mode=&quot;scriptsrcxform&quot; /&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector/transformer/elements&quot; mode=&quot;scriptsrcxform&quot; &gt;
+		&lt;xsl:apply-templates select=&quot;*&quot; mode=&quot;scriptsrcxform&quot; /&gt;
+	&lt;/xsl:template&gt;
+     
+	&lt;xsl:template match=&quot;/channel/sourceConnector/transformer/elements/*&quot; mode=&quot;scriptsrcxform&quot; &gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;local-name()&quot; /&gt;&lt;/xsl:variable&gt;	
+&lt;xsl:text&gt;
+
+____________________________________________________________
+Step &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;sequenceNumber/text()&quot; /&gt;&lt;xsl:text&gt; &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;name/text()&quot; /&gt;&lt;xsl:text&gt;		
+
+
+&lt;/xsl:text&gt;
+		&lt;xsl:choose&gt;
+			&lt;xsl:when test=&quot;(contains($type, &apos;JavaScript&apos;))&quot;&gt;
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;script/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:when&gt;
+			&lt;xsl:when test=&quot;(contains($type, &apos;Xslt&apos;))&quot;&gt;
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;template/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:when&gt;
+			&lt;xsl:otherwise&gt;
+				&lt;xsl:value-of select=&quot;$type&quot; /&gt;&lt;xsl:text&gt; steps are not exported for code review.&lt;/xsl:text&gt;
+			&lt;/xsl:otherwise&gt;
+		&lt;/xsl:choose&gt;	
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template name=&quot;unescape&quot;&gt;
+		&lt;xsl:output method=&quot;text&quot; /&gt;
+		&lt;xsl:param name=&quot;script&quot; /&gt;
+		&lt;xsl:value-of select=&quot;$script&quot; /&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;*|text()&quot; mode=&quot;scriptsrcxform&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+          <useCustomFactory>false</useCustomFactory>
+          <customFactory></customFactory>
+        </com.mirth.connect.plugins.xsltstep.XsltStep>
+        <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+          <name>Destination Scripts for Code Review</name>
+          <sequenceNumber>10</sequenceNumber>
+          <enabled>true</enabled>
+          <sourceXml>connectorMessage.getRawData()</sourceXml>
+          <resultVariable>scriptdstconn</resultVariable>
+          <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+	&lt;xsl:output omit-xml-declaration=&quot;yes&quot; /&gt;
+	
+	&lt;xsl:template match=&quot;/&quot; &gt;
+		&lt;xsl:apply-templates select=&quot;/channel/destinationConnectors&quot; mode=&quot;scriptdst&quot; /&gt;
+	&lt;/xsl:template&gt;
+
+  	&lt;xsl:template match=&quot;/channel/destinationConnectors&quot; mode=&quot;scriptdst&quot;&gt;
+		&lt;xsl:variable name=&quot;dstcount&quot;&gt;&lt;xsl:value-of select=&quot;count(connector)&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:choose&gt;
+			&lt;xsl:when test=&quot;$dstcount = 1&quot;&gt;
+				&lt;xsl:text&gt;This channel has &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;$dstcount&quot; /&gt;&lt;xsl:text&gt; destination.&lt;/xsl:text&gt;
+	 			&lt;xsl:apply-templates select=&quot;connector&quot; mode=&quot;scriptdst&quot; /&gt;
+	 		&lt;/xsl:when&gt;
+			&lt;xsl:when test=&quot;$dstcount &gt; 1&quot;&gt;
+				&lt;xsl:text&gt;This channel has &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;$dstcount&quot; /&gt;&lt;xsl:text&gt; destinations.&lt;/xsl:text&gt;
+	 			&lt;xsl:apply-templates select=&quot;connector&quot; mode=&quot;scriptdst&quot; /&gt;
+	 		&lt;/xsl:when&gt;
+	 		&lt;xsl:otherwise&gt;&lt;/xsl:otherwise&gt;
+	 	&lt;/xsl:choose&gt;
+   	&lt;/xsl:template&gt;
+
+    	&lt;xsl:template match=&quot;/channel/destinationConnectors/connector&quot; mode=&quot;scriptdst&quot;&gt;
+&lt;xsl:text&gt;
+
+
+
+________________________________________________________________________________________________________________________________
+Destination &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;position()&quot;/&gt;&lt;xsl:text&gt; &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;name/text()&quot; /&gt;&lt;xsl:text&gt;
+
+&lt;/xsl:text&gt;
+ 		&lt;xsl:apply-templates select=&quot;filter/elements&quot; mode=&quot;scriptdstfil&quot; /&gt;
+ 		&lt;xsl:apply-templates select=&quot;transformer/elements&quot; mode=&quot;scriptdstxform&quot; /&gt;		
+		&lt;xsl:call-template name=&quot;getdstconn&quot;&gt;
+			&lt;xsl:with-param name=&quot;connector&quot; select=&quot;.&quot; /&gt;
+		&lt;/xsl:call-template&gt;		
+   	&lt;/xsl:template&gt;
+ 
+	&lt;xsl:template match=&quot;/channel/destinationConnectors/connector/filter/elements&quot; mode=&quot;scriptdstfil&quot; &gt;
+		&lt;xsl:variable name=&quot;stepcount&quot;&gt;&lt;xsl:value-of select=&quot;count(*)&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:if test=&quot;$stepcount &gt; 0&quot;&gt;
+&lt;xsl:text&gt;
+
+____________________________________________________________
+Filter		
+
+&lt;/xsl:text&gt;
+    			&lt;xsl:apply-templates select=&quot;*&quot; mode=&quot;scriptdstfil&quot; /&gt;
+    		&lt;/xsl:if&gt;
+	&lt;/xsl:template&gt;
+  
+	&lt;xsl:template match=&quot;/channel/destinationConnectors/connector/filter/elements/*&quot; mode=&quot;scriptdstfil&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;local-name()&quot; /&gt;&lt;/xsl:variable&gt;		
+&lt;xsl:text&gt;
+
+____________________________________________________________
+Rule &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;sequenceNumber/text()&quot; /&gt;&lt;xsl:text&gt; &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;name/text()&quot; /&gt;&lt;xsl:text&gt;		
+
+&lt;/xsl:text&gt;
+		&lt;xsl:choose&gt;
+			&lt;xsl:when test=&quot;(contains($type, &apos;JavaScript&apos;))&quot;&gt;
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;script/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:when&gt;
+			&lt;xsl:when test=&quot;(contains($type, &apos;Xslt&apos;))&quot;&gt;
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;template/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:when&gt;
+			&lt;xsl:otherwise&gt;
+				&lt;xsl:value-of select=&quot;$type&quot; /&gt;&lt;xsl:text&gt; rules are not exported for code review.&lt;/xsl:text&gt;
+			&lt;/xsl:otherwise&gt;
+		&lt;/xsl:choose&gt;	
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/destinationConnectors/connector/transformer/elements&quot; mode=&quot;scriptdstxform&quot; &gt;
+		&lt;xsl:variable name=&quot;stepcount&quot;&gt;&lt;xsl:value-of select=&quot;count(*)&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:if test=&quot;$stepcount &gt; 0&quot;&gt;
+&lt;xsl:text&gt;
+
+____________________________________________________________
+Transformer
+
+&lt;/xsl:text&gt;
+    			&lt;xsl:apply-templates select=&quot;*&quot; mode=&quot;scriptdstxform&quot; /&gt;
+    		&lt;/xsl:if&gt;
+	&lt;/xsl:template&gt;
+  
+	&lt;xsl:template match=&quot;/channel/destinationConnectors/connector/transformer/elements/*&quot; mode=&quot;scriptdstxform&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;local-name()&quot; /&gt;&lt;/xsl:variable&gt;		
+&lt;xsl:text&gt;
+
+____________________________________________________________
+Step &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;sequenceNumber/text()&quot; /&gt;&lt;xsl:text&gt; &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;name/text()&quot; /&gt;&lt;xsl:text&gt;		
+
+&lt;/xsl:text&gt;
+		&lt;xsl:choose&gt;
+			&lt;xsl:when test=&quot;(contains($type, &apos;JavaScript&apos;))&quot;&gt;
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;script/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:when&gt;
+			&lt;xsl:when test=&quot;(contains($type, &apos;Xslt&apos;))&quot;&gt;
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;template/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:when&gt;
+			&lt;xsl:otherwise&gt;
+				&lt;xsl:value-of select=&quot;$type&quot; /&gt;&lt;xsl:text&gt; steps are not exported for code review.&lt;/xsl:text&gt;
+			&lt;/xsl:otherwise&gt;
+		&lt;/xsl:choose&gt;	
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template name=&quot;getdstconn&quot;&gt;
+		&lt;xsl:param name=&quot;connector&quot; /&gt;
+&lt;xsl:text&gt;
+
+
+
+____________________________________________________________
+Connector		
+
+
+&lt;/xsl:text&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;$connector/properties/@class&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:choose&gt;
+			&lt;xsl:when test=&quot;(contains($type, &apos;JavaScript&apos;))&quot;&gt;
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;$connector/properties/script/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:when&gt;				
+			&lt;xsl:when test=&quot;(contains($type, &apos;Database&apos;))&quot;&gt;				
+				&lt;xsl:call-template name=&quot;unescape&quot;&gt;
+					&lt;xsl:with-param name=&quot;script&quot; select=&quot;$connector/properties/query/text()&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:when&gt;
+			&lt;xsl:otherwise&gt;
+				&lt;xsl:value-of select=&quot;$type&quot; /&gt;&lt;xsl:text&gt; connectors are not exported for code review.&lt;/xsl:text&gt;
+			&lt;/xsl:otherwise&gt;
+		&lt;/xsl:choose&gt;	
+	&lt;/xsl:template&gt;   
+
+	&lt;xsl:template name=&quot;unescape&quot;&gt;
+		&lt;xsl:output method=&quot;text&quot; /&gt;
+		&lt;xsl:param name=&quot;script&quot; /&gt;
+		&lt;xsl:value-of select=&quot;$script&quot; /&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;*|text()&quot; mode=&quot;scriptdst&quot; /&gt;
+	&lt;xsl:template match=&quot;*|text()&quot; mode=&quot;scriptdstfil&quot; /&gt;
+	&lt;xsl:template match=&quot;*|text()&quot; mode=&quot;scriptdstxform&quot; /&gt;
+	&lt;xsl:template match=&quot;*|text()&quot; mode=&quot;scriptdstconn&quot; /&gt;	
+&lt;/xsl:stylesheet&gt;
+</template>
+          <useCustomFactory>false</useCustomFactory>
+          <customFactory></customFactory>
+        </com.mirth.connect.plugins.xsltstep.XsltStep>
+      </elements>
+      <inboundTemplate encoding="base64"></inboundTemplate>
+      <outboundTemplate encoding="base64"></outboundTemplate>
+      <inboundDataType>RAW</inboundDataType>
+      <outboundDataType>XML</outboundDataType>
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
+          <splitType>JavaScript</splitType>
+          <batchScript></batchScript>
+        </batchProperties>
+      </inboundProperties>
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+        <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+          <stripNamespaces>false</stripNamespaces>
+        </serializationProperties>
+        <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+          <splitType>Element_Name</splitType>
+          <elementName></elementName>
+          <level>1</level>
+          <query></query>
+          <batchScript></batchScript>
+        </batchProperties>
+      </outboundProperties>
+    </transformer>
+    <filter version="3.11.0">
+      <elements/>
+    </filter>
+    <transportName>File Reader</transportName>
+    <mode>SOURCE</mode>
+    <enabled>true</enabled>
+    <waitForPrevious>true</waitForPrevious>
+  </sourceConnector>
+  <destinationConnectors>
+    <connector version="3.11.0">
+      <metaDataId>1</metaDataId>
+      <name>Output Diagram SVG in HTML</name>
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="3.11.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="3.11.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>5b2a20a1-fdc5-43bd-9663-8a867cdfa51b</string>
+              <string>Stubs</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <scheme>FILE</scheme>
+        <host>/data/xml/write/${exportchannelname}/doc</host>
+        <outputPattern>${exportchannelname}.html</outputPattern>
+        <anonymous>true</anonymous>
+        <username>anonymous</username>
+        <password>anonymous</password>
+        <timeout>10000</timeout>
+        <keepConnectionOpen>true</keepConnectionOpen>
+        <maxIdleTime>0</maxIdleTime>
+        <secure>true</secure>
+        <passive>true</passive>
+        <validateConnection>true</validateConnection>
+        <outputAppend>false</outputAppend>
+        <errorOnExists>false</errorOnExists>
+        <temporary>false</temporary>
+        <binary>false</binary>
+        <charsetEncoding>UTF-8</charsetEncoding>
+        <template>&lt;html&gt;
+&lt;head&gt;
+${cssstyle}
+&lt;/head&gt;
+&lt;body&gt;
+
+${xformheaddiagram}
+&lt;svg width=&quot;1280&quot; height=&quot;630&quot; viewBox=&quot;-5 0 635 290&quot;&gt;
+
+	&lt;!-- background panels --&gt;
+
+	${xformbg}
+
+	&lt;!-- deploy/undeploy --&gt;
+
+	${xformdeploy}
+	${xformundeploy}
+
+    &lt;!-- channel segments: source in --&gt;
+
+	${xformsrcdata}
+	${xformsrcconn}
+	${xformsrcatt}
+	${xformsrcpre}
+
+    &lt;!-- channel segments: source transform --&gt;
+
+	${xformsrcser}
+	${xformsrcfil}
+	${xformsrcxform}
+	${xformsrcdes}
+
+    &lt;!-- channel segments: destination transform --&gt;
+
+	${xformdstser}
+	${xformdstfil}
+	${xformdstxform}
+	${xformdstdes}
+
+    &lt;!-- channel segments: destination out --&gt;
+
+	${xformdstconn}
+
+    &lt;!-- channel segments: destination response --&gt;
+	
+	${xformdstrspall}
+
+    &lt;!-- channel segments: source out --&gt;
+
+	${xformsrcpost}
+	${xformsrcselrsp}
+	${xformsrcrsp}
+&lt;/svg&gt;
+
+${xformheaddetails}
+${xformdetails}
+${xformdescrip}
+
+&lt;/body&gt;
+&lt;/html&gt;</template>
+      </properties>
+      <transformer version="3.11.0">
+        <elements>
+          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.11.0">
+            <name>Output Filename</name>
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>// @apiinfo &quot;&quot;&quot;Converts the input filename *.xml to *.html and stores the result in ${xformoutputfilename}&quot;&quot;&quot;
+var name = String(sourceMap.get(&apos;originalFilename&apos;));
+var output = name.split(&apos;.xml&apos;)[0] + &quot;.html&quot;;
+channelMap.put(&apos;xformoutputfilename&apos;, output);</script>
+          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>CSS stylesheet</name>
+            <sequenceNumber>1</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>cssstyle</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+	&lt;!-- @apiinfo &quot;&quot;&quot;262 lines. Controls all styles for the HTML and SVG output of the Transformer.&quot;&quot;&quot; --&gt;
+
+	&lt;xsl:template match=&quot;/&quot;&gt;
+		&lt;style&gt;&lt;![CDATA[
+            /* base styles */
+            body {
+                margin-left: 15px;
+                font-family: Arial;
+            }
+            h2 {
+                padding-left: 8px;
+            }
+            p {
+                margin-left: 10px;
+            }
+            table.notes {
+                margin-left: 10px;
+                border-collapse: collapse;
+            }
+            table.notes th {
+                text-align: left;
+            }
+            table.notes td.raw {
+                background-color: #f0f0f0;
+            }
+            /* active colors
+                (red) #CE1141; Atlanta Braves
+                (blue) #004687; KC Royals
+                (green) #005C5C; Seattle Mariners
+                (gold) #FFC72C; Warriors
+            */
+
+            /* background panels */
+
+            rect.srcbg {
+                fill: #e6e6e6;
+                stroke: #e6e6e6;
+            }
+            rect.dstbg {
+                fill: #f0f0f0;
+                stroke: #f0f0f0;
+            }
+            rect.xformpanel {
+                fill: white;
+                stroke: white;
+            }
+            text.bgbig {
+                font-size: 0.7em;
+                text-anchor: left;
+                fill: #090909;
+                font-weight: bold;
+            }
+
+            /* dimmed deploy/undeploy */
+
+            rect.deployoff {
+                fill: white;
+                stroke: silver;
+            }
+            text.deployoff {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: darkgray;
+                font-weight: normal;
+            }
+
+            /* dimmed data in */
+
+            rect.dataoff {
+                fill: white;
+                stroke: silver;
+            }
+            line.dataoff {
+                stroke-width: 3;
+                stroke: silver;
+            }
+            polygon.dataoff {
+                fill: silver;
+            }
+            text.dataoff {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: darkgray;
+                font-weight: normal;
+            }
+
+            /* dimmed channel segments: source */
+
+            rect.srcoff {
+                fill: white;
+                stroke: silver;
+            }
+            line.srcoff {
+                stroke-width: 3;
+                stroke: silver;
+            }
+            polygon.srcoff {
+                fill: silver;
+            }
+            text.srcoff {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: darkgray;
+                font-weight: normal;
+            }
+
+            /* dimmed channel segments: destination */
+
+            rect.dstoff {
+                fill: white;
+                stroke: silver;
+            }
+            line.dstoff {
+                stroke-width: 3;
+                stroke: silver;
+            }
+            polygon.dstoff {
+                fill: silver;
+            }
+            text.dstoff {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: darkgray;
+                font-weight: normal;
+            }
+
+            /* dimmed channel segments: response */
+
+            rect.rspoff {
+                fill: white;
+                stroke: white;
+            }
+            line.rspoff {
+                stroke-width: 1;
+                stroke: silver;
+            }
+            polyline.rspoff {
+                stroke-width: 3;
+                stroke: silver;
+                fill: none;
+            }
+            ellipse.rspoff {
+                fill: white;
+                stroke: silver;
+            }
+            polygon.rspoff {
+                fill: silver;
+            }
+            text.rspoff {
+                font-size: 0.45em;
+                text-anchor: left;
+                fill: darkgray;
+                font-weight: normal;
+            }
+
+            /* active deploy/undeploy */
+
+            rect.deployon {
+                fill: #005C5C;
+                stroke: #005C5C;
+            }
+            text.deployon {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: white;
+                font-weight: bold;
+            }
+
+            /* active data in */
+
+            rect.dataon {
+                fill: #FFC72C;
+                stroke: #FFC72C;
+            }
+            line.dataon {
+                stroke-width: 5;
+                stroke: #FFC72C;
+            }
+            polygon.dataon {
+                fill: #FFC72C;
+              }
+            text.dataon {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: #090909;
+                font-weight: bold;
+            }
+
+            /* active channel segments: source */
+
+            rect.srcon {
+                fill: #CE1141;
+                stroke: #CE1141;
+            }
+            line.srcon {
+                stroke-width: 5;
+                stroke: #CE1141;
+            }
+            polygon.srcon {
+                fill: #CE1141;
+              }
+            text.srcon {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: white;
+                font-weight: bold;
+            }
+
+            /* active channel segments: destination */
+
+            rect.dston {
+                fill: #004687;
+                stroke: #004687;
+            }
+            line.dston {
+                stroke-width: 5;
+                stroke: #004687;
+            }
+            polygon.dston {
+                fill: #004687;
+            }
+            text.dston {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: white;
+                font-weight: bold;
+            }
+
+            /* active channel segments: response */
+
+            rect.rspon {
+                fill: #FFC72C;
+                stroke: #FFC72C;
+            }
+            line.rspon {
+                stroke-width: 1;
+                stroke: #FFC72C;
+            }
+            polyline.rspon {
+                stroke-width: 5;
+                stroke: #FFC72C;
+                fill: none;
+            }
+            ellipse.rspon {
+                fill: #FFC72C;
+                stroke: #FFC72C;
+            }
+            polygon.rspon {
+                fill: #FFC72C;
+            }
+            text.rspon {
+                font-size: 0.45em;
+                text-anchor: left;
+                fill: #090909;
+                font-weight: bold;
+            }
+		]]&gt;&lt;/style&gt;
+	&lt;/xsl:template&gt;
+	
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>HTML description</name>
+            <sequenceNumber>2</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformdescrip</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+	&lt;!-- @apiinfo &quot;&quot;&quot;32 lines. Outputs minimal basic info about the channel.&quot;&quot;&quot; --&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt; 	
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;descrip&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel&quot; mode=&quot;descrip&quot;&gt;
+		&lt;table cellpadding=&quot;6px 6px 6px 0px&quot; border=&quot;0&quot; class=&quot;notes&quot; style=&quot;margin-top:12px;margin-bottom:20px;&quot; &gt;
+			&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;description/text()&quot; /&gt;&lt;/xsl:variable&gt;
+			&lt;xsl:variable name=&quot;timemillis&quot;&gt;&lt;xsl:value-of select=&quot;exportData/metadata/lastModified/time/text()&quot; /&gt;&lt;/xsl:variable&gt;
+			&lt;tr valign=&quot;bottom&quot;&gt;&lt;th&gt;Last Modified&lt;/th&gt;&lt;td&gt;
+			&lt;xsl:call-template name=&quot;millisecs-to-ISO&quot;&gt;
+				&lt;xsl:with-param name=&quot;millisecs&quot; select=&quot;$timemillis&quot; /&gt;
+			&lt;/xsl:call-template&gt;
+			&lt;xsl:text&gt; (UTC)&lt;/xsl:text&gt;
+			&lt;/td&gt;&lt;/tr&gt;
+			&lt;tr&gt;&lt;th&gt;ID&lt;/th&gt;&lt;td&gt;&lt;xsl:value-of select=&quot;id/text()&quot; /&gt;&lt;/td&gt;&lt;/tr&gt;
+			&lt;xsl:if test=&quot;(string-length($textvalue) &gt; 0)&quot;&gt;			
+				&lt;tr&gt;
+					&lt;th valign=&quot;top&quot;&gt;Description&lt;/th&gt;
+					&lt;td valign=&quot;top&quot;&gt;&lt;xsl:value-of select=&quot;$textvalue&quot; /&gt;&lt;/td&gt;
+				&lt;/tr&gt;
+			&lt;/xsl:if&gt;	
+			&lt;tr&gt;
+				&lt;th valign=&quot;top&quot;&gt;Resources Loaded&lt;/th&gt;
+				&lt;td valign=&quot;top&quot;&gt;
+					&lt;xsl:apply-templates select=&quot;properties/resourceIds/entry/string[2]&quot; mode=&quot;descripstring&quot; /&gt;
+				&lt;/td&gt;
+			&lt;/tr&gt;
+			&lt;tr&gt;&lt;th&gt;NextGen&amp;#174;&lt;/th&gt;&lt;td&gt;&lt;xsl:value-of select=&quot;@version&quot; /&gt;&lt;/td&gt;&lt;/tr&gt;
+			&lt;tr&gt;
+				&lt;th valign=&quot;top&quot;&gt;See Also&lt;/th&gt;
+				&lt;td valign=&quot;top&quot;&gt;
+					Mirth&amp;#174; Connect by NextGen Healthcare User Guide for version 3.11, The Message Processing Lifecycle, in
+					&lt;a href=&quot;https://www.nextgen.com/-/media/files/nextgen-connect/nextgen-connect-311-user-guide.pdf&quot;&gt;nextgen-connect-311-user-guide.pdf&lt;/a&gt;
+				&lt;/td&gt;
+			&lt;/tr&gt;
+		&lt;/table&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;/channel/properties/resourceIds/entry/string&quot; mode=&quot;descripstring&quot;&gt;
+     	&lt;xsl:value-of select=&quot;text()&quot; /&gt;
+     	&lt;br/&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template name=&quot;millisecs-to-ISO&quot;&gt;
+		&lt;!-- https://stackoverflow.com/questions/27990478/convert-epoch-to-date-via-xsl-from-xml-attribute-and-display-in-html/27993455#27993455 --&gt;
+		&lt;xsl:param name=&quot;millisecs&quot;/&gt;
+		
+		&lt;xsl:param name=&quot;JDN&quot; select=&quot;floor($millisecs div 86400000) + 2440588&quot;/&gt;
+		&lt;xsl:param name=&quot;mSec&quot; select=&quot;$millisecs mod 86400000&quot;/&gt;
+		
+		&lt;xsl:param name=&quot;f&quot; select=&quot;$JDN + 1401 + floor((floor((4 * $JDN + 274277) div 146097) * 3) div 4) - 38&quot;/&gt;
+		&lt;xsl:param name=&quot;e&quot; select=&quot;4*$f + 3&quot;/&gt;
+		&lt;xsl:param name=&quot;g&quot; select=&quot;floor(($e mod 1461) div 4)&quot;/&gt;
+		&lt;xsl:param name=&quot;h&quot; select=&quot;5*$g + 2&quot;/&gt;
+		
+		&lt;xsl:param name=&quot;d&quot; select=&quot;floor(($h mod 153) div 5 ) + 1&quot;/&gt;
+		&lt;xsl:param name=&quot;m&quot; select=&quot;(floor($h div 153) + 2) mod 12 + 1&quot;/&gt;
+		&lt;xsl:param name=&quot;y&quot; select=&quot;floor($e div 1461) - 4716 + floor((14 - $m) div 12)&quot;/&gt;
+		
+		&lt;xsl:param name=&quot;H&quot; select=&quot;floor($mSec div 3600000)&quot;/&gt;
+		&lt;xsl:param name=&quot;M&quot; select=&quot;floor($mSec mod 3600000 div 60000)&quot;/&gt;
+		&lt;xsl:param name=&quot;S&quot; select=&quot;$mSec mod 60000 div 1000&quot;/&gt;
+		
+		&lt;xsl:value-of select=&quot;concat($y, format-number($m, &apos;-00&apos;), format-number($d, &apos;-00&apos;))&quot; /&gt;
+		&lt;xsl:value-of select=&quot;concat(format-number($H, &apos;T00&apos;), format-number($M, &apos;:00&apos;), format-number($S, &apos;:00&apos;))&quot; /&gt;
+	&lt;/xsl:template&gt; 
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;descrip&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;descripstring&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>HTML diagram header</name>
+            <sequenceNumber>3</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformheaddiagram</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+    &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;headdiagram&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/name&quot; mode=&quot;headdiagram&quot;&gt;
+		&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;normalize-space()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;h2&gt;&lt;xsl:value-of select=&quot;$textvalue&quot;/&gt;: Channel Flow Diagram&lt;/h2&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;headdiagram&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>HTML details header</name>
+            <sequenceNumber>4</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformheaddetails</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;headddetails&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/name&quot; mode=&quot;headddetails&quot;&gt;
+		&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;normalize-space()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;h2&gt;&lt;xsl:value-of select=&quot;$textvalue&quot;/&gt;: Channel Flow Details&lt;/h2&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;headddetails&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>HTML details table</name>
+            <sequenceNumber>5</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformdetails</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+	&lt;!-- @apiinfo &quot;&quot;&quot;450 lines. Outputs a human-readable overview (HTML table) of full channel flow with API calls out highlighted.&quot;&quot;&quot; --&gt;
+
+	&lt;xsl:template match=&quot;/&quot;&gt;
+		&lt;table cellpadding=&quot;6px&quot; border=&quot;1&quot; class=&quot;notes&quot;&gt;
+			&lt;tr&gt;
+				&lt;th&gt;Data&lt;br/&gt;Type&lt;/th&gt;
+				&lt;th&gt;Channel Segment&lt;/th&gt;
+				&lt;th&gt;Segment Type or Class&lt;/th&gt;
+				&lt;th&gt;ID&lt;/th&gt;
+				&lt;th&gt;Step&lt;/th&gt;
+				&lt;th&gt;Name&lt;/th&gt;
+				&lt;th&gt;API Calls Out, Other Notes&lt;/th&gt;
+			&lt;/tr&gt;
+     		&lt;xsl:apply-templates select=&quot;/channel/deployScript&quot; mode=&quot;details&quot; /&gt;
+ 			&lt;xsl:apply-templates select=&quot;/channel/sourceConnector&quot; mode=&quot;detailssrcdata&quot; /&gt;
+ 			&lt;xsl:apply-templates select=&quot;/channel/sourceConnector/transformer&quot; mode=&quot;detailssrcintype&quot; /&gt;
+			&lt;xsl:apply-templates select=&quot;/channel/sourceConnector&quot; mode=&quot;detailssrcconn&quot; /&gt;
+			&lt;xsl:apply-templates select=&quot;/channel/properties/attachmentProperties&quot; mode=&quot;detailssrcatt&quot; /&gt;
+			&lt;xsl:apply-templates select=&quot;/channel/preprocessingScript&quot; mode=&quot;detailssrcpre&quot; /&gt;
+			&lt;xsl:apply-templates select=&quot;/channel/sourceConnector/filter/elements&quot; mode=&quot;detailssrcfil&quot; /&gt;
+			&lt;xsl:apply-templates select=&quot;/channel/sourceConnector/transformer/elements&quot; mode=&quot;detailssrcxform&quot; /&gt;
+ 			&lt;xsl:apply-templates select=&quot;/channel/sourceConnector/transformer&quot; mode=&quot;detailssrcouttype&quot; /&gt;
+   			&lt;xsl:apply-templates select=&quot;/channel/destinationConnectors&quot; mode=&quot;detailsdst&quot; /&gt;
+   			&lt;xsl:apply-templates select=&quot;/channel/sourceConnector/properties&quot; mode=&quot;detailssrcpost&quot; /&gt;
+   			&lt;!-- TODO: (as needed) &lt;xsl:apply-templates select=&quot;/channel/sourceConnector/properties&quot; mode=&quot;detailssrcselrsp&quot; /&gt;--&gt;
+   			&lt;xsl:apply-templates select=&quot;/channel/sourceConnector&quot; mode=&quot;detailssrcrsp&quot; /&gt;
+		    	&lt;xsl:apply-templates select=&quot;/channel/undeployScript&quot; mode=&quot;details&quot; /&gt;
+		&lt;/table&gt;
+     &lt;/xsl:template&gt;
+
+     &lt;!-- deploy --&gt;
+
+	&lt;xsl:template match=&quot;/channel/deployScript&quot; mode=&quot;details&quot;&gt;
+		&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;normalize-space()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:if test=&quot;(string-length($textvalue) &gt; 0) and not ($textvalue = &apos;// This script executes once when the channel is deployed // You only have access to the globalMap and globalChannelMap here to persist data return;&apos;)&quot;&gt;
+			&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+				&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+					&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:variable&gt;
+			&lt;tr&gt;
+				&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;
+					&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;deployon&quot; /&gt;&lt;/svg&gt;&amp;#160;Deploy Script
+				&lt;/td&gt;
+				&lt;td&gt;JavaScript&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;&lt;/td&gt;
+			&lt;/tr&gt;
+			&lt;tr&gt;
+				&lt;td class=&quot;raw&quot; colspan=&quot;7&quot;&gt;&amp;#160;&lt;/td&gt;
+			&lt;/tr&gt;
+		&lt;/xsl:if&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;!-- channel segments: source in --&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector&quot; mode=&quot;detailssrcdata&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;properties/@class&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:if test=&quot;not (contains($type, &apos;JavaScriptReceiver&apos;))&quot;&gt;
+			&lt;tr&gt;
+				&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;
+					&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;dataon&quot; /&gt;&lt;/svg&gt;&amp;#160;Data Source
+				&lt;/td&gt;
+				&lt;td class=&quot;raw&quot; colspan=&quot;5&quot;&gt;&amp;#160;&lt;/td&gt;
+			&lt;/tr&gt;
+		&lt;/xsl:if&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector/transformer&quot; mode=&quot;detailssrcintype&quot;&gt;
+            &lt;tr&gt;
+                &lt;td&gt;&lt;xsl:value-of select=&quot;inboundDataType/text()&quot; /&gt;&lt;/td&gt;
+                &lt;td class=&quot;raw&quot; colspan=&quot;6&quot;&gt;&amp;#160;&lt;/td&gt;
+            &lt;/tr&gt;  
+   	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector&quot; mode=&quot;detailssrcconn&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;properties/@class&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;useScript&quot;&gt;&lt;xsl:value-of select=&quot;properties/useScript/text()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;detail&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;(contains($type, &apos;DatabaseReceiver&apos;))&quot;&gt;&lt;xsl:value-of select=&quot;properties/driver/text()&quot; /&gt;&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;
+		&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;language&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;(contains($type, &apos;JavaScriptReceiver&apos;))&quot;&gt;&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;
+					&lt;xsl:choose&gt;
+						&lt;xsl:when test=&quot;($useScript = &apos;true&apos;)&quot;&gt; (JavaScript) &lt;/xsl:when&gt;
+						&lt;xsl:when test=&quot;($useScript = &apos;false&apos;)&quot;&gt; (SQL) &lt;/xsl:when&gt;
+						&lt;xsl:otherwise&gt;&lt;/xsl:otherwise&gt;
+					&lt;/xsl:choose&gt;
+				&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;
+		&lt;/xsl:variable&gt;
+		&lt;tr&gt;
+			&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+			&lt;td&gt;
+				&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;srcon&quot; /&gt;&lt;/svg&gt;&amp;#160;Source Connector
+			&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;transportName/text()&quot; /&gt;&lt;xsl:text&gt; &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;$language&quot; /&gt;&lt;xsl:text&gt; &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;$detail&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;metaDataId/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;&amp;#160;&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;name/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;
+				&lt;xsl:choose&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;JavaScriptReceiver&apos;))&quot;&gt;
+						&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;properties/script/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;
+					&lt;/xsl:when&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;DatabaseReceiver&apos;))&quot;&gt;				
+						&lt;xsl:variable name=&quot;select&quot;&gt;&lt;xsl:value-of select=&quot;properties/select/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;update&quot;&gt;&lt;xsl:value-of select=&quot;properties/update/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;selectinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$select&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;updateinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$update&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:value-of select=&quot;$selectinfo&quot; /&gt; 
+						&lt;xsl:choose&gt;
+							&lt;xsl:when test=&quot;(string-length($updateinfo) &gt; 0)&quot;&gt;
+								&lt;br/&gt;&lt;xsl:value-of select=&quot;$updateinfo&quot; /&gt;
+							&lt;/xsl:when&gt;
+							&lt;xsl:otherwise&gt;&lt;/xsl:otherwise&gt;
+						&lt;/xsl:choose&gt;
+					&lt;/xsl:when&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;FileReceiver&apos;))&quot;&gt; 
+						Input folder/filename: &#xd;						&lt;xsl:value-of select=&quot;properties/host/text()&quot; /&gt;/&lt;xsl:value-of select=&quot;properties/fileFilter/text()&quot; /&gt;
+					&lt;/xsl:when&gt;
+					&lt;xsl:otherwise&gt;
+						&amp;#160;
+					&lt;/xsl:otherwise&gt;
+				&lt;/xsl:choose&gt;
+			&lt;/td&gt;
+		&lt;/tr&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/properties/attachmentProperties&quot; mode=&quot;detailssrcatt&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;type/text()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:if test=&quot;(string-length($type) &gt; 0) and (not ($type = &apos;None&apos;))&quot;&gt;
+			&lt;tr&gt;
+				&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;
+					&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;srcon&quot; /&gt;&lt;/svg&gt;&amp;#160;Attachment Handler
+				&lt;/td&gt;
+				&lt;td&gt;&lt;xsl:value-of select=&quot;$type&quot; /&gt;&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;
+					&lt;xsl:choose&gt;
+						&lt;xsl:when test=&quot;(contains($type, &apos;JavaScript&apos;))&quot;&gt;
+							&lt;xsl:apply-templates select=&quot;properties/entry&quot; mode=&quot;detailssrcattjs&quot; /&gt;
+						&lt;/xsl:when&gt;
+						&lt;xsl:otherwise&gt;&amp;#160;&lt;/xsl:otherwise&gt;
+					&lt;/xsl:choose&gt;
+				&lt;/td&gt;
+			&lt;/tr&gt;
+		&lt;/xsl:if&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/properties/attachmentProperties/properties/entry&quot; mode=&quot;detailssrcattjs&quot;&gt;
+		&lt;xsl:apply-templates select=&quot;string&quot; mode=&quot;detailssrcattjs&quot; /&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/properties/attachmentProperties/properties/entry/string&quot; mode=&quot;detailssrcattjs&quot;&gt;
+		&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;text()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+			&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+				&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+			&lt;/xsl:call-template&gt;
+		&lt;/xsl:variable&gt;
+		&lt;xsl:if test=&quot;(not ($apiinfo = &apos;&amp;#160;&apos;))&quot;&gt;
+			&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;&lt;xsl:text&gt; &lt;/xsl:text&gt;
+		&lt;/xsl:if&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/preprocessingScript&quot; mode=&quot;detailssrcpre&quot;&gt;
+		&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;normalize-space()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:if test=&quot;(string-length($textvalue) &gt; 0) and not ($textvalue = &apos;// Modify the message variable below to pre process data return message;&apos;)&quot;&gt;
+			&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+				&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+					&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:variable&gt;
+			&lt;tr&gt;
+				&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;
+					&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;srcon&quot; /&gt;&lt;/svg&gt;&amp;#160;Preprocessor Script
+				&lt;/td&gt;
+				&lt;td&gt;JavaScript&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;&lt;/td&gt;
+			&lt;/tr&gt;
+		&lt;/xsl:if&gt;
+ 	&lt;/xsl:template&gt;
+
+	&lt;!-- channel segments: source transform --&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector/filter/elements&quot; mode=&quot;detailssrcfil&quot; &gt;
+		&lt;xsl:variable name=&quot;stepcount&quot;&gt;&lt;xsl:value-of select=&quot;count(*)&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:if test=&quot;$stepcount &gt; 0&quot;&gt;
+     		&lt;xsl:apply-templates select=&quot;*&quot; mode=&quot;detailssrcfilelement&quot; /&gt;
+		&lt;/xsl:if&gt;
+	&lt;/xsl:template&gt;
+		
+	&lt;xsl:template match=&quot;*&quot; mode=&quot;detailssrcfilelement&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;local-name()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;tr&gt;
+			&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+			&lt;td&gt;
+				&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;srcon&quot; /&gt;&lt;/svg&gt;&amp;#160;Source Filter
+			&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;substring-after($type, &apos;com.mirth.connect.&apos;)&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;&amp;#160;&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;sequenceNumber/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;name/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;
+				&lt;xsl:choose&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;JavaScript&apos;))&quot;&gt;
+						&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;script/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;
+					&lt;/xsl:when&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;Xslt&apos;))&quot;&gt;
+						&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;template/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;
+					&lt;/xsl:when&gt;				
+					&lt;xsl:otherwise&gt;
+						&amp;#160;
+					&lt;/xsl:otherwise&gt;
+				&lt;/xsl:choose&gt;
+			&lt;/td&gt;
+            &lt;/tr&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector/transformer/elements&quot; mode=&quot;detailssrcxform&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*&quot; mode=&quot;detailssrcxformelement&quot; /&gt;
+	&lt;/xsl:template&gt;
+		
+	&lt;xsl:template match=&quot;*&quot; mode=&quot;detailssrcxformelement&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;local-name()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;tr&gt;
+			&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+			&lt;td&gt;
+				&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;srcon&quot; /&gt;&lt;/svg&gt;&amp;#160;Source Transformer
+			&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;substring-after($type, &apos;com.mirth.connect.&apos;)&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;&amp;#160;&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;sequenceNumber/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;name/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;
+				&lt;xsl:choose&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;JavaScript&apos;))&quot;&gt;
+						&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;script/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;
+					&lt;/xsl:when&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;Xslt&apos;))&quot;&gt;
+						&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;template/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfoxml&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;
+					&lt;/xsl:when&gt;				
+					&lt;xsl:otherwise&gt;
+						&amp;#160;
+					&lt;/xsl:otherwise&gt;
+				&lt;/xsl:choose&gt;
+			&lt;/td&gt;
+		&lt;/tr&gt;
+	&lt;/xsl:template&gt;
+	
+   	&lt;xsl:template match=&quot;/channel/sourceConnector/transformer&quot; mode=&quot;detailssrcouttype&quot;&gt;
+            &lt;tr&gt;
+                &lt;td&gt;&lt;xsl:value-of select=&quot;outboundDataType/text()&quot; /&gt;&lt;/td&gt;
+                &lt;td class=&quot;raw&quot; colspan=&quot;6&quot;&gt;&amp;#160;&lt;/td&gt;
+            &lt;/tr&gt;  
+   	&lt;/xsl:template&gt;
+
+  	&lt;!-- destinations --&gt;
+
+  	&lt;xsl:template match=&quot;/channel/destinationConnectors&quot; mode=&quot;detailsdst&quot;&gt;
+ 		&lt;xsl:apply-templates select=&quot;connector&quot; mode=&quot;detailsdst&quot; /&gt;
+   	&lt;/xsl:template&gt;
+
+    	&lt;xsl:template match=&quot;/channel/destinationConnectors/connector&quot; mode=&quot;detailsdst&quot;&gt;
+ 		&lt;xsl:apply-templates select=&quot;transformer&quot; mode=&quot;detailsdstintype&quot; /&gt;
+ 		&lt;xsl:apply-templates select=&quot;filter&quot; mode=&quot;detailsdstfil&quot; /&gt;
+ 		&lt;xsl:apply-templates select=&quot;transformer&quot; mode=&quot;detailsdstxform&quot; /&gt;		
+		&lt;xsl:call-template name=&quot;getdstconn&quot;&gt;
+			&lt;xsl:with-param name=&quot;connector&quot; select=&quot;.&quot; /&gt;
+		&lt;/xsl:call-template&gt;		
+  		&lt;!-- TODO: (when needed) &lt;xsl:apply-templates select=&quot;responseTransformer&quot; mode=&quot;detailsdstrsp&quot; /&gt;--&gt;
+ 		&lt;xsl:apply-templates select=&quot;transformer&quot; mode=&quot;detailsdstouttype&quot; /&gt;
+   	&lt;/xsl:template&gt;
+   	
+ 	&lt;xsl:template match=&quot;/channel/destinationConnectors/connector/transformer&quot; mode=&quot;detailsdstintype&quot;&gt;
+		&lt;tr&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;inboundDataType/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td class=&quot;raw&quot; colspan=&quot;6&quot;&gt;&amp;#160;&lt;/td&gt;
+		&lt;/tr&gt;  
+	&lt;/xsl:template&gt;
+
+ 	&lt;!-- channel segments: destination transforms --&gt;
+
+	&lt;xsl:template match=&quot;/channel/destinationConnectors/connector/filter&quot; mode=&quot;detailsdstfil&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;elements&quot; mode=&quot;detailsdstfilelement&quot; /&gt;
+   	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/destinationConnectors/connector/filter/elements&quot; mode=&quot;detailsdstfilelement&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*&quot; mode=&quot;detailsdstfilelementout&quot; /&gt;
+	&lt;/xsl:template&gt;
+		
+	&lt;xsl:template match=&quot;*&quot; mode=&quot;detailsdstfilelementout&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;local-name()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;tr&gt;
+			&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+			&lt;td&gt;
+				&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;dston&quot; /&gt;&lt;/svg&gt;&amp;#160;Destination Filter
+			&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;substring-after($type, &apos;com.mirth.connect.&apos;)&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;&amp;#160;&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;sequenceNumber/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;name/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;
+				&lt;xsl:choose&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;JavaScript&apos;))&quot;&gt;
+						&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;script/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;
+					&lt;/xsl:when&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;Xslt&apos;))&quot;&gt;
+						&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;template/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;
+					&lt;/xsl:when&gt;				
+					&lt;xsl:otherwise&gt;
+						&amp;#160;
+					&lt;/xsl:otherwise&gt;
+				&lt;/xsl:choose&gt;
+			&lt;/td&gt;
+		&lt;/tr&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/destinationConnectors/connector/transformer&quot; mode=&quot;detailsdstxform&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;elements&quot; mode=&quot;detailsdstxformelement&quot; /&gt;
+   	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/destinationConnectors/connector/transformer/elements&quot; mode=&quot;detailsdstxformelement&quot; &gt;
+	    	&lt;xsl:apply-templates select=&quot;*&quot; mode=&quot;detailsdstxformelementout&quot; /&gt;
+	&lt;/xsl:template&gt;
+		
+	&lt;xsl:template match=&quot;*&quot; mode=&quot;detailsdstxformelementout&quot;&gt;
+ 		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;local-name()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;tr&gt;
+			&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+			&lt;td&gt;
+				&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;dston&quot; /&gt;&lt;/svg&gt;&amp;#160;Destination Transformer
+			&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;substring-after($type, &apos;com.mirth.connect.&apos;)&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;&amp;#160;&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;sequenceNumber/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;name/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;
+				&lt;xsl:choose&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;JavaScript&apos;))&quot;&gt;
+						&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;script/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;
+					&lt;/xsl:when&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;Xslt&apos;))&quot;&gt;
+						&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;template/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;
+					&lt;/xsl:when&gt;				
+					&lt;xsl:otherwise&gt;
+						&amp;#160;
+					&lt;/xsl:otherwise&gt;
+				&lt;/xsl:choose&gt;
+			&lt;/td&gt;
+		&lt;/tr&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;!-- channel segments: destination out --&gt;
+	
+	&lt;xsl:template name=&quot;getdstconn&quot;&gt;
+		&lt;xsl:param name=&quot;connector&quot; /&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;$connector/properties/@class&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;useScript&quot;&gt;&lt;xsl:value-of select=&quot;$connector/properties/useScript/text()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;detail&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;(contains($type, &apos;DatabaseDispatcher&apos;))&quot;&gt; &lt;xsl:value-of select=&quot;$connector/properties/driver/text()&quot; /&gt;&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;
+		&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;language&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;(contains($type, &apos;JavaScriptDispatcher&apos;))&quot;&gt;&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;
+					&lt;xsl:choose&gt;
+						&lt;xsl:when test=&quot;($useScript = &apos;true&apos;)&quot;&gt; (JavaScript) &lt;/xsl:when&gt;
+						&lt;xsl:when test=&quot;($useScript = &apos;false&apos;)&quot;&gt; (SQL) &lt;/xsl:when&gt;
+						&lt;xsl:otherwise&gt;&lt;/xsl:otherwise&gt;
+					&lt;/xsl:choose&gt;
+				&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;
+		&lt;/xsl:variable&gt;
+		&lt;tr&gt;
+			&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+			&lt;td&gt;
+				&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;dston&quot; /&gt;&lt;/svg&gt;&amp;#160;Destination Connector
+			&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;$connector/transportName/text()&quot; /&gt;&lt;xsl:text&gt; &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;$language&quot; /&gt;&lt;xsl:text&gt; &lt;/xsl:text&gt;&lt;xsl:value-of select=&quot;$detail&quot; /&gt; &lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;$connector/metaDataId/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;&amp;#160;&lt;/td&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;$connector/name/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td&gt;
+				&lt;xsl:choose&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;JavaScriptDispatcher&apos;))&quot;&gt;
+						&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;$connector/properties/script/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;
+					&lt;/xsl:when&gt;				
+					&lt;xsl:when test=&quot;(contains($type, &apos;DatabaseDispatcher&apos;))&quot;&gt;				
+						&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;$connector/properties/query/text()&quot; /&gt;&lt;/xsl:variable&gt;
+						&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+							&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+								&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+							&lt;/xsl:call-template&gt;
+						&lt;/xsl:variable&gt;
+						&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;
+					&lt;/xsl:when&gt;
+					&lt;xsl:when test=&quot;(contains($type, &apos;FileDispatcher&apos;))&quot;&gt; 
+						Output folder/filename: &#xd;						&lt;xsl:value-of select=&quot;$connector/properties/host/text()&quot; /&gt;/&lt;xsl:value-of select=&quot;properties/outputPattern/text()&quot; /&gt;
+					&lt;/xsl:when&gt;
+					&lt;xsl:otherwise&gt;
+						&amp;#160;
+					&lt;/xsl:otherwise&gt;
+				&lt;/xsl:choose&gt;
+			&lt;/td&gt;
+		&lt;/tr&gt;
+    	&lt;/xsl:template&gt;
+
+  	&lt;xsl:template match=&quot;/channel/destinationConnectors/connector/transformer&quot; mode=&quot;detailsdstouttype&quot;&gt;
+		&lt;tr&gt;
+			&lt;td&gt;&lt;xsl:value-of select=&quot;outboundDataType/text()&quot; /&gt;&lt;/td&gt;
+			&lt;td class=&quot;raw&quot; colspan=&quot;6&quot;&gt;&amp;#160;&lt;/td&gt;
+		&lt;/tr&gt;  
+   	&lt;/xsl:template&gt;
+
+	&lt;!-- TODO: (when needed) channel segments: destination response --&gt;
+
+	&lt;!-- channel segments: source out --&gt;   	
+
+	&lt;xsl:template match=&quot;/channel/postprocessingScript&quot; mode=&quot;detailssrcpost&quot;&gt;
+		&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;normalize-space()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:if test=&quot;(string-length($textvalue) &gt; 0) and not ($textvalue = &apos;// This script executes once after a message has been processed // Responses returned from here will be stored as &amp;quot;Postprocessor&amp;quot; in the response map return;&apos;)&quot;&gt;
+			&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+				&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+					&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:variable&gt;
+			&lt;tr&gt;
+				&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;
+					&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;srcon&quot; /&gt;&lt;/svg&gt;&amp;#160;Postprocessor Script
+				&lt;/td&gt;
+				&lt;td&gt;JavaScript&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;&lt;/td&gt;
+			&lt;/tr&gt;
+		&lt;/xsl:if&gt;
+ 	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector/properties&quot; mode=&quot;detailssrcrsp&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;@class&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;srcrsp&quot;&gt;&lt;xsl:value-of select=&quot;sourceConnectorProperties/responseVariable/text()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:if test=&quot;not (($srcrsp = &apos;None&apos;) or (contains($type, &apos;JavaScriptReceiver&apos;)))&quot;&gt;
+			&lt;tr&gt;
+				&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;
+					&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;dataon&quot; /&gt;&lt;/svg&gt;&amp;#160;Response
+				&lt;/td&gt;
+				&lt;td&gt;&lt;xsl:value-of select=&quot;$srcrsp&quot; /&gt;&lt;/td&gt;
+				&lt;td class=&quot;raw&quot; colspan=&quot;4&quot;&gt;&amp;#160;&lt;/td&gt;
+			&lt;/tr&gt;
+		&lt;/xsl:if&gt;
+     &lt;/xsl:template&gt;
+
+     &lt;!-- undeploy --&gt;
+
+	&lt;xsl:template match=&quot;/channel/undeployScript&quot; mode=&quot;details&quot;&gt;
+		&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;normalize-space()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:if test=&quot;(string-length($textvalue) &gt; 0) and not ($textvalue = &apos;// This script executes once when the channel is undeployed // You only have access to the globalMap and globalChannelMap here to persist data return;&apos;)&quot;&gt;
+			&lt;xsl:variable name=&quot;apiinfo&quot;&gt;
+				&lt;xsl:call-template name=&quot;getapiinfo&quot;&gt;
+					&lt;xsl:with-param name=&quot;textvalue&quot; select=&quot;$textvalue&quot; /&gt;
+				&lt;/xsl:call-template&gt;
+			&lt;/xsl:variable&gt;
+			&lt;tr&gt;
+				&lt;td class=&quot;raw&quot; colspan=&quot;7&quot;&gt;&amp;#160;&lt;/td&gt;
+			&lt;/tr&gt;
+			&lt;tr&gt;
+				&lt;td class=&quot;raw&quot;&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;
+					&lt;svg width=&quot;15px&quot; height=&quot;12px&quot; viewBox=&quot;0 0 15 15&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;0&quot; width=&quot;15&quot; height=&quot;15&quot; class=&quot;deployon&quot; /&gt;&lt;/svg&gt;&amp;#160;Undeploy Script
+				&lt;/td&gt;
+				&lt;td&gt;JavaScript&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&amp;#160;&lt;/td&gt;
+				&lt;td&gt;&lt;xsl:value-of select=&quot;$apiinfo&quot; /&gt;&lt;/td&gt;
+			&lt;/tr&gt;
+		&lt;/xsl:if&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;!-- utility templates --&gt;
+	
+     &lt;xsl:template name=&quot;getapiinfo&quot; &gt;
+     	&lt;xsl:param name=&quot;textvalue&quot; /&gt;
+		&lt;xsl:variable name=&quot;text1&quot;&gt;&lt;xsl:value-of select=&quot;substring-after($textvalue, &apos;@apiinfo&apos;)&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;text2&quot;&gt;&lt;xsl:value-of select=&quot;substring-after($text1, &apos;&amp;quot;&amp;quot;&amp;quot;&apos;)&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;text3&quot;&gt;&lt;xsl:value-of select=&quot;substring-before($text2, &apos;&amp;quot;&amp;quot;&amp;quot;&apos;)&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:choose&gt;
+			&lt;xsl:when test=&quot;contains($textvalue, &apos;@apiinfo&apos;)&quot;&gt;&lt;xsl:value-of select=&quot;$text3&quot; /&gt;&lt;/xsl:when&gt;
+			&lt;xsl:otherwise&gt;&amp;#160;&lt;/xsl:otherwise&gt;
+		&lt;/xsl:choose&gt;   	
+     &lt;/xsl:template&gt;
+
+     &lt;xsl:template name=&quot;getapiinfoxml&quot; &gt;
+     	&lt;xsl:param name=&quot;textvalue&quot; /&gt;
+		&lt;xsl:variable name=&quot;text1&quot;&gt;&lt;xsl:value-of select=&quot;substring-after($textvalue, &apos;@apiinfo&apos;)&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;text2&quot;&gt;&lt;xsl:value-of select=&quot;substring-after($text1, &apos;&amp;amp;quot;&amp;amp;quot;&amp;amp;quot;&apos;)&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;text3&quot;&gt;&lt;xsl:value-of select=&quot;substring-before($text2, &apos;&amp;amp;quot;&amp;amp;quot;&amp;amp;quot;&apos;)&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:choose&gt;
+			&lt;xsl:when test=&quot;contains($textvalue, &apos;@apiinfo&apos;)&quot;&gt;&lt;xsl:value-of select=&quot;$text3&quot; /&gt;&lt;/xsl:when&gt;
+			&lt;xsl:otherwise&gt;&amp;#160;&lt;/xsl:otherwise&gt;
+		&lt;/xsl:choose&gt;   	
+     &lt;/xsl:template&gt;
+
+	&lt;!-- default text nodes --&gt;
+	
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;details&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcdata&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcintype&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcconn&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcatt&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcattjs&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcpre&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcfil&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcfilelement&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcxform&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcxformelement&quot; /&gt;	
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcouttype&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailsdst&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailsdstintype&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailsdstfil&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailsdstfilelement&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailsdstfilelementout&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailsdstxform&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailsdstxformelement&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailsdstxformelementout&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailsdstconn&quot; /&gt;	
+	&lt;!-- TODO: (when needed) &lt;xsl:template match=&quot;text()&quot; mode=&quot;detailsdstxformrsp&quot; /&gt;--&gt;	
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailsdstouttype&quot; /&gt;
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcpost&quot; /&gt;
+	&lt;!-- TODO: (when needed) &lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcselrsp&quot; /&gt;--&gt;	
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;detailssrcrsp&quot; /&gt;
+	&lt;!-- TODO: (when needed) &lt;xsl:template match=&quot;text()&quot; mode=&quot;detailsdstrsp&quot; /&gt;--&gt;	
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>SVG background panels</name>
+            <sequenceNumber>6</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformbg</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+	&lt;xsl:template match=&quot;/&quot;&gt;
+		&lt;rect id=&quot;srcbg&quot; rx=&quot;0&quot; ry=&quot;0&quot; x=&quot;48&quot; y=&quot;-5&quot; width=&quot;572&quot; height=&quot;295&quot; class=&quot;srcbg&quot; /&gt;
+		&lt;rect id=&quot;dstbg&quot; rx=&quot;0&quot; ry=&quot;0&quot; x=&quot;133&quot; y=&quot;110&quot; width=&quot;487&quot; height=&quot;180&quot; class=&quot;dstbg&quot; /&gt;
+		&lt;rect id=&quot;srcbgxform&quot; rx=&quot;0&quot; ry=&quot;0&quot; x=&quot;290&quot; y=&quot;40&quot; width=&quot;320&quot; height=&quot;60&quot; class=&quot;xformpanel&quot; /&gt;
+		&lt;rect id=&quot;dstbgxform&quot; rx=&quot;0&quot; ry=&quot;0&quot; x=&quot;451&quot; y=&quot;120&quot; width=&quot;159&quot; height=&quot;120&quot; class=&quot;xformpanel&quot; /&gt;
+		&lt;rect id=&quot;dstbgrsp&quot; rx=&quot;0&quot; ry=&quot;0&quot; x=&quot;210&quot; y=&quot;120&quot; width=&quot;160&quot; height=&quot;120&quot; class=&quot;xformpanel&quot; /&gt;
+		&lt;text id=&quot;bgtext1&quot; x=&quot;60&quot; y=&quot;12&quot; class=&quot;bgbig&quot;&gt;Source Processing&lt;/text&gt;
+		&lt;text id=&quot;bgtext2&quot; x=&quot;480&quot; y=&quot;280&quot; class=&quot;bgbig&quot;&gt;Destination Processing&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Deploy</name>
+            <sequenceNumber>7</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformdeploy</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;deploy&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/deployScript&quot; mode=&quot;deploy&quot;&gt;
+		&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;normalize-space()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;(string-length($textvalue) &gt; 0) and not ($textvalue = &apos;// This script executes once when the channel is deployed // You only have access to the globalMap and globalChannelMap here to persist data return;&apos;)&quot;&gt;deployon&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;deployoff&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;
+		&lt;/xsl:variable&gt;
+		&lt;rect id=&quot;deploy&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;0&quot; y=&quot;190&quot; width=&quot;40&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;deploytext1&quot; x=&quot;20&quot; y=&quot;208&quot; class=&quot;{$style}&quot;&gt;Deploy&lt;/text&gt;
+		&lt;text id=&quot;deploytext2&quot; x=&quot;20&quot; y=&quot;218&quot; class=&quot;{$style}&quot;&gt;Script&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;deploy&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Undeploy</name>
+            <sequenceNumber>8</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformundeploy</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;undeploy&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/undeployScript&quot; mode=&quot;undeploy&quot;&gt;
+		&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;normalize-space()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;(string-length($textvalue) &gt; 0) and not ($textvalue = &apos;// This script executes once when the channel is undeployed // You only have access to the globalMap and globalChannelMap here to persist data return;&apos;)&quot;&gt;deployon&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;deployoff&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;
+		&lt;/xsl:variable&gt;
+		&lt;rect id=&quot;undeploy&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;0&quot; y=&quot;250&quot; width=&quot;40&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;undeploytext1&quot; x=&quot;20&quot; y=&quot;268&quot; class=&quot;{$style}&quot;&gt;Undeploy&lt;/text&gt;
+		&lt;text id=&quot;undeploytext2&quot; x=&quot;20&quot; y=&quot;278&quot; class=&quot;{$style}&quot;&gt;Script&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;undeploy&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Data Source</name>
+            <sequenceNumber>9</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformsrcdata</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;srcdata&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector&quot; mode=&quot;srcdata&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;properties/@class&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;contains($type, &apos;JavaScriptReceiver&apos;)&quot;&gt;dataoff&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;dataon&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;	
+		&lt;/xsl:variable&gt;
+		&lt;line id=&quot;srcdataline&quot; x1=&quot;40&quot; y1=&quot;70&quot; x2=&quot;55&quot; y2=&quot;70&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;srcdatalineptr&quot; points=&quot;54 63, 60 70, 54 77&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;rect id=&quot;srcdata&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;0&quot; y=&quot;50&quot; width=&quot;40&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;srcdatatext1&quot; x=&quot;20&quot; y=&quot;68&quot; class=&quot;{$style}&quot;&gt;Data&lt;/text&gt;
+		&lt;text id=&quot;srcdatatext2&quot; x=&quot;20&quot; y=&quot;78&quot; class=&quot;{$style}&quot;&gt;Source&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;srcdata&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Source Connector</name>
+            <sequenceNumber>10</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformsrcconn</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;srcconn&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector&quot; mode=&quot;srcconn&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;properties/@class&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;(string-length($type) &gt; 0)&quot;&gt;srcon&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;srcoff&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;	
+		&lt;/xsl:variable&gt;
+		&lt;line id=&quot;srcconnline&quot; x1=&quot;120&quot; y1=&quot;70&quot; x2=&quot;135&quot; y2=&quot;70&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;srcconnlineptr&quot; points=&quot;134 63, 140 70, 134 77&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;rect id=&quot;srcconn&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;60&quot; y=&quot;50&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;line id=&quot;srcconnline&quot; x1=&quot;120&quot; y1=&quot;70&quot; x2=&quot;135&quot; y2=&quot;70&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;srcconnlineptr&quot; points=&quot;134 63, 140 70, 134 77&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;srcconntext1&quot; x=&quot;90&quot; y=&quot;68&quot; class=&quot;{$style}&quot;&gt;Source&lt;/text&gt;
+		&lt;text id=&quot;srcconntext2&quot; x=&quot;90&quot; y=&quot;78&quot; class=&quot;{$style}&quot;&gt;Connector&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;srcconn&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Attachment Handler</name>
+            <sequenceNumber>11</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformsrcatt</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;srcatt&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/properties/attachmentProperties&quot; mode=&quot;srcatt&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;type/text()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;(string-length($type) &gt; 0) and (not ($type = &apos;None&apos;))&quot;&gt;srcon&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;srcoff&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;
+		&lt;/xsl:variable&gt;
+		&lt;line id=&quot;srcattline&quot; x1=&quot;200&quot; y1=&quot;70&quot; x2=&quot;215&quot; y2=&quot;70&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;srcattlineptr&quot; points=&quot;214 63, 220 70, 214 77&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;rect id=&quot;srcatt&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;140&quot; y=&quot;50&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;srcatttext1&quot; x=&quot;170&quot; y=&quot;68&quot; class=&quot;{$style}&quot;&gt;Attachment&lt;/text&gt;
+		&lt;text id=&quot;srcatttext2&quot; x=&quot;170&quot; y=&quot;78&quot; class=&quot;{$style}&quot;&gt;Handler&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;srcatt&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Preprocessor</name>
+            <sequenceNumber>12</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformsrcpre</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;srcpre&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/preprocessingScript&quot; mode=&quot;srcpre&quot;&gt;
+		&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;normalize-space()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;(string-length($textvalue) &gt; 0) and not ($textvalue = &apos;// Modify the message variable below to pre process data return message;&apos;)&quot;&gt;srcon&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;srcoff&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;
+		&lt;/xsl:variable&gt;
+		&lt;line id=&quot;srcpreline&quot; x1=&quot;280&quot; y1=&quot;70&quot; x2=&quot;295&quot; y2=&quot;70&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;srcprelineptr&quot; points=&quot;294 63, 300 70, 294 77&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;rect id=&quot;srcpre&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;220&quot; y=&quot;50&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;srcpretext1&quot; x=&quot;250&quot; y=&quot;68&quot; class=&quot;{$style}&quot;&gt;Preprocessor&lt;/text&gt;
+		&lt;text id=&quot;srcpretext2&quot; x=&quot;250&quot; y=&quot;78&quot; class=&quot;{$style}&quot;&gt;Script&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;srcpre&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Source Serialize</name>
+            <sequenceNumber>13</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformsrcser</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;srcser&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector&quot; mode=&quot;srcser&quot;&gt;
+		&lt;!-- TODO: (when needed) research XSL to toggle srcoff/srcon --&gt;
+		&lt;line id=&quot;srcserline&quot; x1=&quot;360&quot; y1=&quot;70&quot; x2=&quot;375&quot; y2=&quot;70&quot; class=&quot;srcoff&quot; /&gt;
+		&lt;polygon id=&quot;srcserlineptr&quot; points=&quot;374 63, 380 70, 374 77&quot; class=&quot;srcoff&quot; /&gt;
+		&lt;rect id=&quot;srcser&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;300&quot; y=&quot;50&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;srcoff&quot; /&gt;
+		&lt;text id=&quot;srcsertext1&quot; x=&quot;330&quot; y=&quot;68&quot; class=&quot;srcoff&quot;&gt;Serialized&lt;/text&gt;
+		&lt;text id=&quot;srcsertext2&quot; x=&quot;330&quot; y=&quot;78&quot; class=&quot;srcoff&quot;&gt;to XML&lt;/text&gt;
+    &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;srcser&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Source Deserialize</name>
+            <sequenceNumber>14</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformsrcdes</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;srcdes&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector&quot; mode=&quot;srcdes&quot;&gt;
+		&lt;!-- TODO: (when needed) research XSL to toggle srcoff/srcon --&gt;
+		&lt;line id=&quot;srcdesline&quot; x1=&quot;570&quot; y1=&quot;90&quot; x2=&quot;570&quot; y2=&quot;125&quot; class=&quot;srcoff&quot; /&gt;
+		&lt;polygon id=&quot;srcdeslineptr&quot; points=&quot;563 124, 570 130, 577 124&quot; class=&quot;srcoff&quot; /&gt;
+		&lt;rect id=&quot;srcdes&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;540&quot; y=&quot;50&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;srcoff&quot; /&gt;
+		&lt;text id=&quot;srcdestext1&quot; x=&quot;570&quot; y=&quot;68&quot; class=&quot;srcoff&quot;&gt;Deserialized&lt;/text&gt;
+		&lt;text id=&quot;srcdestext2&quot; x=&quot;570&quot; y=&quot;78&quot; class=&quot;srcoff&quot;&gt;e.g., to HL7&lt;/text&gt;
+    &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;srcdes&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Source Filter</name>
+            <sequenceNumber>15</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformsrcfil</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;srcfil&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+    &lt;xsl:template match=&quot;/channel/sourceConnector/filter/elements&quot; mode=&quot;srcfil&quot; &gt;
+		&lt;xsl:variable name=&quot;stepcount&quot;&gt;&lt;xsl:value-of select=&quot;count(*)&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;($stepcount &gt; 0)&quot;&gt;srcon&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;srcoff&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;	
+		&lt;/xsl:variable&gt;
+		&lt;line id=&quot;srcfilline&quot; x1=&quot;440&quot; y1=&quot;70&quot; x2=&quot;455&quot; y2=&quot;70&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;srcfillineptr&quot; points=&quot;454 63, 460 70, 454 77&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;rect id=&quot;srcfil&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;380&quot; y=&quot;50&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;srcfiltext1&quot; x=&quot;410&quot; y=&quot;73&quot; class=&quot;{$style}&quot;&gt;Filter&lt;/text&gt;
+		&lt;text id=&quot;srcfiltext2&quot; x=&quot;410&quot; y=&quot;78&quot; class=&quot;{$style}&quot;&gt;&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+ 	&lt;xsl:template match=&quot;text()&quot; mode=&quot;srcfil&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Source Transformer</name>
+            <sequenceNumber>16</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformsrcxform</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;srcxform&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+    &lt;xsl:template match=&quot;/channel/sourceConnector/transformer/elements&quot; mode=&quot;srcxform&quot; &gt;
+		&lt;xsl:variable name=&quot;stepcount&quot;&gt;&lt;xsl:value-of select=&quot;count(*)&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;($stepcount &gt; 0)&quot;&gt;srcon&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;srcoff&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;	
+		&lt;/xsl:variable&gt;
+		&lt;line id=&quot;srcxformline&quot; x1=&quot;520&quot; y1=&quot;70&quot; x2=&quot;535&quot; y2=&quot;70&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;srcxformlineptr&quot; points=&quot;534 63, 540 70, 534 77&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;rect id=&quot;srcxform&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;460&quot; y=&quot;50&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;srcxformtext1&quot; x=&quot;490&quot; y=&quot;73&quot; class=&quot;{$style}&quot;&gt;Transformer&lt;/text&gt;
+		&lt;text id=&quot;srcxformtext2&quot; x=&quot;490&quot; y=&quot;78&quot; class=&quot;{$style}&quot;&gt;&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+ 	&lt;xsl:template match=&quot;text()&quot; mode=&quot;srcxform&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Destination Serialize</name>
+            <sequenceNumber>17</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformdstser</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;dstser&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/destinationConnectors&quot; mode=&quot;dstser&quot;&gt;
+		&lt;!-- TODO: (when needed) research XSL to toggle srcoff/srcon --&gt;
+		&lt;line id=&quot;dstserline&quot; x1=&quot;570&quot; y1=&quot;170&quot; x2=&quot;570&quot; y2=&quot;185&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;polygon id=&quot;dstserlineptr&quot; points=&quot;563 184, 570 190, 577 184&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;rect id=&quot;dstser&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;540&quot; y=&quot;130&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;text id=&quot;dstsertext1&quot; x=&quot;570&quot; y=&quot;148&quot; class=&quot;dstoff&quot;&gt;Serialized&lt;/text&gt;
+		&lt;text id=&quot;dstsertext2&quot; x=&quot;570&quot; y=&quot;158&quot; class=&quot;dstoff&quot;&gt;to XML&lt;/text&gt;
+    &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;dstser&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Destination Deserialize</name>
+            <sequenceNumber>18</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformdstdes</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;dstdes&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/destinationConnectors&quot; mode=&quot;dstdes&quot;&gt;
+		&lt;!-- TODO: (when needed) research XSL to toggle srcoff/srcon --&gt;
+		&lt;line id=&quot;dstdesline&quot; x1=&quot;460&quot; y1=&quot;210&quot; x2=&quot;440&quot; y2=&quot;210&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;polygon id=&quot;dstdeslineptr&quot; points=&quot;446 217, 440 210, 446 203&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;rect id=&quot;dstdes&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;460&quot; y=&quot;190&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;text id=&quot;dstdestext1&quot; x=&quot;490&quot; y=&quot;208&quot; class=&quot;dstoff&quot;&gt;Deserialized&lt;/text&gt;
+		&lt;text id=&quot;dstdestext2&quot; x=&quot;490&quot; y=&quot;218&quot; class=&quot;dstoff&quot;&gt;e.g., to HL7&lt;/text&gt;
+    &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;dstdes&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Destination Response (all)</name>
+            <sequenceNumber>19</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformdstrspall</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+	&lt;!-- @apiinfo &quot;&quot;&quot;Highlights not yet added, not yet needed.&quot;&quot;&quot; --&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;xformdstrspall&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/destinationConnectors&quot; mode=&quot;xformdstrspall&quot;&gt;
+		&lt;!-- TODO: (when needed) research XSL to toggle srcoff/srcon and/or dstoff/dston --&gt;
+		&lt;polyline id=&quot;dstconndataline&quot; points=&quot;410 230, 410 260, 330 260, 330 235&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;polygon id=&quot;dstrspdesdataptr&quot; points=&quot;323 236, 330 230, 337 236&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;ellipse id=&quot;dstrspdesdata1&quot; cx=&quot;370&quot; cy=&quot;270&quot; rx=&quot;10&quot; ry=&quot;5&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;rect id=&quot;dstrspdesdata2&quot; x=&quot;360&quot; y=&quot;255&quot; width=&quot;20&quot; height=&quot;15&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;ellipse id=&quot;dstrspdesdata3&quot; cx=&quot;370&quot; cy=&quot;255&quot; rx=&quot;10&quot; ry=&quot;5&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;line id=&quot;dstrspdesdata4&quot; x1=&quot;360&quot; y1=&quot;256&quot; x2=&quot;360&quot; y2=&quot;271&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;line id=&quot;dstrspdesdata5&quot; x1=&quot;380&quot; y1=&quot;256&quot; x2=&quot;380&quot; y2=&quot;271&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;text id=&quot;dstconndata6&quot; x=&quot;354&quot; y=&quot;285&quot; class=&quot;rspoff&quot;&gt;Response&lt;/text&gt;
+
+		&lt;line id=&quot;dstrspserline&quot; x1=&quot;330&quot; y1=&quot;175&quot; x2=&quot;330&quot; y2=&quot;190&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;polygon id=&quot;dstrspserlineptr&quot; points=&quot;323 176, 330 170, 337 176&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;rect id=&quot;dstrspser&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;300&quot; y=&quot;190&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;text id=&quot;srcdestext1&quot; x=&quot;330&quot; y=&quot;208&quot; class=&quot;dstoff&quot;&gt;Serialized&lt;/text&gt;
+		&lt;text id=&quot;srcdestext2&quot; x=&quot;330&quot; y=&quot;218&quot; class=&quot;dstoff&quot;&gt;to XML&lt;/text&gt;
+		
+		&lt;polyline id=&quot;dstrspxformdataline&quot; points=&quot;300 150, 250 150, 250 185&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;polygon id=&quot;dstrspxformdatalineptr&quot; points=&quot;243 184, 250 190, 257 184&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;ellipse id=&quot;dstrspxformdata1&quot; cx=&quot;250&quot; cy=&quot;160&quot; rx=&quot;10&quot; ry=&quot;5&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;rect id=&quot;dstrspxformdata2&quot; x=&quot;240&quot; y=&quot;145&quot; width=&quot;20&quot; height=&quot;15&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;ellipse id=&quot;dstrspxformdata3&quot; cx=&quot;250&quot; cy=&quot;145&quot; rx=&quot;10&quot; ry=&quot;5&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;line id=&quot;dstrspxformdata4&quot; x1=&quot;240&quot; y1=&quot;146&quot; x2=&quot;240&quot; y2=&quot;161&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;line id=&quot;dstrspxformdata5&quot; x1=&quot;260&quot; y1=&quot;146&quot; x2=&quot;260&quot; y2=&quot;161&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;text id=&quot;dstrspxformdata6&quot; x=&quot;220&quot; y=&quot;128&quot; class=&quot;rspoff&quot;&gt;Response&lt;/text&gt;
+		&lt;text id=&quot;dstrspxformdata7&quot; x=&quot;220&quot; y=&quot;137&quot; class=&quot;rspoff&quot;&gt;Transformed&lt;/text&gt;
+		&lt;rect id=&quot;dstrspxform&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;300&quot; y=&quot;130&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;text id=&quot;dstrspxformtext1&quot; x=&quot;330&quot; y=&quot;153&quot; class=&quot;dstoff&quot;&gt;Transformer&lt;/text&gt;
+		&lt;text id=&quot;dstrspxformtext2&quot; x=&quot;330&quot; y=&quot;158&quot; class=&quot;dstoff&quot;&gt;&lt;/text&gt;
+		
+		&lt;polyline id=&quot;dstrspdesline&quot; points=&quot;250 230, 250 260, 170 260, 170 235&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;polygon id=&quot;dstrspdeslineptr&quot; points=&quot;163 236, 170 230, 177 236&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;ellipse id=&quot;dstrspdesdata1&quot; cx=&quot;210&quot; cy=&quot;270&quot; rx=&quot;10&quot; ry=&quot;5&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;rect id=&quot;dstrspdesdata2&quot; x=&quot;200&quot; y=&quot;255&quot; width=&quot;20&quot; height=&quot;15&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;ellipse id=&quot;dstrspdesdata3&quot; cx=&quot;210&quot; cy=&quot;255&quot; rx=&quot;10&quot; ry=&quot;5&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;line id=&quot;dstrspdesdata4&quot; x1=&quot;200&quot; y1=&quot;256&quot; x2=&quot;200&quot; y2=&quot;271&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;line id=&quot;dstrspdesdata5&quot; x1=&quot;220&quot; y1=&quot;256&quot; x2=&quot;220&quot; y2=&quot;271&quot; class=&quot;rspoff&quot; /&gt;
+		&lt;text id=&quot;dstrspdesdata6&quot; x=&quot;180&quot; y=&quot;285&quot; class=&quot;rspoff&quot;&gt;Processed Response&lt;/text&gt;
+		&lt;rect id=&quot;dstrspdes&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;220&quot; y=&quot;190&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;text id=&quot;dstrspdestext1&quot; x=&quot;250&quot; y=&quot;208&quot; class=&quot;dstoff&quot;&gt;Deserialized&lt;/text&gt;
+		&lt;text id=&quot;dstrspdestext2&quot; x=&quot;250&quot; y=&quot;218&quot; class=&quot;dstoff&quot;&gt;e.g., to HL7&lt;/text&gt;
+		
+		&lt;line id=&quot;dstrspwaitline&quot; x1=&quot;140&quot; y1=&quot;210&quot; x2=&quot;120&quot; y2=&quot;210&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;polygon id=&quot;dstrspwaitptr&quot; points=&quot;126 217, 120 210, 126 203&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;rect id=&quot;dstrspwait&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;140&quot; y=&quot;190&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;dstoff&quot; /&gt;
+		&lt;text id=&quot;dstrspwaittext1&quot; x=&quot;170&quot; y=&quot;208&quot; class=&quot;dstoff&quot;&gt;Wait&lt;/text&gt;
+		&lt;text id=&quot;dstrspwaittext2&quot; x=&quot;170&quot; y=&quot;218&quot; class=&quot;dstoff&quot;&gt;for All&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;xformdstrspall&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+
+
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Postprocessor</name>
+            <sequenceNumber>20</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformsrcpost</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;srcpost&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/postprocessingScript&quot; mode=&quot;srcpost&quot;&gt;
+		&lt;xsl:variable name=&quot;textvalue&quot;&gt;&lt;xsl:value-of select=&quot;normalize-space()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;(string-length($textvalue) &gt; 0) and not ($textvalue = &apos;// This script executes once after a message has been processed // Responses returned from here will be stored as &amp;quot;Postprocessor&amp;quot; in the response map return;&apos;)&quot;&gt;srcon&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;srcoff&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;
+		&lt;/xsl:variable&gt;
+		&lt;line id=&quot;srcpostline&quot; x1=&quot;90&quot; y1=&quot;165&quot; x2=&quot;90&quot; y2=&quot;190&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;srcpostlineptr&quot; points=&quot;83 166, 90 160, 97 166&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;rect id=&quot;srcpost&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;60&quot; y=&quot;190&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;srcposttext1&quot; x=&quot;90&quot; y=&quot;208&quot; class=&quot;{$style}&quot;&gt;Postprocessor&lt;/text&gt;
+		&lt;text id=&quot;srcpostext2&quot; x=&quot;90&quot; y=&quot;218&quot; class=&quot;{$style}&quot;&gt;Script&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;srcpost&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Select Response</name>
+            <sequenceNumber>21</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformsrcselrsp</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+	&lt;!-- @apiinfo &quot;&quot;&quot;Highlights not yet added, not yet needed.&quot;&quot;&quot; --&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;srcselrsp&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector&quot; mode=&quot;srcselrsp&quot;&gt;
+		&lt;!-- TODO: (when needed) research XSL to toggle srcoff/srcon --&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;srcoff&lt;/xsl:variable&gt;
+		&lt;line id=&quot;srcselrspline&quot; x1=&quot;90&quot; y1=&quot;95&quot; x2=&quot;90&quot; y2=&quot;120&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;srcselrsplineptr&quot; points=&quot;83 96, 90 90, 97 96&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;rect id=&quot;srcselrsp&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;60&quot; y=&quot;120&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;srcselrsptext1&quot; x=&quot;90&quot; y=&quot;138&quot; class=&quot;{$style}&quot;&gt;Select&lt;/text&gt;
+		&lt;text id=&quot;srcselrsptext2&quot; x=&quot;90&quot; y=&quot;148&quot; class=&quot;{$style}&quot;&gt;Response&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;srcselrsp&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Source Response</name>
+            <sequenceNumber>22</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformsrcrsp</resultVariable>
+            <template>&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;srcrsp&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;/channel/sourceConnector/properties&quot; mode=&quot;srcrsp&quot;&gt;
+		&lt;xsl:variable name=&quot;type&quot;&gt;&lt;xsl:value-of select=&quot;@class&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;srcrsp&quot;&gt;&lt;xsl:value-of select=&quot;sourceConnectorProperties/responseVariable/text()&quot; /&gt;&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;not (($srcrsp = &apos;None&apos;) or (contains($type, &apos;JavaScriptReceiver&apos;)))&quot;&gt;rspon&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;rspoff&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;	
+		&lt;/xsl:variable&gt;
+		&lt;polyline id=&quot;srcrspline&quot; points=&quot;90 50, 90 35, 20 35, 20 45&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;srcrsplineptr&quot; points=&quot;13 44, 20 50, 27 44&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;srcrsptext&quot; x=&quot;37&quot; y=&quot;29&quot; class=&quot;{$style}&quot;&gt;Response&lt;/text&gt;
+     &lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;srcrsp&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Destination Transformer</name>
+            <sequenceNumber>23</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformdstxform</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;dstxform&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+  	&lt;xsl:template match=&quot;/channel/destinationConnectors&quot; mode=&quot;dstxform&quot;&gt;
+		&lt;xsl:variable name=&quot;stepcount&quot;&gt;
+  			&lt;xsl:value-of select=&quot;count(connector/transformer/elements[count(*) &gt; 0])&quot; /&gt;
+  		&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;($stepcount &gt; 0)&quot;&gt;dston&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;dstoff&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;	
+		&lt;/xsl:variable&gt;
+		&lt;line id=&quot;dstxformline&quot; x1=&quot;490&quot; y1=&quot;170&quot; x2=&quot;490&quot; y2=&quot;185&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;dstxformlineptr&quot; points=&quot;483 184, 490 190, 497 184&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;rect id=&quot;dstxform&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;460&quot; y=&quot;130&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;dstxformtext1&quot; x=&quot;490&quot; y=&quot;153&quot; class=&quot;{$style}&quot;&gt;Transformer&lt;/text&gt;
+		&lt;text id=&quot;dstxformtext2&quot; x=&quot;490&quot; y=&quot;158&quot; class=&quot;{$style}&quot;&gt;&lt;/text&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;dstxform&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+
+
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Destination Filter</name>
+            <sequenceNumber>24</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformdstfil</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;dstfil&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+  	&lt;xsl:template match=&quot;/channel/destinationConnectors&quot; mode=&quot;dstfil&quot;&gt;
+		&lt;xsl:variable name=&quot;stepcount&quot;&gt;
+  			&lt;xsl:value-of select=&quot;count(connector/filter/elements[count(*) &gt; 0])&quot; /&gt;
+  		&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;($stepcount &gt; 0)&quot;&gt;dston&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;dstoff&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;	
+		&lt;/xsl:variable&gt;
+		&lt;line id=&quot;dstfilline&quot; x1=&quot;542&quot; y1=&quot;192&quot; x2=&quot;525&quot; y2=&quot;175&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;dstfillineptr&quot; points=&quot;520 180, 520 170, 530 170&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;rect id=&quot;dstfil&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;540&quot; y=&quot;190&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;dstfiltext1&quot; x=&quot;570&quot; y=&quot;213&quot; class=&quot;{$style}&quot;&gt;Filter&lt;/text&gt;
+		&lt;text id=&quot;dstfiltext2&quot; x=&quot;570&quot; y=&quot;218&quot; class=&quot;{$style}&quot;&gt;&lt;/text&gt;
+	&lt;/xsl:template&gt;
+
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;dstfil&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+          <com.mirth.connect.plugins.xsltstep.XsltStep version="3.11.0">
+            <name>Destination Connector</name>
+            <sequenceNumber>25</sequenceNumber>
+            <enabled>true</enabled>
+            <sourceXml>connectorMessage.getRawData()</sourceXml>
+            <resultVariable>xformdstconn</resultVariable>
+            <template>&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot; xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;&gt;
+
+     &lt;xsl:template match=&quot;/&quot; &gt;
+     	&lt;xsl:apply-templates select=&quot;*|text()&quot; mode=&quot;dstconn&quot; /&gt;
+     &lt;/xsl:template&gt;
+
+  	&lt;xsl:template match=&quot;/channel/destinationConnectors&quot; mode=&quot;dstconn&quot;&gt;
+		&lt;xsl:variable name=&quot;stepcount&quot;&gt;
+  			&lt;xsl:value-of select=&quot;count(connector)&quot; /&gt;
+  		&lt;/xsl:variable&gt;
+		&lt;xsl:variable name=&quot;style&quot;&gt;
+			&lt;xsl:choose&gt;
+				&lt;xsl:when test=&quot;($stepcount &gt; 0)&quot;&gt;dston&lt;/xsl:when&gt;
+				&lt;xsl:otherwise&gt;dstoff&lt;/xsl:otherwise&gt;
+			&lt;/xsl:choose&gt;	
+		&lt;/xsl:variable&gt;		
+		&lt;line id=&quot;dstconnline&quot; x1=&quot;430&quot; y1=&quot;175&quot; x2=&quot;430&quot; y2=&quot;190&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;dstconnlineptr&quot; points=&quot;423 176, 430 170, 437 176&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;rect id=&quot;dstconn&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;380&quot; y=&quot;190&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;dstconntext1&quot; x=&quot;410&quot; y=&quot;208&quot; class=&quot;{$style}&quot;&gt;Destination&lt;/text&gt;
+		&lt;text id=&quot;dstconntext2&quot; x=&quot;410&quot; y=&quot;218&quot; class=&quot;{$style}&quot;&gt;Connector&lt;/text&gt;
+		
+		&lt;line id=&quot;dstsline2&quot; x1=&quot;390&quot; y1=&quot;170&quot; x2=&quot;390&quot; y2=&quot;185&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;polygon id=&quot;dstslineptr2&quot; points=&quot;383 184, 390 190, 397 184&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;rect id=&quot;dsts&quot; rx=&quot;1&quot; ry=&quot;1&quot; x=&quot;380&quot; y=&quot;130&quot; width=&quot;60&quot; height=&quot;40&quot; class=&quot;{$style}&quot; /&gt;
+		&lt;text id=&quot;dststext1&quot; x=&quot;410&quot; y=&quot;153&quot; class=&quot;{$style}&quot;&gt;Destination(s)&lt;/text&gt;
+		&lt;text id=&quot;dststext2&quot; x=&quot;410&quot; y=&quot;158&quot; class=&quot;{$style}&quot;&gt;&lt;/text&gt;
+	&lt;/xsl:template&gt;
+	
+	&lt;xsl:template match=&quot;text()&quot; mode=&quot;dstconn&quot; /&gt;
+
+&lt;/xsl:stylesheet&gt;
+</template>
+            <useCustomFactory>false</useCustomFactory>
+            <customFactory></customFactory>
+          </com.mirth.connect.plugins.xsltstep.XsltStep>
+        </elements>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="3.11.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="3.11.0">
+        <elements/>
+      </filter>
+      <transportName>File Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+    <connector version="3.11.0">
+      <metaDataId>2</metaDataId>
+      <name>Deploy and Other Channel Scripts for Code Review</name>
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="3.11.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="3.11.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <scheme>FILE</scheme>
+        <host>/data/xml/write/${exportchannelname}/doc/script</host>
+        <outputPattern>Channel.md</outputPattern>
+        <anonymous>true</anonymous>
+        <username>anonymous</username>
+        <password>anonymous</password>
+        <timeout>10000</timeout>
+        <keepConnectionOpen>true</keepConnectionOpen>
+        <maxIdleTime>0</maxIdleTime>
+        <secure>true</secure>
+        <passive>true</passive>
+        <validateConnection>true</validateConnection>
+        <outputAppend>false</outputAppend>
+        <errorOnExists>false</errorOnExists>
+        <temporary>false</temporary>
+        <binary>false</binary>
+        <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
+        <template># ${exportchannelname}
+
+__Channel Export__ - ${exportlastmodified}
+
+__Deploy Script__
+
+```
+${scriptdeploy}
+```
+
+__Undeploy Script__
+
+```
+${scriptundeploy}
+```
+
+__Preprocessor Script__
+
+```
+${scriptpre}
+```
+
+__Postprocessor Script__
+
+```
+${scriptpost}
+```
+</template>
+      </properties>
+      <transformer version="3.11.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <outboundTemplate encoding="base64"></outboundTemplate>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="3.11.0">
+        <elements/>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="3.11.0">
+        <elements>
+          <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="3.11.0">
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>return ((channelMap.get(&apos;scriptdeploy&apos;) != &quot;&quot;) || (channelMap.get(&apos;scriptundeploy&apos;) != &quot;&quot;) || (channelMap.get(&apos;scriptpre&apos;) != &quot;&quot;) || (channelMap.get(&apos;scriptpost&apos;) != &quot;&quot;));</script>
+          </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
+        </elements>
+      </filter>
+      <transportName>File Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+    <connector version="3.11.0">
+      <metaDataId>3</metaDataId>
+      <name>Source Connector Script for Code Review</name>
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="3.11.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="3.11.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <scheme>FILE</scheme>
+        <host>/data/xml/write/${exportchannelname}/doc/script</host>
+        <outputPattern>SourceConnector.md</outputPattern>
+        <anonymous>true</anonymous>
+        <username>anonymous</username>
+        <password>anonymous</password>
+        <timeout>10000</timeout>
+        <keepConnectionOpen>true</keepConnectionOpen>
+        <maxIdleTime>0</maxIdleTime>
+        <secure>true</secure>
+        <passive>true</passive>
+        <validateConnection>true</validateConnection>
+        <outputAppend>false</outputAppend>
+        <errorOnExists>false</errorOnExists>
+        <temporary>false</temporary>
+        <binary>false</binary>
+        <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
+        <template># ${exportchannelname}
+
+__Channel Export__ - ${exportlastmodified}
+
+__Source Connector Script__
+```
+${scriptsrcconn}
+```</template>
+      </properties>
+      <transformer version="3.11.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="3.11.0">
+        <elements/>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="3.11.0">
+        <elements>
+          <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="3.11.0">
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>return (channelMap.get(&apos;scriptsrcconn&apos;) != &quot;&quot;);</script>
+          </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
+        </elements>
+      </filter>
+      <transportName>File Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+    <connector version="3.11.0">
+      <metaDataId>4</metaDataId>
+      <name>Source Transformer Scripts for Code Review</name>
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="3.11.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="3.11.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <scheme>FILE</scheme>
+        <host>/data/xml/write/${exportchannelname}/doc/script</host>
+        <outputPattern>SourceTransformer.md</outputPattern>
+        <anonymous>true</anonymous>
+        <username>anonymous</username>
+        <password>anonymous</password>
+        <timeout>10000</timeout>
+        <keepConnectionOpen>true</keepConnectionOpen>
+        <maxIdleTime>0</maxIdleTime>
+        <secure>true</secure>
+        <passive>true</passive>
+        <validateConnection>true</validateConnection>
+        <outputAppend>false</outputAppend>
+        <errorOnExists>false</errorOnExists>
+        <temporary>false</temporary>
+        <binary>false</binary>
+        <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
+        <template># ${exportchannelname}
+
+__Channel Export__ - ${exportlastmodified}
+
+__Source Transformer Scripts__
+```
+${scriptsrcxform}
+```</template>
+      </properties>
+      <transformer version="3.11.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="3.11.0">
+        <elements/>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="3.11.0">
+        <elements>
+          <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="3.11.0">
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>return (channelMap.get(&apos;scriptsrcxform&apos;) != &quot;&quot;);</script>
+          </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
+        </elements>
+      </filter>
+      <transportName>File Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+    <connector version="3.11.0">
+      <metaDataId>5</metaDataId>
+      <name>Source Filter Scripts for Code Review</name>
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="3.11.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="3.11.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <scheme>FILE</scheme>
+        <host>/data/xml/write/${exportchannelname}/doc/script</host>
+        <outputPattern>SourceFilter.md</outputPattern>
+        <anonymous>true</anonymous>
+        <username>anonymous</username>
+        <password>anonymous</password>
+        <timeout>10000</timeout>
+        <keepConnectionOpen>true</keepConnectionOpen>
+        <maxIdleTime>0</maxIdleTime>
+        <secure>true</secure>
+        <passive>true</passive>
+        <validateConnection>true</validateConnection>
+        <outputAppend>false</outputAppend>
+        <errorOnExists>false</errorOnExists>
+        <temporary>false</temporary>
+        <binary>false</binary>
+        <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
+        <template># ${exportchannelname}
+
+__Channel Export__ - ${exportlastmodified}
+
+__Source Filter Scripts__
+```
+${scriptsrcfil}
+```</template>
+      </properties>
+      <transformer version="3.11.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="3.11.0">
+        <elements/>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="3.11.0">
+        <elements>
+          <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="3.11.0">
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>return (channelMap.get(&apos;scriptsrcfil&apos;) != &quot;&quot;);</script>
+          </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
+        </elements>
+      </filter>
+      <transportName>File Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+    <connector version="3.11.0">
+      <metaDataId>7</metaDataId>
+      <name>Destination Scripts for Code Review</name>
+      <properties class="com.mirth.connect.connectors.file.FileDispatcherProperties" version="3.11.0">
+        <pluginProperties/>
+        <destinationConnectorProperties version="3.11.0">
+          <queueEnabled>false</queueEnabled>
+          <sendFirst>false</sendFirst>
+          <retryIntervalMillis>10000</retryIntervalMillis>
+          <regenerateTemplate>false</regenerateTemplate>
+          <retryCount>0</retryCount>
+          <rotate>false</rotate>
+          <includeFilterTransformer>false</includeFilterTransformer>
+          <threadCount>1</threadCount>
+          <threadAssignmentVariable></threadAssignmentVariable>
+          <validateResponse>false</validateResponse>
+          <resourceIds class="linked-hash-map">
+            <entry>
+              <string>Default Resource</string>
+              <string>[Default Resource]</string>
+            </entry>
+          </resourceIds>
+          <queueBufferSize>1000</queueBufferSize>
+          <reattachAttachments>true</reattachAttachments>
+        </destinationConnectorProperties>
+        <scheme>FILE</scheme>
+        <host>/data/xml/write/${exportchannelname}/doc/script</host>
+        <outputPattern>Destinations.md</outputPattern>
+        <anonymous>true</anonymous>
+        <username>anonymous</username>
+        <password>anonymous</password>
+        <timeout>10000</timeout>
+        <keepConnectionOpen>true</keepConnectionOpen>
+        <maxIdleTime>0</maxIdleTime>
+        <secure>true</secure>
+        <passive>true</passive>
+        <validateConnection>true</validateConnection>
+        <outputAppend>false</outputAppend>
+        <errorOnExists>false</errorOnExists>
+        <temporary>false</temporary>
+        <binary>false</binary>
+        <charsetEncoding>DEFAULT_ENCODING</charsetEncoding>
+        <template># ${exportchannelname}
+
+__Channel Export__ - ${exportlastmodified}
+
+__Destination Scripts__
+```
+${scriptdstconn}
+```</template>
+      </properties>
+      <transformer version="3.11.0">
+        <elements/>
+        <inboundTemplate encoding="base64"></inboundTemplate>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </transformer>
+      <responseTransformer version="3.11.0">
+        <elements/>
+        <inboundDataType>XML</inboundDataType>
+        <outboundDataType>XML</outboundDataType>
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </inboundProperties>
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.xml.XMLDataTypeProperties" version="3.11.0">
+          <serializationProperties class="com.mirth.connect.plugins.datatypes.xml.XMLSerializationProperties" version="3.11.0">
+            <stripNamespaces>false</stripNamespaces>
+          </serializationProperties>
+          <batchProperties class="com.mirth.connect.plugins.datatypes.xml.XMLBatchProperties" version="3.11.0">
+            <splitType>Element_Name</splitType>
+            <elementName></elementName>
+            <level>1</level>
+            <query></query>
+            <batchScript></batchScript>
+          </batchProperties>
+        </outboundProperties>
+      </responseTransformer>
+      <filter version="3.11.0">
+        <elements>
+          <com.mirth.connect.plugins.javascriptrule.JavaScriptRule version="3.11.0">
+            <sequenceNumber>0</sequenceNumber>
+            <enabled>true</enabled>
+            <script>return (channelMap.get(&apos;scriptdstconn&apos;) != &quot;&quot;);</script>
+          </com.mirth.connect.plugins.javascriptrule.JavaScriptRule>
+        </elements>
+      </filter>
+      <transportName>File Writer</transportName>
+      <mode>DESTINATION</mode>
+      <enabled>true</enabled>
+      <waitForPrevious>true</waitForPrevious>
+    </connector>
+  </destinationConnectors>
+  <preprocessingScript>// @apiinfo &quot;&quot;&quot;Example only: Preprocesses channel message data.&quot;&quot;&quot;
+// Modify the message variable below to pre process data
+return message;</preprocessingScript>
+  <postprocessingScript>// @apiinfo &quot;&quot;&quot;Example only: Responses are stored as &quot;Postprocessor&quot; in the response map.&quot;&quot;&quot;
+return;</postprocessingScript>
+  <deployScript>// This script executes once when the channel is deployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+return;</deployScript>
+  <undeployScript>// @apiinfo &quot;&quot;&quot;Example only: Notes about calls out to APIs in other code, e.g. Kotlin.
+// This script executes once when the channel is undeployed
+// You only have access to the globalMap and globalChannelMap here to persist data
+logger.info(&quot;Undeploy: Thank you for using this version of the DiagramChannel.&quot;);
+return;</undeployScript>
+  <properties version="3.11.0">
+    <clearGlobalChannelMap>true</clearGlobalChannelMap>
+    <messageStorageMode>DEVELOPMENT</messageStorageMode>
+    <encryptData>false</encryptData>
+    <removeContentOnCompletion>false</removeContentOnCompletion>
+    <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+    <initialState>STARTED</initialState>
+    <storeAttachments>true</storeAttachments>
+    <metaDataColumns>
+      <metaDataColumn>
+        <name>SOURCE</name>
+        <type>STRING</type>
+        <mappingName>mirth_source</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>TYPE</name>
+        <type>STRING</type>
+        <mappingName>mirth_type</mappingName>
+      </metaDataColumn>
+    </metaDataColumns>
+    <attachmentProperties version="3.11.0">
+      <type>None</type>
+      <properties/>
+    </attachmentProperties>
+    <resourceIds class="linked-hash-map">
+      <entry>
+        <string>5b2a20a1-fdc5-43bd-9663-8a867cdfa51b</string>
+        <string>Stubs</string>
+      </entry>
+    </resourceIds>
+  </properties>
+  <exportData>
+    <metadata>
+      <enabled>true</enabled>
+      <lastModified>
+        <time>1651763075365</time>
+        <timezone>America/New_York</timezone>
+      </lastModified>
+      <pruningSettings>
+        <archiveEnabled>true</archiveEnabled>
+      </pruningSettings>
+    </metadata>
+  </exportData>
+</channel>

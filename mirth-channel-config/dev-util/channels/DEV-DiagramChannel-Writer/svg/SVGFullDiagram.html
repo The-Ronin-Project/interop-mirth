@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            /* base styles */
+            body {
+                margin-left: 15px;
+                font-family: Arial;
+            }
+            h2 {
+                padding-left: 8px;
+            }
+            p {
+                padding-left: 10px;
+            }
+            table.notes {
+                margin-left: 10px;
+                border-collapse: collapse;
+                border: 0.5px solid black;
+            }
+            table.notes th {
+                text-align: left;
+            }
+            table.notes td.raw {
+                background-color: #f0f0f0;
+            }
+            /* active colors
+                (red) #CE1141; Atlanta Braves
+                (blue) #004687; KC Royals
+                (green) #005C5C; Seattle Mariners
+                (gold) #FFC72C; Warriors
+            */
+
+            /* background panels */
+
+            rect.srcbg {
+                fill: #e6e6e6;
+                stroke: #e6e6e6;
+            }
+            rect.dstbg {
+                fill: #f0f0f0;
+                stroke: #f0f0f0;
+            }
+            rect.xformpanel {
+                fill: white;
+                stroke: white;
+            }
+            text.bgbig {
+                font-size: 0.7em;
+                text-anchor: left;
+                fill: #090909;
+                font-weight: bold;
+            }
+
+            /* dimmed deploy/undeploy */
+
+            rect.deployoff {
+                fill: white;
+                stroke: silver;
+            }
+            text.deployoff {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: darkgray;
+                font-weight: normal;
+            }
+
+            /* dimmed data in */
+
+            rect.dataoff {
+                fill: white;
+                stroke: silver;
+            }
+            line.dataoff {
+                stroke-width: 3;
+                stroke: silver;
+            }
+            polygon.dataoff {
+                fill: silver;
+            }
+            text.dataoff {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: darkgray;
+                font-weight: normal;
+            }
+
+            /* dimmed channel segments: source */
+
+            rect.srcoff {
+                fill: white;
+                stroke: silver;
+            }
+            line.srcoff {
+                stroke-width: 3;
+                stroke: silver;
+            }
+            polygon.srcoff {
+                fill: silver;
+            }
+            text.srcoff {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: darkgray;
+                font-weight: normal;
+            }
+
+            /* dimmed channel segments: destination */
+
+            rect.dstoff {
+                fill: white;
+                stroke: silver;
+            }
+            line.dstoff {
+                stroke-width: 3;
+                stroke: silver;
+            }
+            polygon.dstoff {
+                fill: silver;
+            }
+            text.dstoff {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: darkgray;
+                font-weight: normal;
+            }
+
+            /* dimmed channel segments: response */
+
+            rect.rspoff {
+                fill: white;
+                stroke: white;
+            }
+            line.rspoff {
+                stroke-width: 1;
+                stroke: silver;
+            }
+            polyline.rspoff {
+                stroke-width: 3;
+                stroke: silver;
+                fill: none;
+            }
+            ellipse.rspoff {
+                fill: white;
+                stroke: silver;
+            }
+            polygon.rspoff {
+                fill: silver;
+            }
+            text.rspoff {
+                font-size: 0.45em;
+                text-anchor: left;
+                fill: darkgray;
+                font-weight: normal;
+            }
+
+            /* active deploy/undeploy */
+
+            rect.deployon {
+                fill: #005C5C;
+                stroke: #005C5C;
+            }
+            text.deployon {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: white;
+                font-weight: bold;
+            }
+
+            /* active data in */
+
+            rect.dataon {
+                fill: #FFC72C;
+                stroke: #FFC72C;
+            }
+            line.dataon {
+                stroke-width: 5;
+                stroke: #FFC72C;
+            }
+            polygon.dataon {
+                fill: #FFC72C;
+              }
+            text.dataon {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: #090909;
+                font-weight: bold;
+            }
+
+            /* active channel segments: source */
+
+            rect.srcon {
+                fill: #CE1141;
+                stroke: #CE1141;
+            }
+            line.srcon {
+                stroke-width: 5;
+                stroke: #CE1141;
+            }
+            polygon.srcon {
+                fill: #CE1141;
+              }
+            text.srcon {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: white;
+                font-weight: bold;
+            }
+
+            /* active channel segments: destination */
+
+            rect.dston {
+                fill: #004687;
+                stroke: #004687;
+            }
+            line.dston {
+                stroke-width: 5;
+                stroke: #004687;
+            }
+            polygon.dston {
+                fill: #004687;
+            }
+            text.dston {
+                font-size: 0.55em;
+                text-anchor: middle;
+                fill: white;
+                font-weight: bold;
+            }
+
+            /* active channel segments: response */
+
+            rect.rspon {
+                fill: #FFC72C;
+                stroke: #FFC72C;
+            }
+            line.rspon {
+                stroke-width: 1;
+                stroke: #FFC72C;
+            }
+            polyline.rspon {
+                stroke-width: 5;
+                stroke: #FFC72C;
+                fill: none;
+            }
+            ellipse.rspon {
+                fill: #FFC72C;
+                stroke: #FFC72C;
+            }
+            polygon.rspon {
+                fill: #FFC72C;
+            }
+            text.rspon {
+                font-size: 0.45em;
+                text-anchor: left;
+                fill: #090909;
+                font-weight: bold;
+            }
+       </style>
+    </head>
+    <body>
+        <h2>Channel Flow Diagram</h2>
+        <svg width="1280" height="630" viewBox="-5 0 635 290">
+
+            <!-- background panels -->
+
+            <rect id="srcbg" rx="0" ry="0" x="48" y="-5" width="572" height="295" class="srcbg" />
+            <rect id="dstbg" rx="0" ry="0" x="133" y="110" width="487" height="180" class="dstbg" />
+            <rect id="srcbgxform" rx="0" ry="0" x="290" y="40" width="320" height="60" class="xformpanel" />
+            <rect id="dstbgxform" rx="0" ry="0" x="451" y="120" width="159" height="120" class="xformpanel" />
+            <rect id="dstbgrsp" rx="0" ry="0" x="210" y="120" width="160" height="120" class="xformpanel" />
+            <text id="bgtext1" x="60" y="12" class="bgbig">Source Processing</text>
+            <text id="bgtext2" x="480" y="280" class="bgbig">Destination Processing</text>
+
+            <!-- deploy/undeploy -->
+
+            <rect id="deploy" rx="1" ry="1" x="0" y="190" width="40" height="40" class="deployoff" />
+            <text id="deploytext1" x="20" y="208" class="deployoff">Deploy</text>
+            <text id="deploytext2" x="20" y="218" class="deployoff">Script</text>
+
+            <rect id="undeploy" rx="1" ry="1" x="0" y="250" width="40" height="40" class="deployoff" />
+            <text id="undeploytext1" x="20" y="268" class="deployoff">Undeploy</text>
+            <text id="undeploytext2" x="20" y="278" class="deployoff">Script</text>
+
+            <!-- channel segments: source in -->
+
+            <line id="srcdataline" x1="40" y1="70" x2="55" y2="70" class="dataoff" />
+            <polygon id="srcdatalineptr" points="54 63, 60 70, 54 77" class="dataoff" />
+            <rect id="srcdata" rx="1" ry="1" x="0" y="50" width="40" height="40" class="dataoff" />
+            <text id="srcdatatext1" x="20" y="68" class="dataoff">Data</text>
+            <text id="srcdatatext2" x="20" y="78" class="dataoff">Source</text>
+
+            <line id="srcconnline" x1="120" y1="70" x2="135" y2="70" class="srcoff" />
+            <polygon id="srcconnlineptr" points="134 63, 140 70, 134 77" class="srcoff" />
+            <rect id="srcconn" rx="1" ry="1" x="60" y="50" width="60" height="40" class="srcoff" />
+            <line id="srcconnline" x1="120" y1="70" x2="135" y2="70" class="srcoff" />
+            <polygon id="srcconnlineptr" points="134 63, 140 70, 134 77" class="srcoff" />
+            <text id="srcconntext1" x="90" y="68" class="srcoff">Source</text>
+            <text id="srcconntext2" x="90" y="78" class="srcoff">Connector</text>
+
+            <line id="srcattline" x1="200" y1="70" x2="215" y2="70" class="srcoff" />
+            <polygon id="srcattlineptr" points="214 63, 220 70, 214 77" class="srcoff" />
+            <rect id="srcatt" rx="1" ry="1" x="140" y="50" width="60" height="40" class="srcoff" />
+            <text id="srcatttext1" x="170" y="68" class="srcoff">Attachment</text>
+            <text id="srcatttext2" x="170" y="78" class="srcoff">Handler</text>
+
+            <line id="srcpreline" x1="280" y1="70" x2="295" y2="70" class="srcoff" />
+            <polygon id="srcprelineptr" points="294 63, 300 70, 294 77" class="srcoff" />
+            <rect id="srcpre" rx="1" ry="1" x="220" y="50" width="60" height="40" class="srcoff" />
+            <text id="srcpretext1" x="250" y="68" class="srcoff">Preprocessor</text>
+            <text id="srcpretext2" x="250" y="78" class="srcoff">Script</text>
+
+            <!-- channel segments: source transform -->
+
+            <line id="srcserline" x1="360" y1="70" x2="375" y2="70" class="srcoff" />
+            <polygon id="srcserlineptr" points="374 63, 380 70, 374 77" class="srcoff" />
+            <rect id="srcser" rx="1" ry="1" x="300" y="50" width="60" height="40" class="srcoff" />
+            <text id="srcsertext1" x="330" y="68" class="srcoff">Serialized</text>
+            <text id="srcsertext2" x="330" y="78" class="srcoff">to XML</text>
+
+            <line id="srcfilline" x1="440" y1="70" x2="455" y2="70" class="srcoff" />
+            <polygon id="srcfillineptr" points="454 63, 460 70, 454 77" class="srcoff" />
+            <rect id="srcfil" rx="1" ry="1" x="380" y="50" width="60" height="40" class="srcoff" />
+            <text id="srcfiltext1" x="410" y="73" class="srcoff">Filter</text>
+            <text id="srcfiltext2" x="410" y="78" class="srcoff"></text>
+
+            <line id="srcxformline" x1="520" y1="70" x2="535" y2="70" class="srcoff" />
+            <polygon id="srcxformlineptr" points="534 63, 540 70, 534 77" class="srcoff" />
+            <rect id="srcxform" rx="1" ry="1" x="460" y="50" width="60" height="40" class="srcoff" />
+            <text id="srcxformtext1" x="490" y="73" class="srcoff">Transformer</text>
+            <text id="srcxformtext2" x="490" y="78" class="srcoff"></text>
+
+            <line id="srcdesline" x1="570" y1="90" x2="570" y2="125" class="srcoff" />
+            <polygon id="srcdeslineptr" points="563 124, 570 130, 577 124" class="srcoff" />
+            <rect id="srcdes" rx="1" ry="1" x="540" y="50" width="60" height="40" class="srcoff" />
+            <text id="srcdestext1" x="570" y="68" class="srcoff">Deserialized</text>
+            <text id="srcdestext2" x="570" y="78" class="srcoff">e.g., to HL7</text>
+
+            <!-- channel segments: destination transform -->
+
+            <line id="dstserline" x1="570" y1="170" x2="570" y2="185" class="dstoff" />
+            <polygon id="dstserlineptr" points="563 184, 570 190, 577 184" class="dstoff" />
+            <rect id="dstser" rx="1" ry="1" x="540" y="130" width="60" height="40" class="dstoff" />
+            <text id="dstsertext1" x="570" y="148" class="dstoff">Serialized</text>
+            <text id="dstsertext2" x="570" y="158" class="dstoff">to XML</text>
+
+            <line id="dstfilline" x1="542" y1="192" x2="525" y2="175" class="dstoff" />
+            <polygon id="dstfillineptr" points="520 180, 520 170, 530 170" class="dstoff" />
+            <rect id="dstfil" rx="1" ry="1" x="540" y="190" width="60" height="40" class="dstoff" />
+            <text id="dstfiltext1" x="570" y="213" class="dstoff">Filter</text>
+            <text id="dstfiltext2" x="570" y="218" class="dstoff"></text>
+
+            <line id="dstxformline" x1="490" y1="170" x2="490" y2="185" class="dstoff" />
+            <polygon id="dstxformlineptr" points="483 184, 490 190, 497 184" class="dstoff" />
+            <rect id="dstxform" rx="1" ry="1" x="460" y="130" width="60" height="40" class="dstoff" />
+            <text id="dstxformtext1" x="490" y="153" class="dstoff">Transformer</text>
+            <text id="dstxformtext2" x="490" y="158" class="dstoff"></text>
+
+            <line id="dstdesline" x1="460" y1="210" x2="440" y2="210" class="dstoff" />
+            <polygon id="dstdeslineptr" points="446 217, 440 210, 446 203" class="dstoff" />
+            <rect id="dstdes" rx="1" ry="1" x="460" y="190" width="60" height="40" class="dstoff" />
+            <text id="dstdestext1" x="490" y="208" class="dstoff">Deserialized</text>
+            <text id="dstdestext2" x="490" y="218" class="dstoff">e.g., to HL7</text>
+
+            <!-- channel segments: destination out -->
+
+            <line id="dstconnline" x1="430" y1="175" x2="430" y2="190" class="dstoff" />
+            <polygon id="dstconnlineptr" points="423 176, 430 170, 437 176" class="dstoff" />
+            <rect id="dstconn" rx="1" ry="1" x="380" y="190" width="60" height="40" class="dstoff" />
+            <text id="dstconntext1" x="410" y="208" class="dstoff">Destination</text>
+            <text id="dstconntext2" x="410" y="218" class="dstoff">Connector</text>
+
+            <line id="dstsline2" x1="390" y1="170" x2="390" y2="185" class="dstoff" />
+            <polygon id="dstslineptr2" points="383 184, 390 190, 397 184" class="dstoff" />
+            <rect id="dsts" rx="1" ry="1" x="380" y="130" width="60" height="40" class="dstoff" />
+            <text id="dststext1" x="410" y="153" class="dstoff">Destination(s)</text>
+            <text id="dststext2" x="410" y="158" class="dstoff"></text>
+
+            <!-- channel segments: destination response -->
+
+            <polyline id="dstconndataline" points="410 230, 410 260, 330 260, 330 235" class="rspoff" />
+            <polygon id="dstrspdesdataptr" points="323 236, 330 230, 337 236" class="rspoff" />
+            <ellipse id="dstrspdesdata1" cx="370" cy="270" rx="10" ry="5" class="rspoff" />
+            <rect id="dstrspdesdata2" x="360" y="255" width="20" height="15" class="rspoff" />
+            <ellipse id="dstrspdesdata3" cx="370" cy="255" rx="10" ry="5" class="rspoff" />
+            <line id="dstrspdesdata4" x1="360" y1="256" x2="360" y2="271" class="rspoff" />
+            <line id="dstrspdesdata5" x1="380" y1="256" x2="380" y2="271" class="rspoff" />
+            <text id="dstconndata6" x="354" y="285" class="rspoff">Response</text>
+
+            <line id="dstrspserline" x1="330" y1="175" x2="330" y2="190" class="dstoff" />
+            <polygon id="dstrspserlineptr" points="323 176, 330 170, 337 176" class="dstoff" />
+            <rect id="dstrspser" rx="1" ry="1" x="300" y="190" width="60" height="40" class="dstoff" />
+            <text id="srcdestext1" x="330" y="208" class="dstoff">Serialized</text>
+            <text id="srcdestext2" x="330" y="218" class="dstoff">to XML</text>
+
+            <polyline id="dstrspxformdataline" points="300 150, 250 150, 250 185" class="rspoff" />
+            <polygon id="dstrspxformdatalineptr" points="243 184, 250 190, 257 184" class="rspoff" />
+            <ellipse id="dstrspxformdata1" cx="250" cy="160" rx="10" ry="5" class="rspoff" />
+            <rect id="dstrspxformdata2" x="240" y="145" width="20" height="15" class="rspoff" />
+            <ellipse id="dstrspxformdata3" cx="250" cy="145" rx="10" ry="5" class="rspoff" />
+            <line id="dstrspxformdata4" x1="240" y1="146" x2="240" y2="161" class="rspoff" />
+            <line id="dstrspxformdata5" x1="260" y1="146" x2="260" y2="161" class="rspoff" />
+            <text id="dstrspxformdata6" x="220" y="128" class="rspoff">Response</text>
+            <text id="dstrspxformdata7" x="220" y="137" class="rspoff">Transformed</text>
+            <rect id="dstrspxform" rx="1" ry="1" x="300" y="130" width="60" height="40" class="dstoff" />
+            <text id="dstrspxformtext1" x="330" y="153" class="dstoff">Transformer</text>
+            <text id="dstrspxformtext2" x="330" y="158" class="dstoff"></text>
+
+            <polyline id="dstrspdesline" points="250 230, 250 260, 170 260, 170 235" class="rspoff" />
+            <polygon id="dstrspdeslineptr" points="163 236, 170 230, 177 236" class="rspoff" />
+            <ellipse id="dstrspdesdata1" cx="210" cy="270" rx="10" ry="5" class="rspoff" />
+            <rect id="dstrspdesdata2" x="200" y="255" width="20" height="15" class="rspoff" />
+            <ellipse id="dstrspdesdata3" cx="210" cy="255" rx="10" ry="5" class="rspoff" />
+            <line id="dstrspdesdata4" x1="200" y1="256" x2="200" y2="271" class="rspoff" />
+            <line id="dstrspdesdata5" x1="220" y1="256" x2="220" y2="271" class="rspoff" />
+            <text id="dstrspdesdata6" x="180" y="285" class="rspoff">Processed Response</text>
+            <rect id="dstrspdes" rx="1" ry="1" x="220" y="190" width="60" height="40" class="dstoff" />
+            <text id="dstrspdestext1" x="250" y="208" class="dstoff">Deserialized</text>
+            <text id="dstrspdestext2" x="250" y="218" class="dstoff">e.g., to HL7</text>
+
+            <line id="dstrspwaitline" x1="140" y1="210" x2="120" y2="210" class="dstoff" />
+            <polygon id="dstrspwaitptr" points="126 217, 120 210, 126 203" class="dstoff" />
+            <rect id="dstrspwait" rx="1" ry="1" x="140" y="190" width="60" height="40" class="dstoff" />
+            <text id="dstrspwaittext1" x="170" y="208" class="dstoff">Wait</text>
+            <text id="dstrspwaittext2" x="170" y="218" class="dstoff">for All</text>
+
+            <!-- channel segments: source out -->
+
+            <line id="srcpostline" x1="90" y1="165" x2="90" y2="190" class="srcoff" />
+            <polygon id="srcpostlineptr" points="83 166, 90 160, 97 166" class="srcoff" />
+            <rect id="srcpost" rx="1" ry="1" x="60" y="190" width="60" height="40" class="srcoff" />
+            <text id="srcposttext1" x="90" y="208" class="srcoff">Postprocessor</text>
+            <text id="srcpostext2" x="90" y="218" class="srcoff">Script</text>
+
+            <line id="srcselrspline" x1="90" y1="95" x2="90" y2="120" class="srcoff" />
+            <polygon id="srcselrsplineptr" points="83 96, 90 90, 97 96" class="srcoff" />
+            <rect id="srcselrsp" rx="1" ry="1" x="60" y="120" width="60" height="40" class="srcoff" />
+            <text id="srcselrsptext1" x="90" y="138" class="srcoff">Select</text>
+            <text id="srcselrsptext2" x="90" y="148" class="srcoff">Response</text>
+
+            <polyline id="srcrspline" points="90 50, 90 35, 20 35, 20 45" class="rspoff" />
+            <polygon id="srcrsplineptr" points="13 44, 20 50, 27 44" class="rspoff" />
+            <text id="srcrsptext" x="37" y="29" class="rspoff">Response</text>
+
+        </svg>
+        <h2>Channel Flow Highlights</h2>
+        <table cellpadding="6px" border=1 class="notes">
+            <tr>
+                <th>Data Type</th>
+                <th>Active Segment</th>
+                <th>Segment Type</th>
+                <th>Step</th>
+                <th>Step Type</th>
+                <th>API Calls Out</th>
+            </tr>
+        </table>
+        <h2>See Also</h2>
+        <p>
+            NextGen&reg; User Guide 3.1.1 The Message Processing Lifecycle
+            <a href="https://www.nextgen.com/-/media/files/nextgen-connect/nextgen-connect-311-user-guide.pdf">nextgen-connect-311-user-guide.pdf</a>
+        </p>
+
+    </body>
+</html>

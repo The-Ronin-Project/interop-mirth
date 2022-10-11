@@ -16,6 +16,7 @@ import io.ktor.client.request.accept
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.contentType
 import io.ktor.serialization.jackson.jackson
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
@@ -80,4 +81,23 @@ object ProxyClient {
             }
             response.body()
         }
+
+    fun getPractitionerByFHIRId(fhirId: String, tenantMnemonic: String): JsonNode = runBlocking {
+        httpClient.post(GRAPHQL_URL) {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            setBody(
+                GraphQLPostRequest(
+                    query = this::class.java.getResource("/PractitionerByIdQuery.graphql")!!.readText(),
+                    variables = mapOf("tenantId" to tenantMnemonic, "fhirId" to fhirId)
+                )
+            )
+        }.body()
+    }
 }
+
+data class GraphQLPostRequest(
+    val query: String,
+    val operationName: String? = null,
+    val variables: Map<String, Any?>? = null
+)

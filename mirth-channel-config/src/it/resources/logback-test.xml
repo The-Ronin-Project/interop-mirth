@@ -12,7 +12,7 @@
     <logger name="com.projectronin" level="DEBUG" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
-    <logger name="io.ktor" level="WARN" additivity="false">
+    <logger name="io.ktor" level="INFO" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
 </configuration>
