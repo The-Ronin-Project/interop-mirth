@@ -6,7 +6,7 @@ on:
         description: 'Branch to release'
         type: string
         required: true
-        default: 'master'
+        default: 'main'
       version:
         description: 'Specific version to release as. Leave unset if discoverable'
         type: string
@@ -36,9 +36,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Execute build
+      - name: Execute build, excluding Postman tests
         if: ${{ github.event.inputs.skip_publish == 'false' }}
-        run: ./gradlew build
+        run: ./gradlew build -x :mirth-channel-config:test
 
       - name: Get version
         id: get-version
