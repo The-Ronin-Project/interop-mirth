@@ -50,6 +50,9 @@ databaseChangeLog:
               - column:
                   name: full_name
                   value: "App Orchard Sandbox"
+              - column:
+                  name: timezone
+                  value: 'Etc/UTC'
         - insert:
             dbms: 'mysql'
             tableName: io_tenant
@@ -75,6 +78,9 @@ databaseChangeLog:
               - column:
                   name: full_name
                   value: "Ronin Mock Epic EHR"
+              - column:
+                  name: timezone
+                  value: 'Etc/UTC'
         - insert:
             dbms: 'mysql'
             tableName: io_tenant
@@ -97,6 +103,9 @@ databaseChangeLog:
               - column:
                   name: available_batch_end
                   value: "06:00:00"
+              - column:
+                  name: timezone
+                  value: 'Etc/UTC'
         - insert:
             dbms: 'mysql'
             tableName: io_tenant_epic
