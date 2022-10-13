@@ -115,7 +115,10 @@ services:
     image: mysql/mysql-server
     container_name: mirth-mysql-db
     environment:
-      MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - "3306:3306"
     volumes:
       - ./db/init:/docker-entrypoint-initdb.d
     healthcheck:
