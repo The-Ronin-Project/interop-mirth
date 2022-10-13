@@ -1095,7 +1095,7 @@
 									"mode": "graphql",
 									"graphql": {
 										"query": "mutation sendNote($noteInput: NoteInput!, $tenantId: String!) \n{\n    sendNote(noteInput: $noteInput, tenantId: $tenantId)\n}",
-										"variables": "{\n    \"noteInput\": {\n        \"datetime\": \"202206011250\", \n        \"patientId\": \"ronin-MDMQueueTestPatient\",\n        \"patientIdType\": \"FHIR\",\n        \"practitionerFhirId\": \"ronin-MDMQueueTestPractitioner\", \n        \"noteText\": \"{{random_string}}\"\n        },\n    \"tenantId\": \"{{tenant_mnemonic}}\"\n}"
+										"variables": "{\n    \"noteInput\": {\n        \"datetime\": \"202206011250\", \n        \"patientId\": \"ronin-MDMQueueTestPatient\",\n        \"patientIdType\": \"FHIR\",\n        \"practitionerFhirId\": \"ronin-MDMQueueTestPractitioner\", \n        \"noteText\": \"{{random_string}}\",\n        \"isAlert\" : false,\n        \"noteSender\" : \"PRACTITIONER\"\n        },\n    \"tenantId\": \"{{tenant_mnemonic}}\"\n}"
 									}
 								},
 								"url": {
