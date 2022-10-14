@@ -28,6 +28,8 @@ class AppointmentByPractitionerLoadTest :
         appointmentByPractitionerLoadName,
         listOf("Practitioner", "Patient", "Appointment", "Condition")
     ) {
+    private final val locationFhirId = "3f1af7cb-a47e-4e1e-a8e3-d18e0d073e6c"
+
     @Test
     fun `fails if no practitioner`() {
         deployAndStartChannel(true)
@@ -90,6 +92,10 @@ class AppointmentByPractitionerLoadTest :
                 participant {
                     status of "accepted"
                     actor of reference("Patient", patient1Id)
+                },
+                participant {
+                    status of "accepted"
+                    actor of reference("Location", locationFhirId)
                 }
             )
             start of 2.daysFromNow()
@@ -193,6 +199,10 @@ class AppointmentByPractitionerLoadTest :
                 participant {
                     status of "accepted"
                     actor of reference("Patient", patient1Id)
+                },
+                participant {
+                    status of "accepted"
+                    actor of reference("Location", locationFhirId)
                 }
             )
             start of 2.daysFromNow()
