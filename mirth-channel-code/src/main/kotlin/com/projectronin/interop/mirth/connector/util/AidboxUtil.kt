@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.connector.util
 
+import com.projectronin.interop.aidbox.LocationService
 import com.projectronin.interop.aidbox.PatientService
 import com.projectronin.interop.aidbox.PractitionerService
 import com.projectronin.interop.aidbox.PublishService
@@ -22,4 +23,5 @@ internal object AidboxUtil {
     val aidboxPublishService = PublishService(aidboxClient)
     val aidBoxPractitionerService = PractitionerService(aidboxClient, 100)
     val aidBoxPatientService = PatientService(aidboxClient, 100)
+    val aidboxLocationService = LocationService(aidboxClient, 100)
 }

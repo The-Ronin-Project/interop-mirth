@@ -13,12 +13,14 @@ io_tenant:
     io_ehr_id: 101
     available_batch_start: "22:00:00"
     available_batch_end: "06:00:00"
+    timezone: 'Etc/UTC'
   - io_tenant_id: 1002
     mnemonic: "psj"
     full_name: "Alternate Test Tenant"
     io_ehr_id: 101
     available_batch_start: "22:00:00"
     available_batch_end: "06:00:00"
+    timezone: 'Etc/UTC'
 
 io_tenant_epic:
   - io_tenant_id: 1001

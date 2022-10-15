@@ -33,6 +33,7 @@ internal object EpicServiceFactory {
         patientService,
         identifierService,
         AidboxUtil.aidBoxPractitionerService,
+        AidboxUtil.aidboxLocationService,
         AidboxUtil.aidBoxPatientService,
         5,
         false
