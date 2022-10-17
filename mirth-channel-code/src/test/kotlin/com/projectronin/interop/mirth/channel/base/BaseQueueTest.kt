@@ -63,6 +63,26 @@ class BaseQueueTest {
     }
 
     @Test
+    fun `sourceReader - continues reading from queue if response is full`() {
+        val queueMessage = "testing!!"
+        val mockMessage = mockk<ApiMessage> {
+            every { text } returns queueMessage
+        }
+        every { mockQueueService.dequeueApiMessages(tenantId, ResourceType.BUNDLE, 5) } returns listOf(
+            mockMessage,
+            mockMessage,
+            mockMessage,
+            mockMessage,
+            mockMessage
+        ) andThen emptyList()
+
+        val channel = TestQueue(mockServiceFactory)
+        val messages = channel.channelSourceReader(tenantId, emptyMap())
+        assertEquals(5, messages.size)
+        assertEquals(queueMessage, messages.first().message)
+    }
+
+    @Test
     fun `sourceTransformer - works`() {
         val fhirID = "I'm a fhir ID!"
         val message = "testing!!"
@@ -112,6 +132,7 @@ class TestQueue(
 ) : BaseQueue<TestResource>(serviceFactory, TestResource::class) {
     override val resourceType: ResourceType = ResourceType.BUNDLE
     override val rootName: String = "Test"
+    override val limit: Int = 5
     override fun deserializeAndTransform(string: String, tenant: Tenant): TestResource = mockRoninDomainResource
 }
 

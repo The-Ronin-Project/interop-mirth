@@ -7,6 +7,7 @@ import com.projectronin.interop.mirth.channel.destinations.QueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.connector.ServiceFactory
+import com.projectronin.interop.queue.model.ApiMessage
 import com.projectronin.interop.tenant.config.model.Tenant
 import kotlin.reflect.KClass
 
@@ -18,7 +19,7 @@ import kotlin.reflect.KClass
 abstract class BaseQueue<K : DomainResource<K>>(serviceFactory: ServiceFactory, publishClass: KClass<out K>) :
     ChannelService(serviceFactory) {
     protected val publishService = "publish"
-    open val limit = 5
+    open val limit = 20
     abstract val resourceType: ResourceType
     override val destinations by lazy {
         mapOf(
@@ -30,8 +31,20 @@ abstract class BaseQueue<K : DomainResource<K>>(serviceFactory: ServiceFactory, 
         tenantMnemonic: String,
         serviceMap: Map<String, Any>
     ): List<MirthMessage> {
-        val messages = serviceFactory.queueService().dequeueApiMessages(tenantMnemonic, resourceType, limit)
-        return messages.map {
+        val queueMessages = mutableListOf<ApiMessage>()
+        val queueService = serviceFactory.queueService()
+        while (true) {
+            val currentMessages = queueService.dequeueApiMessages(tenantMnemonic, resourceType, limit)
+
+            queueMessages.addAll(currentMessages)
+
+            // If we read less than the limit, we're done.
+            if (currentMessages.size < limit) {
+                break
+            }
+        }
+
+        return queueMessages.map {
             MirthMessage(it.text)
         }
     }
