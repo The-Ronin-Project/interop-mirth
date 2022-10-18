@@ -8,11 +8,10 @@ import com.projectronin.interop.fhir.ronin.code.RoninCodeableConcepts
 object AidboxTestData {
     val currentResources = mutableListOf<Resource<*>>()
 
-    inline fun <reified T : Resource<T>> add(vararg resource: Resource<T>) {
-        resource.forEach {
-            val insertedResource = AidboxClient.addResource(it)
-            currentResources.add(insertedResource)
-        }
+    inline fun <reified T : Resource<T>> add(resource: Resource<T>): String {
+        val insertedResource = AidboxClient.addResource<T>(resource)
+        currentResources.add(insertedResource)
+        return insertedResource.id!!.value
     }
 
     fun purge() {

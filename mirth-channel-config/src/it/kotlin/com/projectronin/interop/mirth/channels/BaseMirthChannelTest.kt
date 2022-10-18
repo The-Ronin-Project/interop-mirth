@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.projectronin.interop.mirth.channels.client.AidboxClient
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.MirthClient
+import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -19,14 +20,25 @@ import javax.xml.transform.dom.DOMSource
 import javax.xml.transform.stream.StreamResult
 import kotlin.time.Duration.Companion.seconds
 
-abstract class BaseMirthChannelTest(private val channelName: String, private val aidboxResources: List<String>) {
+/**
+ * Base class to handle testing an individual channel
+ * takes a [channelName] to identify the channel,
+ * [aidboxResourceTypes] a list of resource types to clear in aidbox and [mockEHRResourceTypes]
+ * a list of resources  types to clear in mockERH
+ */
+abstract class BaseMirthChannelTest(
+    private val channelName: String,
+    private val aidboxResourceTypes: List<String>,
+    private val mockEHRResourceTypes: List<String> = emptyList()
+) {
     private val testChannelName = "$testTenant-$channelName"
     protected val testChannelId = installChannel()
 
     @BeforeEach
     fun setup() {
         clearMessages()
-        deleteResources(*aidboxResources.toTypedArray())
+        deleteAidboxResources(*aidboxResourceTypes.toTypedArray())
+        deleteMockEHRResources(*mockEHRResourceTypes.toTypedArray())
     }
 
     @AfterEach
@@ -88,9 +100,19 @@ abstract class BaseMirthChannelTest(private val channelName: String, private val
         return resources.get("total").asInt()
     }
 
-    protected fun deleteResources(vararg resourceTypes: String) {
+    protected fun getMockEHRResourceCount(resourceType: String): Int {
+        val resources = MockEHRClient.getAllResources(resourceType)
+        return resources.get("total").asInt()
+    }
+
+    protected fun deleteAidboxResources(vararg resourceTypes: String) {
         resourceTypes.forEach {
             AidboxClient.deleteAllResources(it, testTenant)
+        }
+    }
+    protected fun deleteMockEHRResources(vararg resourceTypes: String) {
+        resourceTypes.forEach {
+            MockEHRClient.deleteAllResources(it)
         }
     }
 
