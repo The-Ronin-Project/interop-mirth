@@ -34,19 +34,18 @@ class AppointmentByPractitionerLoadTest :
     fun `fails if no practitioner`() {
         deployAndStartChannel(true)
 
-        val jsonNode = MirthClient.getChannelMessages(testChannelId)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertEquals(1, messageList.size)
 
+        val jsonNode = MirthClient.getChannelMessages(testChannelId)
         val list = jsonNode.get("list")
-        assertEquals(1, list.size())
 
         val connectorMessageByConnector = getConnectorMessageByConnector(list)
-        assertEquals(2, connectorMessageByConnector.size)
 
         val expectedErrorMessage = "No Practitioners found in clinical data store for tenant $testTenant"
 
         val conditionMessage = connectorMessageByConnector["Conditions"]!!
         val conditionContent = conditionMessage.get("raw").get("content").asText()
-        println(conditionContent)
         assertTrue(conditionContent.contains(expectedErrorMessage))
 
         val appointmentMessage = connectorMessageByConnector["Appointments"]!!
@@ -160,11 +159,10 @@ class AppointmentByPractitionerLoadTest :
 
         deployAndStartChannel(true)
 
-        val jsonNode = MirthClient.getChannelMessages(testChannelId)
-        val list = jsonNode.get("list")
-        assertEquals(1, list.size())
-        assertAllConnectorsSent(list)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertEquals(1, messageList.size)
 
+        assertAllConnectorsSent(messageList)
         assertEquals(1, getAidboxResourceCount("Patient"))
         assertEquals(1, getAidboxResourceCount("Appointment"))
         assertEquals(1, getAidboxResourceCount("Condition"))
@@ -401,10 +399,10 @@ class AppointmentByPractitionerLoadTest :
 
         deployAndStartChannel(true)
 
-        val jsonNode = MirthClient.getChannelMessages(testChannelId)
-        val list = jsonNode.get("list")
-        assertEquals(1, list.size())
-        assertAllConnectorsSent(list)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertEquals(1, messageList.size)
+
+        assertAllConnectorsSent(messageList)
 
         assertEquals(1, getAidboxResourceCount("Patient"))
         assertEquals(1, getAidboxResourceCount("Appointment"))

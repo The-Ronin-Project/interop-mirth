@@ -1,6 +1,7 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
+import com.projectronin.interop.mirth.channels.client.MirthClient
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.ProxyClient
@@ -53,6 +54,9 @@ class MDMQueueTest : BaseMirthChannelTest(
         assertNotNull(documentID)
 
         deployAndStartChannel(true)
+
+        val list = MirthClient.getChannelMessageIds(testChannelId)
+        assertEquals(1, list.size)
         assertEquals(1, getMockEHRResourceCount(documentReference))
         assertEquals(1, getMockEHRResourceCount(binary))
 

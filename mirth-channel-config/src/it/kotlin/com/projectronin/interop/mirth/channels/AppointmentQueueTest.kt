@@ -80,9 +80,8 @@ class AppointmentQueueTest :
         // make sure a message queued in mirth
         waitForMessage(1)
 
-        val jsonNode = MirthClient.getChannelMessages(testChannelId)
-        val list = jsonNode.get("list")
-        assertEquals(1, list.size())
+        val list = MirthClient.getChannelMessageIds(testChannelId)
+        assertEquals(1, list.size)
         // appointment successfully added to Aidbox
         assertEquals(1, getAidboxResourceCount("Appointment"))
     }

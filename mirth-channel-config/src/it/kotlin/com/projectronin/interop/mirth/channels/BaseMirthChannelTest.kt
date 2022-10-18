@@ -116,18 +116,30 @@ abstract class BaseMirthChannelTest(
         }
     }
 
-    protected fun getConnectorMessageByConnector(messageList: JsonNode): Map<String, JsonNode> =
-        messageList.get("message").get("connectorMessages").get("entry").map { it.get("connectorMessage") }
-            .associateBy { it.get("connectorName").asText() }
+    protected fun getConnectorMessageByConnector(messageList: JsonNode): Map<String, JsonNode> {
+        // this can be one lined, but it's a complicated function, so break it up so it's easier to find
+        // where an error occurs
+        val entries = messageList.get("message").get("connectorMessages").get("entry")
+        val connectors = entries.map { it.get("connectorMessage") }
+        return connectors.associateBy { it.get("connectorName").asText() }
+    }
 
-    protected fun assertAllConnectorsSent(messageList: JsonNode) {
-        getConnectorMessageByConnector(messageList).forEach { name, node ->
-            val status = node.get("status").asText()
-            assertEquals(
-                "SENT",
-                status,
-                "status for connector $name was not SENT. Actual node: ${node.toPrettyString()}"
-            )
+    protected fun assertAllConnectorsSent(messageList: List<Int>) {
+        val messages = messageList.map {
+            MirthClient.getMessageById(testChannelId, it)
+        }
+        messages.forEach {
+            getConnectorMessageByConnector(it).forEach { name, node ->
+                // source will always be transformed
+                if (name != "Source") {
+                    val status = node.get("status").asText()
+                    assertEquals(
+                        "SENT",
+                        status,
+                        "status for connector $name was not SENT. Actual status: $status, node: ${node.toPrettyString()}"
+                    )
+                }
+            }
         }
     }
 
@@ -143,6 +155,8 @@ abstract class BaseMirthChannelTest(
         while (true) {
             val count = MirthClient.getCompletedMessageCount(testChannelId)
             if (count >= minimumCount) {
+                // delay a moment to allow message to process, one destination might complete but give others a chance
+                delay(1000)
                 break
             } else {
                 delay(1000)
