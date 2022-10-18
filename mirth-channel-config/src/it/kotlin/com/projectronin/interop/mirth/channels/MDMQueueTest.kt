@@ -15,12 +15,10 @@ const val mdmQueueChannelName = "MDMQueueOut"
 
 class MDMQueueTest : BaseMirthChannelTest(
     mdmQueueChannelName,
-    listOf("Patient", "Practitioner"),
-    listOf("Patient", "Practitioner", "DocumentReference", "Binary"),
+    emptyList(),
+    listOf("DocumentReference", "Binary"),
 ) {
     // Personally, I'm sick of misspelling one of these and having my test blow up while developing
-    private val patient = "Patient"
-    private val practitioner = "Practitioner"
     private val documentReference = "DocumentReference"
     private val binary = "Binary"
     @Test
@@ -30,8 +28,6 @@ class MDMQueueTest : BaseMirthChannelTest(
 
         MockEHRTestData.add(mockEHRPractitioner)
         MockEHRTestData.add(mockEHRPatient)
-        assertEquals(1, getMockEHRResourceCount(practitioner))
-        assertEquals(1, getMockEHRResourceCount(patient))
         assertEquals(0, getMockEHRResourceCount(documentReference))
         assertEquals(0, getMockEHRResourceCount(binary))
 
@@ -43,9 +39,6 @@ class MDMQueueTest : BaseMirthChannelTest(
         )
         val aidboxPractitionerId = AidboxTestData.add(aidboxPractitioner)
         val aidboxPatientId = AidboxTestData.add(aidboxPatient)
-
-        assertEquals(1, getAidboxResourceCount(practitioner))
-        assertEquals(1, getAidboxResourceCount(patient))
 
         val noteInput = mapOf(
             "datetime" to "202206011250",
@@ -63,7 +56,8 @@ class MDMQueueTest : BaseMirthChannelTest(
         assertEquals(1, getMockEHRResourceCount(documentReference))
         assertEquals(1, getMockEHRResourceCount(binary))
 
-        /* current, we don't have FHIR objects for DocumentReference or Binary in FHIR
+        /*
+        currently, we don't have FHIR objects for DocumentReference or Binary in FHIR
         (in mockEHR they're off the hapi models), in the future, if we do have those object
         you could cast these to those object so these checks became easier
          */

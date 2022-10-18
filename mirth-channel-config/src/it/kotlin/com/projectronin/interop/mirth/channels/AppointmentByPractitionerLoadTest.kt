@@ -11,6 +11,7 @@ import com.projectronin.interop.mirth.channels.client.condition
 import com.projectronin.interop.mirth.channels.client.daysFromNow
 import com.projectronin.interop.mirth.channels.client.externalIdentifier
 import com.projectronin.interop.mirth.channels.client.identifier
+import com.projectronin.interop.mirth.channels.client.location
 import com.projectronin.interop.mirth.channels.client.name
 import com.projectronin.interop.mirth.channels.client.participant
 import com.projectronin.interop.mirth.channels.client.patient
@@ -28,7 +29,6 @@ class AppointmentByPractitionerLoadTest :
         appointmentByPractitionerLoadName,
         listOf("Practitioner", "Patient", "Appointment", "Condition")
     ) {
-    private final val locationFhirId = "3f1af7cb-a47e-4e1e-a8e3-d18e0d073e6c"
 
     @Test
     fun `fails if no practitioner`() {
@@ -63,6 +63,15 @@ class AppointmentByPractitionerLoadTest :
             }
         }
         val practitioner1Id = MockEHRTestData.add(practitioner1)
+        val location = location {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRDepartmentInternalSystem"
+                    value of "123"
+                }
+            )
+        }
+        val locationFhirId = MockEHRTestData.add(location)
 
         val patient1 = patient {
             identifier of listOf(
@@ -170,7 +179,15 @@ class AppointmentByPractitionerLoadTest :
             }
         }
         val practitioner1Id = MockEHRTestData.add(practitioner1)
-
+        val location = location {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRDepartmentInternalSystem"
+                    value of "123"
+                }
+            )
+        }
+        val locationFhirId = MockEHRTestData.add(location)
         val patient1 = patient {
             identifier of listOf(
                 identifier {
