@@ -94,6 +94,19 @@ object ProxyClient {
             )
         }.body()
     }
+
+    fun sendNote(noteInput: Map<String, Any>, tenantMnemonic: String): JsonNode = runBlocking {
+        httpClient.post(GRAPHQL_URL) {
+            contentType(ContentType.Application.Json)
+            accept(ContentType.Application.Json)
+            setBody(
+                GraphQLPostRequest(
+                    query = this::class.java.getResource("/SendNoteMutation.graphql")!!.readText(),
+                    variables = mapOf("noteInput" to noteInput, "tenantId" to tenantMnemonic)
+                )
+            )
+        }.body()
+    }
 }
 
 data class GraphQLPostRequest(

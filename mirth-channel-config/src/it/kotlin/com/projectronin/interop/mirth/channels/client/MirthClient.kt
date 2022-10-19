@@ -86,6 +86,7 @@ object MirthClient {
     private const val CHANNELS_START_FORMAT = "$CHANNELS_FORMAT/_start"
     private const val CHANNELS_STOP_FORMAT = "$CHANNELS_FORMAT/_stop"
     private const val CHANNELS_MESSAGES_FORMAT = "$CHANNELS_FORMAT/messages"
+    private const val CHANNELS_MESSAGE_FORMAT = "$CHANNELS_MESSAGES_FORMAT/%d"
     private const val CHANNELS_MESSAGES_COUNT_FORMAT = "$CHANNELS_MESSAGES_FORMAT/count"
     private const val CHANNELS_MESSAGES_REMOVEALL_FORMAT = "$CHANNELS_MESSAGES_FORMAT/_removeAll"
     private const val CLEAR_STATISTICS_URL = "$CHANNELS_URL/_clearAllStatistics"
@@ -136,7 +137,18 @@ object MirthClient {
         val messagesUrl = CHANNELS_MESSAGES_FORMAT.format(channelId)
         httpClient.get(messagesUrl) {
             url {
-                parameters.appendAll("status", listOf("SENT", "ERROR"))
+                parameters.appendAll(
+                    "status",
+                    listOf(
+                        "SENT",
+                        "ERROR",
+                        "FILTERED",
+                        "TRANSFORMED",
+                        "QUEUED",
+                        "PENDING"
+                    )
+                )
+
                 parameters.append("includeContent", "true")
 
                 // These are required, for some reason
@@ -144,6 +156,23 @@ object MirthClient {
                 parameters.append("limit", "20")
             }
         }.body()
+    }
+
+    fun getChannelMessageIds(channelId: String): List<Int> {
+        val node = getChannelMessages(channelId)
+        val messageNode = node.get("list") ?: return emptyList()
+        if (messageNode.isNull) return emptyList()
+        val messageList = messageNode.get("message")
+        // mirth :/
+        if (messageList.isArray) {
+            return messageList.map { it.get("messageId").asInt() }
+        }
+        return listOf(messageList.get("messageId").asInt())
+    }
+
+    fun getMessageById(channelId: String, messageId: Int): JsonNode = runBlocking {
+        val messageUrl = CHANNELS_MESSAGE_FORMAT.format(channelId, messageId)
+        httpClient.get(messageUrl) {}.body()
     }
 
     fun clearChannelMessages(channelId: String) = runBlocking {

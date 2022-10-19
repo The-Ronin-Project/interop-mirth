@@ -1,8 +1,10 @@
 package com.projectronin.interop.mirth.channels.client
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.fhir.r4.resource.Resource
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -10,6 +12,7 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.accept
 import io.ktor.client.request.delete
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -61,5 +64,25 @@ object MockEHRClient {
     fun deleteResource(resourceType: String, id: String) = runBlocking {
         val url = RESOURCE_FORMAT.format(resourceType, id)
         httpClient.delete(url)
+    }
+
+    fun deleteAllResources(resourceType: String) = runBlocking {
+        val resources = getAllResources(resourceType)
+        KotlinLogging.logger { }.warn { resources }
+        resources.get("entry")?.forEach {
+            val resourceId = it.get("resource").get("id").asText()
+            deleteResource(resourceType, resourceId)
+        }
+    }
+
+    fun getAllResources(resourceType: String): JsonNode = runBlocking {
+        val url = RESOURCES_FORMAT.format(resourceType)
+        httpClient.get(url) {
+        }.body()
+    }
+    fun getPlainBinary(fhirId: String): String = runBlocking {
+        val url = RESOURCES_FORMAT.format("Binary") + "/$fhirId"
+        httpClient.get(url) {
+        }.body()
     }
 }

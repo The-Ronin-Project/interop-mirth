@@ -15,6 +15,7 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Instant
 import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Condition
+import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.r4.resource.Resource
@@ -89,6 +90,24 @@ data class ConditionGenerator(
             code = code.generate(),
             subject = subject.generate()
         )
+}
+
+class LocationGenerator(
+    override val id: Generator<Id> = NullGenerator(),
+    override val identifier: ListGenerator<Identifier> = ListGenerator(0, IdentifierGenerator())
+) : FhirTestResource<Location> {
+    override fun toFhir(): Location =
+        Location(
+            id = id.generate(),
+            identifier = identifier.generate(),
+            name = faker.university().name() + " Medical Center"
+        )
+}
+
+fun location(block: LocationGenerator.() -> Unit): Location {
+    val location = LocationGenerator()
+    location.apply(block)
+    return location.toFhir()
 }
 
 fun condition(block: ConditionGenerator.() -> Unit): Condition {

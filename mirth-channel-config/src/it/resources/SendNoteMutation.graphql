@@ -1,0 +1,4 @@
+mutation sendNote($noteInput: NoteInput!, $tenantId: String!)
+{
+    sendNote(noteInput: $noteInput, tenantId: $tenantId)
+}

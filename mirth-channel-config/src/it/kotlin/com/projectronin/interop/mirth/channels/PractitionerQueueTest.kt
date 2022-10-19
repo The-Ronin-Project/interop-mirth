@@ -26,21 +26,16 @@ class PractitionerQueueTest : BaseMirthChannelTest(practitionerQueueChannelName,
 
         // Queue up the practitioner
         val proxyNode = ProxyClient.getPractitionerByFHIRId(practitionerId, testTenant)
-
-        // start channel
-        deployAndStartChannel(false)
-
         assertEquals(
             "\"$testTenant-$practitionerId\"",
             proxyNode["data"]["getPractitionerById"]["id"].toString()
         )
 
-        // make sure a message queued in mirth
-        waitForMessage(1)
+        // start channel
+        deployAndStartChannel(true)
 
-        val jsonNode = MirthClient.getChannelMessages(testChannelId)
-        val list = jsonNode.get("list")
-        assertEquals(1, list.size())
+        val list = MirthClient.getChannelMessageIds(testChannelId)
+        assertEquals(1, list.size)
         // practitioner successfully added to Aidbox
         assertEquals(1, getAidboxResourceCount("Practitioner"))
     }

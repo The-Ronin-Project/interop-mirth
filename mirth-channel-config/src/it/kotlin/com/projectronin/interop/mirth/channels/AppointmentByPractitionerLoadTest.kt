@@ -11,6 +11,7 @@ import com.projectronin.interop.mirth.channels.client.condition
 import com.projectronin.interop.mirth.channels.client.daysFromNow
 import com.projectronin.interop.mirth.channels.client.externalIdentifier
 import com.projectronin.interop.mirth.channels.client.identifier
+import com.projectronin.interop.mirth.channels.client.location
 import com.projectronin.interop.mirth.channels.client.name
 import com.projectronin.interop.mirth.channels.client.participant
 import com.projectronin.interop.mirth.channels.client.patient
@@ -28,25 +29,23 @@ class AppointmentByPractitionerLoadTest :
         appointmentByPractitionerLoadName,
         listOf("Practitioner", "Patient", "Appointment", "Condition")
     ) {
-    private final val locationFhirId = "3f1af7cb-a47e-4e1e-a8e3-d18e0d073e6c"
 
     @Test
     fun `fails if no practitioner`() {
         deployAndStartChannel(true)
 
-        val jsonNode = MirthClient.getChannelMessages(testChannelId)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertEquals(1, messageList.size)
 
+        val jsonNode = MirthClient.getChannelMessages(testChannelId)
         val list = jsonNode.get("list")
-        assertEquals(1, list.size())
 
         val connectorMessageByConnector = getConnectorMessageByConnector(list)
-        assertEquals(2, connectorMessageByConnector.size)
 
         val expectedErrorMessage = "No Practitioners found in clinical data store for tenant $testTenant"
 
         val conditionMessage = connectorMessageByConnector["Conditions"]!!
         val conditionContent = conditionMessage.get("raw").get("content").asText()
-        println(conditionContent)
         assertTrue(conditionContent.contains(expectedErrorMessage))
 
         val appointmentMessage = connectorMessageByConnector["Appointments"]!!
@@ -63,6 +62,15 @@ class AppointmentByPractitionerLoadTest :
             }
         }
         val practitioner1Id = MockEHRTestData.add(practitioner1)
+        val location = location {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRDepartmentInternalSystem"
+                    value of "123"
+                }
+            )
+        }
+        val locationFhirId = MockEHRTestData.add(location)
 
         val patient1 = patient {
             identifier of listOf(
@@ -151,11 +159,10 @@ class AppointmentByPractitionerLoadTest :
 
         deployAndStartChannel(true)
 
-        val jsonNode = MirthClient.getChannelMessages(testChannelId)
-        val list = jsonNode.get("list")
-        assertEquals(1, list.size())
-        assertAllConnectorsSent(list)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertEquals(1, messageList.size)
 
+        assertAllConnectorsSent(messageList)
         assertEquals(1, getAidboxResourceCount("Patient"))
         assertEquals(1, getAidboxResourceCount("Appointment"))
         assertEquals(1, getAidboxResourceCount("Condition"))
@@ -170,7 +177,15 @@ class AppointmentByPractitionerLoadTest :
             }
         }
         val practitioner1Id = MockEHRTestData.add(practitioner1)
-
+        val location = location {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRDepartmentInternalSystem"
+                    value of "123"
+                }
+            )
+        }
+        val locationFhirId = MockEHRTestData.add(location)
         val patient1 = patient {
             identifier of listOf(
                 identifier {
@@ -384,10 +399,10 @@ class AppointmentByPractitionerLoadTest :
 
         deployAndStartChannel(true)
 
-        val jsonNode = MirthClient.getChannelMessages(testChannelId)
-        val list = jsonNode.get("list")
-        assertEquals(1, list.size())
-        assertAllConnectorsSent(list)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertEquals(1, messageList.size)
+
+        assertAllConnectorsSent(messageList)
 
         assertEquals(1, getAidboxResourceCount("Patient"))
         assertEquals(1, getAidboxResourceCount("Appointment"))
