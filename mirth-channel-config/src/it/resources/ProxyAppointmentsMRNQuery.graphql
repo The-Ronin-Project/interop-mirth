@@ -1,5 +1,15 @@
-{
-    appointmentsByMRNAndDate (endDate: "__END_DATE__", mrn: "__MRN__", startDate: "__START_DATE__", tenantId: "__TENANT__") {
-        id
-    }
+query (
+  $tenantId: String!
+  $startDate: String!
+  $endDate: String!
+  $mrn: String!
+) {
+  appointmentsByMRNAndDate(
+    tenantId: $tenantId
+    startDate: $startDate
+    endDate: $endDate
+    mrn: $mrn
+  ) {
+    id
+  }
 }

@@ -65,44 +65,43 @@ object ProxyClient {
 
     private const val GRAPHQL_URL = "$BASE_URL/graphql"
 
-    fun getAppointmentsByMRN(mrn: String, tenantMnemonic: String, startDate: LocalDate, endDate: LocalDate): JsonNode =
-        runBlocking {
-            val formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy")
-            val response = httpClient.post(GRAPHQL_URL) {
-                headers["Content-type"] = "application/graphql"
-                accept(ContentType.Application.Any)
-                setBody(
-                    this::class.java.getResource("/ProxyAppointmentsMRNQuery.graphql")!!.readText()
-                        .replace("__START_DATE__", startDate.format(formatter))
-                        .replace("__END_DATE__", endDate.format(formatter))
-                        .replace("__MRN__", mrn)
-                        .replace("__TENANT__", tenantMnemonic)
-                )
-            }
-            response.body()
-        }
-
-    fun getPractitionerByFHIRId(fhirId: String, tenantMnemonic: String): JsonNode = runBlocking {
-        httpClient.post(GRAPHQL_URL) {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-            setBody(
-                GraphQLPostRequest(
-                    query = this::class.java.getResource("/PractitionerByIdQuery.graphql")!!.readText(),
-                    variables = mapOf("tenantId" to tenantMnemonic, "fhirId" to fhirId)
-                )
+    fun getAppointmentsByMRN(mrn: String, tenantMnemonic: String, startDate: LocalDate, endDate: LocalDate): JsonNode {
+        val formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy")
+        return callGraphQLProxy(
+            query = this::class.java.getResource("/ProxyAppointmentsMRNQuery.graphql")!!.readText(),
+            variables = mapOf(
+                "startDate" to startDate.format(formatter),
+                "endDate" to endDate.format(formatter),
+                "mrn" to mrn,
+                "tenantId" to tenantMnemonic
             )
-        }.body()
+        )
     }
 
-    fun sendNote(noteInput: Map<String, Any>, tenantMnemonic: String): JsonNode = runBlocking {
+    fun getPractitionerByFHIRId(fhirId: String, tenantMnemonic: String): JsonNode = callGraphQLProxy(
+        query = this::class.java.getResource("/ProxyPractitionerByIdQuery.graphql")!!.readText(),
+        variables = mapOf("tenantId" to tenantMnemonic, "fhirId" to fhirId)
+    )
+
+    fun sendNote(noteInput: Map<String, Any>, tenantMnemonic: String): JsonNode = callGraphQLProxy(
+        query = this::class.java.getResource("/ProxySendNoteMutation.graphql")!!.readText(),
+        variables = mapOf("noteInput" to noteInput, "tenantId" to tenantMnemonic)
+    )
+
+    fun getConditionsByPatient(tenantMnemonic: String, patientFhirId: String): JsonNode =
+        callGraphQLProxy(
+            query = this::class.java.getResource("/ProxyConditionsQuery.graphql")!!.readText(),
+            variables = mapOf("tenantId" to tenantMnemonic, "patientFhirId" to patientFhirId)
+        )
+
+    private fun callGraphQLProxy(query: String, variables: Map<String, Any?>): JsonNode = runBlocking {
         httpClient.post(GRAPHQL_URL) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
             setBody(
                 GraphQLPostRequest(
-                    query = this::class.java.getResource("/SendNoteMutation.graphql")!!.readText(),
-                    variables = mapOf("noteInput" to noteInput, "tenantId" to tenantMnemonic)
+                    query = query,
+                    variables = variables
                 )
             )
         }.body()

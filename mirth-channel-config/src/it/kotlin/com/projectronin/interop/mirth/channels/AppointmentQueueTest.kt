@@ -1,18 +1,23 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.MirthClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.ProxyClient
-import com.projectronin.interop.mirth.channels.client.appointment
-import com.projectronin.interop.mirth.channels.client.daysFromNow
-import com.projectronin.interop.mirth.channels.client.identifier
-import com.projectronin.interop.mirth.channels.client.name
-import com.projectronin.interop.mirth.channels.client.participant
-import com.projectronin.interop.mirth.channels.client.patient
-import com.projectronin.interop.mirth.channels.client.reference
+import com.projectronin.interop.mirth.channels.client.data.datatypes.identifier
+import com.projectronin.interop.mirth.channels.client.data.datatypes.name
+import com.projectronin.interop.mirth.channels.client.data.datatypes.participant
+import com.projectronin.interop.mirth.channels.client.data.datatypes.reference
+import com.projectronin.interop.mirth.channels.client.data.primitives.daysFromNow
+import com.projectronin.interop.mirth.channels.client.data.resources.appointment
+import com.projectronin.interop.mirth.channels.client.data.resources.patient
+import com.projectronin.interop.mirth.channels.client.tenantIdentifier
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
+import kotlin.random.Random
 
 const val appointmentQueueChannelName = "AppointmentQueue"
 
@@ -26,6 +31,9 @@ class AppointmentQueueTest :
     fun `appointments can be queued`() {
         val startDate = 2.daysFromNow()
         val endDate = 3.daysFromNow()
+        // generating a random MRN so we can be sure if this test fails
+        // the random patient we left in mockEHR / aidbox won't cause problems on future run of test
+        val mrn = Random.nextInt(10000, 99999).toString()
         val patient1 = patient {
             identifier of listOf(
                 identifier {
@@ -33,7 +41,7 @@ class AppointmentQueueTest :
                 },
                 identifier {
                     system of "mockEHRMRNSystem"
-                    value of "MRN123"
+                    value of mrn
                 }
             )
             name of listOf(
@@ -57,13 +65,17 @@ class AppointmentQueueTest :
             end of endDate
         }
         val appointment1Id = MockEHRTestData.add(appointment1)
+        val aidboxPatient = patient1.copy(
+            identifier = patient1.identifier + tenantIdentifier(testTenant)
+        )
+        AidboxTestData.add(aidboxPatient)
 
-        assertEquals(0, getAidboxResourceCount("Patient"))
+        assertEquals(1, getAidboxResourceCount("Patient"))
         assertEquals(0, getAidboxResourceCount("Appointment"))
 
         // query for appointments from 'EHR'
         val apptNode = ProxyClient.getAppointmentsByMRN(
-            "MRN123",
+            mrn,
             testTenant,
             LocalDate.now().plusDays(2),
             LocalDate.now().plusDays(3)
@@ -82,7 +94,24 @@ class AppointmentQueueTest :
 
         val list = MirthClient.getChannelMessageIds(testChannelId)
         assertEquals(1, list.size)
+        assertAllConnectorsSent(list)
+
         // appointment successfully added to Aidbox
         assertEquals(1, getAidboxResourceCount("Appointment"))
+    }
+
+    @Test
+    fun `no data no message`() {
+        assertEquals(0, getAidboxResourceCount("Appointment"))
+        // start channel
+        deployAndStartChannel(false)
+        // just wait a moment
+        runBlocking {
+            delay(1000)
+        }
+        val list = MirthClient.getChannelMessageIds(testChannelId)
+        assertEquals(0, list.size)
+        // nothing added
+        assertEquals(0, getAidboxResourceCount("Appointment"))
     }
 }
