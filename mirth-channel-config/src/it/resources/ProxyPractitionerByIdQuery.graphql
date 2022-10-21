@@ -1,0 +1,10 @@
+query ($tenantId: String!, $fhirId: String!) {
+  getPractitionerById(tenantId: $tenantId, practitionerFhirId: $fhirId) {
+    id
+    name {
+      family
+      given
+      use
+    }
+  }
+}

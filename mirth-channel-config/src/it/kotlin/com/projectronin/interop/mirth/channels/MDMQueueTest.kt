@@ -5,9 +5,11 @@ import com.projectronin.interop.mirth.channels.client.MirthClient
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.ProxyClient
-import com.projectronin.interop.mirth.channels.client.patient
-import com.projectronin.interop.mirth.channels.client.practitioner
+import com.projectronin.interop.mirth.channels.client.data.resources.patient
+import com.projectronin.interop.mirth.channels.client.data.resources.practitioner
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
@@ -72,5 +74,23 @@ class MDMQueueTest : BaseMirthChannelTest(
         val binary = MockEHRClient.getPlainBinary(binaryId)
 
         assertEquals("integration testing\nsecond line", binary)
+    }
+
+    @Test
+    fun `no data no message`() {
+        assertEquals(0, getMockEHRResourceCount(documentReference))
+        assertEquals(0, getMockEHRResourceCount(binary))
+        // start channel
+        deployAndStartChannel(false)
+        // just wait a moment
+        runBlocking {
+            delay(1000)
+        }
+        val list = MirthClient.getChannelMessageIds(testChannelId)
+        assertEquals(0, list.size)
+
+        // nothing added
+        assertEquals(0, getMockEHRResourceCount(documentReference))
+        assertEquals(0, getMockEHRResourceCount(binary))
     }
 }

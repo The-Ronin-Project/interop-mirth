@@ -1,0 +1,12 @@
+query (
+  $tenantId: String!
+  $patientFhirId: String!
+) {
+  conditionsByPatientAndCategory(
+    tenantId: $tenantId
+    patientFhirId: $patientFhirId
+    conditionCategoryCode: PROBLEM_LIST_ITEM
+  ) {
+    id
+  }
+}

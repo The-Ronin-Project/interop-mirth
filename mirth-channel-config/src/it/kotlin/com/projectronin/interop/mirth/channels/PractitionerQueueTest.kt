@@ -3,8 +3,8 @@ package com.projectronin.interop.mirth.channels
 import com.projectronin.interop.mirth.channels.client.MirthClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.ProxyClient
-import com.projectronin.interop.mirth.channels.client.externalIdentifier
-import com.projectronin.interop.mirth.channels.client.practitioner
+import com.projectronin.interop.mirth.channels.client.data.datatypes.externalIdentifier
+import com.projectronin.interop.mirth.channels.client.data.resources.practitioner
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
