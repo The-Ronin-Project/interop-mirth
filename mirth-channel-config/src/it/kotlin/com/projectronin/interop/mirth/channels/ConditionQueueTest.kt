@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.mirth.channels.client.MirthClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.ProxyClient
 import com.projectronin.interop.mirth.channels.client.data.datatypes.codeableConcept
@@ -8,6 +7,7 @@ import com.projectronin.interop.mirth.channels.client.data.datatypes.coding
 import com.projectronin.interop.mirth.channels.client.data.datatypes.reference
 import com.projectronin.interop.mirth.channels.client.data.resources.condition
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
+import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals

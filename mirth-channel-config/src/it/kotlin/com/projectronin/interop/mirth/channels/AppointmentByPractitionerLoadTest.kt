@@ -2,7 +2,6 @@ package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.fhir.r4.valueset.ConditionCategoryCodes
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
-import com.projectronin.interop.mirth.channels.client.MirthClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.data.datatypes.codeableConcept
 import com.projectronin.interop.mirth.channels.client.data.datatypes.coding
@@ -17,6 +16,7 @@ import com.projectronin.interop.mirth.channels.client.data.resources.condition
 import com.projectronin.interop.mirth.channels.client.data.resources.location
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
 import com.projectronin.interop.mirth.channels.client.data.resources.practitioner
+import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -37,20 +37,12 @@ class AppointmentByPractitionerLoadTest :
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertEquals(1, messageList.size)
 
-        val jsonNode = MirthClient.getChannelMessages(testChannelId)
-        val list = jsonNode.get("list")
-
-        val connectorMessageByConnector = getConnectorMessageByConnector(list)
-
-        val expectedErrorMessage = "No Practitioners found in clinical data store for tenant $testTenant"
-
-        val conditionMessage = connectorMessageByConnector["Conditions"]!!
-        val conditionContent = conditionMessage.get("raw").get("content").asText()
-        assertTrue(conditionContent.contains(expectedErrorMessage))
-
-        val appointmentMessage = connectorMessageByConnector["Appointments"]!!
-        val appointmentContent = appointmentMessage.get("raw").get("content").asText()
-        assertTrue(appointmentContent.contains(expectedErrorMessage))
+        messageList.forEach { ids ->
+            val message = MirthClient.getMessageById(testChannelId, ids)
+            message.destinationMessages.forEach {
+                assertTrue(it.status == "ERROR" || it.status == "FILTERED")
+            }
+        }
     }
 
     @Test

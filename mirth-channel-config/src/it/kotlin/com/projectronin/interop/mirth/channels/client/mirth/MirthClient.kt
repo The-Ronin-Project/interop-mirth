@@ -1,4 +1,4 @@
-package com.projectronin.interop.mirth.channels.client
+package com.projectronin.interop.mirth.channels.client.mirth
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.projectronin.interop.common.jackson.JacksonManager
@@ -170,9 +170,9 @@ object MirthClient {
         return listOf(messageList.get("messageId").asInt())
     }
 
-    fun getMessageById(channelId: String, messageId: Int): JsonNode = runBlocking {
+    fun getMessageById(channelId: String, messageId: Int): Message = runBlocking {
         val messageUrl = CHANNELS_MESSAGE_FORMAT.format(channelId, messageId)
-        httpClient.get(messageUrl) {}.body()
+        httpClient.get(messageUrl) {}.body<MessageWrapper>().message
     }
 
     fun clearChannelMessages(channelId: String) = runBlocking {
