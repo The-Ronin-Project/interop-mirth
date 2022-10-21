@@ -124,7 +124,7 @@ abstract class BaseMirthChannelTest(
                 assertEquals(
                     "SENT",
                     it.status,
-                    "status for connector ${it.connectorName} was not SENT. Actual status: $${it.status}"
+                    "status for connector ${it.connectorName} was not SENT. Actual status: ${it.status}"
                 )
             }
         }
