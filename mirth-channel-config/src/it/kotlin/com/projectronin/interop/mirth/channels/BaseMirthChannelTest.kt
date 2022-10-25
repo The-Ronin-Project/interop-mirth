@@ -1,11 +1,10 @@
 package com.projectronin.interop.mirth.channels
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.projectronin.interop.mirth.channels.client.AidboxClient
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
-import com.projectronin.interop.mirth.channels.client.MirthClient
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
+import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -116,29 +115,17 @@ abstract class BaseMirthChannelTest(
         }
     }
 
-    protected fun getConnectorMessageByConnector(messageList: JsonNode): Map<String, JsonNode> {
-        // this can be one lined, but it's a complicated function, so break it up so it's easier to find
-        // where an error occurs
-        val entries = messageList.get("message").get("connectorMessages").get("entry")
-        val connectors = entries.map { it.get("connectorMessage") }
-        return connectors.associateBy { it.get("connectorName").asText() }
-    }
-
     protected fun assertAllConnectorsSent(messageList: List<Int>) {
         val messages = messageList.map {
             MirthClient.getMessageById(testChannelId, it)
         }
-        messages.forEach {
-            getConnectorMessageByConnector(it).forEach { name, node ->
-                // source will always be transformed
-                if (name != "Source") {
-                    val status = node.get("status").asText()
-                    assertEquals(
-                        "SENT",
-                        status,
-                        "status for connector $name was not SENT. Actual status: $status, node: ${node.toPrettyString()}"
-                    )
-                }
+        messages.forEach { connectorMessage ->
+            connectorMessage.destinationMessages.forEach {
+                assertEquals(
+                    "SENT",
+                    it.status,
+                    "status for connector ${it.connectorName} was not SENT. Actual status: ${it.status}"
+                )
             }
         }
     }
@@ -163,4 +150,6 @@ abstract class BaseMirthChannelTest(
             }
         }
     }
+
+    protected fun pause() = runBlocking { delay(1000) }
 }

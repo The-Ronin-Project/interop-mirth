@@ -1,7 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
-import com.projectronin.interop.mirth.channels.client.MirthClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.ProxyClient
 import com.projectronin.interop.mirth.channels.client.data.datatypes.identifier
@@ -11,6 +10,7 @@ import com.projectronin.interop.mirth.channels.client.data.datatypes.reference
 import com.projectronin.interop.mirth.channels.client.data.primitives.daysFromNow
 import com.projectronin.interop.mirth.channels.client.data.resources.appointment
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
+import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
