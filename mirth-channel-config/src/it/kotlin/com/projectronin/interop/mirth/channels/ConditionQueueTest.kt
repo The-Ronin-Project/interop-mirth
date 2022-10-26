@@ -8,8 +8,6 @@ import com.projectronin.interop.mirth.channels.client.data.datatypes.reference
 import com.projectronin.interop.mirth.channels.client.data.resources.condition
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -78,9 +76,7 @@ class ConditionQueueTest : BaseMirthChannelTest(conditionQueueChannelName, listO
         // start channel
         deployAndStartChannel(false)
         // just wait a moment
-        runBlocking {
-            delay(1000)
-        }
+        pause()
         val list = MirthClient.getChannelMessageIds(testChannelId)
         assertEquals(0, list.size)
         // nothing added

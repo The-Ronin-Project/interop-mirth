@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test
 const val practitionerQueueChannelName = "PractitionerQueue"
 
 class PractitionerQueueTest : BaseMirthChannelTest(practitionerQueueChannelName, listOf("Practitioner")) {
+    private val practitionerType = "Practitioner"
     @Test
     fun `queued practitioners are processed`() {
         val practitioner = practitioner {
@@ -22,7 +23,7 @@ class PractitionerQueueTest : BaseMirthChannelTest(practitionerQueueChannelName,
         val practitionerId = MockEHRTestData.add(practitioner)
 
         // Validate there are no current Practitioners.
-        assertEquals(0, getAidboxResourceCount("Practitioner"))
+        assertEquals(0, getAidboxResourceCount(practitionerType))
 
         // Queue up the practitioner
         val proxyNode = ProxyClient.getPractitionerByFHIRId(practitionerId, testTenant)
@@ -37,6 +38,20 @@ class PractitionerQueueTest : BaseMirthChannelTest(practitionerQueueChannelName,
         val list = MirthClient.getChannelMessageIds(testChannelId)
         assertEquals(1, list.size)
         // practitioner successfully added to Aidbox
-        assertEquals(1, getAidboxResourceCount("Practitioner"))
+        assertEquals(1, getAidboxResourceCount(practitionerType))
+    }
+
+    @Test
+    fun `no data no message`() {
+        assertEquals(0, getAidboxResourceCount(practitionerType))
+        // start channel
+        deployAndStartChannel(false)
+        // just wait a moment
+        pause()
+        val list = MirthClient.getChannelMessageIds(testChannelId)
+        assertEquals(0, list.size)
+
+        // nothing added
+        assertEquals(0, getAidboxResourceCount(practitionerType))
     }
 }

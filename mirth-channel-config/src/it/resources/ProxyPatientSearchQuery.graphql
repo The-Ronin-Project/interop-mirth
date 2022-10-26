@@ -1,0 +1,15 @@
+query (
+  $tenantId: String!
+  $familyName: String!
+  $givenName: String!
+  $birthdate: String!
+) {
+  patientsByNameAndDOB(
+    tenantId: $tenantId
+    family: $familyName
+    given: $givenName
+    birthdate: $birthdate
+  ) {
+    id
+  }
+}

@@ -94,6 +94,12 @@ object ProxyClient {
             variables = mapOf("tenantId" to tenantMnemonic, "patientFhirId" to patientFhirId)
         )
 
+    fun getPatientByNameAndDob(tenantMnemonic: String, familyName: String, givenName: String, dob: String): JsonNode =
+        callGraphQLProxy(
+            query = this::class.java.getResource("/ProxyPatientSearchQuery.graphql")!!.readText(),
+            variables = mapOf("tenantId" to tenantMnemonic, "familyName" to familyName, "givenName" to givenName, "birthdate" to dob)
+        )
+
     private fun callGraphQLProxy(query: String, variables: Map<String, Any?>): JsonNode = runBlocking {
         httpClient.post(GRAPHQL_URL) {
             contentType(ContentType.Application.Json)
