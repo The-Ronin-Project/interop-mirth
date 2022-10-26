@@ -15,6 +15,7 @@ dependencies {
     implementation(libs.interop.ehr.epic)
     implementation(libs.interop.fhir.core)
     implementation(libs.interop.publishers)
+    implementation(libs.interop.datalake)
     implementation(libs.interop.queue.api)
     implementation(libs.interop.queue.db)
     implementation(libs.interop.tenant)
