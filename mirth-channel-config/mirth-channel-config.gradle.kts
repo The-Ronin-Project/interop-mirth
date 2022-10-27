@@ -8,7 +8,6 @@ mirth {
     dockerDirectory = layout.buildDirectory.dir("../dev-env")
     mirthConnectorLibrary = project(":mirth-channel-code")
     codeTemplateLibraryDirectory = layout.buildDirectory.dir("../code-template-libraries")
-    testReportsDirectory = layout.buildDirectory.dir("postman-tests")
 
     channel {
         baseDirectory = layout.buildDirectory.dir("../channels")

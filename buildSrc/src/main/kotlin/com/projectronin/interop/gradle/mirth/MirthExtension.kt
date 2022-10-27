@@ -26,8 +26,6 @@ open class MirthExtension @Inject constructor(objectFactory: ObjectFactory) {
      */
     lateinit var codeTemplateLibraryDirectory: Provider<Directory>
 
-    lateinit var testReportsDirectory: Provider<Directory>
-
     /**
      * The [ChannelExtension] for this extension.
      */

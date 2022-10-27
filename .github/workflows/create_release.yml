@@ -36,9 +36,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Execute build, excluding Postman tests
+      - name: Execute build
         if: ${{ github.event.inputs.skip_publish == 'false' }}
-        run: ./gradlew build -x :mirth-channel-config:test
+        run: ./gradlew build
 
       - name: Get version
         id: get-version

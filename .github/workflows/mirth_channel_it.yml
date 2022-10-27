@@ -44,9 +44,9 @@ jobs:
       - name: Run tests
         run: ./gradlew :mirth-channel-config:it --info --stacktrace
 
-      - name: Archive postman test output
+      - name: Archive integration test output
         if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
-          name: postman-results
-          path: /runner/_work/mirth-channel-config/mirth-channel-config/build/postman-tests
+          name: test-results
+          path: /runner/_work/mirth-channel-config/mirth-channel-config/build/tests

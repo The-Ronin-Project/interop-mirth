@@ -11,8 +11,6 @@ import com.projectronin.interop.gradle.mirth.task.ReloadMirthResourceTask
 import com.projectronin.interop.gradle.mirth.task.SetupUserTask
 import com.projectronin.interop.gradle.mirth.task.UpdateTenantConfigTask
 import com.projectronin.interop.gradle.mirth.task.UpdateTenantServerTask
-import com.projectronin.interop.gradle.postman.task.InstallNewmanTask
-import com.projectronin.interop.gradle.postman.task.PostmanTestTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.kotlin.dsl.create
@@ -28,7 +26,6 @@ class MirthPlugin : Plugin<Project> {
         project.extensions.create<com.projectronin.interop.gradle.mirth.MirthExtension>(EXTENSION_NAME)
 
         setupMirthTasks(project)
-        setupPostmanTasks(project)
     }
 
     private fun setupMirthTasks(project: Project) {
@@ -87,18 +84,6 @@ class MirthPlugin : Plugin<Project> {
             dependsOn(updateTenantConfig)
             dependsOn(updateTenantServer)
             dependsOn(installAidboxResources)
-        }
-    }
-
-    private fun setupPostmanTasks(project: Project) {
-        val installNewman = project.tasks.register<InstallNewmanTask>("installNewman")
-        val postmanTests = project.tasks.register<PostmanTestTask>("postmanTests") {
-            dependsOn(installNewman)
-            dependsOn(project.tasks.named("mirth"))
-        }
-
-        project.tasks.getByName("test") {
-            dependsOn(postmanTests)
         }
     }
 }

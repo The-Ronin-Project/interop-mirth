@@ -70,9 +70,6 @@ Under [channels](channels)*/channelName*
 
 * __channel__ - channel definition export file, can be imported - *channelName*.xml
 * __doc__ - channel flow diagram and overview, generated from definition - *channelName*.html
-* __test__ - Postman files for channel tests:
-    * *channelName*.postman_collection.json
-    * *channelName*.postman_environment.json
 * __aidbox__ - bundles needed for the channel to run
     * *name*.json
 * __config__ - contains any local configuration properties files
@@ -102,15 +99,6 @@ These subfolders provide files to build Mirth and test Mirth channels in a local
 
 [dev-util](dev-util) - Utilities for Mirth channel developers. Over time, tools may be replaced or refactored to
 increase automation.
-
-* [postman](dev-util/postman) - Informal Postman collections that Mirth channel developers can adjust locally as needed.
-  Examples:
-
-    * __Patch Dates__ - Patch dates in Mock EHR test data Appointments to
-      make Appointments "recent". Without this patch, Appointments may be missed as irrelevant to a search.
-
-    * __GET Resources__ - Easily GET resources from the Mock EHR so a developer can view them.
-      The developer can then adapt the GET entries to send PUT calls to adjust the data as needed.
 
 
 * [channels](dev-util/channels) - Channels used only in development
