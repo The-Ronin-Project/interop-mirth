@@ -5,15 +5,12 @@ all of the dependent services and resources (devbox, database, etc.) with minima
 
 ### Required Configuration
 
-The [.zshenv] is a template to the required developer settings that must be added to the local .zshenv file if not
-already present.
+The [.zshenv.example] contains the variables needed to be added to your local environment if not already set.
 
-1. Github Repo access,
-   see [here](https://projectronin.atlassian.net/wiki/spaces/ENG/pages/1645740033/GitHub+-+interops+onboarding#GitHub-interopsonboarding-Packages)
-2. Aidbox Devbox Licence, see [here](https://docs.aidbox.app/getting-started/installation/setup-aidbox.dev)
-3. App Orchard Sandbox access,
+1. Aidbox Devbox Licence, see [here](https://docs.aidbox.app/getting-started/installation/setup-aidbox.dev)
+2. App Orchard Sandbox access,
    see [here](https://projectronin.atlassian.net/wiki/spaces/ENG/pages/1620279305/Uses+for+AppOrchard+in+Development#AO_SANDBOX_KEY-for-.env-and-.zshenv-Files)
-4. Access to dev Seki, see [here](https://github.com/projectronin/interop-mirth-channels#readme)
+3. Access to dev Seki, see [here](https://github.com/projectronin/interop-mirth-channels#readme)
 
 More detailed instuctions are included on
    our [wiki](https://projectronin.atlassian.net/wiki/spaces/ENG/pages/1687552027/Development+Environment)

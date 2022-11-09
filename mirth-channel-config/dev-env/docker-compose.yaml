@@ -5,27 +5,10 @@ services:
   mc:
     image: docker-proxy.devops.projectronin.io/ronin/base/mirth-base:3.11.0
     container_name: mirth-connect
+    env_file:
+      - envs/mirth.env
     environment:
-      - DATABASE=postgres
-      - DATABASE_URL=jdbc:postgresql://mirth-db:5433/mirthdb
-      - DATABASE_MAX_CONNECTIONS=20
-      - DATABASE_USERNAME=mirthdb
-      - DATABASE_PASSWORD=mirthdb
-      - DATABASE_MAX_RETRY=2
-      - DATABASE_RETRY_WAIT=10000
-      - KEYSTORE_STOREPASS=docker_storepass
-      - KEYSTORE_KEYPASS=docker_keypass
-      - VMOPTIONS=-Xmx512m
       - AO_SANDBOX_KEY
-      - AIDBOX_CLIENT_ID=${AIDBOX_CLIENT_ID}
-      - AIDBOX_CLIENT_SECRET=${AIDBOX_CLIENT_SECRET}
-      - AIDBOX_REST_URL=http://devbox:${AIDBOX_PORT}
-      - TENANT_DB_URL=jdbc:mysql://mockehrmysql:3306/interop-ehr
-      - TENANT_DB_USERNAME=ehr
-      - TENANT_DB_PASSWORD=secret
-      - QUEUE_DB_URL=jdbc:mysql://mockehrmysql:3306/interop-queue
-      - QUEUE_DB_USERNAME=queue
-      - QUEUE_DB_PASSWORD=secret
     ports: # Mirth and Mirth Admin UI
       - 8080:8080/tcp
       - 8443:8443/tcp
@@ -61,10 +44,8 @@ services:
   mirth-db:
     image: postgres
     container_name: mirth-db
-    environment:
-      - POSTGRES_USER=mirthdb
-      - POSTGRES_PASSWORD=mirthdb
-      - POSTGRES_DB=mirthdb
+    env_file:
+      - envs/mirth.env
     volumes:
       - ./data-mcpg:/data  # Avoid collision with "data" folder used by devbox and devbox-db
     expose:
@@ -73,7 +54,7 @@ services:
 
   ## Aidbox (Devbox)
   devbox:
-    image: "${AIDBOX_IMAGE}"
+    image: healthsamurai/devbox:2206-lts
     container_name: mirth-devbox
     depends_on:
       - "devbox-db"
@@ -82,12 +63,10 @@ services:
     ports:
       - "${AIDBOX_PORT}:${AIDBOX_PORT}"
     env_file:
-      - .env
+      - envs/aidbox.env
     environment:
-      AIDBOX_CONFIG: /var/config/config.edn
-      PGHOST: database
-      AIDBOX_LICENSE_ID:
-      AIDBOX_LICENSE_KEY:
+      - AIDBOX_LICENSE_ID
+      - AIDBOX_LICENSE_KEY
     volumes:
       - ./config:/var/config
       - ./data:/data # Avoid collision with "data" folder used by devbox-db and mirth-db
@@ -97,16 +76,14 @@ services:
       retries: 10
 
   devbox-db:
-    image: "${PGIMAGE}"
+    image: healthsamurai/aidboxdb:13.2
     container_name: mirth-devbox-db
     ports:
-      - "${PGHOSTPORT}:${PGPORT}"
+      - "${AIDBOX_PGHOSTPORT}:${AIDBOX_PGPORT}"
+    env_file:
+      - envs/aidbox.env
     volumes:
       - ./data-dbpg:/data # Avoid collision with "data" folder used by devbox and mirth-db
-    environment:
-      - POSTGRES_USER=${PGUSER}
-      - POSTGRES_PASSWORD=${PGPASSWORD}
-      - POSTGRES_DB=${PGDATABASE}
 
   # MySQL Database.
   # It is name "mockehrmysql" due to the mock-ehr-init script requiring this name
@@ -131,7 +108,7 @@ services:
     image: docker-proxy.devops.projectronin.io/interop-ehr-liquibase:dev
     container_name: mirth-ehr-liquibase
     environment:
-      - JDBC_URL=jdbc:mysql://ehr:secret@mockehrmysql:3306/interop-ehr
+      - JDBC_URL=jdbc:mysql://$EHR_DB_USERNAME:$EHR_DB_PASSWORD@mockehrmysql:3306/interop-ehr
       - DATA_LOAD=db/changelog/insertTestData.yaml
       - AO_SANDBOX_KEY
     volumes:
@@ -175,7 +152,7 @@ services:
     image: docker-repo.devops.projectronin.io/interop-queue-liquibase:1.1.1
     container_name: mirth-queue-liquibase
     environment:
-      - JDBC_URL=jdbc:mysql://queue:secret@mockehrmysql:3306/interop-queue
+      - JDBC_URL=jdbc:mysql://${QUEUE_DB_USERNAME}:${QUEUE_DB_PASSWORD}@mockehrmysql:3306/interop-queue
     depends_on:
       mockehrmysql:
         condition: service_healthy
@@ -183,16 +160,11 @@ services:
   local-proxy:
     image: docker-proxy.devops.projectronin.io/interop-proxy-server:latest
     container_name: mirth-proxy-sever
+    env_file:
+      - envs/proxy.env
     environment:
-      - SPRING_QUEUE_DATASOURCE_JDBCURL=jdbc:mysql://queue:secret@mockehrmysql:3306/interop-queue
-      - SPRING_EHR_DATASOURCE_JDBCURL=jdbc:mysql://ehr:secret@mockehrmysql:3306/interop-ehr
-      - RONIN_SERVER_AUTH_M2M_ISSUER=https://ronin-dev.auth0.com/
-      - RONIN_SERVER_AUTH_M2M_AUDIENCE=https://interop-proxy-server.dev.projectronin.io
       - AO_SANDBOX_KEY
       - SERVICE_CALL_JWT_SECRET
-      - AIDBOX_URL=http://devbox:${AIDBOX_PORT}
-      - AIDBOX_CLIENT_ID
-      - AIDBOX_CLIENT_SECRET
     ports:
       - 8082:8080
     volumes:
