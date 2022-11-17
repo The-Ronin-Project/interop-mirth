@@ -13,7 +13,8 @@ internal object DatabaseUtil {
     val tenantDatabase =
         Database.connect(
             url = tenantDatabaseURL, user = tenantDatabaseUsername, password = tenantDatabasePassword,
-            dialect = MySqlDialect()
+            dialect = MySqlDialect(),
+            driver = "com.mysql.cj.jdbc.Driver"
         )
 
     private val queueDatabaseURL = EnvironmentReader.readRequired("QUEUE_DB_URL")
@@ -24,6 +25,7 @@ internal object DatabaseUtil {
             url = queueDatabaseURL,
             user = queueDatabaseUsername,
             password = queueDatabasePassword,
-            dialect = MySqlDialect()
+            dialect = MySqlDialect(),
+            driver = "com.mysql.cj.jdbc.Driver"
         )
 }

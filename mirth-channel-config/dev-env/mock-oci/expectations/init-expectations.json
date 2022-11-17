@@ -1,0 +1,23 @@
+[ {
+  "httpRequest" : {
+    "method" : "GET",
+    "path" : "/n/.*/b/.*/o/.*"
+  },
+  "httpResponse" : {
+    "statusCode" : 200,
+    "headers" : {
+      "Content-Type" : [ "application/json;" ]
+    },
+    "body" : {
+      "FakeNode" : "Fake Object Retrieved From Mock Server"
+    }
+  },
+  "id" : "GetObjectExpectation",
+  "priority" : 0,
+  "timeToLive" : {
+    "unlimited" : true
+  },
+  "times" : {
+    "unlimited" : true
+  }
+} ]

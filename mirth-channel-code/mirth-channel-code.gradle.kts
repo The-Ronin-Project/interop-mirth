@@ -21,6 +21,11 @@ dependencies {
     implementation(libs.interop.tenant)
     implementation(libs.interop.fhir.ronin)
 
+    implementation(libs.jakarta.ws)
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.mysql.connector.java)
+    implementation(libs.jersey.glassfish.client)
+
     implementation(libs.jackson.module.kotlin)
     implementation(libs.ktor.client.core)
     implementation(libs.ktorm.core)
@@ -42,6 +47,13 @@ dependencies {
 // Set up ShadowJar to run at the end of the Jar task, thus ensuring both are always built.
 tasks.jar {
     finalizedBy(tasks.shadowJar)
+}
+
+tasks.shadowJar {
+    relocate("javax.ws.rs", "interop.javax.ws.rs")
+    relocate("org.glassfish.jersey", "interop.org.glassfish.jersey")
+    relocate("org.glassfish.hk2", "interop.org.glassfish.hk2")
+    relocate("org.jvnet.hk2", "interop.org.jvnet.hk2")
 }
 
 tasks.withType(Test::class) {

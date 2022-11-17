@@ -3,7 +3,8 @@ services:
 
   ## Mirth
   mc:
-    image: docker-proxy.devops.projectronin.io/ronin/base/mirth-base:3.11.0
+    # image: docker-proxy.devops.projectronin.io/ronin/base/mirth-base:3.11.0
+    build: './mirth'
     container_name: mirth-connect
     env_file:
       - envs/mirth.env
@@ -35,6 +36,8 @@ services:
       liquibase-queue:
         condition: service_completed_successfully
       mockehr:
+        condition: service_started
+      mock-server:
         condition: service_started
     healthcheck:
       test: [ "CMD", "curl", "-k", "-X", "GET", "https://mc:8443/api/server/resources", "-H", "\"X-Requested-With: OpenAPI\"", "-u", "admin:admin" ]
@@ -180,6 +183,20 @@ services:
       test: [ "CMD", "curl", "-k", "-X", "GET", "localhost:8080/actuator/health" ]
       timeout: 5s
       retries: 10
+
+  mock-server:
+    image: "docker-proxy.devops.projectronin.io/mockserver/mockserver:latest"
+    container_name: mirth-mock-oci
+    volumes:
+      - "./mock-oci/config/mockserver.properties:/config/mockserver.properties"
+      - "./mock-oci/expectations:/expectations"
+    ports:
+      - 1081:443
+    networks:
+      default:
+        aliases:
+          - oraclecloud.com
+          - objectstorage.us-phoenix-1.oraclecloud.com
 
   # This is just to force servers to be healthy before completion. The docker compose up --wait functionality appears to fail due to the stopped containers.
   wait:
