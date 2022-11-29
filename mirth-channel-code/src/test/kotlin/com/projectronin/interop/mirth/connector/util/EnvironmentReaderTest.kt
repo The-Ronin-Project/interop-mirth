@@ -1,5 +1,7 @@
 package com.projectronin.interop.mirth.connector.util
 
+import io.mockk.every
+import io.mockk.mockkObject
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.AfterEach
@@ -44,6 +46,8 @@ class EnvironmentReaderTest {
         System.setProperty(VaultClient.Keys.SECRET_ID, "vault-client-secret-id")
         System.setProperty(VaultClient.Keys.ENV, "dev")
         System.setProperty(VaultClient.Keys.URL, "http://localhost:${mockWebServer.port}/")
+        mockkObject(EnvironmentReader)
+        every { EnvironmentReader.getProperty("vaultValues") } returns mapOf("TEST_KEY_1" to "testValue1", "TEST_KEY_2" to "testValue2")
     }
 
     @AfterEach

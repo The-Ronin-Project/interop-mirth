@@ -3,6 +3,7 @@ package com.projectronin.interop.mirth.channels.client.data.datatypes
 import com.github.javafaker.Faker
 import com.projectronin.interop.fhir.r4.datatype.HumanName
 import com.projectronin.interop.fhir.r4.datatype.Period
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.mirth.channels.client.data.Generator
 import com.projectronin.interop.mirth.channels.client.data.primitives.FakerGenerator
 import com.projectronin.interop.mirth.channels.client.data.primitives.ListGenerator
@@ -22,11 +23,11 @@ class HumanNameGenerator : Generator<HumanName>() {
     override fun generateInternal(): HumanName {
         return HumanName(
             use = use.generate(),
-            text = text.generate(),
-            family = family.generate(),
-            given = given.generate(),
-            prefix = prefix.generate(),
-            suffix = suffix.generate(),
+            text = text.generate()?.asFHIR(),
+            family = family.generate()?.asFHIR(),
+            given = given.generate().asFHIR(),
+            prefix = prefix.generate().asFHIR(),
+            suffix = suffix.generate().asFHIR(),
             period = period.generate()
         )
     }

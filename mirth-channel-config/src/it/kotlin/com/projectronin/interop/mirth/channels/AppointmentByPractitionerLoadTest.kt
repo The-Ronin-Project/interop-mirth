@@ -3,6 +3,7 @@ package com.projectronin.interop.mirth.channels
 import com.projectronin.interop.fhir.r4.valueset.ConditionCategoryCodes
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
+import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.data.datatypes.codeableConcept
 import com.projectronin.interop.mirth.channels.client.data.datatypes.coding
 import com.projectronin.interop.mirth.channels.client.data.datatypes.externalIdentifier
@@ -29,7 +30,10 @@ class AppointmentByPractitionerLoadTest :
         appointmentByPractitionerLoadName,
         listOf("Practitioner", "Patient", "Appointment", "Condition")
     ) {
-
+    val patientType = "Patient"
+    val appointmentType = "Appointment"
+    val conditionType = "Condition"
+    val practitionerType = "Practitioner"
     @Test
     fun `fails if no practitioner`() {
         deployAndStartChannel(true)
@@ -87,11 +91,11 @@ class AppointmentByPractitionerLoadTest :
             participant of listOf(
                 participant {
                     status of "accepted"
-                    actor of reference("Practitioner", practitioner1Id)
+                    actor of reference(practitionerType, practitioner1Id)
                 },
                 participant {
                     status of "accepted"
-                    actor of reference("Patient", patient1Id)
+                    actor of reference(patientType, patient1Id)
                 },
                 participant {
                     status of "accepted"
@@ -101,7 +105,7 @@ class AppointmentByPractitionerLoadTest :
             start of 2.daysFromNow()
             end of 3.daysFromNow()
         }
-        MockEHRTestData.add(appointment1)
+        val appointmentID = MockEHRTestData.add(appointment1)
 
         val condition1 = condition {
             clinicalStatus of codeableConcept {
@@ -134,9 +138,17 @@ class AppointmentByPractitionerLoadTest :
                 )
                 text of "Apnea"
             }
-            subject of reference("Patient", patient1Id)
+            subject of reference(patientType, patient1Id)
         }
-        MockEHRTestData.add(condition1)
+        val conditionID = MockEHRTestData.add(condition1)
+
+        val expectedMap = mapOf(
+            patientType to listOf(patient1Id),
+            conditionType to listOf(conditionID),
+            appointmentType to listOf(appointmentID)
+        )
+
+        MockOCIServerClient.createExpectations(expectedMap)
 
         // Not particularly a fan of this method, but best I can come up with quickly
         val aidboxPractitioner1 = practitioner1.copy(
@@ -144,10 +156,10 @@ class AppointmentByPractitionerLoadTest :
         )
         AidboxTestData.add(aidboxPractitioner1)
 
-        assertEquals(0, getAidboxResourceCount("Patient"))
-        assertEquals(1, getAidboxResourceCount("Practitioner"))
-        assertEquals(0, getAidboxResourceCount("Appointment"))
-        assertEquals(0, getAidboxResourceCount("Condition"))
+        assertEquals(0, getAidboxResourceCount(patientType))
+        assertEquals(1, getAidboxResourceCount(practitionerType))
+        assertEquals(0, getAidboxResourceCount(appointmentType))
+        assertEquals(0, getAidboxResourceCount(conditionType))
 
         deployAndStartChannel(true)
 
@@ -155,9 +167,14 @@ class AppointmentByPractitionerLoadTest :
         assertEquals(1, messageList.size)
 
         assertAllConnectorsSent(messageList)
-        assertEquals(1, getAidboxResourceCount("Patient"))
-        assertEquals(1, getAidboxResourceCount("Appointment"))
-        assertEquals(1, getAidboxResourceCount("Condition"))
+        assertEquals(1, getAidboxResourceCount(patientType))
+        assertEquals(1, getAidboxResourceCount(appointmentType))
+        assertEquals(1, getAidboxResourceCount(conditionType))
+
+        // ensure data lake gets what it needs
+        MockOCIServerClient.verify(3)
+        val resources = MockOCIServerClient.getAllPutsAsResources()
+        verifyAllPresent(resources, expectedMap)
     }
 
     @Test
@@ -201,11 +218,11 @@ class AppointmentByPractitionerLoadTest :
             participant of listOf(
                 participant {
                     status of "accepted"
-                    actor of reference("Practitioner", practitioner1Id)
+                    actor of reference(practitionerType, practitioner1Id)
                 },
                 participant {
                     status of "accepted"
-                    actor of reference("Patient", patient1Id)
+                    actor of reference(patientType, patient1Id)
                 },
                 participant {
                     status of "accepted"
@@ -215,7 +232,7 @@ class AppointmentByPractitionerLoadTest :
             start of 2.daysFromNow()
             end of 3.daysFromNow()
         }
-        MockEHRTestData.add(appointment1)
+        val appointmentID = MockEHRTestData.add(appointment1)
 
         val condition1 = condition {
             clinicalStatus of codeableConcept {
@@ -248,7 +265,7 @@ class AppointmentByPractitionerLoadTest :
                 )
                 text of "Apnea"
             }
-            subject of reference("Patient", patient1Id)
+            subject of reference(patientType, patient1Id)
         }
         val condition2 = condition {
             clinicalStatus of codeableConcept {
@@ -281,7 +298,7 @@ class AppointmentByPractitionerLoadTest :
                 )
                 text of "Apnea"
             }
-            subject of reference("Patient", patient1Id)
+            subject of reference(patientType, patient1Id)
         }
         val condition3 = condition {
             clinicalStatus of codeableConcept {
@@ -314,7 +331,7 @@ class AppointmentByPractitionerLoadTest :
                 )
                 text of "Apnea"
             }
-            subject of reference("Patient", patient1Id)
+            subject of reference(patientType, patient1Id)
         }
         val condition4 = condition {
             clinicalStatus of codeableConcept {
@@ -347,7 +364,7 @@ class AppointmentByPractitionerLoadTest :
                 )
                 text of "Apnea"
             }
-            subject of reference("Patient", patient1Id)
+            subject of reference(patientType, patient1Id)
         }
         val condition5 = condition {
             clinicalStatus of codeableConcept {
@@ -369,14 +386,21 @@ class AppointmentByPractitionerLoadTest :
                 )
                 text of "Apnea"
             }
-            subject of reference("Patient", patient1Id)
+            subject of reference(patientType, patient1Id)
         }
 
-        MockEHRTestData.add(condition1)
-        MockEHRTestData.add(condition2)
+        val cond1Id = MockEHRTestData.add(condition1)
+        val cond2Id = MockEHRTestData.add(condition2)
         MockEHRTestData.add(condition3)
         MockEHRTestData.add(condition4)
         MockEHRTestData.add(condition5)
+
+        val expectedMap = mapOf(
+            patientType to listOf(patient1Id),
+            conditionType to listOf(cond1Id, cond2Id),
+            appointmentType to listOf(appointmentID)
+        )
+        MockOCIServerClient.createExpectations(expectedMap)
 
         // Not particularly a fan of this method, but best I can come up with quickly
         val aidboxPractitioner1 = practitioner1.copy(
@@ -384,20 +408,27 @@ class AppointmentByPractitionerLoadTest :
         )
         AidboxTestData.add(aidboxPractitioner1)
 
-        assertEquals(0, getAidboxResourceCount("Patient"))
-        assertEquals(1, getAidboxResourceCount("Practitioner"))
-        assertEquals(0, getAidboxResourceCount("Appointment"))
-        assertEquals(0, getAidboxResourceCount("Condition"))
+        assertEquals(0, getAidboxResourceCount(patientType))
+        assertEquals(1, getAidboxResourceCount(practitionerType))
+        assertEquals(0, getAidboxResourceCount(appointmentType))
+        assertEquals(0, getAidboxResourceCount(conditionType))
 
         deployAndStartChannel(true)
+        // this one is moving slow for w/e reason
+        pause()
 
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertEquals(1, messageList.size)
 
         assertAllConnectorsSent(messageList)
 
-        assertEquals(1, getAidboxResourceCount("Patient"))
-        assertEquals(1, getAidboxResourceCount("Appointment"))
-        assertEquals(2, getAidboxResourceCount("Condition"))
+        assertEquals(1, getAidboxResourceCount(patientType))
+        assertEquals(1, getAidboxResourceCount(appointmentType))
+        assertEquals(2, getAidboxResourceCount(conditionType))
+
+        // ensure data lake gets what it needs
+        MockOCIServerClient.verify(4)
+        val resources = MockOCIServerClient.getAllPutsAsResources()
+        verifyAllPresent(resources, expectedMap)
     }
 }

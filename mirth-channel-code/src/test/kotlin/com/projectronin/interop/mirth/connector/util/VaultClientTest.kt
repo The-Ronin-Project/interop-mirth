@@ -161,6 +161,25 @@ class VaultClientTest {
         assertEquals(mapOf("TEST_KEY_1" to "testValue1", "TEST_KEY_2" to "testValue2"), value)
     }
 
+    @SetEnvironmentVariable(key = "VAULT_ROLE_ID", value = "vault-client-role-id")
+    @SetEnvironmentVariable(key = "VAULT_SECRET_ID", value = "vault-client-secret-id")
+    @SetEnvironmentVariable(key = "VAULT_ENGINE", value = "interop-test")
+    @SetEnvironmentVariable(key = "ENVIRONMENT", value = "dev")
+    @SetEnvironmentVariable(key = "VAULT_URL", value = "http://localhost:8083/")
+    @Test
+    fun `server errors default to empty map`() {
+        mockWebServer.start(8083)
+        mockWebServer.enqueue(
+            MockResponse().setResponseCode(200).setBody(mockAuthResponse).setHeader("Content-Type", "application/json")
+        )
+        mockWebServer.enqueue(
+            MockResponse().setResponseCode(404).setBody("{}").setHeader("Content-Type", "application/json")
+        )
+
+        val value = runBlocking { VaultClient().readConfig() }
+        assertEquals(emptyMap<String, String>(), value)
+    }
+
     @Test
     fun `errors from vault default to empty map`() {
         System.setProperty(VaultClient.Keys.ENV, "dev")

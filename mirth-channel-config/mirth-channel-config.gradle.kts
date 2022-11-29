@@ -34,5 +34,8 @@ dependencies {
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.bundles.ktor)
     testImplementation(libs.xerces)
+
     implementation(project(":mirth-channel-code"))
+
+    itImplementation(libs.mockserver.client.java)
 }

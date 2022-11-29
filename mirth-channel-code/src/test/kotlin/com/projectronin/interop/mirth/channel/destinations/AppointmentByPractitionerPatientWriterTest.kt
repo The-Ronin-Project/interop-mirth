@@ -3,6 +3,7 @@ package com.projectronin.interop.mirth.channel.destinations
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Patient
+import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
 import com.projectronin.interop.fhir.ronin.resource.RoninPatient
 import com.projectronin.interop.fhir.ronin.transformTo
 import com.projectronin.interop.mirth.channel.enums.MirthKey
@@ -22,6 +23,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 private const val VALID_TENANT_ID = "mdaoc"
 private const val CHANNEL_ROOT_NAME = "AppointmentByPractitionerLoad"
@@ -31,6 +33,7 @@ class AppointmentByPractitionerPatientWriterTest {
     lateinit var vendorFactory: VendorFactory
     lateinit var serviceFactory: ServiceFactory
     lateinit var writer: AppointmentByPractitionerPatientWriter
+    lateinit var conceptMapClient: ConceptMapClient
 
     private val tenant = mockk<Tenant> {
         every { mnemonic } returns VALID_TENANT_ID
@@ -45,10 +48,12 @@ class AppointmentByPractitionerPatientWriterTest {
     @BeforeEach
     fun setup() {
         vendorFactory = mockk()
+        conceptMapClient = mockk()
 
         serviceFactory = mockk {
             every { getTenant(VALID_TENANT_ID) } returns tenant
             every { vendorFactory(tenant) } returns vendorFactory
+            every { conceptMapClient() } returns conceptMapClient
         }
 
         writer = AppointmentByPractitionerPatientWriter(CHANNEL_ROOT_NAME, serviceFactory)
@@ -82,7 +87,7 @@ class AppointmentByPractitionerPatientWriterTest {
                 every { value } returns "blah"
             }
         }
-        every { RoninPatient.create(any()) } returns mockk()
+        every { RoninPatient.create(any(), any()) } returns mockk()
         val mockPatient = mockk<Patient> {
             every { transformTo(any(), tenant) } returns mockRoninPatient
         }
@@ -114,7 +119,7 @@ class AppointmentByPractitionerPatientWriterTest {
                 every { value } returns "blah"
             }
         }
-        every { RoninPatient.create(any()) } returns mockk()
+        every { RoninPatient.create(any(), any()) } returns mockk()
         val mockPatient = mockk<Patient> {
             every { transformTo(any(), tenant) } returns mockRoninPatient
         }
@@ -146,7 +151,7 @@ class AppointmentByPractitionerPatientWriterTest {
                 every { value } returns "blah"
             }
         }
-        every { RoninPatient.create(any()) } returns mockk()
+        every { RoninPatient.create(any(), any()) } returns mockk()
         val mockPatient = mockk<Patient> {
             every { transformTo(any(), tenant) } returns null
         }
@@ -166,5 +171,63 @@ class AppointmentByPractitionerPatientWriterTest {
         assertEquals(MirthResponseStatus.ERROR, response.status)
         assertEquals("Oh No", response.detailedMessage)
         assertNull(response.dataMap[MirthKey.PATIENT_FHIR_ID.code])
+    }
+
+    @Test
+    fun `destinationWriter - errors when null patient id value`() {
+        mockkStatic(Patient::transformTo)
+        mockkObject(RoninPatient)
+        mockkObject(JacksonUtil)
+        val mockRoninPatient = mockk<Patient> {
+            every { id } returns mockk {
+                every { value } returns null
+            }
+        }
+        every { RoninPatient.create(any(), any()) } returns mockk()
+        val mockPatient = mockk<Patient> {
+            every { transformTo(any(), tenant) } returns mockRoninPatient
+        }
+
+        every { vendorFactory.identifierService } returns mockk()
+        val mockPublishService = mockk<PublishService> {
+            every { publishFHIRResources(VALID_TENANT_ID, listOf(mockRoninPatient)) } returns false
+        }
+
+        every { serviceFactory.publishService() } returns mockPublishService
+        every { JacksonUtil.writeJsonValue(any()) } returns "[]"
+        every { JacksonUtil.readJsonObject(any(), Patient::class) } returns mockPatient
+        assertThrows<java.lang.NullPointerException> {
+            writer.destinationWriter(
+                VALID_DEPLOYED_NAME, "", mapOf(MirthKey.NEW_PATIENT_JSON.code to "patient"), emptyMap()
+            )
+        }
+    }
+
+    @Test
+    fun `destinationWriter - errors when null patient id`() {
+        mockkStatic(Patient::transformTo)
+        mockkObject(RoninPatient)
+        mockkObject(JacksonUtil)
+        val mockRoninPatient = mockk<Patient> {
+            every { id } returns null
+        }
+        every { RoninPatient.create(any(), any()) } returns mockk()
+        val mockPatient = mockk<Patient> {
+            every { transformTo(any(), tenant) } returns mockRoninPatient
+        }
+
+        every { vendorFactory.identifierService } returns mockk()
+        val mockPublishService = mockk<PublishService> {
+            every { publishFHIRResources(VALID_TENANT_ID, listOf(mockRoninPatient)) } returns false
+        }
+
+        every { serviceFactory.publishService() } returns mockPublishService
+        every { JacksonUtil.writeJsonValue(any()) } returns "[]"
+        every { JacksonUtil.readJsonObject(any(), Patient::class) } returns mockPatient
+        assertThrows<java.lang.NullPointerException> {
+            writer.destinationWriter(
+                VALID_DEPLOYED_NAME, "", mapOf(MirthKey.NEW_PATIENT_JSON.code to "patient"), emptyMap()
+            )
+        }
     }
 }

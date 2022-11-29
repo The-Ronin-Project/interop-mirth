@@ -3,6 +3,7 @@ package com.projectronin.interop.mirth.channels.client.data.resources
 import com.github.javafaker.Faker
 import com.projectronin.interop.fhir.r4.datatype.Identifier
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.mirth.channels.client.data.Generator
 import com.projectronin.interop.mirth.channels.client.data.datatypes.IdentifierGenerator
@@ -18,7 +19,7 @@ class LocationGenerator(
         Location(
             id = id.generate(),
             identifier = identifier.generate(),
-            name = Faker().university().name() + " Medical Center"
+            name = (Faker().university().name() + " Medical Center").asFHIR()
         )
 }
 

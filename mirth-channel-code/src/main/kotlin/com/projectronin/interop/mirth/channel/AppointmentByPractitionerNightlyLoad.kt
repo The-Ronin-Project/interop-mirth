@@ -60,14 +60,14 @@ class AppointmentByPractitionerNightlyLoad(serviceFactory: ServiceFactory) : Cha
         try {
             val perPatientAppointments = fullAppointments.appointments.groupBy { appointment ->
                 appointment.participant.single {
-                    it.actor?.reference?.contains("Patient") == true
-                }.actor?.reference?.removePrefix("Patient/")
+                    it.actor?.reference?.value?.contains("Patient") == true
+                }.actor!!.reference!!.value!!.removePrefix("Patient/")
             }
             return perPatientAppointments.map { patientList ->
                 // see if we got any new patient objects from appointment service
                 val patient = fullAppointments.newPatients?.find { it.id?.value == patientList.key }
                 patientList.value.chunked(confirmMaxChunkSize(serviceMap)).map { appointments ->
-                    val sourceMap = mutableMapOf(MirthKey.PATIENT_FHIR_ID.code to patientList.key!!)
+                    val sourceMap = mutableMapOf(MirthKey.PATIENT_FHIR_ID.code to patientList.key)
                     patient?.let { sourceMap.put(MirthKey.NEW_PATIENT_JSON.code, JacksonUtil.writeJsonValue(it)) }
                     MirthMessage(
                         JacksonUtil.writeJsonValue(appointments),

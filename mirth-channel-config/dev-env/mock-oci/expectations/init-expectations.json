@@ -20,4 +20,28 @@
   "times" : {
     "unlimited" : true
   }
-} ]
+},
+  {
+    "httpRequest" : {
+      "method" : "PUT",
+      "path" : "/n/.*/b/.*/o/.*"
+    },
+    "httpResponse" : {
+      "statusCode" : 200,
+      "headers" : {
+        "Content-Type" : [ "application/json;" ]
+      },
+      "body" : {
+        "FakeNode" : "Fake Object Retrieved From Mock Server"
+      }
+    },
+    "id" : "PutObjectExpectation",
+    "priority" : 0,
+    "timeToLive" : {
+      "unlimited" : true
+    },
+    "times" : {
+      "unlimited" : true
+    }
+  }
+]

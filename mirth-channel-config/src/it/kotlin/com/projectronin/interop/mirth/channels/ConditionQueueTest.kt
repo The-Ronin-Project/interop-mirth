@@ -1,6 +1,9 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
+import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.ProxyClient
 import com.projectronin.interop.mirth.channels.client.data.datatypes.codeableConcept
 import com.projectronin.interop.mirth.channels.client.data.datatypes.coding
@@ -54,7 +57,8 @@ class ConditionQueueTest : BaseMirthChannelTest(conditionQueueChannelName, listO
                 text of "Apnea"
             }
         }
-        MockEHRTestData.add(condition)
+        val conditionFhirId = MockEHRTestData.add(condition)
+        MockOCIServerClient.createExpectations(conditionType, conditionFhirId)
         assertEquals(0, getAidboxResourceCount(conditionType))
 
         // query for conditions from 'EHR'
@@ -66,8 +70,15 @@ class ConditionQueueTest : BaseMirthChannelTest(conditionQueueChannelName, listO
         val list = MirthClient.getChannelMessageIds(testChannelId)
         assertEquals(1, list.size)
         assertAllConnectorsSent(list)
+
         // condition successfully added to Aidbox
         assertEquals(1, getAidboxResourceCount(conditionType))
+
+        // datalake received the object
+        MockOCIServerClient.verify()
+        val datalakeObject = MockOCIServerClient.getLastPutBody()
+        val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Condition::class)
+        assertEquals(conditionFhirId, datalakeFhirResource.getFhirIdentifier()?.value?.value)
     }
 
     @Test

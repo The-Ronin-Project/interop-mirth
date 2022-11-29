@@ -9,9 +9,12 @@ import com.projectronin.interop.ehr.outputs.FindPractitionerAppointmentsResponse
 import com.projectronin.interop.fhir.r4.datatype.Identifier
 import com.projectronin.interop.fhir.r4.datatype.Participant
 import com.projectronin.interop.fhir.r4.datatype.Reference
+import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Appointment
+import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.AppointmentStatus
 import com.projectronin.interop.fhir.r4.valueset.ParticipationStatus
 import com.projectronin.interop.mirth.connector.ServiceFactory
@@ -62,12 +65,12 @@ class AppointmentByPractitionerNightlyLoadTest {
         val patient1 = Participant(
             status = ParticipationStatus.ACCEPTED.asCode(),
             actor = Reference(
-                reference = "Patient",
-                identifier = Identifier(value = "patientID", system = Uri("system"))
+                reference = "Patient".asFHIR(),
+                identifier = Identifier(value = "patientID".asFHIR(), system = Uri("system"))
             )
         )
         val provider1 =
-            Participant(status = ParticipationStatus.ACCEPTED.asCode(), actor = Reference(reference = "Practitioner"))
+            Participant(status = ParticipationStatus.ACCEPTED.asCode(), actor = Reference(reference = "Practitioner".asFHIR()))
         val appt1 = Appointment(
             id = Id("1"),
             participant = listOf(provider1, patient1),
@@ -85,12 +88,12 @@ class AppointmentByPractitionerNightlyLoadTest {
             every { getPractitionersByTenant(VALID_TENANT_ID) } returns mapOf(
                 "provfhirID1" to listOf(
                     mockk {
-                        every { value } returns "nonFhir1"
+                        every { value } returns "nonFhir1".asFHIR()
                     }
                 ),
                 "provfhirID2" to listOf(
                     mockk {
-                        every { value } returns "nonFhir2"
+                        every { value } returns "nonFhir2".asFHIR()
                     }
                 )
             )
@@ -100,7 +103,64 @@ class AppointmentByPractitionerNightlyLoadTest {
         }
         val mockIdentifierService = mockk<IdentifierService> {
             every { getPractitionerProviderIdentifier(tenant, any()) } returns mockk<Identifier> {
-                every { value } returns "abc"
+                every { value } returns "abc".asFHIR()
+            }
+        }
+
+        every { vendorFactory.appointmentService } returns mockAppointmentService
+        every { vendorFactory.identifierService } returns mockIdentifierService
+
+        every { serviceFactory.practitionerService() } returns mockPractitionerService
+
+        val messageList = channel.sourceReader(VALID_DEPLOYED_NAME, emptyMap())
+        assertEquals(1, messageList.size)
+        assertEquals(3, channel.destinations.size)
+    }
+
+    @Test
+    fun `sourceReader - works with new patient`() {
+        val patient1 = Participant(
+            status = ParticipationStatus.ACCEPTED.asCode(),
+            actor = Reference(
+                reference = "Patient/patty".asFHIR(),
+                identifier = Identifier(value = "patientID".asFHIR(), system = Uri("system"))
+            )
+        )
+        val provider1 =
+            Participant(status = ParticipationStatus.ACCEPTED.asCode(), actor = Reference(reference = "Practitioner".asFHIR()))
+        val appt1 = Appointment(
+            id = Id("1"),
+            participant = listOf(provider1, patient1),
+            status = AppointmentStatus.BOOKED.asCode()
+        )
+        val appt2 = Appointment(
+            id = Id("2"),
+            participant = listOf(provider1, patient1),
+            status = AppointmentStatus.BOOKED.asCode()
+        )
+        val appointmentlist = listOf(appt1, appt2)
+        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointmentlist, listOf(Patient(id = Id(value = "patty"))))
+
+        val mockPractitionerService = mockk<PractitionerService> {
+            every { getPractitionersByTenant(VALID_TENANT_ID) } returns mapOf(
+                "provfhirID1" to listOf(
+                    mockk {
+                        every { value } returns "nonFhir1".asFHIR()
+                    }
+                ),
+                "provfhirID2" to listOf(
+                    mockk {
+                        every { value } returns "nonFhir2".asFHIR()
+                    }
+                )
+            )
+        }
+        val mockAppointmentService = mockk<AppointmentService> {
+            every { findProviderAppointments(tenant, any(), any(), any()) } returns findPractitionersResponse
+        }
+        val mockIdentifierService = mockk<IdentifierService> {
+            every { getPractitionerProviderIdentifier(tenant, any()) } returns mockk<Identifier> {
+                every { value } returns "abc".asFHIR()
             }
         }
 
@@ -117,9 +177,9 @@ class AppointmentByPractitionerNightlyLoadTest {
     @Test
     fun `sourceReader - patient without identifier value`() {
         val patient1 =
-            Participant(status = ParticipationStatus.ACCEPTED.asCode(), actor = Reference(reference = "Patient"))
+            Participant(status = ParticipationStatus.ACCEPTED.asCode(), actor = Reference(reference = "Patient".asFHIR()))
         val provider1 =
-            Participant(status = ParticipationStatus.ACCEPTED.asCode(), actor = Reference(reference = "Practitioner"))
+            Participant(status = ParticipationStatus.ACCEPTED.asCode(), actor = Reference(reference = "Practitioner".asFHIR()))
         val appt1 = Appointment(
             id = Id("1"),
             participant = listOf(provider1, patient1),
@@ -136,12 +196,12 @@ class AppointmentByPractitionerNightlyLoadTest {
             every { getPractitionersByTenant(VALID_TENANT_ID) } returns mapOf(
                 "provfhirID1" to listOf(
                     mockk {
-                        every { value } returns "nonFhir1"
+                        every { value } returns "nonFhir1".asFHIR()
                     }
                 ),
                 "provfhirID2" to listOf(
                     mockk {
-                        every { value } returns "nonFhir2"
+                        every { value } returns "nonFhir2".asFHIR()
                     }
                 )
             )
@@ -154,11 +214,11 @@ class AppointmentByPractitionerNightlyLoadTest {
                     any(),
                     any()
                 )
-            } returns FindPractitionerAppointmentsResponse(appointmentList)
+            } returns FindPractitionerAppointmentsResponse(appointmentList, listOf(Patient(id = Id(value = null))))
         }
         val mockIdentifierService = mockk<IdentifierService> {
             every { getPractitionerProviderIdentifier(tenant, any()) } returns mockk<Identifier> {
-                every { value } returns "abc"
+                every { value } returns "abc".asFHIR()
             }
         }
         every { vendorFactory.appointmentService } returns mockAppointmentService
@@ -188,12 +248,12 @@ class AppointmentByPractitionerNightlyLoadTest {
             every { getPractitionersByTenant(VALID_TENANT_ID) } returns mapOf(
                 "provfhirID1" to listOf(
                     mockk {
-                        every { value } returns "nonFhir1"
+                        every { value } returns "nonFhir1".asFHIR()
                     }
                 ),
                 "provfhirID2" to listOf(
                     mockk {
-                        every { value } returns "nonFhir2"
+                        every { value } returns "nonFhir2".asFHIR()
                     }
                 )
             )
@@ -223,8 +283,8 @@ class AppointmentByPractitionerNightlyLoadTest {
         val patient1 = Participant(
             status = ParticipationStatus.ACCEPTED.asCode(),
             actor = Reference(
-                reference = "Patient",
-                identifier = Identifier(value = "patientID", system = Uri("system"))
+                reference = "Patient".asFHIR(),
+                identifier = Identifier(value = "patientID".asFHIR(), system = Uri("system"))
             )
         )
         val provider1 = Participant(
@@ -243,7 +303,7 @@ class AppointmentByPractitionerNightlyLoadTest {
             every { getPractitionersByTenant(VALID_TENANT_ID) } returns mapOf(
                 "provfhirID1" to listOf(
                     mockk {
-                        every { value } returns "nonFhir1"
+                        every { value } returns "nonFhir1".asFHIR()
                     }
                 )
             )
@@ -253,7 +313,52 @@ class AppointmentByPractitionerNightlyLoadTest {
         }
         val mockIdentifierService = mockk<IdentifierService> {
             every { getPractitionerProviderIdentifier(tenant, any()) } returns mockk<Identifier> {
-                every { value } returns "abc"
+                every { value } returns "abc".asFHIR()
+            }
+        }
+
+        every { vendorFactory.appointmentService } returns mockAppointmentService
+        every { vendorFactory.identifierService } returns mockIdentifierService
+
+        every { serviceFactory.practitionerService() } returns mockPractitionerService
+
+        val messageList = channel.sourceReader(VALID_DEPLOYED_NAME, emptyMap())
+        assertEquals(1, messageList.size)
+        assertEquals(3, channel.destinations.size)
+    }
+
+    @Test
+    fun `sourceReader - incomplete actor or reference with no value`() {
+        val patient1 = Participant(
+            status = ParticipationStatus.ACCEPTED.asCode(),
+            actor = Reference(
+                reference = FHIRString(value = null),
+                identifier = Identifier(value = "patientID".asFHIR(), system = Uri("system"))
+            )
+        )
+        val appt1 = Appointment(
+            id = Id("1"),
+            participant = listOf(patient1),
+            status = AppointmentStatus.BOOKED.asCode()
+        )
+        val appointmentlist = listOf(appt1)
+        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointmentlist, listOf(Patient()))
+
+        val mockPractitionerService = mockk<PractitionerService> {
+            every { getPractitionersByTenant(VALID_TENANT_ID) } returns mapOf(
+                "provfhirID1" to listOf(
+                    mockk {
+                        every { value } returns "nonFhir1".asFHIR()
+                    }
+                )
+            )
+        }
+        val mockAppointmentService = mockk<AppointmentService> {
+            every { findProviderAppointments(tenant, any(), any(), any()) } returns findPractitionersResponse
+        }
+        val mockIdentifierService = mockk<IdentifierService> {
+            every { getPractitionerProviderIdentifier(tenant, any()) } returns mockk<Identifier> {
+                every { value } returns "abc".asFHIR()
             }
         }
 
@@ -272,7 +377,7 @@ class AppointmentByPractitionerNightlyLoadTest {
         val patient1 = Participant(
             status = ParticipationStatus.ACCEPTED.asCode(),
             actor = Reference(
-                identifier = Identifier(value = "patientID", system = Uri("system"))
+                identifier = Identifier(value = "patientID".asFHIR(), system = Uri("system"))
             )
         )
         val provider1 = Participant(
@@ -290,7 +395,7 @@ class AppointmentByPractitionerNightlyLoadTest {
             every { getPractitionersByTenant(VALID_TENANT_ID) } returns mapOf(
                 "provfhirID1" to listOf(
                     mockk {
-                        every { value } returns "nonFhir1"
+                        every { value } returns "nonFhir1".asFHIR()
                     }
                 )
             )
@@ -300,7 +405,7 @@ class AppointmentByPractitionerNightlyLoadTest {
         }
         val mockIdentifierService = mockk<IdentifierService> {
             every { getPractitionerProviderIdentifier(tenant, any()) } returns mockk<Identifier> {
-                every { value } returns "abc"
+                every { value } returns "abc".asFHIR()
             }
         }
 

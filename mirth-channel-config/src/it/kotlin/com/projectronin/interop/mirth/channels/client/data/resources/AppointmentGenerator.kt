@@ -4,6 +4,7 @@ import com.projectronin.interop.fhir.r4.datatype.Identifier
 import com.projectronin.interop.fhir.r4.datatype.Participant
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.datatype.primitive.Instant
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.mirth.channels.client.data.Generator
 import com.projectronin.interop.mirth.channels.client.data.datatypes.CodeGenerator
@@ -29,7 +30,7 @@ data class AppointmentGenerator(
             identifier = identifier.generate(),
             status = status.generate(),
             participant = participant.generate(),
-            minutesDuration = minutesDuration.generate(),
+            minutesDuration = minutesDuration.generate()?.asFHIR(),
             start = start.generate(),
             end = end.generate()
         )

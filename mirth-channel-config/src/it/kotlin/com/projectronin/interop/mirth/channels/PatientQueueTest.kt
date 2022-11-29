@@ -1,6 +1,9 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
+import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.ProxyClient
 import com.projectronin.interop.mirth.channels.client.data.datatypes.identifier
 import com.projectronin.interop.mirth.channels.client.data.datatypes.name
@@ -56,12 +59,13 @@ class PatientQueueTestTest : BaseMirthChannelTest(patientQueueChannelName, listO
             gender of "male"
         }
         val patientName = patient.name.first()
-        MockEHRTestData.add(patient)
+        val fhirId = MockEHRTestData.add(patient)
 
+        MockOCIServerClient.createExpectations(patientType, fhirId)
         assertEquals(0, getAidboxResourceCount(patientType))
 
         // query for patient from 'EHR'
-        ProxyClient.getPatientByNameAndDob(testTenant, patientName.family!!, patientName.given.first(), "1990-01-03")
+        ProxyClient.getPatientByNameAndDob(testTenant, patientName.family?.value!!, patientName.given.first().value!!, "1990-01-03")
 
         // start channel
         deployAndStartChannel(true)
@@ -69,5 +73,11 @@ class PatientQueueTestTest : BaseMirthChannelTest(patientQueueChannelName, listO
         assertEquals(1, list.size)
 
         assertEquals(1, getAidboxResourceCount("Patient"))
+
+        // datalake received the object
+        MockOCIServerClient.verify()
+        val datalakeObject = MockOCIServerClient.getLastPutBody()
+        val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Patient::class)
+        assertEquals(fhirId, datalakeFhirResource.getFhirIdentifier()?.value?.value)
     }
 }

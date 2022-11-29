@@ -9,6 +9,7 @@ import com.projectronin.interop.ehr.epic.EpicMedicationStatementService
 import com.projectronin.interop.ehr.epic.EpicMessageService
 import com.projectronin.interop.ehr.epic.EpicObservationService
 import com.projectronin.interop.ehr.epic.EpicPatientService
+import com.projectronin.interop.ehr.epic.EpicPractitionerRoleService
 import com.projectronin.interop.ehr.epic.EpicPractitionerService
 import com.projectronin.interop.ehr.epic.EpicVendorFactory
 import com.projectronin.interop.ehr.epic.auth.EpicAuthenticationService
@@ -39,7 +40,8 @@ internal object EpicServiceFactory {
         false
     )
     private val messageService = EpicMessageService(epicClient, providerPoolService)
-    private val practitionerService = EpicPractitionerService(epicClient, 1)
+    private val practitionerRoleService = EpicPractitionerRoleService(epicClient, 1)
+    private val practitionerService = EpicPractitionerService(epicClient, practitionerRoleService, 1)
     private val conditionService = EpicConditionService(epicClient)
     private val observationService = EpicObservationService(epicClient, 1)
     private val locationService = EpicLocationService(epicClient)
@@ -51,6 +53,7 @@ internal object EpicServiceFactory {
         appointmentService,
         messageService,
         practitionerService,
+        practitionerRoleService,
         conditionService,
         identifierService,
         observationService,

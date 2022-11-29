@@ -80,4 +80,9 @@ class ServiceFactoryTest {
     fun `dequeue works`() {
         assertNotNull(mirthServiceFactory.queueService())
     }
+
+    @Test
+    fun `conceptMap works`() {
+        assertNotNull(mirthServiceFactory.conceptMapClient())
+    }
 }

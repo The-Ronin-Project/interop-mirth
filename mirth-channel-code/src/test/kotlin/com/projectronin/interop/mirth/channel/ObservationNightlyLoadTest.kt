@@ -8,6 +8,7 @@ import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.datatype.CodeableConcept
 import com.projectronin.interop.fhir.r4.datatype.Reference
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.valueset.ObservationStatus
 import com.projectronin.interop.fhir.ronin.transformTo
@@ -114,37 +115,37 @@ class ObservationNightlyLoadTest {
     private val r4Observation1 = Observation(
         id = Id("12345"),
         status = ObservationStatus.FINAL.asCode(),
-        category = listOf(CodeableConcept(text = "category")),
-        code = CodeableConcept(text = "code1"),
-        subject = Reference(reference = "Patient/123"),
+        category = listOf(CodeableConcept(text = "category".asFHIR())),
+        code = CodeableConcept(text = "code1".asFHIR()),
+        subject = Reference(reference = "Patient/123".asFHIR()),
     )
     val r4Observation2 = Observation(
         id = Id("23456"),
         status = ObservationStatus.FINAL.asCode(),
-        category = listOf(CodeableConcept(text = "category2")),
-        code = CodeableConcept(text = "code2"),
-        subject = Reference(reference = "Patient/456"),
+        category = listOf(CodeableConcept(text = "category2".asFHIR())),
+        code = CodeableConcept(text = "code2".asFHIR()),
+        subject = Reference(reference = "Patient/456".asFHIR()),
     )
     val r4Observation3 = Observation(
         id = Id("34567"),
         status = ObservationStatus.FINAL.asCode(),
-        category = listOf(CodeableConcept(text = "category3")),
-        code = CodeableConcept(text = "code3"),
-        subject = Reference(reference = "Patient/123"),
+        category = listOf(CodeableConcept(text = "category3".asFHIR())),
+        code = CodeableConcept(text = "code3".asFHIR()),
+        subject = Reference(reference = "Patient/123".asFHIR()),
     )
     val r4Observation4 = Observation(
         id = Id("45678"),
         status = ObservationStatus.FINAL.asCode(),
-        category = listOf(CodeableConcept(text = "category4")),
-        code = CodeableConcept(text = "code4"),
-        subject = Reference(reference = "Patient/456"),
+        category = listOf(CodeableConcept(text = "category4".asFHIR())),
+        code = CodeableConcept(text = "code4".asFHIR()),
+        subject = Reference(reference = "Patient/456".asFHIR()),
     )
     val r4Observation5 = Observation(
         id = Id("56789"),
         status = ObservationStatus.FINAL.asCode(),
-        category = listOf(CodeableConcept(text = "category5")),
-        code = CodeableConcept(text = "code5"),
-        subject = Reference(reference = "Patient/456"),
+        category = listOf(CodeableConcept(text = "category5".asFHIR())),
+        code = CodeableConcept(text = "code5".asFHIR()),
+        subject = Reference(reference = "Patient/456".asFHIR()),
     )
 
     @Test

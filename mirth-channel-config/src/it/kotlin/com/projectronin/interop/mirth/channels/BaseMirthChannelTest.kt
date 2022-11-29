@@ -1,16 +1,29 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.interop.fhir.r4.datatype.Identifier
+import com.projectronin.interop.fhir.r4.resource.Appointment
+import com.projectronin.interop.fhir.r4.resource.Condition
+import com.projectronin.interop.fhir.r4.resource.Location
+import com.projectronin.interop.fhir.r4.resource.Observation
+import com.projectronin.interop.fhir.r4.resource.Patient
+import com.projectronin.interop.fhir.r4.resource.Practitioner
+import com.projectronin.interop.fhir.r4.resource.PractitionerRole
+import com.projectronin.interop.fhir.r4.resource.Resource
+import com.projectronin.interop.fhir.ronin.code.RoninCodeSystem
 import com.projectronin.interop.mirth.channels.client.AidboxClient
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
+import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
+import org.mockserver.model.HttpRequest
 import java.io.File
 import java.io.StringWriter
 import javax.xml.parsers.DocumentBuilderFactory
@@ -38,6 +51,7 @@ abstract class BaseMirthChannelTest(
         clearMessages()
         deleteAidboxResources(*aidboxResourceTypes.toTypedArray())
         deleteMockEHRResources(*mockEHRResourceTypes.toTypedArray())
+        MockOCIServerClient.client.clear(HttpRequest.request().withMethod("PUT"))
     }
 
     @AfterEach
@@ -151,5 +165,34 @@ abstract class BaseMirthChannelTest(
         }
     }
 
-    protected fun pause() = runBlocking { delay(1000) }
+    protected fun Resource<*>.getFhirIdentifier(): Identifier? {
+        val identifiers = when (this::class) {
+            Appointment::class -> (this as Appointment).identifier
+            Condition::class -> (this as Condition).identifier
+            Location::class -> (this as Location).identifier
+            Observation::class -> (this as Observation).identifier
+            Patient::class -> (this as Patient).identifier
+            Practitioner::class -> (this as Practitioner).identifier
+            PractitionerRole::class -> (this as PractitionerRole).identifier
+            else -> throw IllegalStateException("Resource has not been cast or has no identifier field")
+        }
+        return identifiers.firstOrNull { it.system == RoninCodeSystem.FHIR_ID.uri }
+    }
+
+    protected fun verifyAllPresent(resources: List<Resource<*>>, expectedMap: Map<String, List<String>>) {
+        assertEquals(resources.size, expectedMap.flatMap { it.value }.size)
+        val found = resources.groupBy(
+            { it.resourceType }, { it.getFhirIdentifier()?.value?.value }
+        )
+
+        expectedMap.forEach {
+            val expectedFhirIDs = it.value
+            val foundFhirIds = found[it.key]
+            expectedFhirIDs.forEach { fhirId ->
+                assertTrue(foundFhirIds?.contains(fhirId) == true)
+            }
+        }
+    }
+
+    protected fun pause(time: Long = 1000) = runBlocking { delay(time) }
 }

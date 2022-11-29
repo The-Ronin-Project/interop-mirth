@@ -1,6 +1,7 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
+import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.TenantClient
 import com.projectronin.interop.mirth.channels.client.data.datatypes.reference
 import com.projectronin.interop.mirth.channels.client.data.resources.location
@@ -60,7 +61,13 @@ class PractitionerLoadTest : BaseMirthChannelTest(
             practitioner of reference(practitionerType, practitionerId)
             location of listOf(reference(locationType, locationId))
         }
-        MockEHRTestData.add(practitionerRoleResource)
+        val practitionerRoleId = MockEHRTestData.add(practitionerRoleResource)
+        val expectedMap = mapOf(
+            practitionerType to listOf(practitionerId),
+            locationType to listOf(locationId),
+            practitionerRoleType to listOf(practitionerRoleId)
+        )
+        MockOCIServerClient.createExpectations(expectedMap)
 
         TenantClient.putMirthConfig(testTenant, TenantClient.MirthConfig(locationIds = listOf(locationId)))
 
@@ -74,5 +81,10 @@ class PractitionerLoadTest : BaseMirthChannelTest(
         assertEquals(3, messageList.size)
 
         assertAllConnectorsSent(messageList)
+
+        // ensure data lake gets what it needs
+        MockOCIServerClient.verify(3)
+        val resources = MockOCIServerClient.getAllPutsAsResources()
+        verifyAllPresent(resources, expectedMap)
     }
 }

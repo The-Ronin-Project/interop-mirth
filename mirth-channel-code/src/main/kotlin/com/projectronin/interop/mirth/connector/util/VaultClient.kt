@@ -77,7 +77,6 @@ class VaultClient {
             }.body<VaultResponse>()
         }.onSuccess { logger.info { "Configured Vault successfully accessed" } }
             .onFailure { logger.warn { "Configured Vault could not be accessed: $it" } }.getOrNull()
-
         return response?.data?.data ?: emptyMap()
     }
 

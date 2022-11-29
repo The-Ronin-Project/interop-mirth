@@ -1,10 +1,13 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
+import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
+import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.data.datatypes.codeableConcept
 import com.projectronin.interop.mirth.channels.client.data.datatypes.coding
 import com.projectronin.interop.mirth.channels.client.data.datatypes.reference
@@ -69,7 +72,7 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
                 codeableConcept {
                     coding of listOf(
                         coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri.value
+                            system of CodeSystem.OBSERVATION_CATEGORY.uri.value!!
                             code of ObservationCategoryCodes.VITAL_SIGNS.code
                         }
                     )
@@ -78,7 +81,9 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
             status of "final"
             code of codeableConcept { text of "blah" }
         }
-        MockEHRTestData.add(observation)
+        val obsvId = MockEHRTestData.add(observation)
+
+        MockOCIServerClient.createExpectations(observationType, obsvId)
 
         val aidboxPatient = patient.copy(
             id = Id("$testTenant-$patientId"),
@@ -94,6 +99,12 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
         assertEquals(1, list.size)
         assertEquals(1, getAidboxResourceCount(patientType))
         assertEquals(1, getAidboxResourceCount(observationType))
+
+        // ensure data lake gets what it needs
+        MockOCIServerClient.verify()
+        val datalakeObject = MockOCIServerClient.getLastPutBody()
+        val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Observation::class)
+        assertEquals(obsvId, datalakeFhirResource.getFhirIdentifier()?.value?.value)
     }
 
     @Test
@@ -109,7 +120,7 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
                 codeableConcept {
                     coding of listOf(
                         coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri.value
+                            system of CodeSystem.OBSERVATION_CATEGORY.uri.value!!
                             code of ObservationCategoryCodes.VITAL_SIGNS.code
                         }
                     )
@@ -124,7 +135,7 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
                 codeableConcept {
                     coding of listOf(
                         coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri.value
+                            system of CodeSystem.OBSERVATION_CATEGORY.uri.value!!
                             code of ObservationCategoryCodes.LABORATORY.code
                         }
                     )
@@ -133,8 +144,13 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
             status of "final"
             code of codeableConcept { text of "blah" }
         }
-        MockEHRTestData.add(observation1)
-        MockEHRTestData.add(observation2)
+        val obsv1Id = MockEHRTestData.add(observation1)
+        val obsv2Id = MockEHRTestData.add(observation2)
+
+        val expectedMap = mapOf(
+            observationType to listOf(obsv1Id, obsv2Id),
+        )
+        MockOCIServerClient.createExpectations(expectedMap)
 
         val aidboxPatient1 = patient1.copy(
             id = Id("$testTenant-$patient1Id"),
@@ -156,5 +172,10 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
         assertEquals(2, list.size)
         assertEquals(2, getAidboxResourceCount(patientType))
         assertEquals(2, getAidboxResourceCount(observationType))
+
+        // ensure data lake gets what it needs
+        MockOCIServerClient.verify(2)
+        val resources = MockOCIServerClient.getAllPutsAsResources()
+        verifyAllPresent(resources, expectedMap)
     }
 }

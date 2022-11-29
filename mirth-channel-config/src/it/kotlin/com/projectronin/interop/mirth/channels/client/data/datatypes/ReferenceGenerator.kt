@@ -2,6 +2,7 @@ package com.projectronin.interop.mirth.channels.client.data.datatypes
 
 import com.projectronin.interop.fhir.r4.datatype.Identifier
 import com.projectronin.interop.fhir.r4.datatype.Reference
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.mirth.channels.client.data.Generator
 import com.projectronin.interop.mirth.channels.client.data.primitives.NullGenerator
 
@@ -13,9 +14,9 @@ class ReferenceGenerator : Generator<Reference>() {
 
     override fun generateInternal(): Reference? =
         Reference(
-            id = id.generate(),
+            id = id.generate()?.asFHIR(),
             type = type.generate(),
-            reference = reference.generate(),
+            reference = reference.generate()?.asFHIR(),
             identifier = identifier.generate()
         )
 }

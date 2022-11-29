@@ -4,7 +4,9 @@ import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.ehr.IdentifierService
 import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Patient
+import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
 import com.projectronin.interop.fhir.ronin.resource.RoninPatient
 import com.projectronin.interop.fhir.ronin.transformTo
 import com.projectronin.interop.mirth.connector.ServiceFactory
@@ -29,6 +31,7 @@ class PatientQueueTest {
     private lateinit var mockServiceFactory: ServiceFactory
     private lateinit var channel: PatientQueue
     private lateinit var mockIdentifierService: IdentifierService
+    private lateinit var conceptMapClient: ConceptMapClient
 
     @AfterEach
     fun unMock() {
@@ -38,9 +41,11 @@ class PatientQueueTest {
 
     @BeforeEach
     fun setup() {
+        conceptMapClient = mockk()
+
         mockIdentifierService = mockk {
             every { getPatientIdentifier(mockTenant, any()) } returns mockk {
-                every { value } returns "An MRN"
+                every { value } returns "An MRN".asFHIR()
             }
         }
         mockVendorFactory = mockk {
@@ -48,6 +53,7 @@ class PatientQueueTest {
         }
         mockServiceFactory = mockk {
             every { vendorFactory(mockTenant) } returns mockVendorFactory
+            every { conceptMapClient() } returns conceptMapClient
         }
         channel = PatientQueue(mockServiceFactory)
     }
@@ -67,7 +73,7 @@ class PatientQueueTest {
         val mockOnc = mockk<RoninPatient>()
         val mockPatient = mockk<Patient>()
         every { JacksonUtil.readJsonObject<Patient>(any(), any()) } returns mockk()
-        every { RoninPatient.create(any()) } returns mockOnc
+        every { RoninPatient.create(any(), any()) } returns mockOnc
         every { any<Patient>().transformTo(any(), mockTenant) } returns mockPatient
         val transformedPatient = channel.deserializeAndTransform("patientString", mockTenant)
         assertEquals(mockPatient, transformedPatient)
@@ -80,7 +86,7 @@ class PatientQueueTest {
         mockkStatic(Patient::transformTo)
         val mockOnc = mockk<RoninPatient>()
         every { JacksonUtil.readJsonObject<Patient>(any(), any()) } returns mockk()
-        every { RoninPatient.create(any()) } returns mockOnc
+        every { RoninPatient.create(any(), any()) } returns mockOnc
         every { any<Patient>().transformTo(any(), mockTenant) } returns null
         assertThrows<ResourcesNotTransformedException> {
             channel.deserializeAndTransform(

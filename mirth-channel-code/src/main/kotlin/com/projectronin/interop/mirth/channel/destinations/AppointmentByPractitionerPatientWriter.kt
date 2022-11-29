@@ -40,7 +40,7 @@ class AppointmentByPractitionerPatientWriter(rootName: String, serviceFactory: S
         val tenant = serviceFactory.getTenant(tenantMnemonic)
         val vendorFactory = serviceFactory.vendorFactory(tenant)
 
-        val roninPatient = RoninPatient.create(vendorFactory.identifierService)
+        val roninPatient = RoninPatient.create(vendorFactory.identifierService, serviceFactory.conceptMapClient())
         val transformedPatient = patient.transformTo(roninPatient, tenant)
             ?: return MirthResponse(
                 status = MirthResponseStatus.ERROR,
@@ -52,7 +52,7 @@ class AppointmentByPractitionerPatientWriter(rootName: String, serviceFactory: S
             tenantMnemonic = tenantMnemonic,
             resourceList = listOf(transformedPatient),
             resourceType = "Patient",
-            successDataMap = mapOf(MirthKey.PATIENT_FHIR_ID.code to transformedPatient.id!!.value)
+            successDataMap = mapOf(MirthKey.PATIENT_FHIR_ID.code to transformedPatient.id!!.value!!)
         )
     }
 }

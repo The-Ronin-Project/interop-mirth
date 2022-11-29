@@ -22,7 +22,7 @@ class PatientQueue(serviceFactory: ServiceFactory) :
 
     override fun deserializeAndTransform(string: String, tenant: Tenant): Patient {
         val patient = JacksonUtil.readJsonObject(string, Patient::class)
-        val roninPatient = RoninPatient.create(serviceFactory.vendorFactory(tenant).identifierService)
+        val roninPatient = RoninPatient.create(serviceFactory.vendorFactory(tenant).identifierService, serviceFactory.conceptMapClient())
         return patient.transformTo(roninPatient, tenant)
             ?: throw ResourcesNotTransformedException("Failed to transform Patient for tenant ${tenant.mnemonic}")
     }

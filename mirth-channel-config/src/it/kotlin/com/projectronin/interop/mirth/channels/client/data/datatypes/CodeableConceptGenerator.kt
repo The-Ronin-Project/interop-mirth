@@ -2,6 +2,7 @@ package com.projectronin.interop.mirth.channels.client.data.datatypes
 
 import com.projectronin.interop.fhir.r4.datatype.CodeableConcept
 import com.projectronin.interop.fhir.r4.datatype.Coding
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.mirth.channels.client.data.Generator
 import com.projectronin.interop.mirth.channels.client.data.primitives.ListGenerator
 import com.projectronin.interop.mirth.channels.client.data.primitives.NullGenerator
@@ -13,7 +14,7 @@ class CodeableConceptGenerator : Generator<CodeableConcept>() {
     override fun generateInternal(): CodeableConcept? =
         CodeableConcept(
             coding = coding.generate(),
-            text = text.generate()
+            text = text.generate()?.asFHIR()
         )
 }
 

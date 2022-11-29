@@ -1,7 +1,10 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
+import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.ProxyClient
 import com.projectronin.interop.mirth.channels.client.data.datatypes.identifier
 import com.projectronin.interop.mirth.channels.client.data.datatypes.name
@@ -24,6 +27,8 @@ class AppointmentQueueTest :
         appointmentQueueChannelName,
         listOf("Patient", "Appointment")
     ) {
+    val patientType = "Patient"
+    val appointmentType = "Appointment"
 
     @Test
     fun `appointments can be queued`() {
@@ -56,7 +61,7 @@ class AppointmentQueueTest :
             participant of listOf(
                 participant {
                     status of "accepted"
-                    actor of reference("Patient", patient1Id)
+                    actor of reference(patientType, patient1Id)
                 }
             )
             start of startDate
@@ -68,8 +73,10 @@ class AppointmentQueueTest :
         )
         AidboxTestData.add(aidboxPatient)
 
-        assertEquals(1, getAidboxResourceCount("Patient"))
-        assertEquals(0, getAidboxResourceCount("Appointment"))
+        assertEquals(1, getAidboxResourceCount(patientType))
+        assertEquals(0, getAidboxResourceCount(appointmentType))
+
+        MockOCIServerClient.createExpectations(appointmentType, appointment1Id)
 
         // query for appointments from 'EHR'
         val apptNode = ProxyClient.getAppointmentsByMRN(
@@ -95,12 +102,18 @@ class AppointmentQueueTest :
         assertAllConnectorsSent(list)
 
         // appointment successfully added to Aidbox
-        assertEquals(1, getAidboxResourceCount("Appointment"))
+        assertEquals(1, getAidboxResourceCount(appointmentType))
+
+        // datalake received the object
+        MockOCIServerClient.verify()
+        val datalakeObject = MockOCIServerClient.getLastPutBody()
+        val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Appointment::class)
+        assertEquals(appointment1Id, datalakeFhirResource.getFhirIdentifier()?.value?.value)
     }
 
     @Test
     fun `no data no message`() {
-        assertEquals(0, getAidboxResourceCount("Appointment"))
+        assertEquals(0, getAidboxResourceCount(appointmentType))
         // start channel
         deployAndStartChannel(false)
         // just wait a moment
@@ -108,6 +121,6 @@ class AppointmentQueueTest :
         val list = MirthClient.getChannelMessageIds(testChannelId)
         assertEquals(0, list.size)
         // nothing added
-        assertEquals(0, getAidboxResourceCount("Appointment"))
+        assertEquals(0, getAidboxResourceCount(appointmentType))
     }
 }

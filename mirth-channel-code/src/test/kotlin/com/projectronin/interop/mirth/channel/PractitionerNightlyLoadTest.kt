@@ -12,6 +12,7 @@ import com.projectronin.interop.fhir.r4.datatype.Reference
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.r4.resource.PractitionerRole
@@ -79,18 +80,18 @@ class PractitionerNightlyLoadTest {
                     Coding(
                         system = Uri("http://projectronin.com/id/tenantId"),
                         code = Code(value = "TID"),
-                        display = "Ronin-specified Tenant Identifier"
+                        display = "Ronin-specified Tenant Identifier".asFHIR()
                     )
                 ),
-                text = "Tenant ID"
+                text = "Tenant ID".asFHIR()
             ),
             system = Uri("http://projectronin.com/id/tenantId"),
-            value = VALID_TENANT_ID
+            value = VALID_TENANT_ID.asFHIR()
         )
     )
     private val r4Practitioner = Practitioner(
         id = Id("12345"),
-        name = listOf(HumanName(family = "Doe")),
+        name = listOf(HumanName(family = "Doe".asFHIR())),
     )
 
     private val r4Location = Location(
@@ -99,8 +100,8 @@ class PractitionerNightlyLoadTest {
     )
     private val r4PractitionerRole = PractitionerRole(
         id = Id("678"),
-        specialty = listOf(CodeableConcept(text = "Ronin")),
-        practitioner = Reference(reference = "Practitioner/12345")
+        specialty = listOf(CodeableConcept(text = "Ronin".asFHIR())),
+        practitioner = Reference(reference = "Practitioner/12345".asFHIR())
     )
 
     @Test

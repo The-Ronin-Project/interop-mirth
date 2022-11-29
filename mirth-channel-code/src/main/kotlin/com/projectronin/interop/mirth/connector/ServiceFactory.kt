@@ -4,10 +4,13 @@ import com.projectronin.interop.aidbox.PatientService
 import com.projectronin.interop.aidbox.PractitionerService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
 import com.projectronin.interop.mirth.connector.ehr.EpicServiceFactory.epicVendorFactory
 import com.projectronin.interop.mirth.connector.util.AidboxUtil.aidBoxPatientService
 import com.projectronin.interop.mirth.connector.util.AidboxUtil.aidBoxPractitionerService
 import com.projectronin.interop.mirth.connector.util.AidboxUtil.aidboxPublishService
+import com.projectronin.interop.mirth.connector.util.OciUtil
+import com.projectronin.interop.mirth.connector.util.OciUtil.datalakePublishService
 import com.projectronin.interop.mirth.connector.util.QueueUtil.queueService
 import com.projectronin.interop.mirth.connector.util.TenantUtil.tenantService
 import com.projectronin.interop.publishers.PublishService
@@ -54,6 +57,11 @@ interface ServiceFactory {
      * For reading API Messages from the queue.
      */
     fun queueService(): QueueService
+
+    /**
+     * For requests to the ConceptMap Registry.
+     */
+    fun conceptMapClient(): ConceptMapClient
 }
 
 /**
@@ -62,7 +70,7 @@ interface ServiceFactory {
 object ServiceFactoryImpl : ServiceFactory {
     private val ehrFactory = EHRFactory(listOf(epicVendorFactory))
 
-    private val publishService = PublishService(aidboxPublishService)
+    private val publishService = PublishService(aidboxPublishService, datalakePublishService)
 
     override fun getTenant(tenantId: String): Tenant =
         tenantService.getTenantForMnemonic(tenantId)
@@ -81,4 +89,6 @@ object ServiceFactoryImpl : ServiceFactory {
     override fun patientService(): PatientService = aidBoxPatientService
 
     override fun queueService(): QueueService = queueService
+
+    override fun conceptMapClient(): ConceptMapClient = OciUtil.conceptMapClient
 }

@@ -10,15 +10,14 @@ coverage:
           threshold: 1%
           flags:
             - mirth-channel-code
-      default:
-        target: auto
-        threshold: 1%
 
     patch:
-      default:
+      mirth-channel-code:
         target: 80
         threshold: 1%
         base: auto
+        flags:
+          - mirth-channel-code
 
 comment:
   layout: "reach, diff, flags, files"
@@ -28,3 +27,9 @@ comment:
   require_head: yes
   branches: null
   show_carryforward_flags: false
+
+flags:
+  mirth-channel-code:
+    paths:
+      - mirth-channel-code/
+    carryforward: true

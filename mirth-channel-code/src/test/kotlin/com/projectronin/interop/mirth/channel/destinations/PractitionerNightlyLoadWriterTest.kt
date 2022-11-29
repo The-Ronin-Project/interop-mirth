@@ -8,6 +8,7 @@ import com.projectronin.interop.fhir.r4.datatype.Identifier
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.mirth.channel.enums.MirthKey
@@ -57,13 +58,13 @@ class PractitionerNightlyLoadTest {
                     Coding(
                         system = Uri("http://projectronin.com/id/tenantId"),
                         code = Code(value = "TID"),
-                        display = "Ronin-specified Tenant Identifier"
+                        display = "Ronin-specified Tenant Identifier".asFHIR()
                     )
                 ),
-                text = "Tenant ID"
+                text = "Tenant ID".asFHIR()
             ),
             system = Uri("http://projectronin.com/id/tenantId"),
-            value = VALID_TENANT_ID
+            value = VALID_TENANT_ID.asFHIR()
         )
     )
 
