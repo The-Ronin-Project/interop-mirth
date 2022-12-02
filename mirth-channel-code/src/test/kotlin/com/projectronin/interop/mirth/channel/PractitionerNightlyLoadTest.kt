@@ -17,6 +17,7 @@ import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.r4.resource.PractitionerRole
 import com.projectronin.interop.fhir.r4.valueset.LocationStatus
+import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
 import com.projectronin.interop.fhir.ronin.transformTo
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
@@ -46,6 +47,7 @@ private const val VALID_DEPLOYED_NAME = "$VALID_TENANT_ID-$CHANNEL_ROOT_NAME"
 
 class PractitionerNightlyLoadTest {
     lateinit var vendorFactory: VendorFactory
+    lateinit var conceptMapClient: ConceptMapClient
     lateinit var serviceFactory: ServiceFactory
     lateinit var tenantConfigurationFactory: TenantConfigurationFactory
     lateinit var channel: PractitionerNightlyLoad
@@ -62,14 +64,14 @@ class PractitionerNightlyLoadTest {
     @BeforeEach
     fun setup() {
         vendorFactory = mockk()
+        conceptMapClient = mockk()
         tenantConfigurationFactory = mockk()
-
         serviceFactory = mockk {
             every { getTenant(VALID_TENANT_ID) } returns tenant
             every { vendorFactory(tenant) } returns vendorFactory
             every { tenantConfigurationFactory() } returns tenantConfigurationFactory
+            every { conceptMapClient() } returns conceptMapClient
         }
-
         channel = PractitionerNightlyLoad(serviceFactory)
     }
 

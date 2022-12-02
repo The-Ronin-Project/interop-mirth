@@ -88,7 +88,12 @@ class PractitionerNightlyLoad(serviceFactory: ServiceFactory = ServiceFactoryImp
                 }
                 "Location" -> {
                     resourcesTransformed =
-                        deserializeAndTransformToList(tenantMnemonic, msg, Location::class, RoninLocation)
+                        deserializeAndTransformToList(
+                            tenantMnemonic,
+                            msg,
+                            Location::class,
+                            RoninLocation.create(serviceFactory.conceptMapClient())
+                        )
                 }
                 "PractitionerRole" -> {
                     resourcesTransformed =

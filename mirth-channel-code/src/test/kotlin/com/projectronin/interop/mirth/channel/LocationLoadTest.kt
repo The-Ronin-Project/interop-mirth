@@ -3,6 +3,7 @@ package com.projectronin.interop.mirth.channel
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Location
+import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
 import com.projectronin.interop.fhir.ronin.transformTo
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.connector.ServiceFactory
@@ -28,15 +29,18 @@ internal class LocationLoadTest {
     }
     private val vendorFactory = mockk<VendorFactory>()
     private var tenantConfigurationFactory = mockk<TenantConfigurationFactory>()
+    lateinit var conceptMapClient: ConceptMapClient
     lateinit var serviceFactory: ServiceFactory
     lateinit var channel: LocationLoad
 
     @BeforeEach
     fun setup() {
+        conceptMapClient = mockk()
         serviceFactory = mockk {
             every { getTenant(TENANT_ID) } returns tenant
             every { vendorFactory(tenant) } returns vendorFactory
             every { tenantConfigurationFactory() } returns tenantConfigurationFactory
+            every { conceptMapClient() } returns conceptMapClient
         }
         channel = LocationLoad(serviceFactory)
     }
