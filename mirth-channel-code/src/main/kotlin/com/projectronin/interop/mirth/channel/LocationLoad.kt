@@ -59,7 +59,11 @@ class LocationLoad(serviceFactory: ServiceFactory = ServiceFactoryImpl) : Channe
             throw ResourcesNotFoundException("No Locations found for tenant $tenantMnemonic")
         }
 
-        val locationsTransformed = transformToList(tenantMnemonic, locations, RoninLocation)
+        val locationsTransformed = transformToList(
+            tenantMnemonic,
+            locations,
+            RoninLocation.create(serviceFactory.conceptMapClient())
+        )
         if (locationsTransformed.isEmpty()) {
             throw ResourcesNotTransformedException("Failed to transform Locations for tenant $tenantMnemonic")
         }
