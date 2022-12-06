@@ -50,7 +50,7 @@ tasks.jar {
 }
 
 tasks.shadowJar {
-    relocate("jakarta.ws.rs", "interop.jakarta.ws.rs")
+    relocate("javax.ws.rs", "interop.javax.ws.rs")
     relocate("org.glassfish.jersey", "interop.org.glassfish.jersey")
     relocate("org.glassfish.hk2", "interop.org.glassfish.hk2")
     relocate("org.jvnet.hk2", "interop.org.jvnet.hk2")
