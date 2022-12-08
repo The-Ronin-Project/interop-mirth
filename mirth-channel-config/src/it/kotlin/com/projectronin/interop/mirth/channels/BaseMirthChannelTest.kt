@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.Identifier
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Condition
@@ -9,7 +10,6 @@ import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.r4.resource.PractitionerRole
 import com.projectronin.interop.fhir.r4.resource.Resource
-import com.projectronin.interop.fhir.ronin.code.RoninCodeSystem
 import com.projectronin.interop.mirth.channels.client.AidboxClient
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
@@ -176,7 +176,7 @@ abstract class BaseMirthChannelTest(
             PractitionerRole::class -> (this as PractitionerRole).identifier
             else -> throw IllegalStateException("Resource has not been cast or has no identifier field")
         }
-        return identifiers.firstOrNull { it.system == RoninCodeSystem.FHIR_ID.uri }
+        return identifiers.firstOrNull { it.system == CodeSystem.RONIN_FHIR_ID.uri }
     }
 
     protected fun verifyAllPresent(resources: List<Resource<*>>, expectedMap: Map<String, List<String>>) {

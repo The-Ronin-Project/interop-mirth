@@ -1,10 +1,10 @@
 package com.projectronin.interop.mirth.channels.client
 
+import com.projectronin.interop.fhir.r4.CodeSystem
+import com.projectronin.interop.fhir.r4.CodeableConcepts
 import com.projectronin.interop.fhir.r4.datatype.Identifier
 import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Resource
-import com.projectronin.interop.fhir.ronin.code.RoninCodeSystem
-import com.projectronin.interop.fhir.ronin.code.RoninCodeableConcepts
 
 object AidboxTestData {
     val currentResources = mutableListOf<Resource<*>>()
@@ -24,4 +24,4 @@ object AidboxTestData {
 }
 
 fun tenantIdentifier(tenantMnemonic: String): Identifier =
-    Identifier(type = RoninCodeableConcepts.TENANT, system = RoninCodeSystem.TENANT.uri, value = tenantMnemonic.asFHIR())
+    Identifier(type = CodeableConcepts.RONIN_TENANT, system = CodeSystem.RONIN_TENANT.uri, value = tenantMnemonic.asFHIR())
