@@ -4,7 +4,6 @@ import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.ronin.resource.RoninAppointment
-import com.projectronin.interop.fhir.ronin.transformTo
 import com.projectronin.interop.mirth.channel.base.BaseQueue
 import com.projectronin.interop.mirth.connector.ServiceFactory
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
@@ -19,7 +18,8 @@ class AppointmentQueue(serviceFactory: ServiceFactory) :
 
     override fun deserializeAndTransform(string: String, tenant: Tenant): Appointment {
         val appointment = JacksonUtil.readJsonObject(string, Appointment::class)
-        return appointment.transformTo(RoninAppointment, tenant)
+        val roninAppointment = RoninAppointment.create(serviceFactory.conceptMapClient())
+        return roninAppointment.transform(appointment, tenant)
             ?: throw ResourcesNotTransformedException("Failed to transform Appointment for tenant ${tenant.mnemonic}")
     }
 }

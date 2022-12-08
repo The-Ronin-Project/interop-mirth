@@ -1,47 +1,232 @@
-[ {
-  "httpRequest" : {
-    "method" : "GET",
-    "path" : "/n/.*/b/.*/o/.*"
-  },
-  "httpResponse" : {
-    "statusCode" : 200,
-    "headers" : {
-      "Content-Type" : [ "application/json;" ]
-    },
-    "body" : {
-      "FakeNode" : "Fake Object Retrieved From Mock Server"
-    }
-  },
-  "id" : "GetObjectExpectation",
-  "priority" : 0,
-  "timeToLive" : {
-    "unlimited" : true
-  },
-  "times" : {
-    "unlimited" : true
-  }
-},
+[
   {
-    "httpRequest" : {
-      "method" : "PUT",
-      "path" : "/n/.*/b/.*/o/.*"
+    "httpRequest": {
+      "method": "PUT",
+      "path": "/n/.*/b/.*/o/.*"
     },
-    "httpResponse" : {
-      "statusCode" : 200,
-      "headers" : {
-        "Content-Type" : [ "application/json;" ]
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
       },
-      "body" : {
-        "FakeNode" : "Fake Object Retrieved From Mock Server"
+      "body": {
+        "FakeNode": "Fake Object Retrieved From Mock Server"
       }
     },
-    "id" : "PutObjectExpectation",
-    "priority" : 0,
-    "timeToLive" : {
-      "unlimited" : true
+    "id": "PutObjectExpectation",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
     },
-    "times" : {
-      "unlimited" : true
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/namespace/b/infx-bucket/o/DataNormalizationRegistry%2Fv1%2Fregistry.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": [
+        {
+          "resource_type": "Appointment",
+          "data_element": "Appointment.status",
+          "tenant_id": "ronin",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "ConceptMaps/v1/published/4ffae118-778f-4df9-bd73-aece934b521b/1.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceAppointmentStatus",
+          "registry_uuid": "13f958c6-87b6-471e-8636-2cabdf0b73e4",
+          "concept_map_name": "AppointmentStatusRonin"
+        }
+      ]
+    },
+    "id": "GetConceptMapRegistry",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/ConceptMaps%2Fv1%2Fpublished%2F4ffae118-778f-4df9-bd73-aece934b521b%2F1.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ConceptMap",
+        "title": "Ronin Appointment Statuses to FHIR R4 AppointmentStatus",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a2",
+        "name": "AppointmentStatusRonin",
+        "url": "http://projectronin.io/fhir/StructureDefinition/ConceptMap/4ffae118-778f-4df9-bd73-aece934b521b",
+        "purpose": "FHIR Interops Concept Map",
+        "publisher": "Project Ronin",
+        "experimental": false,
+        "date": "2022-12-02",
+        "version": 1,
+        "group": [
+          {
+            "source": "http://projectronin.io/fhir/CodeSystem/ronin/AppointmentStatus",
+            "sourceVersion": "1.0",
+            "target": "http://hl7.org/fhir/appointmentstatus",
+            "targetVersion": "4.0.1",
+            "element": [
+              {
+                "code": "Arrived",
+                "display": "Arrived",
+                "target": [
+                  {
+                    "code": "arrived",
+                    "display": "Arrived",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              },
+              {
+                "code": "Canceled",
+                "display": "Canceled",
+                "target": [
+                  {
+                    "code": "cancelled",
+                    "display": "Cancelled",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              },
+              {
+                "code": "Scheduled",
+                "display": "Scheduled",
+                "target": [
+                  {
+                    "code": "booked",
+                    "display": "Booked",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              },
+              {
+                "code": "Present",
+                "display": "Present",
+                "target": [
+                  {
+                    "code": "arrived",
+                    "display": "Arrived",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              },
+              {
+                "code": "Completed",
+                "display": "Completed",
+                "target": [
+                  {
+                    "code": "fulfilled",
+                    "display": "Fulfilled",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              },
+              {
+                "code": "No Show",
+                "display": "No Show",
+                "target": [
+                  {
+                    "code": "noshow",
+                    "display": "No Show",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              },
+              {
+                "code": "HSP Incomplete",
+                "display": "HSP Incomplete",
+                "target": [
+                  {
+                    "code": "cancelled",
+                    "display": "Cancelled",
+                    "equivalence": "wider",
+                    "comment": "source-is-narrower-than-target"
+                  }
+                ]
+              },
+              {
+                "code": "HH Incomplete",
+                "display": "HH Incomplete",
+                "target": [
+                  {
+                    "code": "cancelled",
+                    "display": "Cancelled",
+                    "equivalence": "wider",
+                    "comment": "source-is-narrower-than-target"
+                  }
+                ]
+              },
+              {
+                "code": "Left without seen",
+                "display": "Left without seen",
+                "target": [
+                  {
+                    "code": "noshow",
+                    "display": "No Show",
+                    "equivalence": "wider",
+                    "comment": "source-is-narrower-than-target"
+                  }
+                ]
+              },
+              {
+                "code": "Phoned Patient",
+                "display": "Phoned Patient",
+                "target": [
+                  {
+                    "code": "proposed",
+                    "display": "Proposed",
+                    "equivalence": "wider",
+                    "comment": "source-is-narrower-than-target"
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://projectronin.io/fhir/ronin.common-fhir-model.uscore-r4/StructureDefinition/Extension/ronin-ConceptMapSchema",
+            "valueString": "1.0.0"
+          }
+        ]
+      }
+    },
+    "id": "GetRoninAppointmentStatus",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
     }
   }
 ]

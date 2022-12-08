@@ -23,7 +23,6 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
-import org.mockserver.model.HttpRequest
 import java.io.File
 import java.io.StringWriter
 import javax.xml.parsers.DocumentBuilderFactory
@@ -51,7 +50,7 @@ abstract class BaseMirthChannelTest(
         clearMessages()
         deleteAidboxResources(*aidboxResourceTypes.toTypedArray())
         deleteMockEHRResources(*mockEHRResourceTypes.toTypedArray())
-        MockOCIServerClient.client.clear(HttpRequest.request().withMethod("PUT"))
+        MockOCIServerClient.client.clear("PutObjectExpectation")
     }
 
     @AfterEach
@@ -123,6 +122,7 @@ abstract class BaseMirthChannelTest(
             AidboxClient.deleteAllResources(it, testTenant)
         }
     }
+
     protected fun deleteMockEHRResources(vararg resourceTypes: String) {
         resourceTypes.forEach {
             MockEHRClient.deleteAllResources(it)

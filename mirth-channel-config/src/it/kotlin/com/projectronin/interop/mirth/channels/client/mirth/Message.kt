@@ -20,6 +20,7 @@ data class Message(val messageId: Int, val connectorMessages: ConnectorMessages)
         parsedConnectorMessages.filter { it.connectorName != "Source" }
     }
 }
+
 @JsonDeserialize(using = ConnectorMessagesDeserializer::class)
 data class ConnectorMessages(val entry: List<ConnectorMessageWrapper>)
 
@@ -32,9 +33,9 @@ class ConnectorMessagesDeserializer : StdDeserializer<ConnectorMessages>(Connect
         val node = p.codec.readTree<JsonNode>(p) ?: throw JsonParseException(p, "Unable to parse node")
         val entry = node.get("entry")
         return if (!entry.isArray) {
-            return ConnectorMessages(entry = listOf(node.getAs("entry", p)))
+            ConnectorMessages(entry = listOf(node.getAs("entry", p)))
         } else {
-            return ConnectorMessages(entry = node.getAsList("entry", p))
+            ConnectorMessages(entry = node.getAsList("entry", p))
         }
     }
 }

@@ -25,8 +25,8 @@ There is some initial setup required to ensure that you can fully build this pro
 The following Gradle tasks are currently exposed and can be
 utilized by this project:
 
-* __mirth__ - Stands up Mirth with the appropriate local environment. This includes all other tasks, unless explicitly
-  mentioned.
+* __mirth__ - Stands up Mirth with the appropriate local environment. This includes all other tasks except __it__. For
+  local dev environments, it can be helpful to delete the previous dev-env container before running `./gradlew mirth`.
 * __copyMirthConnector__ - Installs the Mirth Connector JAR and reloads the resource. This requires a currently running
   Mirth instance.
 * __installAllChannels__ - Installs all channels from the filesystem as currently defined in [channels](channels). This
@@ -36,6 +36,7 @@ utilized by this project:
 * __updateTenantConfig__ - Updates the local tenant config based off of config properties files within each channel.
 * __installAidboxResources__ - Installs resources needed for channels to run found in `aidbox` folder
   in [channels](channels)
+* __it__ - Runs the integration tests. First run `./gradlew mirth` to stand up Mirth, then run `./gradlew it`
 
 ### Configuration
 

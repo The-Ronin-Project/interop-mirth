@@ -19,7 +19,12 @@ class AppointmentByPractitionerAppointmentWriter(rootName: String, serviceFactor
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthMessage {
-        return deserializeAndTransformToMessage(tenantMnemonic, msg, Appointment::class, RoninAppointment)
+        return deserializeAndTransformToMessage(
+            tenantMnemonic,
+            msg,
+            Appointment::class,
+            RoninAppointment.create(serviceFactory.conceptMapClient())
+        )
     }
 
     /**

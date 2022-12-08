@@ -5,9 +5,17 @@ import com.projectronin.interop.aidbox.PractitionerService
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.fhir.r4.datatype.Identifier
+import com.projectronin.interop.fhir.r4.datatype.Participant
+import com.projectronin.interop.fhir.r4.datatype.Reference
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Appointment
+import com.projectronin.interop.fhir.r4.valueset.AppointmentStatus
+import com.projectronin.interop.fhir.r4.valueset.ParticipationStatus
+import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
 import com.projectronin.interop.fhir.ronin.resource.RoninAppointment
-import com.projectronin.interop.fhir.ronin.transformTo
+import com.projectronin.interop.fhir.util.asCode
 import com.projectronin.interop.mirth.connector.ServiceFactory
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -16,6 +24,7 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.mockkStatic
 import io.mockk.unmockkObject
+import io.mockk.unmockkStatic
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -30,8 +39,10 @@ class AppointmentQueueTest {
     private lateinit var mockVendorFactory: VendorFactory
     private lateinit var mockPatientService: PatientService
     private lateinit var mockPractitionerService: PractitionerService
+    private lateinit var mockConceptMapClient: ConceptMapClient
     private lateinit var mockServiceFactory: ServiceFactory
     private lateinit var channel: AppointmentQueue
+    private lateinit var mockR4Appointment: Appointment
 
     @AfterEach
     fun unMock() {
@@ -43,12 +54,26 @@ class AppointmentQueueTest {
         mockVendorFactory = mockk()
         mockPatientService = mockk()
         mockPractitionerService = mockk()
+        mockConceptMapClient = mockk()
         mockServiceFactory = mockk {
             every { vendorFactory(mockTenant) } returns mockVendorFactory
             every { patientService() } returns mockPatientService
             every { practitionerService() } returns mockPractitionerService
+            every { conceptMapClient() } returns mockConceptMapClient
         }
         channel = AppointmentQueue(mockServiceFactory)
+        mockR4Appointment = mockk(relaxed = true) {
+            every { resourceType } returns "Appointment"
+            every { id } returns Id("12345")
+            every { identifier } returns listOf(Identifier(value = "id".asFHIR()))
+            every { status } returns AppointmentStatus.CANCELLED.asCode()
+            every { participant } returns listOf(
+                Participant(
+                    actor = Reference(display = "actor".asFHIR()),
+                    status = ParticipationStatus.ACCEPTED.asCode()
+                )
+            )
+        }
     }
 
     @Test
@@ -60,28 +85,60 @@ class AppointmentQueueTest {
 
     @Test
     fun `deserializeAndTransform - fails`() {
-        mockkObject(JacksonUtil)
-        mockkStatic(Appointment::transformTo)
-        every { JacksonUtil.readJsonObject<Appointment>(any(), any()) } returns mockk {
-            every { transformTo(RoninAppointment, any()) } returns null
+        mockkObject(RoninAppointment)
+        mockkStatic(RoninAppointment::transform)
+        mockkStatic(ConceptMapClient::getConceptMapping)
+        val mockRonin = mockk<RoninAppointment> {
+            every { transform(mockR4Appointment, mockTenant) } returns null
         }
+        every { RoninAppointment.create(any()) } returns mockRonin
+
+        mockServiceFactory = mockk {
+            every { getTenant(mockTenantMnemonic) } returns mockTenant
+            every { vendorFactory(mockTenant) } returns mockVendorFactory
+            every { conceptMapClient() } returns mockConceptMapClient
+        }
+        channel = AppointmentQueue(mockServiceFactory)
+
+        mockkObject(JacksonUtil)
+        every { JacksonUtil.readJsonObject("appointmentString", Appointment::class) } returns mockR4Appointment
         assertThrows<ResourcesNotTransformedException> {
             channel.deserializeAndTransform(
                 "appointmentString",
                 mockTenant
             )
         }
+
+        unmockkObject(RoninAppointment)
+        unmockkStatic(RoninAppointment::transform)
+        unmockkStatic(ConceptMapClient::getConceptMapping)
     }
 
     @Test
     fun `deserializeAndTransform - works`() {
-        mockkObject(JacksonUtil)
-        mockkStatic(Appointment::transformTo)
+        mockkObject(RoninAppointment)
+        mockkStatic(RoninAppointment::transform)
+        mockkStatic(ConceptMapClient::getConceptMapping)
         val mockAppointment = mockk<Appointment>()
-        every { JacksonUtil.readJsonObject<Appointment>(any(), any()) } returns mockk {
-            every { transformTo(RoninAppointment, any()) } returns mockAppointment
+        val mockRonin = mockk<RoninAppointment> {
+            every { transform(mockR4Appointment, mockTenant) } returns mockAppointment
         }
-        val transformedAppt = channel.deserializeAndTransform("appointmentString", mockTenant)
-        assertEquals(mockAppointment, transformedAppt)
+        every { RoninAppointment.create(any()) } returns mockRonin
+
+        mockServiceFactory = mockk {
+            every { getTenant(mockTenantMnemonic) } returns mockTenant
+            every { vendorFactory(mockTenant) } returns mockVendorFactory
+            every { conceptMapClient() } returns mockConceptMapClient
+        }
+        channel = AppointmentQueue(mockServiceFactory)
+
+        mockkObject(JacksonUtil)
+        every { JacksonUtil.readJsonObject("appointmentString", Appointment::class) } returns mockR4Appointment
+        val transformedAppointment = channel.deserializeAndTransform("appointmentString", mockTenant)
+        assertEquals(mockAppointment, transformedAppointment)
+
+        unmockkObject(RoninAppointment)
+        unmockkStatic(RoninAppointment::transform)
+        unmockkStatic(ConceptMapClient::getConceptMapping)
     }
 }

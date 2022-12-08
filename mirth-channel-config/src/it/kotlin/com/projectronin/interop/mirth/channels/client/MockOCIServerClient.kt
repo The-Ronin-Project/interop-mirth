@@ -28,7 +28,8 @@ object MockOCIServerClient {
     fun verify(numTimes: Int = 1) {
         client.verify(
             request()
-                .withPath("/n/.*/b/.*/o/.*"),
+                .withPath("/n/.*/b/.*/o/.*")
+                .withMethod("PUT"),
             VerificationTimes.exactly(numTimes)
         )
     }
@@ -56,14 +57,30 @@ object MockOCIServerClient {
         // gotta be a better way to do this
         return resourceStrings.map {
             when {
-                it.contains("\"resourceType\":\"Appointment\"") -> { JacksonUtil.readJsonObject(it, Appointment::class) }
-                it.contains("\"resourceType\":\"Condition\"") -> { JacksonUtil.readJsonObject(it, Condition::class) }
-                it.contains("\"resourceType\":\"Location\"") -> { JacksonUtil.readJsonObject(it, Location::class) }
-                it.contains("\"resourceType\":\"Observation\"") -> { JacksonUtil.readJsonObject(it, Observation::class) }
-                it.contains("\"resourceType\":\"Patient\"") -> { JacksonUtil.readJsonObject(it, Patient::class) }
-                it.contains("\"resourceType\":\"Practitioner\"") -> { JacksonUtil.readJsonObject(it, Practitioner::class) }
-                it.contains("\"resourceType\":\"PractitionerRole\"") -> { JacksonUtil.readJsonObject(it, PractitionerRole::class) }
-                else -> { throw IllegalStateException("UnknownResourceType") }
+                it.contains("\"resourceType\":\"Appointment\"") -> {
+                    JacksonUtil.readJsonObject(it, Appointment::class)
+                }
+                it.contains("\"resourceType\":\"Condition\"") -> {
+                    JacksonUtil.readJsonObject(it, Condition::class)
+                }
+                it.contains("\"resourceType\":\"Location\"") -> {
+                    JacksonUtil.readJsonObject(it, Location::class)
+                }
+                it.contains("\"resourceType\":\"Observation\"") -> {
+                    JacksonUtil.readJsonObject(it, Observation::class)
+                }
+                it.contains("\"resourceType\":\"Patient\"") -> {
+                    JacksonUtil.readJsonObject(it, Patient::class)
+                }
+                it.contains("\"resourceType\":\"Practitioner\"") -> {
+                    JacksonUtil.readJsonObject(it, Practitioner::class)
+                }
+                it.contains("\"resourceType\":\"PractitionerRole\"") -> {
+                    JacksonUtil.readJsonObject(it, PractitionerRole::class)
+                }
+                else -> {
+                    throw IllegalStateException("UnknownResourceType")
+                }
             }
         }
     }
