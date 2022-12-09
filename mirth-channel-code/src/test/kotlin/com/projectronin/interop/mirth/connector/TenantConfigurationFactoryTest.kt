@@ -1,36 +1,33 @@
 package com.projectronin.interop.mirth.connector
 
-import com.github.database.rider.core.api.connection.ConnectionHolder
-import com.github.database.rider.core.api.dataset.DataSet
-import com.projectronin.interop.common.test.database.dbrider.DBRiderConnection
-import com.projectronin.interop.common.test.database.liquibase.LiquibaseTest
-import com.projectronin.interop.mirth.connector.util.EnvironmentReader
+import com.projectronin.interop.common.hl7.MessageType
+import com.projectronin.interop.tenant.config.data.MirthTenantConfigDAO
+import com.projectronin.interop.tenant.config.data.TenantServerDAO
 import io.mockk.every
+import io.mockk.mockk
 import io.mockk.mockkObject
+import io.mockk.unmockkAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
-@LiquibaseTest(changeLog = "changelog/db.changelog-test.yaml")
-@DataSet(value = ["EHRTenants.yaml"], cleanAfter = true)
 class TenantConfigurationFactoryTest {
-    @DBRiderConnection
-    lateinit var connectionHolder: ConnectionHolder
+    lateinit var springContext: AnnotationConfigApplicationContext
 
-    companion object {
-        @JvmStatic
-        @BeforeAll
-        fun setupEnvironment() {
-            mockkObject(EnvironmentReader)
-            every { EnvironmentReader.readRequired("TENANT_DB_URL") } returns LiquibaseTest.DEFAULT_DB_URL
-            every { EnvironmentReader.read("TENANT_DB_USERNAME") } returns null
-            every { EnvironmentReader.read("TENANT_DB_PASSWORD") } returns null
-            every { EnvironmentReader.readRequired("QUEUE_DB_URL") } returns LiquibaseTest.DEFAULT_DB_URL
-            every { EnvironmentReader.read("QUEUE_DB_USERNAME") } returns null
-            every { EnvironmentReader.read("QUEUE_DB_PASSWORD") } returns null
-        }
+    @BeforeEach
+    fun setupEnvironment() {
+        springContext = mockk()
+        mockkObject(TenantConfigurationFactoryImpl)
+        every { TenantConfigurationFactoryImpl.context } returns springContext
+    }
+
+    @AfterEach
+    fun unmockk() {
+        unmockkAll()
     }
 
     @Test
@@ -40,12 +37,20 @@ class TenantConfigurationFactoryTest {
 
     @Test
     fun `can find values when they exist`() {
+        every { springContext.getBean(MirthTenantConfigDAO::class.java) } returns mockk {
+            every { getByTenantMnemonic("mdaoc") } returns mockk {
+                every { locationIds } returns "12,12312"
+            }
+        }
         val locations = TenantConfigurationFactoryImpl.getLocationIDsByTenant("mdaoc")
-        assertEquals(3, locations.size)
+        assertEquals(2, locations.size)
     }
 
     @Test
     fun `throws error when non-existent`() {
+        every { springContext.getBean(MirthTenantConfigDAO::class.java) } returns mockk {
+            every { getByTenantMnemonic("fake") } returns null
+        }
         assertThrows<IllegalArgumentException> {
             TenantConfigurationFactoryImpl.getLocationIDsByTenant("fake")
         }
@@ -53,6 +58,14 @@ class TenantConfigurationFactoryTest {
 
     @Test
     fun `can find mdm info`() {
+        every { springContext.getBean(TenantServerDAO::class.java) } returns mockk {
+            every { getTenantServers("mdaoc", MessageType.MDM) } returns listOf(
+                mockk {
+                    every { address } returns "ProjectRonin.biz.gov.co.uk.com"
+                    every { port } returns 10
+                }
+            )
+        }
         val mdmInfo = TenantConfigurationFactoryImpl.getMDMInfo("mdaoc")
         assertEquals("ProjectRonin.biz.gov.co.uk.com", mdmInfo?.first)
         assertEquals(10, mdmInfo?.second)

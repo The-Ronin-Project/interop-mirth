@@ -1,4 +1,5 @@
 [libraries]
+
 interop-aidbox = "com.projectronin.interop.publish:interop-aidbox:5.0.2"
 interop-common = "com.projectronin.interop:interop-common:3.2.0"
 interop-commonHttp = "com.projectronin.interop:interop-common-http:3.2.0"
@@ -8,7 +9,7 @@ interop-ehr-api = "com.projectronin.interop.ehr:interop-ehr:6.0.0"
 interop-ehr-epic = "com.projectronin.interop.ehr:interop-ehr-epic:6.0.0"
 interop-ehr-liquibase = "com.projectronin.interop.ehr:interop-ehr-liquibase:6.0.0"
 interop-publishers = "com.projectronin.interop.publish:interop-publishers:5.0.2"
-interop-datalake = "com.projectronin.interop.publish:interop-datalake:5.0.2"
+interop-datalake = "com.projectronin.interop.publish:interop-datalake:5.0.3"
 interop-fhir-core = "com.projectronin.interop.fhir:interop-fhir:5.0.0"
 interop-fhir-ronin = "com.projectronin.interop.ehr:interop-fhir-ronin:6.0.0"
 interop-queue-api = "com.projectronin.interop.queue:interop-queue:1.2.0"

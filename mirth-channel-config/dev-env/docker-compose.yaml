@@ -136,20 +136,10 @@ services:
     depends_on:
       mockehrmysql:
         condition: service_healthy
-      mockehrinit:
-        condition: service_completed_successfully
     healthcheck:
       test: [ "CMD", "curl", "-k", "-X", "GET", "localhost:8080/fhir/r4/metadata", "-H", "\accept: application/fhir+json", ]
       timeout: 5s
       retries: 10
-
-  mockehrinit:
-    restart: "no"
-    image: docker-proxy.devops.projectronin.io/interop-mock-ehr-init:latest
-    container_name: mirth-mock-ehr-setup
-    depends_on:
-      mockehrmysql:
-        condition: service_healthy
 
   liquibase-queue:
     image: docker-repo.devops.projectronin.io/interop-queue-liquibase:1.1.1
@@ -210,6 +200,48 @@ services:
         condition: service_healthy
       devbox:
         condition: service_healthy
+
+  vault:
+    build:
+      context: ./vault
+    volumes:
+      - ./vault/data:/vault/data
+    environment:
+      VAULT_ADDR: "http://0.0.0.0:8200"
+      VAULT_API_ADDR: "http://0.0.0.0:8200"
+      VAULT_DEV_ROOT_TOKEN_ID: "root"
+      VAULT_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+    ports:
+      - 8200:8200
+    cap_add:
+      - IPC_LOCK
+    healthcheck:
+      test: [ "CMD", "curl", "-k", "-X", "GET", "localhost:8200/v1/sys/health" ]
+      timeout: 2s
+      retries: 10
+
+  vault-init:
+    image: vault:latest
+    volumes:
+      - ./vault/secrets.json:/secrets.json
+      - ./vault/policy.hcl:/policy.hcl
+    entrypoint: ["/bin/sh","-c"]
+    environment:
+      VAULT_ADDR: "http://vault:8200"
+    command:
+      - |
+        vault login "root"
+        vault secrets enable -path=interop-mirth-connector -version=2 kv
+        vault kv put -mount="interop-mirth-connector" dev @secrets.json
+        vault policy write mirth /policy.hcl
+        vault auth enable -path=approle-mirth-dev approle
+        vault write -f auth/approle-mirth-dev/role/developer \policies="default","mirth"
+        vault write -f auth/approle-mirth-dev/role/developer/role-id role_id="interops_role"
+        vault write auth/approle-mirth-dev/role/developer/custom-secret-id secret_id="interops_secret"
+    depends_on:
+      vault:
+        condition: service_healthy
+
 
 secrets:
   mcserver_vmoptions:

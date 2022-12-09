@@ -2,20 +2,16 @@ package com.projectronin.interop.mirth.connector
 
 import com.projectronin.interop.aidbox.PatientService
 import com.projectronin.interop.aidbox.PractitionerService
+import com.projectronin.interop.datalake.DatalakePublishService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
-import com.projectronin.interop.mirth.connector.ehr.EpicServiceFactory.epicVendorFactory
-import com.projectronin.interop.mirth.connector.util.AidboxUtil.aidBoxPatientService
-import com.projectronin.interop.mirth.connector.util.AidboxUtil.aidBoxPractitionerService
-import com.projectronin.interop.mirth.connector.util.AidboxUtil.aidboxPublishService
-import com.projectronin.interop.mirth.connector.util.OciUtil
-import com.projectronin.interop.mirth.connector.util.OciUtil.datalakePublishService
-import com.projectronin.interop.mirth.connector.util.QueueUtil.queueService
-import com.projectronin.interop.mirth.connector.util.TenantUtil.tenantService
+import com.projectronin.interop.mirth.connector.util.SpringUtil
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.queue.QueueService
+import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
+import com.projectronin.interop.aidbox.PublishService as AidboxPublishService
 
 interface ServiceFactory {
     /**
@@ -68,9 +64,15 @@ interface ServiceFactory {
  * Provides Mirth with access to Kotlin services.
  */
 object ServiceFactoryImpl : ServiceFactory {
-    private val ehrFactory = EHRFactory(listOf(epicVendorFactory))
-
-    private val publishService = PublishService(aidboxPublishService, datalakePublishService)
+    val applicationContext by lazy { SpringUtil.applicationContext }
+    private val ehrFactory by lazy { applicationContext.getBean(EHRFactory::class.java) }
+    private val publishService by lazy {
+        PublishService(
+            applicationContext.getBean(AidboxPublishService::class.java),
+            applicationContext.getBean(DatalakePublishService::class.java)
+        )
+    }
+    private val tenantService by lazy { applicationContext.getBean(TenantService::class.java) }
 
     override fun getTenant(tenantId: String): Tenant =
         tenantService.getTenantForMnemonic(tenantId)
@@ -84,11 +86,11 @@ object ServiceFactoryImpl : ServiceFactory {
 
     override fun publishService(): PublishService = publishService
 
-    override fun practitionerService(): PractitionerService = aidBoxPractitionerService
+    override fun practitionerService() = applicationContext.getBean(PractitionerService::class.java)
 
-    override fun patientService(): PatientService = aidBoxPatientService
+    override fun patientService() = applicationContext.getBean(PatientService::class.java)
 
-    override fun queueService(): QueueService = queueService
+    override fun queueService() = applicationContext.getBean(QueueService::class.java)
 
-    override fun conceptMapClient(): ConceptMapClient = OciUtil.conceptMapClient
+    override fun conceptMapClient() = applicationContext.getBean(ConceptMapClient::class.java)
 }

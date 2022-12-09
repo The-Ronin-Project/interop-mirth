@@ -2,6 +2,7 @@ plugins {
     id("com.projectronin.interop.gradle.version")
     id("com.projectronin.interop.gradle.publish")
     id("com.projectronin.interop.gradle.junit")
+    id("com.projectronin.interop.gradle.spring")
     // Plugin exposing shadowJar task for creating fat JAR
     id("com.github.johnrengelman.shadow")
 }
@@ -20,6 +21,8 @@ dependencies {
     implementation(libs.interop.queue.db)
     implementation(libs.interop.tenant)
     implementation(libs.interop.fhir.ronin)
+    implementation("org.springframework.vault:spring-vault-core:2.3.2")
+    implementation("org.springframework:spring-context")
 
     implementation(libs.jakarta.ws)
     implementation(libs.kotlin.stdlib)
