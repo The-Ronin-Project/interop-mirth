@@ -24,12 +24,14 @@ mirth {
 }
 
 dependencies {
+    testImplementation(libs.snakeyaml) {
+        isForce = true
+    }
     testImplementation(libs.interop.aidbox)
     testImplementation(libs.interop.common)
     testImplementation(libs.interop.commonJackson)
-    testImplementation(libs.interop.fhir.core)
-    testImplementation(libs.interop.fhir.ronin)
-    testImplementation(libs.snakeyaml)
+    testImplementation(libs.interop.fhir)
+    testImplementation(libs.interop.ehr.fhir.ronin)
     testImplementation(libs.javafaker)
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.bundles.ktor)

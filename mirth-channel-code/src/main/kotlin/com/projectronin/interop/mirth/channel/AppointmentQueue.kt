@@ -19,7 +19,7 @@ class AppointmentQueue(serviceFactory: ServiceFactory) :
     override fun deserializeAndTransform(string: String, tenant: Tenant): Appointment {
         val appointment = JacksonUtil.readJsonObject(string, Appointment::class)
         val roninAppointment = RoninAppointment.create(serviceFactory.conceptMapClient())
-        return roninAppointment.transform(appointment, tenant)
+        return serviceFactory.transformManager().transformResource(appointment, roninAppointment, tenant)
             ?: throw ResourcesNotTransformedException("Failed to transform Appointment for tenant ${tenant.mnemonic}")
     }
 }

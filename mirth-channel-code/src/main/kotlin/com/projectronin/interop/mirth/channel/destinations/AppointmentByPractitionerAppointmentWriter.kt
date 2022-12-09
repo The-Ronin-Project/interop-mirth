@@ -19,12 +19,8 @@ class AppointmentByPractitionerAppointmentWriter(rootName: String, serviceFactor
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthMessage {
-        return deserializeAndTransformToMessage(
-            tenantMnemonic,
-            msg,
-            Appointment::class,
-            RoninAppointment.create(serviceFactory.conceptMapClient())
-        )
+        val roninAppointment = RoninAppointment.create(serviceFactory.conceptMapClient())
+        return deserializeAndTransformToMessage(tenantMnemonic, msg, Appointment::class, roninAppointment)
     }
 
     /**

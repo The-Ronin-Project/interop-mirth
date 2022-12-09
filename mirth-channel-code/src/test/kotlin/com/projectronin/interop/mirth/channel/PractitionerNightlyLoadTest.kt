@@ -17,8 +17,10 @@ import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.r4.resource.PractitionerRole
 import com.projectronin.interop.fhir.r4.valueset.LocationStatus
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
-import com.projectronin.interop.fhir.ronin.transformTo
+import com.projectronin.interop.fhir.ronin.resource.RoninPractitioner
+import com.projectronin.interop.fhir.ronin.resource.RoninPractitionerRole
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.connector.ServiceFactory
@@ -32,7 +34,6 @@ import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.mockkStatic
 import io.mockk.unmockkObject
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -48,6 +49,7 @@ private const val VALID_DEPLOYED_NAME = "$VALID_TENANT_ID-$CHANNEL_ROOT_NAME"
 class PractitionerNightlyLoadTest {
     lateinit var vendorFactory: VendorFactory
     lateinit var conceptMapClient: ConceptMapClient
+    lateinit var transformManager: TransformManager
     lateinit var serviceFactory: ServiceFactory
     lateinit var tenantConfigurationFactory: TenantConfigurationFactory
     lateinit var channel: PractitionerNightlyLoad
@@ -66,11 +68,14 @@ class PractitionerNightlyLoadTest {
         vendorFactory = mockk()
         conceptMapClient = mockk()
         tenantConfigurationFactory = mockk()
+        transformManager = mockk()
+
         serviceFactory = mockk {
             every { getTenant(VALID_TENANT_ID) } returns tenant
             every { vendorFactory(tenant) } returns vendorFactory
             every { tenantConfigurationFactory() } returns tenantConfigurationFactory
             every { conceptMapClient() } returns conceptMapClient
+            every { transformManager() } returns transformManager
         }
         channel = PractitionerNightlyLoad(serviceFactory)
     }
@@ -310,11 +315,20 @@ class PractitionerNightlyLoadTest {
             MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
             "${MirthKey.RESOURCES_FOUND.code}.Practitioner" to listOf(r4Practitioner)
         )
+
         mockkObject(JacksonUtil)
-        every { JacksonUtil.readJsonList(any(), Practitioner::class) } returns listOf(mockk())
+        val practitioner = mockk<Practitioner>()
+        every { JacksonUtil.readJsonList(any(), Practitioner::class) } returns listOf(practitioner)
         every { JacksonUtil.writeJsonValue(any()) } returns "message"
-        mockkStatic(Practitioner::transformTo)
-        every { any<Practitioner>().transformTo(any(), tenant) } returns transformedPractitioner
+
+        every {
+            transformManager.transformResource(
+                practitioner,
+                RoninPractitioner,
+                tenant
+            )
+        } returns transformedPractitioner
+
         val expectedMessage =
             MirthMessage("", mapOf(MirthKey.RESOURCES_TRANSFORMED.code to listOf(transformedPractitioner)))
         val actualMessage = channel.sourceTransformer(VALID_DEPLOYED_NAME, "", sourceMap, mapOf("b" to "c"))
@@ -331,10 +345,17 @@ class PractitionerNightlyLoadTest {
             "${MirthKey.RESOURCES_FOUND.code}.Practitioner" to listOf(r4Practitioner)
         )
         mockkObject(JacksonUtil)
-        every { JacksonUtil.readJsonList(any(), Practitioner::class) } returns listOf(mockk())
+        val practitioner = mockk<Practitioner>()
+        every { JacksonUtil.readJsonList(any(), Practitioner::class) } returns listOf(practitioner)
         every { JacksonUtil.writeJsonValue(any()) } returns "message"
-        mockkStatic(Practitioner::transformTo)
-        every { any<Practitioner>().transformTo(any(), tenant) } returns null
+
+        every {
+            transformManager.transformResource(
+                practitioner,
+                RoninPractitioner,
+                tenant
+            )
+        } returns null
 
         val ex = assertThrows<ResourcesNotTransformedException> {
             channel.sourceTransformer(VALID_DEPLOYED_NAME, "a", sourceMap, mapOf("b" to "c"))
@@ -355,10 +376,12 @@ class PractitionerNightlyLoadTest {
             "${MirthKey.RESOURCES_FOUND.code}.Location" to listOf(r4Location)
         )
         mockkObject(JacksonUtil)
-        every { JacksonUtil.readJsonList(any(), Location::class) } returns listOf(mockk())
+        val location = mockk<Location>()
+        every { JacksonUtil.readJsonList(any(), Location::class) } returns listOf(location)
         every { JacksonUtil.writeJsonValue(any()) } returns "message"
-        mockkStatic(Location::transformTo)
-        every { any<Location>().transformTo(any(), tenant) } returns transformedLocation
+
+        every { transformManager.transformResource(location, any(), tenant) } returns transformedLocation
+
         val expectedMessage =
             MirthMessage("", mapOf(MirthKey.RESOURCES_TRANSFORMED.code to listOf(transformedLocation)))
         val actualMessage = channel.sourceTransformer(VALID_DEPLOYED_NAME, "", sourceMap, mapOf("b" to "c"))
@@ -381,10 +404,18 @@ class PractitionerNightlyLoadTest {
             "${MirthKey.RESOURCES_FOUND.code}.PractitionerRole" to listOf(r4PractitionerRole)
         )
         mockkObject(JacksonUtil)
-        every { JacksonUtil.readJsonList(any(), PractitionerRole::class) } returns listOf(mockk())
+        val practitionerRole = mockk<PractitionerRole>()
+        every { JacksonUtil.readJsonList(any(), PractitionerRole::class) } returns listOf(practitionerRole)
         every { JacksonUtil.writeJsonValue(any()) } returns "message"
-        mockkStatic(PractitionerRole::transformTo)
-        every { any<PractitionerRole>().transformTo(any(), tenant) } returns transformedPractitionerRole
+
+        every {
+            transformManager.transformResource(
+                practitionerRole,
+                RoninPractitionerRole,
+                tenant
+            )
+        } returns transformedPractitionerRole
+
         val expectedMessage =
             MirthMessage("", mapOf(MirthKey.RESOURCES_TRANSFORMED.code to listOf(transformedPractitionerRole)))
         val actualMessage = channel.sourceTransformer(VALID_DEPLOYED_NAME, "", sourceMap, mapOf("b" to "c"))
@@ -402,10 +433,11 @@ class PractitionerNightlyLoadTest {
             "${MirthKey.RESOURCES_FOUND.code}.PractitionerRole" to listOf(r4PractitionerRole)
         )
         mockkObject(JacksonUtil)
-        every { JacksonUtil.readJsonList(any(), PractitionerRole::class) } returns listOf(mockk())
+        val practitionerRole = mockk<PractitionerRole>()
+        every { JacksonUtil.readJsonList(any(), PractitionerRole::class) } returns listOf(practitionerRole)
         every { JacksonUtil.writeJsonValue(any()) } returns "message"
-        mockkStatic(PractitionerRole::transformTo)
-        every { any<PractitionerRole>().transformTo(any(), tenant) } returns null
+
+        every { transformManager.transformResource(practitionerRole, RoninPractitionerRole, tenant) } returns null
 
         val ex = assertThrows<ResourcesNotTransformedException> {
             channel.sourceTransformer(VALID_DEPLOYED_NAME, "a", sourceMap, mapOf("b" to "c"))

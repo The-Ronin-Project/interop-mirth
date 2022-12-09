@@ -4,7 +4,6 @@ import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
-import com.projectronin.interop.fhir.ronin.transformTo
 import com.projectronin.interop.mirth.channel.base.BaseQueue
 import com.projectronin.interop.mirth.connector.ServiceFactory
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
@@ -19,7 +18,7 @@ class ConditionQueue(serviceFactory: ServiceFactory) :
 
     override fun deserializeAndTransform(string: String, tenant: Tenant): Condition {
         val condition = JacksonUtil.readJsonObject(string, Condition::class)
-        return condition.transformTo(RoninConditions, tenant)
+        return serviceFactory.transformManager().transformResource(condition, RoninConditions, tenant)
             ?: throw ResourcesNotTransformedException("Failed to transform Condition for tenant ${tenant.mnemonic}")
     }
 }

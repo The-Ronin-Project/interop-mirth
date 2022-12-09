@@ -13,6 +13,7 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.valueset.AppointmentStatus
 import com.projectronin.interop.fhir.r4.valueset.ParticipationStatus
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
 import com.projectronin.interop.fhir.ronin.resource.RoninAppointment
 import com.projectronin.interop.fhir.util.asCode
@@ -22,9 +23,7 @@ import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.mockkStatic
 import io.mockk.unmockkObject
-import io.mockk.unmockkStatic
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -39,6 +38,7 @@ class AppointmentQueueTest {
     private lateinit var mockVendorFactory: VendorFactory
     private lateinit var mockPatientService: PatientService
     private lateinit var mockPractitionerService: PractitionerService
+    private lateinit var mockTransformManager: TransformManager
     private lateinit var mockConceptMapClient: ConceptMapClient
     private lateinit var mockServiceFactory: ServiceFactory
     private lateinit var channel: AppointmentQueue
@@ -54,11 +54,13 @@ class AppointmentQueueTest {
         mockVendorFactory = mockk()
         mockPatientService = mockk()
         mockPractitionerService = mockk()
+        mockTransformManager = mockk()
         mockConceptMapClient = mockk()
         mockServiceFactory = mockk {
             every { vendorFactory(mockTenant) } returns mockVendorFactory
             every { patientService() } returns mockPatientService
             every { practitionerService() } returns mockPractitionerService
+            every { transformManager() } returns mockTransformManager
             every { conceptMapClient() } returns mockConceptMapClient
         }
         channel = AppointmentQueue(mockServiceFactory)
@@ -86,59 +88,43 @@ class AppointmentQueueTest {
     @Test
     fun `deserializeAndTransform - fails`() {
         mockkObject(RoninAppointment)
-        mockkStatic(RoninAppointment::transform)
-        mockkStatic(ConceptMapClient::getConceptMapping)
-        val mockRonin = mockk<RoninAppointment> {
-            every { transform(mockR4Appointment, mockTenant) } returns null
-        }
-        every { RoninAppointment.create(any()) } returns mockRonin
-
-        mockServiceFactory = mockk {
-            every { getTenant(mockTenantMnemonic) } returns mockTenant
-            every { vendorFactory(mockTenant) } returns mockVendorFactory
-            every { conceptMapClient() } returns mockConceptMapClient
-        }
-        channel = AppointmentQueue(mockServiceFactory)
-
         mockkObject(JacksonUtil)
-        every { JacksonUtil.readJsonObject("appointmentString", Appointment::class) } returns mockR4Appointment
+
+        val appointment = mockk<Appointment>()
+        every { JacksonUtil.readJsonObject<Appointment>(any(), any()) } returns appointment
+        val roninAppointment = mockk<RoninAppointment>()
+        every { RoninAppointment.create(any()) } returns roninAppointment
+
+        every { mockTransformManager.transformResource(appointment, roninAppointment, mockTenant) } returns null
+
         assertThrows<ResourcesNotTransformedException> {
             channel.deserializeAndTransform(
                 "appointmentString",
                 mockTenant
             )
         }
-
-        unmockkObject(RoninAppointment)
-        unmockkStatic(RoninAppointment::transform)
-        unmockkStatic(ConceptMapClient::getConceptMapping)
     }
 
     @Test
     fun `deserializeAndTransform - works`() {
         mockkObject(RoninAppointment)
-        mockkStatic(RoninAppointment::transform)
-        mockkStatic(ConceptMapClient::getConceptMapping)
-        val mockAppointment = mockk<Appointment>()
-        val mockRonin = mockk<RoninAppointment> {
-            every { transform(mockR4Appointment, mockTenant) } returns mockAppointment
-        }
-        every { RoninAppointment.create(any()) } returns mockRonin
-
-        mockServiceFactory = mockk {
-            every { getTenant(mockTenantMnemonic) } returns mockTenant
-            every { vendorFactory(mockTenant) } returns mockVendorFactory
-            every { conceptMapClient() } returns mockConceptMapClient
-        }
-        channel = AppointmentQueue(mockServiceFactory)
-
         mockkObject(JacksonUtil)
-        every { JacksonUtil.readJsonObject("appointmentString", Appointment::class) } returns mockR4Appointment
-        val transformedAppointment = channel.deserializeAndTransform("appointmentString", mockTenant)
-        assertEquals(mockAppointment, transformedAppointment)
 
-        unmockkObject(RoninAppointment)
-        unmockkStatic(RoninAppointment::transform)
-        unmockkStatic(ConceptMapClient::getConceptMapping)
+        val appointment = mockk<Appointment>()
+        every { JacksonUtil.readJsonObject<Appointment>(any(), any()) } returns appointment
+        val roninAppointment = mockk<RoninAppointment>()
+        every { RoninAppointment.create(any()) } returns roninAppointment
+
+        val transformedAppointment = mockk<Appointment>()
+        every {
+            mockTransformManager.transformResource(
+                appointment,
+                roninAppointment,
+                mockTenant
+            )
+        } returns transformedAppointment
+
+        val transformedAppt = channel.deserializeAndTransform("appointmentString", mockTenant)
+        assertEquals(transformedAppointment, transformedAppt)
     }
 }

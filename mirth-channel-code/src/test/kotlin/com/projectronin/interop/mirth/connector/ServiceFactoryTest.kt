@@ -5,6 +5,7 @@ import com.projectronin.interop.aidbox.PractitionerService
 import com.projectronin.interop.aidbox.PublishService
 import com.projectronin.interop.datalake.DatalakePublishService
 import com.projectronin.interop.ehr.factory.EHRFactory
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
 import com.projectronin.interop.queue.QueueService
 import com.projectronin.interop.tenant.config.TenantService
@@ -31,7 +32,12 @@ class ServiceFactoryTest {
     fun setupEnvironment() {
         springContext = mockk()
         mockkConstructor(com.projectronin.interop.publishers.PublishService::class)
-        every { anyConstructed<com.projectronin.interop.publishers.PublishService>().publishFHIRResources(any(), any()) } returns true
+        every {
+            anyConstructed<com.projectronin.interop.publishers.PublishService>().publishFHIRResources(
+                any(),
+                any()
+            )
+        } returns true
         every { springContext.getBean(TenantService::class.java) } returns tenantService
         every { springContext.getBean(EHRFactory::class.java) } returns ehrFactory
         every { springContext.getBean(PublishService::class.java) } returns mockk()
@@ -93,5 +99,11 @@ class ServiceFactoryTest {
     fun `conceptMap works`() {
         every { springContext.getBean(ConceptMapClient::class.java) } returns mockk()
         assertNotNull(ServiceFactoryImpl.conceptMapClient())
+    }
+
+    @Test
+    fun `transformManager works`() {
+        every { springContext.getBean(TransformManager::class.java) } returns mockk()
+        assertNotNull(ServiceFactoryImpl.transformManager())
     }
 }

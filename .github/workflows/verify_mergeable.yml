@@ -1,0 +1,18 @@
+name: Verify Mergeable
+on:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check Libs for Snapshots
+        run: |
+          if grep -- -SNAPSHOT ./gradle/libs.versions.toml
+          then
+            echo "Above snapshots found in library";
+            exit 1;
+          else
+            echo "No Snapshots found";
+          fi

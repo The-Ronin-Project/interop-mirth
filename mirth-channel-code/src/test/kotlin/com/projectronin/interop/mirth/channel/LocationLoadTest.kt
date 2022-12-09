@@ -3,8 +3,8 @@ package com.projectronin.interop.mirth.channel
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Location
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
-import com.projectronin.interop.fhir.ronin.transformTo
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.connector.ServiceFactory
 import com.projectronin.interop.mirth.connector.TenantConfigurationFactory
@@ -13,7 +13,6 @@ import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.mockkStatic
 import io.mockk.unmockkObject
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -28,6 +27,7 @@ internal class LocationLoadTest {
         every { mnemonic } returns TENANT_ID
     }
     private val vendorFactory = mockk<VendorFactory>()
+    private val transformManager = mockk<TransformManager>()
     private var tenantConfigurationFactory = mockk<TenantConfigurationFactory>()
     lateinit var conceptMapClient: ConceptMapClient
     lateinit var serviceFactory: ServiceFactory
@@ -41,6 +41,7 @@ internal class LocationLoadTest {
             every { vendorFactory(tenant) } returns vendorFactory
             every { tenantConfigurationFactory() } returns tenantConfigurationFactory
             every { conceptMapClient() } returns conceptMapClient
+            every { transformManager() } returns transformManager
         }
         channel = LocationLoad(serviceFactory)
     }
@@ -105,9 +106,10 @@ internal class LocationLoadTest {
         mockkObject(JacksonUtil)
         every { JacksonUtil.readJsonList("msg", Location::class) } returns listOf(location1, location2)
         every { JacksonUtil.writeJsonValue(any()) } returns "message"
-        mockkStatic(Location::transformTo)
-        every { location1.transformTo(any(), tenant) } returns location1
-        every { location2.transformTo(any(), tenant) } returns location2
+
+        every { transformManager.transformResource(location1, any(), tenant) } returns location1
+        every { transformManager.transformResource(location2, any(), tenant) } returns location2
+
         val response = channel.channelSourceTransformer(TENANT_ID, "msg", mapOf(), mapOf())
         assertEquals("message", response.message)
         assertEquals("location1,location2", response.dataMap[MirthKey.FHIR_ID_LIST.code])

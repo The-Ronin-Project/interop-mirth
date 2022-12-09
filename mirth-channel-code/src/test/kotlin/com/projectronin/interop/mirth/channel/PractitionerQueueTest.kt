@@ -4,15 +4,14 @@ import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Practitioner
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninPractitioner
-import com.projectronin.interop.fhir.ronin.transformTo
 import com.projectronin.interop.mirth.connector.ServiceFactory
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.mockkStatic
 import io.mockk.unmockkObject
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -25,6 +24,7 @@ class PractitionerQueueTest {
         every { mnemonic } returns "testmnemonic"
     }
     private lateinit var mockVendorFactory: VendorFactory
+    private lateinit var mockTransformManager: TransformManager
     private lateinit var mockServiceFactory: ServiceFactory
     private lateinit var channel: PractitionerQueue
 
@@ -36,8 +36,10 @@ class PractitionerQueueTest {
     @BeforeEach
     fun setup() {
         mockVendorFactory = mockk()
+        mockTransformManager = mockk()
         mockServiceFactory = mockk {
             every { vendorFactory(mockTenant) } returns mockVendorFactory
+            every { transformManager() } returns mockTransformManager
         }
         channel = PractitionerQueue(mockServiceFactory)
     }
@@ -52,22 +54,30 @@ class PractitionerQueueTest {
     @Test
     fun `deserializeAndTransform - works`() {
         mockkObject(JacksonUtil)
-        mockkStatic(Practitioner::transformTo)
-        val mockPractitioner = mockk<Practitioner>()
-        every { JacksonUtil.readJsonObject<Practitioner>(any(), any()) } returns mockk {
-            every { transformTo(RoninPractitioner, any()) } returns mockPractitioner
-        }
+        val practitioner = mockk<Practitioner>()
+        every { JacksonUtil.readJsonObject<Practitioner>(any(), any()) } returns practitioner
+
+        val transformedPractitioner = mockk<Practitioner>()
+        every {
+            mockTransformManager.transformResource(
+                practitioner,
+                RoninPractitioner,
+                mockTenant
+            )
+        } returns transformedPractitioner
+
         val transformed = channel.deserializeAndTransform("practitionerString", mockTenant)
-        assertEquals(mockPractitioner, transformed)
+        assertEquals(transformedPractitioner, transformed)
     }
 
     @Test
     fun `deserializeAndTransform - fails`() {
         mockkObject(JacksonUtil)
-        mockkStatic(Practitioner::transformTo)
-        every { JacksonUtil.readJsonObject<Practitioner>(any(), any()) } returns mockk {
-            every { transformTo(RoninPractitioner, any()) } returns null
-        }
+        val practitioner = mockk<Practitioner>()
+        every { JacksonUtil.readJsonObject<Practitioner>(any(), any()) } returns practitioner
+
+        every { mockTransformManager.transformResource(practitioner, RoninPractitioner, mockTenant) } returns null
+
         assertThrows<ResourcesNotTransformedException> {
             channel.deserializeAndTransform(
                 "practitionerString",

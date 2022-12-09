@@ -16,7 +16,7 @@ import kotlin.random.Random
 
 const val patientQueueChannelName = "PatientQueue"
 
-class PatientQueueTestTest : BaseMirthChannelTest(patientQueueChannelName, listOf("Patient")) {
+class PatientQueueTest : BaseMirthChannelTest(patientQueueChannelName, listOf("Patient")) {
     val patientType = "Patient"
 
     @Test
@@ -65,7 +65,12 @@ class PatientQueueTestTest : BaseMirthChannelTest(patientQueueChannelName, listO
         assertEquals(0, getAidboxResourceCount(patientType))
 
         // query for patient from 'EHR'
-        ProxyClient.getPatientByNameAndDob(testTenant, patientName.family?.value!!, patientName.given.first().value!!, "1990-01-03")
+        ProxyClient.getPatientByNameAndDob(
+            testTenant,
+            patientName.family?.value!!,
+            patientName.given.first().value!!,
+            "1990-01-03"
+        )
 
         // start channel
         deployAndStartChannel(true)

@@ -11,7 +11,8 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.valueset.ObservationStatus
-import com.projectronin.interop.fhir.ronin.transformTo
+import com.projectronin.interop.fhir.ronin.TransformManager
+import com.projectronin.interop.fhir.ronin.resource.RoninObservations
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.connector.ServiceFactory
@@ -23,7 +24,6 @@ import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.mockkStatic
 import io.mockk.unmockkObject
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -38,6 +38,7 @@ private const val VALID_DEPLOYED_NAME = "$VALID_TENANT_ID-$CHANNEL_ROOT_NAME"
 class ObservationNightlyLoadTest {
     lateinit var tenant: Tenant
     lateinit var vendorFactory: VendorFactory
+    lateinit var transformManager: TransformManager
     lateinit var serviceFactory: ServiceFactory
     lateinit var channel: ObservationNightlyLoad
 
@@ -48,10 +49,12 @@ class ObservationNightlyLoadTest {
         }
 
         vendorFactory = mockk()
+        transformManager = mockk()
 
         serviceFactory = mockk {
             every { getTenant(VALID_TENANT_ID) } returns tenant
             every { vendorFactory(tenant) } returns vendorFactory
+            every { transformManager() } returns transformManager
         }
 
         channel = ObservationNightlyLoad(serviceFactory)
@@ -312,11 +315,14 @@ class ObservationNightlyLoadTest {
     @Test
     fun `sourceTransformer - works`() {
         mockkObject(JacksonUtil)
-        mockkStatic(Observation::transformTo)
-        every { JacksonUtil.readJsonList<Observation>(any(), any()) } returns listOf(mockk())
-        every { any<Observation>().transformTo(any(), tenant) } returns mockk {
+
+        val observation = mockk<Observation>()
+        every { JacksonUtil.readJsonList<Observation>(any(), any()) } returns listOf(observation)
+
+        every { transformManager.transformResource(observation, RoninObservations, tenant) } returns mockk {
             every { id?.value } returns "id"
         }
+
         every { JacksonUtil.writeJsonValue(any()) } returns "message"
         val actualMessage =
             channel.sourceTransformer(VALID_DEPLOYED_NAME, "a", emptyMap(), mapOf("b" to "c"))
@@ -330,10 +336,13 @@ class ObservationNightlyLoadTest {
             MirthKey.RESOURCES_FOUND.code to listOf(r4Observation1, r4Observation2, mockk())
         )
         mockkObject(JacksonUtil)
-        mockkStatic(Observation::transformTo)
-        every { JacksonUtil.readJsonList<Observation>(any(), any()) } returns listOf(mockk())
+
+        val observation = mockk<Observation>()
+        every { JacksonUtil.readJsonList<Observation>(any(), any()) } returns listOf(observation)
+
+        every { transformManager.transformResource(observation, RoninObservations, tenant) } returns null
+
         every { JacksonUtil.writeJsonValue(any()) } returns "message"
-        every { any<Observation>().transformTo(any(), tenant) } returns null
 
         val ex = assertThrows<ResourcesNotTransformedException> {
             channel.sourceTransformer(VALID_DEPLOYED_NAME, "a", sourceMap, mapOf("b" to "c"))

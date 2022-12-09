@@ -3,7 +3,6 @@ package com.projectronin.interop.mirth.channel.destinations
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.resource.RoninPatient
-import com.projectronin.interop.fhir.ronin.transformTo
 import com.projectronin.interop.mirth.channel.base.DestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
@@ -41,7 +40,7 @@ class AppointmentByPractitionerPatientWriter(rootName: String, serviceFactory: S
         val vendorFactory = serviceFactory.vendorFactory(tenant)
 
         val roninPatient = RoninPatient.create(vendorFactory.identifierService, serviceFactory.conceptMapClient())
-        val transformedPatient = patient.transformTo(roninPatient, tenant)
+        val transformedPatient = serviceFactory.transformManager().transformResource(patient, roninPatient, tenant)
             ?: return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = JacksonUtil.writeJsonValue(patient),

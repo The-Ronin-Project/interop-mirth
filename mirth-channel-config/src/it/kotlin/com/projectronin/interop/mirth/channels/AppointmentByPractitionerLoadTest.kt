@@ -34,6 +34,7 @@ class AppointmentByPractitionerLoadTest :
     val appointmentType = "Appointment"
     val conditionType = "Condition"
     val practitionerType = "Practitioner"
+
     @Test
     fun `fails if no practitioner`() {
         deployAndStartChannel(true)

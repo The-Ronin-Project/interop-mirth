@@ -3,9 +3,9 @@ package com.projectronin.interop.mirth.channel.destinations
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Patient
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
 import com.projectronin.interop.fhir.ronin.resource.RoninPatient
-import com.projectronin.interop.fhir.ronin.transformTo
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.connector.ServiceFactory
@@ -14,7 +14,6 @@ import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.mockkStatic
 import io.mockk.unmockkObject
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -31,6 +30,7 @@ private const val VALID_DEPLOYED_NAME = "$VALID_TENANT_ID-$CHANNEL_ROOT_NAME"
 
 class AppointmentByPractitionerPatientWriterTest {
     lateinit var vendorFactory: VendorFactory
+    lateinit var transformManager: TransformManager
     lateinit var serviceFactory: ServiceFactory
     lateinit var writer: AppointmentByPractitionerPatientWriter
     lateinit var conceptMapClient: ConceptMapClient
@@ -49,11 +49,13 @@ class AppointmentByPractitionerPatientWriterTest {
     fun setup() {
         vendorFactory = mockk()
         conceptMapClient = mockk()
+        transformManager = mockk()
 
         serviceFactory = mockk {
             every { getTenant(VALID_TENANT_ID) } returns tenant
             every { vendorFactory(tenant) } returns vendorFactory
             every { conceptMapClient() } returns conceptMapClient
+            every { transformManager() } returns transformManager
         }
 
         writer = AppointmentByPractitionerPatientWriter(CHANNEL_ROOT_NAME, serviceFactory)
@@ -78,8 +80,6 @@ class AppointmentByPractitionerPatientWriterTest {
 
     @Test
     fun `destinationWriter - works`() {
-
-        mockkStatic(Patient::transformTo)
         mockkObject(RoninPatient)
         mockkObject(JacksonUtil)
         val mockRoninPatient = mockk<Patient> {
@@ -87,10 +87,11 @@ class AppointmentByPractitionerPatientWriterTest {
                 every { value } returns "blah"
             }
         }
-        every { RoninPatient.create(any(), any()) } returns mockk()
-        val mockPatient = mockk<Patient> {
-            every { transformTo(any(), tenant) } returns mockRoninPatient
-        }
+        val roninPatient = mockk<RoninPatient>()
+        every { RoninPatient.create(any(), any()) } returns roninPatient
+        val mockPatient = mockk<Patient>()
+
+        every { transformManager.transformResource(mockPatient, roninPatient, tenant) } returns mockRoninPatient
 
         every { vendorFactory.identifierService } returns mockk()
         val mockPublishService = mockk<PublishService> {
@@ -111,7 +112,6 @@ class AppointmentByPractitionerPatientWriterTest {
 
     @Test
     fun `destinationWriter - has resource but publish fails`() {
-        mockkStatic(Patient::transformTo)
         mockkObject(RoninPatient)
         mockkObject(JacksonUtil)
         val mockRoninPatient = mockk<Patient> {
@@ -119,10 +119,11 @@ class AppointmentByPractitionerPatientWriterTest {
                 every { value } returns "blah"
             }
         }
-        every { RoninPatient.create(any(), any()) } returns mockk()
-        val mockPatient = mockk<Patient> {
-            every { transformTo(any(), tenant) } returns mockRoninPatient
-        }
+        val roninPatient = mockk<RoninPatient>()
+        every { RoninPatient.create(any(), any()) } returns roninPatient
+        val mockPatient = mockk<Patient>()
+
+        every { transformManager.transformResource(mockPatient, roninPatient, tenant) } returns mockRoninPatient
 
         every { vendorFactory.identifierService } returns mockk()
         val mockPublishService = mockk<PublishService> {
@@ -143,25 +144,16 @@ class AppointmentByPractitionerPatientWriterTest {
 
     @Test
     fun `destinationWriter - failed transform`() {
-        mockkStatic(Patient::transformTo)
         mockkObject(RoninPatient)
         mockkObject(JacksonUtil)
-        val mockRoninPatient = mockk<Patient> {
-            every { id } returns mockk {
-                every { value } returns "blah"
-            }
-        }
-        every { RoninPatient.create(any(), any()) } returns mockk()
-        val mockPatient = mockk<Patient> {
-            every { transformTo(any(), tenant) } returns null
-        }
+        val roninPatient = mockk<RoninPatient>()
+        every { RoninPatient.create(any(), any()) } returns roninPatient
+        val mockPatient = mockk<Patient>()
+
+        every { transformManager.transformResource(mockPatient, roninPatient, tenant) } returns null
 
         every { vendorFactory.identifierService } returns mockk()
-        val mockPublishService = mockk<PublishService> {
-            every { publishFHIRResources(VALID_TENANT_ID, listOf(mockRoninPatient)) } returns true
-        }
 
-        every { serviceFactory.publishService() } returns mockPublishService
         every { JacksonUtil.writeJsonValue(any()) } returns "Oh No"
         every { JacksonUtil.readJsonObject(any(), Patient::class) } returns mockPatient
         val response = writer.destinationWriter(
@@ -175,7 +167,6 @@ class AppointmentByPractitionerPatientWriterTest {
 
     @Test
     fun `destinationWriter - errors when null patient id value`() {
-        mockkStatic(Patient::transformTo)
         mockkObject(RoninPatient)
         mockkObject(JacksonUtil)
         val mockRoninPatient = mockk<Patient> {
@@ -183,10 +174,11 @@ class AppointmentByPractitionerPatientWriterTest {
                 every { value } returns null
             }
         }
-        every { RoninPatient.create(any(), any()) } returns mockk()
-        val mockPatient = mockk<Patient> {
-            every { transformTo(any(), tenant) } returns mockRoninPatient
-        }
+        val roninPatient = mockk<RoninPatient>()
+        every { RoninPatient.create(any(), any()) } returns roninPatient
+        val mockPatient = mockk<Patient>()
+
+        every { transformManager.transformResource(mockPatient, roninPatient, tenant) } returns mockRoninPatient
 
         every { vendorFactory.identifierService } returns mockk()
         val mockPublishService = mockk<PublishService> {
@@ -205,16 +197,16 @@ class AppointmentByPractitionerPatientWriterTest {
 
     @Test
     fun `destinationWriter - errors when null patient id`() {
-        mockkStatic(Patient::transformTo)
         mockkObject(RoninPatient)
         mockkObject(JacksonUtil)
         val mockRoninPatient = mockk<Patient> {
             every { id } returns null
         }
-        every { RoninPatient.create(any(), any()) } returns mockk()
-        val mockPatient = mockk<Patient> {
-            every { transformTo(any(), tenant) } returns mockRoninPatient
-        }
+        val roninPatient = mockk<RoninPatient>()
+        every { RoninPatient.create(any(), any()) } returns roninPatient
+        val mockPatient = mockk<Patient>()
+
+        every { transformManager.transformResource(mockPatient, roninPatient, tenant) } returns mockRoninPatient
 
         every { vendorFactory.identifierService } returns mockk()
         val mockPublishService = mockk<PublishService> {

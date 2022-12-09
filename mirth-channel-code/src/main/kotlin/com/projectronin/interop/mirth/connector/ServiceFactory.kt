@@ -5,6 +5,7 @@ import com.projectronin.interop.aidbox.PractitionerService
 import com.projectronin.interop.datalake.DatalakePublishService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
 import com.projectronin.interop.mirth.connector.util.SpringUtil
 import com.projectronin.interop.publishers.PublishService
@@ -58,6 +59,11 @@ interface ServiceFactory {
      * For requests to the ConceptMap Registry.
      */
     fun conceptMapClient(): ConceptMapClient
+
+    /**
+     * For transforming to Ronin profiles.
+     */
+    fun transformManager(): TransformManager
 }
 
 /**
@@ -93,4 +99,6 @@ object ServiceFactoryImpl : ServiceFactory {
     override fun queueService() = applicationContext.getBean(QueueService::class.java)
 
     override fun conceptMapClient() = applicationContext.getBean(ConceptMapClient::class.java)
+
+    override fun transformManager() = applicationContext.getBean(TransformManager::class.java)
 }

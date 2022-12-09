@@ -3,7 +3,6 @@ package com.projectronin.interop.mirth.channel.base
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.fhir.ronin.ProfileTransformer
-import com.projectronin.interop.fhir.ronin.transformTo
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.connector.ServiceFactory
@@ -164,8 +163,9 @@ abstract class BaseService(val serviceFactory: ServiceFactory) {
         transformer: ProfileTransformer<T>
     ): List<T> {
         val tenant = serviceFactory.getTenant(tenantMnemonic)
+        val transformManager = serviceFactory.transformManager()
         return resourceList.mapNotNull { resource ->
-            resource.transformTo(transformer, tenant)
+            transformManager.transformResource(resource, transformer, tenant)
         }
     }
 
@@ -210,8 +210,9 @@ abstract class BaseService(val serviceFactory: ServiceFactory) {
         transformer: ProfileTransformer<T>
     ): MirthMessage {
         val tenant = serviceFactory.getTenant(tenantMnemonic)
+        val transformManager = serviceFactory.transformManager()
         val transformedList = resourceList.mapNotNull { resource ->
-            resource.transformTo(transformer, tenant)
+            transformManager.transformResource(resource, transformer, tenant)
         }
         if (transformedList.isEmpty()) {
             throw ResourcesNotTransformedException(

@@ -8,10 +8,10 @@
     <root level="WARN">
         <appender-ref ref="STDOUT"/>
     </root>
-    <!-- Update level to INFO if ktor logging is needed -->
     <logger name="com.projectronin" level="INFO" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
+    <!-- Update level to INFO if ktor logging is needed -->
     <logger name="io.ktor" level="WARN" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>

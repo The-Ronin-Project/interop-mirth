@@ -4,8 +4,8 @@ import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.ConditionService
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Condition
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
-import com.projectronin.interop.fhir.ronin.transformTo
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.connector.ServiceFactory
@@ -14,7 +14,6 @@ import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.mockkStatic
 import io.mockk.unmockkObject
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -27,6 +26,7 @@ private const val VALID_DEPLOYED_NAME = "$VALID_TENANT_ID-$CHANNEL_ROOT_NAME"
 
 class AppointmentByPractitionerConditionWriterTest {
     lateinit var vendorFactory: VendorFactory
+    lateinit var transformManager: TransformManager
     lateinit var serviceFactory: ServiceFactory
     lateinit var writer: AppointmentByPractitionerConditionWriter
 
@@ -42,10 +42,12 @@ class AppointmentByPractitionerConditionWriterTest {
     @BeforeEach
     fun setup() {
         vendorFactory = mockk()
+        transformManager = mockk()
 
         serviceFactory = mockk {
             every { getTenant(VALID_TENANT_ID) } returns tenant
             every { vendorFactory(tenant) } returns vendorFactory
+            every { transformManager() } returns transformManager
         }
 
         writer = AppointmentByPractitionerConditionWriter(CHANNEL_ROOT_NAME, serviceFactory)
@@ -77,8 +79,7 @@ class AppointmentByPractitionerConditionWriterTest {
                 )
             } returns mockConditions
         }
-        mockkStatic(Condition::transformTo)
-        every { mockCondition.transformTo(RoninConditions, tenant) } returns mockRoninCondition
+        every { transformManager.transformResource(mockCondition, RoninConditions, tenant) } returns mockRoninCondition
         every { vendorFactory.conditionService } returns mockConditionService
 
         mockkObject(JacksonUtil)
@@ -125,8 +126,7 @@ class AppointmentByPractitionerConditionWriterTest {
                 )
             } returns mockConditions
         }
-        mockkStatic(Condition::transformTo)
-        every { mockCondition.transformTo(RoninConditions, tenant) } returns mockRoninCondition
+        every { transformManager.transformResource(mockCondition, RoninConditions, tenant) } returns mockRoninCondition
         every { vendorFactory.conditionService } returns mockConditionService
 
         val mockPublishService = mockk<PublishService> {
@@ -163,8 +163,7 @@ class AppointmentByPractitionerConditionWriterTest {
                 )
             } returns mockConditions
         }
-        mockkStatic(Condition::transformTo)
-        every { mockCondition.transformTo(RoninConditions, tenant) } returns null
+        every { transformManager.transformResource(mockCondition, RoninConditions, tenant) } returns null
         every { vendorFactory.conditionService } returns mockConditionService
         mockkObject(JacksonUtil)
         every { JacksonUtil.writeJsonValue(any()) } returns "[]"
