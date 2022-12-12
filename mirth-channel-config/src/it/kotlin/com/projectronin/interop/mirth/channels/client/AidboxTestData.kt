@@ -25,3 +25,6 @@ object AidboxTestData {
 
 fun tenantIdentifier(tenantMnemonic: String): Identifier =
     Identifier(type = CodeableConcepts.RONIN_TENANT, system = CodeSystem.RONIN_TENANT.uri, value = tenantMnemonic.asFHIR())
+
+fun fhirIdentifier(fhirId: String): Identifier =
+    Identifier(type = CodeableConcepts.RONIN_FHIR_ID, system = CodeSystem.RONIN_FHIR_ID.uri, value = fhirId.asFHIR())

@@ -13,6 +13,7 @@ import com.projectronin.interop.mirth.channels.client.data.datatypes.reference
 import com.projectronin.interop.mirth.channels.client.data.primitives.daysFromNow
 import com.projectronin.interop.mirth.channels.client.data.resources.appointment
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
+import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -69,7 +70,7 @@ class AppointmentQueueTest :
         }
         val appointment1Id = MockEHRTestData.add(appointment1)
         val aidboxPatient = patient1.copy(
-            identifier = patient1.identifier + tenantIdentifier(testTenant)
+            identifier = patient1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patient1Id)
         )
         AidboxTestData.add(aidboxPatient)
 

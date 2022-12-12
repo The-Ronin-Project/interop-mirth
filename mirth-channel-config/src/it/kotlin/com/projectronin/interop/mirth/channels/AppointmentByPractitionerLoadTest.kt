@@ -17,6 +17,7 @@ import com.projectronin.interop.mirth.channels.client.data.resources.condition
 import com.projectronin.interop.mirth.channels.client.data.resources.location
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
 import com.projectronin.interop.mirth.channels.client.data.resources.practitioner
+import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -153,7 +154,7 @@ class AppointmentByPractitionerLoadTest :
 
         // Not particularly a fan of this method, but best I can come up with quickly
         val aidboxPractitioner1 = practitioner1.copy(
-            identifier = practitioner1.identifier + tenantIdentifier(testTenant)
+            identifier = practitioner1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(practitioner1Id)
         )
         AidboxTestData.add(aidboxPractitioner1)
 
@@ -405,7 +406,7 @@ class AppointmentByPractitionerLoadTest :
 
         // Not particularly a fan of this method, but best I can come up with quickly
         val aidboxPractitioner1 = practitioner1.copy(
-            identifier = practitioner1.identifier + tenantIdentifier(testTenant)
+            identifier = practitioner1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(practitioner1Id)
         )
         AidboxTestData.add(aidboxPractitioner1)
 

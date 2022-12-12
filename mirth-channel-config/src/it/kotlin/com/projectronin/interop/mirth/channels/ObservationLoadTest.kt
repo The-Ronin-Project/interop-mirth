@@ -13,6 +13,7 @@ import com.projectronin.interop.mirth.channels.client.data.datatypes.coding
 import com.projectronin.interop.mirth.channels.client.data.datatypes.reference
 import com.projectronin.interop.mirth.channels.client.data.resources.observation
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
+import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -46,10 +47,10 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
     @Test
     fun `no observations`() {
         val patient = patient {}
-        MockEHRTestData.add(patient)
+        val patientId = MockEHRTestData.add(patient)
 
         val aidboxPatient = patient.copy(
-            identifier = patient.identifier + tenantIdentifier(testTenant)
+            identifier = patient.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patientId)
         )
         AidboxTestData.add(aidboxPatient)
 
@@ -72,7 +73,7 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
                 codeableConcept {
                     coding of listOf(
                         coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri.value!!
+                            system of CodeSystem.OBSERVATION_CATEGORY.uri
                             code of ObservationCategoryCodes.VITAL_SIGNS.code
                         }
                     )
@@ -87,7 +88,7 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
 
         val aidboxPatient = patient.copy(
             id = Id("$testTenant-$patientId"),
-            identifier = patient.identifier + tenantIdentifier(testTenant)
+            identifier = patient.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patientId)
         )
         AidboxTestData.add(aidboxPatient)
 
@@ -120,7 +121,7 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
                 codeableConcept {
                     coding of listOf(
                         coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri.value!!
+                            system of CodeSystem.OBSERVATION_CATEGORY.uri
                             code of ObservationCategoryCodes.VITAL_SIGNS.code
                         }
                     )
@@ -135,14 +136,21 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
                 codeableConcept {
                     coding of listOf(
                         coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri.value!!
+                            system of CodeSystem.OBSERVATION_CATEGORY.uri
                             code of ObservationCategoryCodes.LABORATORY.code
                         }
                     )
                 }
             )
             status of "final"
-            code of codeableConcept { text of "blah" }
+            code of codeableConcept {
+                coding of listOf(
+                    coding {
+                        display of "bogus"
+                        code of "also bogus"
+                    }
+                )
+            }
         }
         val obsv1Id = MockEHRTestData.add(observation1)
         val obsv2Id = MockEHRTestData.add(observation2)
@@ -154,11 +162,11 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
 
         val aidboxPatient1 = patient1.copy(
             id = Id("$testTenant-$patient1Id"),
-            identifier = patient1.identifier + tenantIdentifier(testTenant)
+            identifier = patient1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patient1Id)
         )
         val aidboxPatient2 = patient2.copy(
             id = Id("$testTenant-$patient2Id"),
-            identifier = patient2.identifier + tenantIdentifier(testTenant)
+            identifier = patient2.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patient2Id)
 
         )
         AidboxTestData.add(aidboxPatient1)

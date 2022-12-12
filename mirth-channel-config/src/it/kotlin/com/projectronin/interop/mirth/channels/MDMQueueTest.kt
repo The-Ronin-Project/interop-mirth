@@ -6,6 +6,7 @@ import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.ProxyClient
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
 import com.projectronin.interop.mirth.channels.client.data.resources.practitioner
+import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -27,16 +28,16 @@ class MDMQueueTest : BaseMirthChannelTest(
         val mockEHRPractitioner = practitioner { }
         val mockEHRPatient = patient { }
 
-        MockEHRTestData.add(mockEHRPractitioner)
-        MockEHRTestData.add(mockEHRPatient)
+        val practitionerId = MockEHRTestData.add(mockEHRPractitioner)
+        val patientId = MockEHRTestData.add(mockEHRPatient)
         assertEquals(0, getMockEHRResourceCount(documentReference))
         assertEquals(0, getMockEHRResourceCount(binary))
 
         val aidboxPractitioner = mockEHRPractitioner.copy(
-            identifier = mockEHRPractitioner.identifier + tenantIdentifier(testTenant)
+            identifier = mockEHRPractitioner.identifier + tenantIdentifier(testTenant) + fhirIdentifier(practitionerId)
         )
         val aidboxPatient = mockEHRPatient.copy(
-            identifier = mockEHRPatient.identifier + tenantIdentifier(testTenant)
+            identifier = mockEHRPatient.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patientId)
         )
         val aidboxPractitionerId = AidboxTestData.add(aidboxPractitioner)
         val aidboxPatientId = AidboxTestData.add(aidboxPatient)
