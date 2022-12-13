@@ -1,9 +1,9 @@
 [libraries]
 interop-aidbox = "com.projectronin.interop.publish:interop-aidbox:6.0.0"
-interop-common = "com.projectronin.interop:interop-common:3.2.0"
-interop-commonHttp = "com.projectronin.interop:interop-common-http:3.2.0"
-interop-commonJackson = "com.projectronin.interop:interop-common-jackson:3.2.0"
-interop-commonTestDb = "com.projectronin.interop:interop-common-test-db:3.2.0"
+interop-common = "com.projectronin.interop:interop-common:3.2.1"
+interop-commonHttp = "com.projectronin.interop:interop-common-http:3.2.1"
+interop-commonJackson = "com.projectronin.interop:interop-common-jackson:3.2.1"
+interop-commonTestDb = "com.projectronin.interop:interop-common-test-db:3.2.1"
 interop-datalake = "com.projectronin.interop.publish:interop-datalake:6.0.0"
 interop-ehr-api = "com.projectronin.interop.ehr:interop-ehr:6.2.0"
 interop-ehr-epic = "com.projectronin.interop.ehr:interop-ehr-epic:6.2.0"
