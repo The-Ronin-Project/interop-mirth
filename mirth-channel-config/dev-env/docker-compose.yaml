@@ -76,7 +76,7 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-H", "\"Content-Type: application/json\"", "-H", "\"Accept: application/json\"", "-X", "POST", "-d", "\"{\\\"query\\\":\\\"query { PractitionerList { id } }\\\"}\"", "http://localhost:8888/$$graphql", "-u", "client:secret" ]
       timeout: 5s
-      retries: 10
+      retries: 30
 
   devbox-db:
     image: healthsamurai/aidboxdb:13.2
@@ -104,7 +104,7 @@ services:
     healthcheck:
       test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "ehr", "-psecret" ]
       timeout: 5s
-      retries: 20
+      retries: 30
 
   ## Schema updates + starter data
   liquibase-ehr:
@@ -139,7 +139,7 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-k", "-X", "GET", "localhost:8080/fhir/r4/metadata", "-H", "\accept: application/fhir+json", ]
       timeout: 5s
-      retries: 10
+      retries: 30
 
   liquibase-queue:
     image: docker-repo.devops.projectronin.io/interop-queue-liquibase:1.1.1
@@ -172,7 +172,25 @@ services:
     healthcheck:
       test: [ "CMD", "curl", "-k", "-X", "GET", "localhost:8080/actuator/health" ]
       timeout: 5s
-      retries: 10
+      retries: 30
+  kafka:
+    image: docker-proxy.devops.projectronin.io/wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: >-
+        LISTENER_DOCKER_INTERNAL://kafka:19092,
+        LISTENER_DOCKER_EXTERNAL://127.0.0.1:9092
+      KAFKA_LISTENERS: >-
+        LISTENER_DOCKER_INTERNAL://:19092,
+        LISTENER_DOCKER_EXTERNAL://:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: >-
+        LISTENER_DOCKER_INTERNAL:PLAINTEXT,
+        LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+    depends_on:
+      - zookeeper
 
   mock-server:
     image: "docker-proxy.devops.projectronin.io/mockserver/mockserver:latest"
@@ -188,6 +206,12 @@ services:
           - oraclecloud.com
           - objectstorage.us-phoenix-1.oraclecloud.com
 
+  zookeeper:
+    image: docker-proxy.devops.projectronin.io/zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - KAFKA_ADVERTISED_HOST_NAME=zookeeper
   # This is just to force servers to be healthy before completion. The docker compose up --wait functionality appears to fail due to the stopped containers.
   wait:
     image: hello-world:latest

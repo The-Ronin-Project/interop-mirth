@@ -8,6 +8,8 @@ import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
 import com.projectronin.interop.queue.QueueService
+import com.projectronin.interop.queue.db.DBQueueService
+import com.projectronin.interop.queue.kafka.KafkaQueueService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
@@ -42,6 +44,8 @@ class ServiceFactoryTest {
         every { springContext.getBean(EHRFactory::class.java) } returns ehrFactory
         every { springContext.getBean(PublishService::class.java) } returns mockk()
         every { springContext.getBean(DatalakePublishService::class.java) } returns mockk()
+        every { springContext.getBean(KafkaQueueService::class.java) } returns mockk()
+        every { springContext.getBean(DBQueueService::class.java) } returns mockk()
         mockkObject(ServiceFactoryImpl)
         every { ServiceFactoryImpl.applicationContext } returns springContext
     }
@@ -105,5 +109,10 @@ class ServiceFactoryTest {
     fun `transformManager works`() {
         every { springContext.getBean(TransformManager::class.java) } returns mockk()
         assertNotNull(ServiceFactoryImpl.transformManager())
+    }
+    @Test
+    fun `kafka works`() {
+        every { springContext.getBean(KafkaQueueService::class.java) } returns mockk()
+        assertNotNull(ServiceFactoryImpl.kafkaQueueService())
     }
 }

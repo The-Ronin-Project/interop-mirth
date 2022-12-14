@@ -1,9 +1,11 @@
 package com.projectronin.interop.mirth.connector.util
 
+import com.projectronin.interop.kafka.config.KafkaConfig
 import org.ktorm.database.Database
 import org.ktorm.support.mysql.MySqlDialect
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
@@ -13,6 +15,7 @@ import org.springframework.vault.annotation.VaultPropertySource
 
 @Configuration
 @ComponentScan("com.projectronin.interop")
+@EnableConfigurationProperties(KafkaConfig::class)
 @VaultPropertySource("interop-mirth-connector/\${ENVIRONMENT}")
 class SpringConfig {
 
@@ -21,7 +24,6 @@ class SpringConfig {
     fun property(): PropertySourcesPlaceholderConfigurer {
         val ret = PropertySourcesPlaceholderConfigurer()
         ret.setNullValue("null") // allow easy null defaults
-        ret.setIgnoreUnresolvablePlaceholders(true)
         return ret
     }
 

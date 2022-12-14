@@ -10,6 +10,8 @@ import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
 import com.projectronin.interop.mirth.connector.util.SpringUtil
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.queue.QueueService
+import com.projectronin.interop.queue.db.DBQueueService
+import com.projectronin.interop.queue.kafka.KafkaQueueService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import com.projectronin.interop.aidbox.PublishService as AidboxPublishService
@@ -54,7 +56,10 @@ interface ServiceFactory {
      * For reading API Messages from the queue.
      */
     fun queueService(): QueueService
-
+    /**
+     * For reading API Messages from Kafka.
+     */
+    fun kafkaQueueService(): QueueService
     /**
      * For requests to the ConceptMap Registry.
      */
@@ -96,7 +101,9 @@ object ServiceFactoryImpl : ServiceFactory {
 
     override fun patientService() = applicationContext.getBean(PatientService::class.java)
 
-    override fun queueService() = applicationContext.getBean(QueueService::class.java)
+    override fun queueService() = applicationContext.getBean(DBQueueService::class.java)
+
+    override fun kafkaQueueService() = applicationContext.getBean(KafkaQueueService::class.java)
 
     override fun conceptMapClient() = applicationContext.getBean(ConceptMapClient::class.java)
 

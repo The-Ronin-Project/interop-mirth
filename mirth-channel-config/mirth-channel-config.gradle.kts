@@ -30,8 +30,10 @@ dependencies {
     testImplementation(libs.interop.aidbox)
     testImplementation(libs.interop.common)
     testImplementation(libs.interop.commonJackson)
+
     testImplementation(libs.interop.fhir)
     testImplementation(libs.interop.ehr.fhir.ronin)
+
     testImplementation(libs.javafaker)
     testImplementation(libs.bundles.jackson)
     testImplementation(libs.bundles.ktor)
