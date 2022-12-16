@@ -4,6 +4,7 @@ import com.projectronin.interop.fhir.r4.valueset.ConditionCategoryCodes
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
+import com.projectronin.interop.mirth.channels.client.TenantClient
 import com.projectronin.interop.mirth.channels.client.data.datatypes.codeableConcept
 import com.projectronin.interop.mirth.channels.client.data.datatypes.coding
 import com.projectronin.interop.mirth.channels.client.data.datatypes.externalIdentifier
@@ -35,9 +36,10 @@ class AppointmentByPractitionerLoadTest :
     val appointmentType = "Appointment"
     val conditionType = "Condition"
     val practitionerType = "Practitioner"
+    val locationType = "Location"
 
     @Test
-    fun `fails if no practitioner`() {
+    fun `fails if no location`() {
         deployAndStartChannel(true)
 
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
@@ -53,13 +55,6 @@ class AppointmentByPractitionerLoadTest :
 
     @Test
     fun `works - gets practitioner, appointment, condition, patient`() {
-        val practitioner1 = practitioner {
-            identifier generate 1 plus externalIdentifier {
-                system of "mockEHRProviderSystem"
-                value of "1234"
-            }
-        }
-        val practitioner1Id = MockEHRTestData.add(practitioner1)
         val location = location {
             identifier of listOf(
                 identifier {
@@ -91,10 +86,6 @@ class AppointmentByPractitionerLoadTest :
         val appointment1 = appointment {
             status of "arrived"
             participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference(practitionerType, practitioner1Id)
-                },
                 participant {
                     status of "accepted"
                     actor of reference(patientType, patient1Id)
@@ -153,13 +144,13 @@ class AppointmentByPractitionerLoadTest :
         MockOCIServerClient.createExpectations(expectedMap)
 
         // Not particularly a fan of this method, but best I can come up with quickly
-        val aidboxPractitioner1 = practitioner1.copy(
-            identifier = practitioner1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(practitioner1Id)
+        val aidboxLocation1 = location.copy(
+            identifier = location.identifier + tenantIdentifier(testTenant) + fhirIdentifier(locationFhirId)
         )
-        AidboxTestData.add(aidboxPractitioner1)
-
+        AidboxTestData.add(aidboxLocation1)
+        TenantClient.putMirthConfig(testTenant, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
         assertEquals(0, getAidboxResourceCount(patientType))
-        assertEquals(1, getAidboxResourceCount(practitionerType))
+        assertEquals(1, getAidboxResourceCount(locationType))
         assertEquals(0, getAidboxResourceCount(appointmentType))
         assertEquals(0, getAidboxResourceCount(conditionType))
 
@@ -404,14 +395,14 @@ class AppointmentByPractitionerLoadTest :
         )
         MockOCIServerClient.createExpectations(expectedMap)
 
-        // Not particularly a fan of this method, but best I can come up with quickly
-        val aidboxPractitioner1 = practitioner1.copy(
-            identifier = practitioner1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(practitioner1Id)
+        val aidboxLocation1 = location.copy(
+            identifier = location.identifier + tenantIdentifier(testTenant) + fhirIdentifier(locationFhirId)
         )
-        AidboxTestData.add(aidboxPractitioner1)
+        AidboxTestData.add(aidboxLocation1)
+        TenantClient.putMirthConfig(testTenant, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
 
         assertEquals(0, getAidboxResourceCount(patientType))
-        assertEquals(1, getAidboxResourceCount(practitionerType))
+        assertEquals(1, getAidboxResourceCount(locationType))
         assertEquals(0, getAidboxResourceCount(appointmentType))
         assertEquals(0, getAidboxResourceCount(conditionType))
 

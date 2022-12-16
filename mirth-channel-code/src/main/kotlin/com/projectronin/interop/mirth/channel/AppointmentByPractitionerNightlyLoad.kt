@@ -1,8 +1,6 @@
 package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.jackson.JacksonUtil
-import com.projectronin.interop.ehr.inputs.FHIRIdentifiers
-import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.destinations.AppointmentByPractitionerAppointmentWriter
 import com.projectronin.interop.mirth.channel.destinations.AppointmentByPractitionerConditionWriter
@@ -45,14 +43,14 @@ class AppointmentByPractitionerNightlyLoad(serviceFactory: ServiceFactory) : Cha
         val tenant = serviceFactory.getTenant(tenantMnemonic)
         val vendorFactory = serviceFactory.vendorFactory(tenant)
 
-        val practitionersMap = serviceFactory.practitionerService().getPractitionersByTenant(tenantMnemonic)
-        if (practitionersMap.isEmpty()) {
-            throw ResourcesNotFoundException("No Practitioners found in clinical data store for tenant $tenantMnemonic")
+        val locationIdsList = serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant(tenantMnemonic)
+        if (locationIdsList.isEmpty()) {
+            throw ResourcesNotFoundException("No Location IDs configured for tenant $tenantMnemonic")
         }
 
-        val fullAppointments = vendorFactory.appointmentService.findProviderAppointments(
+        val fullAppointments = vendorFactory.appointmentService.findLocationAppointments(
             tenant,
-            practitionersMap.map { FHIRIdentifiers(Id(it.key), it.value) },
+            locationIdsList,
             startDate,
             endDate
         )
