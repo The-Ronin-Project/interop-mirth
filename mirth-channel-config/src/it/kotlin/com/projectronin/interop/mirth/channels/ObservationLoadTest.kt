@@ -2,6 +2,7 @@ package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.CodeSystem
+import com.projectronin.interop.fhir.r4.datatype.primitive.Code
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
@@ -80,7 +81,15 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
                 }
             )
             status of "final"
-            code of codeableConcept { text of "blah" }
+            code of codeableConcept {
+                coding of listOf(
+                    coding {
+                        system of CodeSystem.LOINC.uri
+                        display of "Body Weight"
+                        code of Code("29463-7")
+                    }
+                )
+            }
         }
         val obsvId = MockEHRTestData.add(observation)
 
@@ -128,7 +137,15 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
                 }
             )
             status of "final"
-            code of codeableConcept { text of "blah" }
+            code of codeableConcept {
+                coding of listOf(
+                    coding {
+                        system of CodeSystem.LOINC.uri
+                        display of "Body Weight"
+                        code of Code("29463-7")
+                    }
+                )
+            }
         }
         val observation2 = observation {
             subject of reference(patientType, patient2Id)
@@ -137,7 +154,7 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
                     coding of listOf(
                         coding {
                             system of CodeSystem.OBSERVATION_CATEGORY.uri
-                            code of ObservationCategoryCodes.LABORATORY.code
+                            code of ObservationCategoryCodes.VITAL_SIGNS.code
                         }
                     )
                 }
@@ -146,8 +163,9 @@ class ObservationLoadTest : BaseMirthChannelTest(observationLoadChannelName, lis
             code of codeableConcept {
                 coding of listOf(
                     coding {
-                        display of "bogus"
-                        code of "also bogus"
+                        system of CodeSystem.LOINC.uri
+                        display of "Body Height"
+                        code of Code("8302-2")
                     }
                 )
             }
