@@ -1,13 +1,15 @@
 package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.ronin.TransformManager
-import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
+import com.projectronin.interop.fhir.ronin.resource.RoninLocation
+import com.projectronin.interop.mirth.channel.destinations.LocationWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
-import com.projectronin.interop.mirth.connector.ServiceFactory
-import com.projectronin.interop.mirth.connector.TenantConfigurationFactory
+import com.projectronin.interop.mirth.service.TenantConfigurationService
+import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotFoundException
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
@@ -28,22 +30,28 @@ internal class LocationLoadTest {
     }
     private val vendorFactory = mockk<VendorFactory>()
     private val transformManager = mockk<TransformManager>()
-    private var tenantConfigurationFactory = mockk<TenantConfigurationFactory>()
-    lateinit var conceptMapClient: ConceptMapClient
-    lateinit var serviceFactory: ServiceFactory
+    private var tenantConfigurationFactory = mockk<TenantConfigurationService>()
+    private var roninLocation = mockk<RoninLocation>()
+
     lateinit var channel: LocationLoad
 
     @BeforeEach
     fun setup() {
-        conceptMapClient = mockk()
-        serviceFactory = mockk {
-            every { getTenant(TENANT_ID) } returns tenant
-            every { vendorFactory(tenant) } returns vendorFactory
-            every { tenantConfigurationFactory() } returns tenantConfigurationFactory
-            every { conceptMapClient() } returns conceptMapClient
-            every { transformManager() } returns transformManager
+        val tenantService = mockk<TenantService> {
+            every { getTenantForMnemonic(TENANT_ID) } returns tenant
         }
-        channel = LocationLoad(serviceFactory)
+        val ehrFactory = mockk<EHRFactory> {
+            every { getVendorFactory(tenant) } returns vendorFactory
+        }
+        val locationWriter = mockk<LocationWriter>()
+        channel = LocationLoad(
+            tenantService,
+            transformManager,
+            locationWriter,
+            ehrFactory,
+            tenantConfigurationFactory,
+            roninLocation
+        )
     }
 
     @AfterEach

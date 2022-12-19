@@ -2,14 +2,15 @@ package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.ConditionService
+import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
-import com.projectronin.interop.mirth.connector.ServiceFactory
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
@@ -21,13 +22,12 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 private const val VALID_TENANT_ID = "mdaoc"
-private const val CHANNEL_ROOT_NAME = "AppointmentByPractitionerLoad"
-private const val VALID_DEPLOYED_NAME = "$VALID_TENANT_ID-$CHANNEL_ROOT_NAME"
 
 class AppointmentByPractitionerConditionWriterTest {
     lateinit var vendorFactory: VendorFactory
     lateinit var transformManager: TransformManager
-    lateinit var serviceFactory: ServiceFactory
+    lateinit var publishService: PublishService
+    lateinit var roninConditions: RoninConditions
     lateinit var writer: AppointmentByPractitionerConditionWriter
 
     private val tenant = mockk<Tenant>() {
@@ -43,14 +43,22 @@ class AppointmentByPractitionerConditionWriterTest {
     fun setup() {
         vendorFactory = mockk()
         transformManager = mockk()
+        publishService = mockk()
+        roninConditions = mockk()
 
-        serviceFactory = mockk {
-            every { getTenant(VALID_TENANT_ID) } returns tenant
-            every { vendorFactory(tenant) } returns vendorFactory
-            every { transformManager() } returns transformManager
+        val tenantService = mockk<TenantService> {
+            every { getTenantForMnemonic(VALID_TENANT_ID) } returns tenant
         }
-
-        writer = AppointmentByPractitionerConditionWriter(CHANNEL_ROOT_NAME, serviceFactory)
+        val ehrFactory = mockk<EHRFactory>() {
+            every { getVendorFactory(tenant) } returns vendorFactory
+        }
+        writer = AppointmentByPractitionerConditionWriter(
+            tenantService,
+            transformManager,
+            publishService,
+            ehrFactory,
+            roninConditions
+        )
     }
 
     @Test
@@ -79,20 +87,22 @@ class AppointmentByPractitionerConditionWriterTest {
                 )
             } returns mockConditions
         }
-        every { transformManager.transformResource(mockCondition, RoninConditions, tenant) } returns mockRoninCondition
+        every { transformManager.transformResource(mockCondition, roninConditions, tenant) } returns mockRoninCondition
         every { vendorFactory.conditionService } returns mockConditionService
 
         mockkObject(JacksonUtil)
         every { JacksonUtil.writeJsonValue(any()) } returns "[]"
 
-        val mockPublishService = mockk<PublishService> {
-            every { publishFHIRResources(VALID_TENANT_ID, mockRoninConditions) } returns true
-        }
-
-        every { serviceFactory.publishService() } returns mockPublishService
+        every { publishService.publishFHIRResources(VALID_TENANT_ID, mockRoninConditions) } returns true
 
         val response = writer.destinationWriter(
-            VALID_DEPLOYED_NAME, "", mapOf(MirthKey.PATIENT_FHIR_ID.code to "${tenant.mnemonic}-blah"), emptyMap()
+            "unused",
+            "",
+            mapOf(
+                MirthKey.PATIENT_FHIR_ID.code to "${tenant.mnemonic}-blah",
+                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
+            ),
+            emptyMap()
         )
         assertEquals("Published 1 Condition(s)", response.message)
         assertEquals(MirthResponseStatus.SENT, response.status)
@@ -126,18 +136,21 @@ class AppointmentByPractitionerConditionWriterTest {
                 )
             } returns mockConditions
         }
-        every { transformManager.transformResource(mockCondition, RoninConditions, tenant) } returns mockRoninCondition
+        every { transformManager.transformResource(mockCondition, roninConditions, tenant) } returns mockRoninCondition
         every { vendorFactory.conditionService } returns mockConditionService
 
-        val mockPublishService = mockk<PublishService> {
-            every { publishFHIRResources(VALID_TENANT_ID, mockRoninConditions) } returns false
-        }
+        every { publishService.publishFHIRResources(VALID_TENANT_ID, mockRoninConditions) } returns false
 
-        every { serviceFactory.publishService() } returns mockPublishService
         mockkObject(JacksonUtil)
         every { JacksonUtil.writeJsonValue(any()) } returns "[]"
         val response = writer.destinationWriter(
-            VALID_DEPLOYED_NAME, "", mapOf(MirthKey.PATIENT_FHIR_ID.code to "${tenant.mnemonic}-blah"), emptyMap()
+            "unused",
+            "",
+            mapOf(
+                MirthKey.PATIENT_FHIR_ID.code to "${tenant.mnemonic}-blah",
+                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
+            ),
+            emptyMap()
         )
         assertEquals("Failed to publish Condition(s)", response.message)
         assertEquals(MirthResponseStatus.ERROR, response.status)
@@ -163,14 +176,17 @@ class AppointmentByPractitionerConditionWriterTest {
                 )
             } returns mockConditions
         }
-        every { transformManager.transformResource(mockCondition, RoninConditions, tenant) } returns null
+        every { transformManager.transformResource(mockCondition, roninConditions, tenant) } returns null
         every { vendorFactory.conditionService } returns mockConditionService
         mockkObject(JacksonUtil)
         every { JacksonUtil.writeJsonValue(any()) } returns "[]"
         val response = writer.destinationWriter(
-            VALID_DEPLOYED_NAME,
+            "unused",
             "",
-            mapOf(MirthKey.PATIENT_FHIR_ID.code to "${tenant.mnemonic}-blah"),
+            mapOf(
+                MirthKey.PATIENT_FHIR_ID.code to "${tenant.mnemonic}-blah",
+                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
+            ),
             emptyMap()
         )
         assertEquals("Failed to transform Conditions for Patient", response.message)
@@ -196,7 +212,13 @@ class AppointmentByPractitionerConditionWriterTest {
         every { vendorFactory.conditionService } returns mockConditionService
 
         val response = writer.destinationWriter(
-            VALID_DEPLOYED_NAME, "", mapOf(MirthKey.PATIENT_FHIR_ID.code to "${tenant.mnemonic}-blah"), emptyMap()
+            "unused",
+            "",
+            mapOf(
+                MirthKey.PATIENT_FHIR_ID.code to "${tenant.mnemonic}-blah",
+                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
+            ),
+            emptyMap()
         )
         assertEquals(MirthResponseStatus.SENT, response.status)
         assertEquals("No Conditions found for Patient", response.message)
@@ -204,9 +226,8 @@ class AppointmentByPractitionerConditionWriterTest {
 
     @Test
     fun `destinationWriter - fails when no patient fhir ID`() {
-        val response = writer.destinationWriter(
-            VALID_DEPLOYED_NAME, "", emptyMap(), emptyMap()
-        )
+        val response =
+            writer.destinationWriter("unused", "", mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID), emptyMap())
         assertEquals(MirthResponseStatus.ERROR, response.status)
         assertEquals("No Patient FHIR ID found in channel map", response.message)
         assertEquals("", response.detailedMessage)

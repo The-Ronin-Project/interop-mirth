@@ -1,12 +1,22 @@
 package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.hl7.MessageType
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.base.DestinationService
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.connector.ServiceFactory
+import com.projectronin.interop.mirth.service.TenantConfigurationService
+import com.projectronin.interop.queue.QueueService
+import com.projectronin.interop.tenant.config.TenantService
+import org.springframework.stereotype.Component
 
-class MDMQueueOut(serviceFactory: ServiceFactory) : ChannelService(serviceFactory) {
+@Component
+class MDMQueueOut(
+    tenantService: TenantService,
+    transformManager: TransformManager,
+    private val queueService: QueueService,
+    private val tenantConfigurationService: TenantConfigurationService
+) : ChannelService(tenantService, transformManager) {
     companion object : ChannelFactory<MDMQueueOut>()
 
     override val rootName = "MDMQueueOut"
@@ -17,14 +27,14 @@ class MDMQueueOut(serviceFactory: ServiceFactory) : ChannelService(serviceFactor
         tenantMnemonic: String,
         serviceMap: Map<String, Any>
     ): List<MirthMessage> {
-        val messages = serviceFactory.queueService().dequeueHL7Messages(tenantMnemonic, MessageType.MDM, null, limit)
+        val messages = queueService.dequeueHL7Messages(tenantMnemonic, MessageType.MDM, null, limit)
         return messages.map {
             MirthMessage(it.text)
         }
     }
 
     override fun channelOnDeploy(tenantMnemonic: String, serviceMap: Map<String, Any>): Map<String, Any> {
-        val pair = serviceFactory.tenantConfigurationFactory().getMDMInfo(tenantMnemonic)
+        val pair = tenantConfigurationService.getMDMInfo(tenantMnemonic)
         val address = pair?.first.toString()
         val port = pair?.second.toString()
         return mapOf(

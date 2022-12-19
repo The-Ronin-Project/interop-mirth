@@ -2,6 +2,7 @@ package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.ehr.outputs.FindPractitionersResponse
 import com.projectronin.interop.fhir.r4.datatype.CodeableConcept
@@ -18,14 +19,15 @@ import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.r4.resource.PractitionerRole
 import com.projectronin.interop.fhir.r4.valueset.LocationStatus
 import com.projectronin.interop.fhir.ronin.TransformManager
-import com.projectronin.interop.fhir.ronin.conceptmap.ConceptMapClient
+import com.projectronin.interop.fhir.ronin.resource.RoninLocation
 import com.projectronin.interop.fhir.ronin.resource.RoninPractitioner
 import com.projectronin.interop.fhir.ronin.resource.RoninPractitionerRole
+import com.projectronin.interop.mirth.channel.destinations.PractitionerNightlyLoadWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.connector.ServiceFactory
-import com.projectronin.interop.mirth.connector.TenantConfigurationFactory
 import com.projectronin.interop.mirth.connector.util.asCode
+import com.projectronin.interop.mirth.service.TenantConfigurationService
+import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ConfigurationMissingException
 import com.projectronin.interop.tenant.config.exception.ResourcesNotFoundException
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
@@ -48,10 +50,11 @@ private const val VALID_DEPLOYED_NAME = "$VALID_TENANT_ID-$CHANNEL_ROOT_NAME"
 
 class PractitionerNightlyLoadTest {
     lateinit var vendorFactory: VendorFactory
-    lateinit var conceptMapClient: ConceptMapClient
     lateinit var transformManager: TransformManager
-    lateinit var serviceFactory: ServiceFactory
-    lateinit var tenantConfigurationFactory: TenantConfigurationFactory
+    lateinit var tenantConfigurationService: TenantConfigurationService
+    lateinit var roninPractitioner: RoninPractitioner
+    lateinit var roninPractitionerRole: RoninPractitionerRole
+    lateinit var roninLocation: RoninLocation
     lateinit var channel: PractitionerNightlyLoad
 
     private val tenant = mockk<Tenant> {
@@ -66,18 +69,30 @@ class PractitionerNightlyLoadTest {
     @BeforeEach
     fun setup() {
         vendorFactory = mockk()
-        conceptMapClient = mockk()
-        tenantConfigurationFactory = mockk()
+        tenantConfigurationService = mockk()
         transformManager = mockk()
+        roninPractitioner = mockk()
+        roninPractitionerRole = mockk()
+        roninLocation = mockk()
 
-        serviceFactory = mockk {
-            every { getTenant(VALID_TENANT_ID) } returns tenant
-            every { vendorFactory(tenant) } returns vendorFactory
-            every { tenantConfigurationFactory() } returns tenantConfigurationFactory
-            every { conceptMapClient() } returns conceptMapClient
-            every { transformManager() } returns transformManager
+        val tenantService = mockk<TenantService> {
+            every { getTenantForMnemonic(VALID_TENANT_ID) } returns tenant
         }
-        channel = PractitionerNightlyLoad(serviceFactory)
+        val ehrFactory = mockk<EHRFactory> {
+            every { getVendorFactory(tenant) } returns vendorFactory
+        }
+        val practitionerNightlyLoadWriter = mockk<PractitionerNightlyLoadWriter>()
+
+        channel = PractitionerNightlyLoad(
+            tenantService,
+            transformManager,
+            practitionerNightlyLoadWriter,
+            tenantConfigurationService,
+            ehrFactory,
+            roninPractitioner,
+            roninPractitionerRole,
+            roninLocation
+        )
     }
 
     private val roninIdentifier = listOf(
@@ -129,9 +144,7 @@ class PractitionerNightlyLoadTest {
             every { findPractitionersByLocation(tenant, any()) } returns emptyResponse
         }
         every { vendorFactory.practitionerService } returns mockPractitionerService
-        every {
-            serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant(VALID_TENANT_ID)
-        } returns emptyList()
+        every { tenantConfigurationService.getLocationIDsByTenant(VALID_TENANT_ID) } returns emptyList()
 
         val serviceMap = mapOf<String, Any>(
             MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
@@ -152,9 +165,7 @@ class PractitionerNightlyLoadTest {
             every { findPractitionersByLocation(tenant, any()) } returns emptyResponse
         }
         every { vendorFactory.practitionerService } returns mockPractitionerService
-        every {
-            serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant(VALID_TENANT_ID)
-        } returns listOf("aaa")
+        every { tenantConfigurationService.getLocationIDsByTenant(VALID_TENANT_ID) } returns listOf("aaa")
 
         val serviceMap = mapOf<String, Any>(
             MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
@@ -169,7 +180,7 @@ class PractitionerNightlyLoadTest {
     @Test
     fun `sourceReader - no configuration for tenant`() {
         every {
-            serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant("notenant")
+            tenantConfigurationService.getLocationIDsByTenant("notenant")
         } throws IllegalArgumentException("No Mirth Tenant Configuration object found for notenant")
         val serviceMap = mapOf<String, Any>(
             MirthKey.TENANT_MNEMONIC.code to "notenant",
@@ -225,7 +236,7 @@ class PractitionerNightlyLoadTest {
             )
         )
 
-        every { tenantConfigurationFactory.getLocationIDsByTenant(VALID_TENANT_ID) } returns listOf("aaa")
+        every { tenantConfigurationService.getLocationIDsByTenant(VALID_TENANT_ID) } returns listOf("aaa")
 
         val mockPractitionerService = mockk<EHRPractitionerService> {
             every { findPractitionersByLocation(tenant, listOf("aaa")) } returns resourcesFound
@@ -288,7 +299,7 @@ class PractitionerNightlyLoadTest {
             )
         )
 
-        every { tenantConfigurationFactory.getLocationIDsByTenant(VALID_TENANT_ID) } returns listOf("aaa")
+        every { tenantConfigurationService.getLocationIDsByTenant(VALID_TENANT_ID) } returns listOf("aaa")
 
         val mockPractitionerService = mockk<EHRPractitionerService> {
             every { findPractitionersByLocation(tenant, listOf("aaa")) } returns resourcesFound
@@ -324,7 +335,7 @@ class PractitionerNightlyLoadTest {
         every {
             transformManager.transformResource(
                 practitioner,
-                RoninPractitioner,
+                roninPractitioner,
                 tenant
             )
         } returns transformedPractitioner
@@ -352,7 +363,7 @@ class PractitionerNightlyLoadTest {
         every {
             transformManager.transformResource(
                 practitioner,
-                RoninPractitioner,
+                roninPractitioner,
                 tenant
             )
         } returns null
@@ -411,7 +422,7 @@ class PractitionerNightlyLoadTest {
         every {
             transformManager.transformResource(
                 practitionerRole,
-                RoninPractitionerRole,
+                roninPractitionerRole,
                 tenant
             )
         } returns transformedPractitionerRole
@@ -437,7 +448,7 @@ class PractitionerNightlyLoadTest {
         every { JacksonUtil.readJsonList(any(), PractitionerRole::class) } returns listOf(practitionerRole)
         every { JacksonUtil.writeJsonValue(any()) } returns "message"
 
-        every { transformManager.transformResource(practitionerRole, RoninPractitionerRole, tenant) } returns null
+        every { transformManager.transformResource(practitionerRole, roninPractitionerRole, tenant) } returns null
 
         val ex = assertThrows<ResourcesNotTransformedException> {
             channel.sourceTransformer(VALID_DEPLOYED_NAME, "a", sourceMap, mapOf("b" to "c"))

@@ -1,4 +1,4 @@
-package com.projectronin.interop.mirth.connector.util
+package com.projectronin.interop.mirth.spring
 
 import org.springframework.context.annotation.Configuration
 import org.springframework.vault.authentication.AppRoleAuthentication

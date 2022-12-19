@@ -1,4 +1,4 @@
-package com.projectronin.interop.mirth.connector.util
+package com.projectronin.interop.mirth.spring
 
 import io.mockk.every
 import io.mockk.mockk
@@ -9,7 +9,6 @@ import org.springframework.core.env.Environment
 import org.springframework.vault.client.RestTemplateFactory
 
 internal class VaultConfigTest {
-
     @Test
     fun endpoint() {
         val config = VaultConfig()

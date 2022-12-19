@@ -1,10 +1,11 @@
 package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.hl7.MessageType
-import com.projectronin.interop.mirth.connector.ServiceFactory
-import com.projectronin.interop.mirth.connector.TenantConfigurationFactory
+import com.projectronin.interop.fhir.ronin.TransformManager
+import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.queue.QueueService
 import com.projectronin.interop.queue.model.HL7Message
+import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
@@ -16,25 +17,25 @@ class MDMQueueOutTest {
     private val mockTenant = mockk<Tenant> {
         every { mnemonic } returns "tenant"
     }
-    private lateinit var mockTenantConfigurationFactory: TenantConfigurationFactory
+    private lateinit var mockTenantConfigurationService: TenantConfigurationService
     private lateinit var mockQueueService: QueueService
-    private lateinit var mockServiceFactory: ServiceFactory
+
     private lateinit var channel: MDMQueueOut
 
     @BeforeEach
     fun setup() {
-        mockTenantConfigurationFactory = mockk()
+        mockTenantConfigurationService = mockk()
         mockQueueService = mockk()
-        mockServiceFactory = mockk {
-            every { tenantConfigurationFactory() } returns mockTenantConfigurationFactory
-            every { queueService() } returns mockQueueService
+        val tenantService = mockk<TenantService> {
+            every { getTenantForMnemonic("tenant") } returns mockTenant
         }
-        channel = MDMQueueOut(mockServiceFactory)
+        val transformManager = mockk<TransformManager>()
+        channel = MDMQueueOut(tenantService, transformManager, mockQueueService, mockTenantConfigurationService)
     }
 
     @Test
     fun `onDeploy - works`() {
-        every { mockTenantConfigurationFactory.getMDMInfo("tenant") } returns Pair("address", 1)
+        every { mockTenantConfigurationService.getMDMInfo("tenant") } returns Pair("address", 1)
         val serviceMap = channel.channelOnDeploy(mockTenant.mnemonic, emptyMap())
         assertEquals(2, serviceMap.size)
         assertEquals("address", serviceMap["ADDRESS"])
@@ -43,7 +44,7 @@ class MDMQueueOutTest {
 
     @Test
     fun `onDeploy - works with bad values`() {
-        every { mockTenantConfigurationFactory.getMDMInfo("tenant") } returns null
+        every { mockTenantConfigurationService.getMDMInfo("tenant") } returns null
         val serviceMap = channel.channelOnDeploy(mockTenant.mnemonic, emptyMap())
         assertEquals(2, serviceMap.size)
         assertEquals("null", serviceMap["ADDRESS"])

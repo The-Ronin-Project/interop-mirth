@@ -3,10 +3,11 @@ package com.projectronin.interop.mirth.channel.destinations
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Location
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
-import com.projectronin.interop.mirth.connector.ServiceFactory
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.tenant.config.TenantService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -18,15 +19,13 @@ import org.junit.jupiter.api.Test
 
 internal class LocationWriterTest {
     private val publishService = mockk<PublishService>()
-    lateinit var serviceFactory: ServiceFactory
     lateinit var writer: LocationWriter
 
     @BeforeEach
     fun setup() {
-        serviceFactory = mockk {
-            every { publishService() } returns publishService
-        }
-        writer = LocationWriter("LocationLoad", serviceFactory)
+        val tenantService = mockk<TenantService>()
+        val transformManager = mockk<TransformManager>()
+        writer = LocationWriter(tenantService, transformManager, publishService)
     }
 
     @AfterEach
@@ -48,7 +47,7 @@ internal class LocationWriterTest {
 
         val resourceList = listOf(location)
         val channelMap =
-            mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList, MirthKey.TENANT_MNEMONIC.code to "ronin")
+            mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList)
 
         every { publishService.publishFHIRResources("ronin", resourceList) } returns false
 
@@ -57,7 +56,7 @@ internal class LocationWriterTest {
         val response = writer.channelDestinationWriter(
             "ronin",
             mockSerialized,
-            emptyMap(),
+            mapOf(MirthKey.TENANT_MNEMONIC.code to "ronin"),
             channelMap
         )
         assertEquals(MirthResponseStatus.ERROR, response.status)
@@ -82,14 +81,14 @@ internal class LocationWriterTest {
 
         val resourceList = listOf(location)
         val channelMap =
-            mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList, MirthKey.TENANT_MNEMONIC.code to "ronin")
+            mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList)
 
         every { publishService.publishFHIRResources("ronin", any<List<Location>>()) } returns true
 
         val response = writer.destinationWriter(
-            "ronin-LocationLoad",
+            "unused",
             "",
-            emptyMap(),
+            mapOf(MirthKey.TENANT_MNEMONIC.code to "ronin"),
             channelMap
         )
         assertEquals("Published 1 Location(s)", response.message)
@@ -99,14 +98,11 @@ internal class LocationWriterTest {
 
     @Test
     fun `destination writer - empty list of transformed resources returns error message`() {
-        val channelMap = mapOf(
-            MirthKey.RESOURCES_TRANSFORMED.code to emptyList<Location>(),
-            MirthKey.TENANT_MNEMONIC.code to "ronin"
-        )
+        val channelMap = mapOf(MirthKey.RESOURCES_TRANSFORMED.code to emptyList<Location>())
         val response = writer.channelDestinationWriter(
             "ronin",
             "msg",
-            mapOf(),
+            mapOf(MirthKey.TENANT_MNEMONIC.code to "ronin"),
             channelMap
         )
         assertEquals("No transformed Location(s) to publish", response.message)
@@ -115,12 +111,11 @@ internal class LocationWriterTest {
 
     @Test
     fun `destination writer - missing list of transformed resources returns error message`() {
-        val channelMap = mapOf(MirthKey.TENANT_MNEMONIC.code to "ronin")
         val response = writer.channelDestinationWriter(
             "ronin",
             "msg",
-            mapOf(),
-            channelMap
+            mapOf(MirthKey.TENANT_MNEMONIC.code to "ronin"),
+            emptyMap()
         )
         assertEquals("No transformed Location(s) to publish", response.message)
         assertEquals(MirthResponseStatus.ERROR, response.status)

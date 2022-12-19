@@ -2,6 +2,7 @@ plugins {
     id("com.projectronin.interop.gradle.version")
     id("com.projectronin.interop.gradle.publish")
     id("com.projectronin.interop.gradle.junit")
+    id("com.projectronin.interop.gradle.integration")
     id("com.projectronin.interop.gradle.spring")
     // Plugin exposing shadowJar task for creating fat JAR
     id("com.github.johnrengelman.shadow")
@@ -51,6 +52,8 @@ dependencies {
     testImplementation(libs.junit.pioneer)
 
     testRuntimeOnly(libs.bundles.test.mysql)
+
+    itImplementation(libs.guava)
 }
 
 // Set up ShadowJar to run at the end of the Jar task, thus ensuring both are always built.

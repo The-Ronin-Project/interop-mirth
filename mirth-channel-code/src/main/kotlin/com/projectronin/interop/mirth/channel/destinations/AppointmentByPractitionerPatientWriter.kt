@@ -2,16 +2,24 @@ package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.Patient
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninPatient
 import com.projectronin.interop.mirth.channel.base.DestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthResponse
-import com.projectronin.interop.mirth.connector.ServiceFactory
+import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.tenant.config.TenantService
+import org.springframework.stereotype.Component
 
-class AppointmentByPractitionerPatientWriter(rootName: String, serviceFactory: ServiceFactory) :
-    DestinationService(rootName, serviceFactory) {
+@Component
+class AppointmentByPractitionerPatientWriter(
+    tenantService: TenantService,
+    transformManager: TransformManager,
+    publishService: PublishService,
+    private val roninPatient: RoninPatient
+) : DestinationService(tenantService, transformManager, publishService) {
     /**
      * determines if we need to resolve a patient reference
      * Looks into the Ronin clinical data store for a given patient and returns the FHIR ID if found
@@ -36,11 +44,9 @@ class AppointmentByPractitionerPatientWriter(rootName: String, serviceFactory: S
         channelMap: Map<String, Any>
     ): MirthResponse {
         val patient = JacksonUtil.readJsonObject(sourceMap[MirthKey.NEW_PATIENT_JSON.code] as String, Patient::class)
-        val tenant = serviceFactory.getTenant(tenantMnemonic)
-        val vendorFactory = serviceFactory.vendorFactory(tenant)
+        val tenant = getTenant(tenantMnemonic)
 
-        val roninPatient = RoninPatient.create(vendorFactory.identifierService, serviceFactory.conceptMapClient())
-        val transformedPatient = serviceFactory.transformManager().transformResource(patient, roninPatient, tenant)
+        val transformedPatient = transformManager.transformResource(patient, roninPatient, tenant)
             ?: return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = JacksonUtil.writeJsonValue(patient),

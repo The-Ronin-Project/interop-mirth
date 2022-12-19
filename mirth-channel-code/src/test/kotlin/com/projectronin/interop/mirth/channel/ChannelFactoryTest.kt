@@ -1,98 +1,67 @@
 package com.projectronin.interop.mirth.channel
 
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.base.DestinationService
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.connector.ServiceFactory
+import com.projectronin.interop.mirth.spring.SpringUtil
+import com.projectronin.interop.tenant.config.TenantService
+import io.mockk.every
 import io.mockk.mockk
-import org.junit.jupiter.api.Assertions.assertEquals
+import io.mockk.mockkObject
+import io.mockk.unmockkAll
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
+import org.springframework.context.annotation.AnnotationConfigApplicationContext
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 
 class ChannelFactoryTest {
-    @Test
-    fun `can create for service with only one, valid constructor`() {
-        val service = ValidConstructorChannelService.create()
+    @BeforeEach
+    fun setupEnvironment() {
+        mockkObject(SpringUtil)
 
+        // We return an actual application context, but it uses our faked out data.
+        every { SpringUtil.applicationContext } returns AnnotationConfigApplicationContext(TestSpringConfig::class.java)
+    }
+
+    @AfterEach
+    fun unmockk() {
+        unmockkAll()
+    }
+
+    @Test
+    fun `can create class`() {
+        val service = TestChannelService.create()
         assertNotNull(service)
-        assertInstanceOf(ValidConstructorChannelService::class.java, service)
-    }
-
-    @Test
-    fun `can create for service with multiple constructors, including one valid one`() {
-        val service = MultipleConstructorChannelService.create()
-
-        assertNotNull(service)
-        assertInstanceOf(MultipleConstructorChannelService::class.java, service)
-    }
-
-    @Test
-    fun `fails for service with empty constructor`() {
-        val exception = assertThrows<NoSuchMethodException> {
-            NoConstructorChannelService.create()
-        }
-        assertEquals(
-            "com.projectronin.interop.mirth.channel.NoConstructorChannelService.<init>(com.projectronin.interop.mirth.connector.ServiceFactory)",
-            exception.message
-        )
-    }
-
-    @Test
-    fun `fails for service with different constructor param`() {
-        val exception = assertThrows<NoSuchMethodException> {
-            DifferentConstructorParamChannelService.create()
-        }
-        assertEquals(
-            "com.projectronin.interop.mirth.channel.DifferentConstructorParamChannelService.<init>(com.projectronin.interop.mirth.connector.ServiceFactory)",
-            exception.message
-        )
-    }
-
-    @Test
-    fun `fails for service with too many constructor params`() {
-        val exception = assertThrows<NoSuchMethodException> {
-            TooManyConstructorParamsChannelService.create()
-        }
-        assertEquals(
-            "com.projectronin.interop.mirth.channel.TooManyConstructorParamsChannelService.<init>(com.projectronin.interop.mirth.connector.ServiceFactory)",
-            exception.message
-        )
+        assertInstanceOf(TestChannelService::class.java, service)
     }
 }
 
-internal class ValidConstructorChannelService(serviceFactory: ServiceFactory) : TestChannelService(serviceFactory) {
-    companion object : ChannelFactory<ValidConstructorChannelService>()
+@Configuration
+class TestSpringConfig {
+    @Bean
+    fun tenantService() = mockk<TenantService>()
+
+    @Bean
+    fun transformManager() = mockk<TransformManager>()
+
+    @Bean
+    fun testChannelService(tenantService: TenantService, transformManager: TransformManager) =
+        TestChannelService(tenantService, transformManager)
 }
 
-internal class MultipleConstructorChannelService(serviceFactory: ServiceFactory) : TestChannelService(serviceFactory) {
-    companion object : ChannelFactory<MultipleConstructorChannelService>()
+class TestChannelService(tenantService: TenantService, transformManager: TransformManager) :
+    ChannelService(tenantService, transformManager) {
+    companion object : ChannelFactory<TestChannelService>()
 
-    constructor(name: String, serviceFactory: ServiceFactory) : this(serviceFactory)
-}
-
-internal class NoConstructorChannelService() : TestChannelService(mockk()) {
-    companion object : ChannelFactory<NoConstructorChannelService>()
-}
-
-internal class DifferentConstructorParamChannelService(name: String) : TestChannelService(mockk()) {
-    companion object : ChannelFactory<DifferentConstructorParamChannelService>()
-}
-
-internal class TooManyConstructorParamsChannelService(serviceFactory: ServiceFactory, name: String) :
-    TestChannelService(serviceFactory) {
-    companion object : ChannelFactory<TooManyConstructorParamsChannelService>()
-}
-
-abstract class TestChannelService(serviceFactory: ServiceFactory) : ChannelService(serviceFactory) {
-    override val destinations: Map<String, DestinationService>
-        get() = TODO("Not yet implemented")
+    override val rootName: String = "test"
+    override val destinations: Map<String, DestinationService> = emptyMap()
 
     override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
         TODO("Not yet implemented")
     }
-
-    override val rootName: String
-        get() = TODO("Not yet implemented")
 }

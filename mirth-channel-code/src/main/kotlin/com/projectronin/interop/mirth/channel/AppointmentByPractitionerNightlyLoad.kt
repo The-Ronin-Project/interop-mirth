@@ -1,14 +1,18 @@
 package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.ehr.factory.EHRFactory
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.destinations.AppointmentByPractitionerAppointmentWriter
 import com.projectronin.interop.mirth.channel.destinations.AppointmentByPractitionerConditionWriter
 import com.projectronin.interop.mirth.channel.destinations.AppointmentByPractitionerPatientWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.connector.ServiceFactory
+import com.projectronin.interop.mirth.service.TenantConfigurationService
+import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotFoundException
+import org.springframework.stereotype.Component
 import java.time.LocalDate
 
 private const val APPOINTMENT_SERVICE = "appointments"
@@ -20,14 +24,23 @@ private const val PATIENT_SERVICE = "patient"
  *  From providers in the Ronin clinical data store for a given tenant,
  *  this channel retrieves future appointment information and associated patients and conditions.
  */
-class AppointmentByPractitionerNightlyLoad(serviceFactory: ServiceFactory) : ChannelService(serviceFactory) {
+@Component
+class AppointmentByPractitionerNightlyLoad(
+    tenantService: TenantService,
+    transformManager: TransformManager,
+    private val ehrFactory: EHRFactory,
+    private val tenantConfigurationService: TenantConfigurationService,
+    patientWriter: AppointmentByPractitionerPatientWriter,
+    conditionWriter: AppointmentByPractitionerConditionWriter,
+    appointmentWriter: AppointmentByPractitionerAppointmentWriter
+) : ChannelService(tenantService, transformManager) {
     companion object : ChannelFactory<AppointmentByPractitionerNightlyLoad>()
 
     override val rootName = "AppointmentByPractitionerLoad"
     override val destinations = mapOf(
-        PATIENT_SERVICE to AppointmentByPractitionerPatientWriter(rootName, serviceFactory),
-        CONDITION_SERVICE to AppointmentByPractitionerConditionWriter(rootName, serviceFactory),
-        APPOINTMENT_SERVICE to AppointmentByPractitionerAppointmentWriter(rootName, serviceFactory)
+        PATIENT_SERVICE to patientWriter,
+        CONDITION_SERVICE to conditionWriter,
+        APPOINTMENT_SERVICE to appointmentWriter
     )
     private val futureDateRange: Long = 7
     private val pastDateRange: Long = 1
@@ -40,10 +53,10 @@ class AppointmentByPractitionerNightlyLoad(serviceFactory: ServiceFactory) : Cha
         val currentDate = LocalDate.now()
         val endDate = currentDate.plusDays(futureDateRange)
         val startDate = currentDate.minusDays(pastDateRange)
-        val tenant = serviceFactory.getTenant(tenantMnemonic)
-        val vendorFactory = serviceFactory.vendorFactory(tenant)
+        val tenant = getTenant(tenantMnemonic)
+        val vendorFactory = ehrFactory.getVendorFactory(tenant)
 
-        val locationIdsList = serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant(tenantMnemonic)
+        val locationIdsList = tenantConfigurationService.getLocationIDsByTenant(tenantMnemonic)
         if (locationIdsList.isEmpty()) {
             throw ResourcesNotFoundException("No Location IDs configured for tenant $tenantMnemonic")
         }

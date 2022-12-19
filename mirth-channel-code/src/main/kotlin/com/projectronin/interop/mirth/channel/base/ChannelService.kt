@@ -1,9 +1,11 @@
 package com.projectronin.interop.mirth.channel.base
 
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.connector.ServiceFactory
+import com.projectronin.interop.tenant.config.TenantService
+import com.projectronin.interop.tenant.config.exception.TenantMissingException
 
 /**
  * Abstract Mirth channel service class.
@@ -28,7 +30,21 @@ import com.projectronin.interop.mirth.connector.ServiceFactory
  * The [ChannelService] MUST define a unique key to each of its [DestinationService] subclasses in this map:
  * - destinations
  */
-abstract class ChannelService(serviceFactory: ServiceFactory) : BaseService(serviceFactory) {
+abstract class ChannelService(tenantService: TenantService, transformManager: TransformManager) :
+    BaseService(tenantService, transformManager) {
+    /**
+     * rootName is the tenant agnostic channel name as archived in source control.
+     * Example: "PractitionerLoad".
+     *
+     * Each deployed channel in Mirth prefixes a tenant mnemonic and hyphen to this rootName.
+     * The tenant mnemonic is the lowercase string defined for each Ronin customer in the Ronin tenant ID list.
+     *
+     * Example: the deployed channel name "MDAOC-PractitionerLoad" in Mirth
+     * corresponds to the [ChannelService] rootName "PractitionerLoad"
+     * for the "mdaoc" tenant mnemonic.
+     */
+    abstract val rootName: String
+
     /**
      * Mirth channels may have multiple Destination Writers. They must have at least one.
      *
@@ -247,8 +263,9 @@ abstract class ChannelService(serviceFactory: ServiceFactory) : BaseService(serv
      */
     fun sourceReader(deployedChannelName: String, serviceMap: Map<String, Any>): List<MirthMessage> {
         val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
+        val tenantId = tenantMap[MirthKey.TENANT_MNEMONIC.code] as String
         try {
-            return channelSourceReader(tenantMap[MirthKey.TENANT_MNEMONIC.code] as String, tenantMap)
+            return channelSourceReader(tenantId, tenantMap).inject(MirthKey.TENANT_MNEMONIC to tenantId)
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during sourceReader: ${e.message}" }
             throw e
@@ -370,5 +387,45 @@ abstract class ChannelService(serviceFactory: ServiceFactory) : BaseService(serv
         channelMap: Map<String, Any>
     ): MirthMessage {
         return MirthMessage(msg)
+    }
+
+    /**
+     * If the tenant mnemonic value is not already present in the input serviceMap,
+     * extract the tenant mnemonic string from the deployedChannelName and add it to the serviceMap.
+     *
+     * @return copy of serviceMap with the tenant mnemonic value at the key "tenantMnemonic".
+     * @throws TenantMissingException if no tenant mnemonic can be found.
+     */
+    protected fun addTenantToServiceMap(deployedChannelName: String, serviceMap: Map<String, Any>): Map<String, Any> {
+        return if (serviceMap.containsKey(MirthKey.TENANT_MNEMONIC.code)) {
+            serviceMap
+        } else {
+            mapOf(MirthKey.TENANT_MNEMONIC.code to getTenantNameFromDeployedChannelName(deployedChannelName)) + serviceMap
+        }
+    }
+
+    /**
+     * Extract the tenant mnemonic string from the deployed channel name string.
+     * Example: deployedChannelName "MDAOC-PractitionerLoad" and
+     * the channel rootName "PractitionerLoad"
+     * return the tenant mnemonic "mdaoc".
+     *
+     * @return tenant mnemonic value.
+     * @throws TenantMissingException if no tenant mnemonic can be parsed from the name.
+     */
+    protected fun getTenantNameFromDeployedChannelName(deployedChannelName: String): String {
+        if ((rootName.isEmpty()) || (deployedChannelName == rootName)) {
+            throw TenantMissingException()
+        }
+        val index = deployedChannelName.indexOf("-$rootName")
+        return if (index > 0) deployedChannelName.substring(0, index).lowercase() else throw TenantMissingException()
+    }
+
+    /**
+     * Injects the supplied key-value pairs into the data maps for each message in this List.
+     */
+    private fun List<MirthMessage>.inject(vararg keyedValues: Pair<MirthKey, String>): List<MirthMessage> {
+        val newValues = keyedValues.associate { it.first.code to it.second }
+        return map { MirthMessage(it.message, it.dataMap + newValues) }
     }
 }

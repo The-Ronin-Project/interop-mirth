@@ -3,11 +3,11 @@ package com.projectronin.interop.mirth.channel.base
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.resource.ResourceType
-import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.mirth.channel.destinations.queue.TenantlessQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
-import com.projectronin.interop.mirth.connector.ServiceFactory
 import com.projectronin.interop.queue.kafka.KafkaQueueService
 import com.projectronin.interop.queue.model.ApiMessage
+import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
@@ -26,21 +26,19 @@ class KafkaQueueTest {
     private val mockTenant = mockk<Tenant>()
     private val mockRoninDomainResource = mockk<TestResource>()
 
+    private lateinit var mockTenantService: TenantService
     private lateinit var mockQueueService: KafkaQueueService
-    private lateinit var mockVendorFactory: VendorFactory
-    private lateinit var mockServiceFactory: ServiceFactory
+    private lateinit var mockQueueWriter: TenantlessQueueWriter<TestResource>
     private lateinit var channel: KafkaTestQueue
 
     @BeforeEach
     fun setup() {
         mockQueueService = mockk()
-        mockVendorFactory = mockk()
-        mockServiceFactory = mockk {
-            every { kafkaQueueService() } returns mockQueueService
-            every { getTenant(tenantId) } returns mockTenant
-            every { vendorFactory(mockTenant) } returns mockVendorFactory
+        mockTenantService = mockk {
+            every { getTenantForMnemonic(tenantId) } returns mockTenant
         }
-        channel = KafkaTestQueue(mockServiceFactory)
+        mockQueueWriter = mockk()
+        channel = KafkaTestQueue(mockTenantService, mockQueueService, mockQueueWriter)
         mockkObject(JacksonManager)
     }
 
@@ -52,7 +50,7 @@ class KafkaQueueTest {
             every { tenant } returns tenantId
         }
         every { mockQueueService.dequeueApiMessages("", ResourceType.BUNDLE, 5) } returns listOf(mockMessage)
-        val channel = KafkaTestQueue(mockServiceFactory)
+
         val messages = channel.sourceReader("name", mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId))
         assertEquals(1, messages.size)
         assertEquals(queueMessage, messages.first().message)
@@ -73,7 +71,6 @@ class KafkaQueueTest {
             mockMessage
         ) andThen emptyList()
 
-        val channel = KafkaTestQueue(mockServiceFactory)
         val messages = channel.sourceReader("name", mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId))
         assertEquals(5, messages.size)
         assertEquals(queueMessage, messages.first().message)
@@ -92,7 +89,7 @@ class KafkaQueueTest {
         mockkObject(JacksonManager)
         every { JacksonManager.objectMapper.writeValueAsString(mockRoninDomainResource) } returns transformedResource
 
-        val channel = KafkaTestQueue(mockServiceFactory, mockRoninDomainResource)
+        val channel = KafkaTestQueue(mockTenantService, mockQueueService, mockQueueWriter, mockRoninDomainResource)
         val transformedMessage =
             channel.sourceTransformer("name", message, mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId), emptyMap())
         assertEquals(fhirID, transformedMessage.dataMap[MirthKey.FHIR_ID.code])
@@ -103,7 +100,7 @@ class KafkaQueueTest {
 
     @Test
     fun codeCov() {
-        val channel = KafkaTestQueue(mockServiceFactory, mockRoninDomainResource)
+        val channel = KafkaTestQueue(mockTenantService, mockQueueService, mockQueueWriter, mockRoninDomainResource)
         assertNotNull(channel.destinations["publish"])
         assertDoesNotThrow {
             channel.onDeploy("ronin-KafkaPatientQueue", emptyMap())
@@ -114,7 +111,7 @@ class KafkaQueueTest {
 
         assertThrows<Exception> {
             KafkaTestQueueBad(
-                mockServiceFactory,
+                mockTenantService, mockQueueService, mockQueueWriter,
                 mockRoninDomainResource
             ).onDeploy("thisnameiscompletelyandutterlymcuhtoolongohno", emptyMap())
         }
@@ -134,7 +131,7 @@ class KafkaQueueTest {
         mockkObject(JacksonManager)
         every { JacksonManager.objectMapper.writeValueAsString(mockRoninDomainResource) } returns transformedResource
 
-        val channel = KafkaTestQueue(mockServiceFactory, mockRoninDomainResource)
+        val channel = KafkaTestQueue(mockTenantService, mockQueueService, mockQueueWriter, mockRoninDomainResource)
         val transformedMessage =
             channel.sourceTransformer("name", message, mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId), emptyMap())
         assertEquals(fhirID, transformedMessage.dataMap[MirthKey.FHIR_ID.code])
@@ -145,9 +142,11 @@ class KafkaQueueTest {
 }
 
 class KafkaTestQueue(
-    serviceFactory: ServiceFactory,
+    tenantService: TenantService,
+    queueService: KafkaQueueService,
+    queueWriter: TenantlessQueueWriter<TestResource>,
     private val mockRoninDomainResource: TestResource = mockk()
-) : KafkaQueue<TestResource>(serviceFactory, TestResource::class) {
+) : KafkaQueue<TestResource>(tenantService, queueService, queueWriter) {
     override val resourceType: ResourceType = ResourceType.BUNDLE
     override val rootName: String = "Test"
     override val limit: Int = 5
@@ -155,9 +154,11 @@ class KafkaTestQueue(
 }
 
 class KafkaTestQueueBad(
-    serviceFactory: ServiceFactory,
+    tenantService: TenantService,
+    queueService: KafkaQueueService,
+    queueWriter: TenantlessQueueWriter<TestResource>,
     private val mockRoninDomainResource: TestResource = mockk()
-) : KafkaQueue<TestResource>(serviceFactory, TestResource::class) {
+) : KafkaQueue<TestResource>(tenantService, queueService, queueWriter) {
     override val resourceType: ResourceType = ResourceType.BUNDLE
     override val rootName: String = "thisnameiscompletelyandutterlymcuhtoolongohno"
     override val limit: Int = 5

@@ -4,6 +4,7 @@ import com.projectronin.interop.aidbox.PatientService
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.ehr.ObservationService
+import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.datatype.CodeableConcept
 import com.projectronin.interop.fhir.r4.datatype.Reference
@@ -13,10 +14,11 @@ import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.valueset.ObservationStatus
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninObservations
+import com.projectronin.interop.mirth.channel.destinations.ObservationWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.connector.ServiceFactory
 import com.projectronin.interop.mirth.connector.util.asCode
+import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotFoundException
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
 import com.projectronin.interop.tenant.config.exception.TenantMissingException
@@ -39,7 +41,8 @@ class ObservationNightlyLoadTest {
     lateinit var tenant: Tenant
     lateinit var vendorFactory: VendorFactory
     lateinit var transformManager: TransformManager
-    lateinit var serviceFactory: ServiceFactory
+    lateinit var patientService: PatientService
+    lateinit var roninObservations: RoninObservations
     lateinit var channel: ObservationNightlyLoad
 
     @BeforeEach
@@ -50,14 +53,24 @@ class ObservationNightlyLoadTest {
 
         vendorFactory = mockk()
         transformManager = mockk()
+        patientService = mockk()
+        roninObservations = mockk()
 
-        serviceFactory = mockk {
-            every { getTenant(VALID_TENANT_ID) } returns tenant
-            every { vendorFactory(tenant) } returns vendorFactory
-            every { transformManager() } returns transformManager
+        val tenantService = mockk<TenantService> {
+            every { getTenantForMnemonic(VALID_TENANT_ID) } returns tenant
         }
-
-        channel = ObservationNightlyLoad(serviceFactory)
+        val ehrFactory = mockk<EHRFactory> {
+            every { getVendorFactory(tenant) } returns vendorFactory
+        }
+        val observationWriter = mockk<ObservationWriter>()
+        channel = ObservationNightlyLoad(
+            tenantService,
+            transformManager,
+            observationWriter,
+            patientService,
+            ehrFactory,
+            roninObservations
+        )
     }
 
     @AfterEach
@@ -163,10 +176,7 @@ class ObservationNightlyLoadTest {
     fun `sourceReader - no patients for tenant`() {
         val serviceMap = mapOf(MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID)
 
-        val mockPatientService: PatientService = mockk {
-            every { getPatientFHIRIdsByTenant(VALID_TENANT_ID) } returns emptyList()
-        }
-        every { serviceFactory.patientService() } returns mockPatientService
+        every { patientService.getPatientFHIRIdsByTenant(VALID_TENANT_ID) } returns emptyList()
 
         val ex = assertThrows<ResourcesNotFoundException> {
             channel.sourceReader(VALID_DEPLOYED_NAME, serviceMap)
@@ -210,13 +220,10 @@ class ObservationNightlyLoadTest {
         }
         every { vendorFactory.observationService } returns mockObservationService
 
-        val mockPatientService = mockk<PatientService> {
-            every { getPatientFHIRIdsByTenant("mdaoc") } returns listOf(
-                "mdaoc-123",
-                "mdaoc-456"
-            )
-        }
-        every { serviceFactory.patientService() } returns mockPatientService
+        every { patientService.getPatientFHIRIdsByTenant("mdaoc") } returns listOf(
+            "mdaoc-123",
+            "mdaoc-456"
+        )
 
         val actualList = channel.sourceReader(
             VALID_DEPLOYED_NAME,
@@ -283,13 +290,10 @@ class ObservationNightlyLoadTest {
         }
         every { vendorFactory.observationService } returns mockObservationService
 
-        val mockPatientService = mockk<PatientService> {
-            every { getPatientFHIRIdsByTenant("mdaoc") } returns listOf(
-                "mdaoc-123",
-                "mdaoc-456"
-            )
-        }
-        every { serviceFactory.patientService() } returns mockPatientService
+        every { patientService.getPatientFHIRIdsByTenant("mdaoc") } returns listOf(
+            "mdaoc-123",
+            "mdaoc-456"
+        )
 
         val actualList = channel.sourceReader(
             VALID_DEPLOYED_NAME,
@@ -319,7 +323,7 @@ class ObservationNightlyLoadTest {
         val observation = mockk<Observation>()
         every { JacksonUtil.readJsonList<Observation>(any(), any()) } returns listOf(observation)
 
-        every { transformManager.transformResource(observation, RoninObservations, tenant) } returns mockk {
+        every { transformManager.transformResource(observation, roninObservations, tenant) } returns mockk {
             every { id?.value } returns "id"
         }
 
@@ -340,7 +344,7 @@ class ObservationNightlyLoadTest {
         val observation = mockk<Observation>()
         every { JacksonUtil.readJsonList<Observation>(any(), any()) } returns listOf(observation)
 
-        every { transformManager.transformResource(observation, RoninObservations, tenant) } returns null
+        every { transformManager.transformResource(observation, roninObservations, tenant) } returns null
 
         every { JacksonUtil.writeJsonValue(any()) } returns "message"
 

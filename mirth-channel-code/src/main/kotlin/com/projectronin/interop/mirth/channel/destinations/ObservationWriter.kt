@@ -1,11 +1,19 @@
 package com.projectronin.interop.mirth.channel.destinations
 
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.base.DestinationService
 import com.projectronin.interop.mirth.channel.model.MirthResponse
-import com.projectronin.interop.mirth.connector.ServiceFactory
+import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.tenant.config.TenantService
+import org.springframework.stereotype.Component
 
-class ObservationWriter(rootName: String, serviceFactory: ServiceFactory) :
-    DestinationService(rootName, serviceFactory) {
+@Component
+class ObservationWriter(
+    tenantService: TenantService,
+    transformManager: TransformManager,
+    publishService: PublishService
+) :
+    DestinationService(tenantService, transformManager, publishService) {
 
     override fun channelDestinationWriter(
         tenantMnemonic: String,
@@ -13,6 +21,6 @@ class ObservationWriter(rootName: String, serviceFactory: ServiceFactory) :
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthResponse {
-        return publishTransformed(channelMap, "Observation")
+        return publishTransformed(sourceMap, channelMap, "Observation")
     }
 }

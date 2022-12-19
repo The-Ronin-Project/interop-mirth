@@ -1,10 +1,20 @@
 package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.fhir.r4.datatype.Extension
+import com.projectronin.interop.fhir.r4.datatype.Meta
+import com.projectronin.interop.fhir.r4.datatype.Narrative
+import com.projectronin.interop.fhir.r4.datatype.primitive.Code
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
+import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
+import com.projectronin.interop.fhir.r4.resource.ContainedResource
+import com.projectronin.interop.fhir.r4.resource.DomainResource
+import com.projectronin.interop.fhir.ronin.TransformManager
+import com.projectronin.interop.mirth.channel.destinations.queue.QueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
-import com.projectronin.interop.mirth.connector.ServiceFactory
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.tenant.config.TenantService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -14,20 +24,20 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class TenantlessQueueWriterTest {
+class QueueWriterTest {
     private val tenantId = "tenant"
 
     private lateinit var mockPublishService: PublishService
-    private lateinit var mockServiceFactory: ServiceFactory
-    private lateinit var writer: TenantlessQueueWriter<TestResource>
+    private lateinit var writer: QueueWriter<TestResource>
 
     @BeforeEach
     fun setup() {
         mockPublishService = mockk()
-        mockServiceFactory = mockk {
-            every { publishService() } returns mockPublishService
-        }
-        writer = TenantlessQueueWriter("test", mockServiceFactory, TestResource::class)
+
+        val tenantService = mockk<TenantService>()
+        val transformManager = mockk<TransformManager>()
+        writer = object :
+            QueueWriter<TestResource>(tenantService, transformManager, mockPublishService, TestResource::class) {}
     }
 
     @AfterEach
@@ -52,21 +62,15 @@ class TenantlessQueueWriterTest {
 
         every { mockPublishService.publishFHIRResources(tenantId, any<List<TestResource>>()) } returns true
 
-        val response = writer.destinationWriter(
-            "name",
+        val response = writer.channelDestinationWriter(
+            tenantId,
             mockSerialized,
-            mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId),
+            emptyMap(),
             channelMap
         )
         assertEquals("Published 1 TestResource(s)", response.message)
         assertEquals(MirthResponseStatus.SENT, response.status)
         assertEquals(mockSerialized, response.detailedMessage)
-    }
-
-    @Test
-    fun `destination transformer`() {
-        val message = writer.destinationTransformer("name", "message", emptyMap(), emptyMap())
-        assertEquals("message", message.message)
     }
 
     @Test
@@ -86,10 +90,10 @@ class TenantlessQueueWriterTest {
 
         every { mockPublishService.publishFHIRResources(tenantId, any<List<TestResource>>()) } returns false
 
-        val response = writer.destinationWriter(
+        val response = writer.channelDestinationWriter(
             tenantId,
             mockSerialized,
-            mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId),
+            emptyMap(),
             channelMap
         )
         assertEquals(MirthResponseStatus.ERROR, response.status)
@@ -97,3 +101,15 @@ class TenantlessQueueWriterTest {
         assertEquals("Failed to publish TestResource(s)", response.message)
     }
 }
+
+class TestResource(
+    override val contained: List<ContainedResource> = listOf(),
+    override val extension: List<Extension> = listOf(),
+    override val modifierExtension: List<Extension> = listOf(),
+    override val text: Narrative?,
+    override val id: Id?,
+    override val implicitRules: Uri?,
+    override val language: Code?,
+    override val meta: Meta?,
+    override val resourceType: String = "TestResourceType"
+) : DomainResource<TestResource>

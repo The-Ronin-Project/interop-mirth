@@ -4,12 +4,11 @@ codecov:
 coverage:
   status:
     project:
-      project:
-        mirth-channel-code:
-          target: auto
-          threshold: 1%
-          flags:
-            - mirth-channel-code
+      mirth-channel-code:
+        target: auto
+        threshold: 1%
+        flags:
+          - mirth-channel-code
 
     patch:
       mirth-channel-code:

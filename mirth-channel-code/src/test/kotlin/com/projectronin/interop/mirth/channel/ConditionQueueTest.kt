@@ -2,11 +2,12 @@ package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.common.resource.ResourceType
-import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
-import com.projectronin.interop.mirth.connector.ServiceFactory
+import com.projectronin.interop.mirth.channel.destinations.queue.ConditionQueueWriter
+import com.projectronin.interop.queue.QueueService
+import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
@@ -23,9 +24,8 @@ class ConditionQueueTest {
     private val mockTenant = mockk<Tenant> {
         every { mnemonic } returns "testmnemonic"
     }
-    private lateinit var mockVendorFactory: VendorFactory
     private lateinit var mockTransformManager: TransformManager
-    private lateinit var mockServiceFactory: ServiceFactory
+    private lateinit var mockRoninConditions: RoninConditions
     private lateinit var channel: ConditionQueue
 
     @AfterEach
@@ -35,18 +35,20 @@ class ConditionQueueTest {
 
     @BeforeEach
     fun setup() {
-        mockVendorFactory = mockk()
         mockTransformManager = mockk()
-        mockServiceFactory = mockk {
-            every { vendorFactory(mockTenant) } returns mockVendorFactory
-            every { transformManager() } returns mockTransformManager
+        mockRoninConditions = mockk()
+
+        val tenantService = mockk<TenantService> {
+            every { getTenantForMnemonic("testmnemonic") } returns mockTenant
         }
-        channel = ConditionQueue(mockServiceFactory)
+        val conditionQueueWriter = mockk<ConditionQueueWriter>()
+        val queueService = mockk<QueueService>()
+        channel =
+            ConditionQueue(tenantService, mockTransformManager, conditionQueueWriter, queueService, mockRoninConditions)
     }
 
     @Test
     fun `create channel - works`() {
-        val channel = ConditionQueue(mockServiceFactory)
         assertEquals(ResourceType.CONDITION, channel.resourceType)
         assertEquals(1, channel.destinations.size)
     }
@@ -58,7 +60,13 @@ class ConditionQueueTest {
         every { JacksonUtil.readJsonObject<Condition>(any(), any()) } returns condition
 
         val roninCondition = mockk<Condition>()
-        every { mockTransformManager.transformResource(condition, RoninConditions, mockTenant) } returns roninCondition
+        every {
+            mockTransformManager.transformResource(
+                condition,
+                mockRoninConditions,
+                mockTenant
+            )
+        } returns roninCondition
 
         val transformed = channel.deserializeAndTransform("conditionString", mockTenant)
         assertEquals(roninCondition, transformed)
@@ -70,7 +78,7 @@ class ConditionQueueTest {
         val condition = mockk<Condition>()
         every { JacksonUtil.readJsonObject<Condition>(any(), any()) } returns condition
 
-        every { mockTransformManager.transformResource(condition, RoninConditions, mockTenant) } returns null
+        every { mockTransformManager.transformResource(condition, mockRoninConditions, mockTenant) } returns null
 
         assertThrows<ResourcesNotTransformedException> {
             channel.deserializeAndTransform(

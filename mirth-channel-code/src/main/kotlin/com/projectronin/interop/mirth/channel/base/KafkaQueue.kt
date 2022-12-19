@@ -3,12 +3,12 @@ package com.projectronin.interop.mirth.channel.base
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.DomainResource
-import com.projectronin.interop.mirth.channel.destinations.TenantlessQueueWriter
+import com.projectronin.interop.mirth.channel.destinations.queue.TenantlessQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.connector.ServiceFactory
+import com.projectronin.interop.queue.kafka.KafkaQueueService
+import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
-import kotlin.reflect.KClass
 
 /**
  *  This is a base for any channel that reads resources off the API Queue, transforms the objects
@@ -16,8 +16,9 @@ import kotlin.reflect.KClass
  */
 
 abstract class KafkaQueue<K : DomainResource<K>>(
-    val serviceFactory: ServiceFactory,
-    publishClass: KClass<out K>
+    private val tenantService: TenantService,
+    private val queueService: KafkaQueueService,
+    queueWriter: TenantlessQueueWriter<K>
 ) {
     protected val publishService = "publish"
     open val limit = 20
@@ -25,7 +26,7 @@ abstract class KafkaQueue<K : DomainResource<K>>(
     abstract val rootName: String
     val destinations by lazy {
         mapOf(
-            publishService to TenantlessQueueWriter(rootName, serviceFactory, publishClass)
+            publishService to queueWriter
         )
     }
 
@@ -39,7 +40,6 @@ abstract class KafkaQueue<K : DomainResource<K>>(
         deployedChannelName: String,
         serviceMap: Map<String, Any>
     ): List<MirthMessage> {
-        val queueService = serviceFactory.kafkaQueueService()
         return queueService.dequeueApiMessages("", resourceType, limit).map {
             MirthMessage(it.text, mapOf(MirthKey.TENANT_MNEMONIC.code to it.tenant))
         }
@@ -52,7 +52,8 @@ abstract class KafkaQueue<K : DomainResource<K>>(
         channelMap: Map<String, Any>
     ): MirthMessage {
         val tenantId = sourceMap[MirthKey.TENANT_MNEMONIC.code] as String
-        val tenant = serviceFactory.getTenant(tenantId)
+        val tenant =
+            tenantService.getTenantForMnemonic(tenantId) ?: throw IllegalArgumentException("Unknown tenant: $tenantId")
         val transformed = deserializeAndTransform(msg, tenant)
         return MirthMessage(
             message = JacksonManager.objectMapper.writeValueAsString(transformed),

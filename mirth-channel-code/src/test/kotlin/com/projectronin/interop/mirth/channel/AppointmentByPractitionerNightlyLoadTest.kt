@@ -3,6 +3,7 @@ package com.projectronin.interop.mirth.channel
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.AppointmentService
 import com.projectronin.interop.ehr.IdentifierService
+import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.ehr.outputs.FindPractitionerAppointmentsResponse
 import com.projectronin.interop.fhir.r4.datatype.Identifier
@@ -16,9 +17,13 @@ import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.AppointmentStatus
 import com.projectronin.interop.fhir.r4.valueset.ParticipationStatus
-import com.projectronin.interop.mirth.connector.ServiceFactory
-import com.projectronin.interop.mirth.connector.TenantConfigurationFactory
+import com.projectronin.interop.fhir.ronin.TransformManager
+import com.projectronin.interop.mirth.channel.destinations.AppointmentByPractitionerAppointmentWriter
+import com.projectronin.interop.mirth.channel.destinations.AppointmentByPractitionerConditionWriter
+import com.projectronin.interop.mirth.channel.destinations.AppointmentByPractitionerPatientWriter
 import com.projectronin.interop.mirth.connector.util.asCode
+import com.projectronin.interop.mirth.service.TenantConfigurationService
+import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotFoundException
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
@@ -36,8 +41,8 @@ private const val VALID_DEPLOYED_NAME = "$VALID_TENANT_ID-$CHANNEL_ROOT_NAME"
 
 class AppointmentByPractitionerNightlyLoadTest {
     lateinit var vendorFactory: VendorFactory
-    lateinit var serviceFactory: ServiceFactory
-    lateinit var tenantConfigurationFactory: TenantConfigurationFactory
+    lateinit var tenantConfigurationService: TenantConfigurationService
+
     lateinit var channel: AppointmentByPractitionerNightlyLoad
 
     private val tenant = mockk<Tenant> {
@@ -46,17 +51,30 @@ class AppointmentByPractitionerNightlyLoadTest {
 
     @BeforeEach
     fun setup() {
+        tenantConfigurationService = mockk()
         vendorFactory = mockk()
-
-        tenantConfigurationFactory = mockk()
-
-        serviceFactory = mockk {
-            every { getTenant(VALID_TENANT_ID) } returns tenant
-            every { vendorFactory(tenant) } returns vendorFactory
-            every { tenantConfigurationFactory() } returns tenantConfigurationFactory
+        val ehrFactory = mockk<EHRFactory> {
+            every { getVendorFactory(tenant) } returns vendorFactory
         }
 
-        channel = AppointmentByPractitionerNightlyLoad(serviceFactory)
+        val transformManager = mockk<TransformManager>()
+        val patientWriter = mockk<AppointmentByPractitionerPatientWriter>()
+        val conditionWriter = mockk<AppointmentByPractitionerConditionWriter>()
+        val appointmentWriter = mockk<AppointmentByPractitionerAppointmentWriter>()
+
+        val tenantService = mockk<TenantService> {
+            every { getTenantForMnemonic(VALID_TENANT_ID) } returns tenant
+        }
+
+        channel = AppointmentByPractitionerNightlyLoad(
+            tenantService,
+            transformManager,
+            ehrFactory,
+            tenantConfigurationService,
+            patientWriter,
+            conditionWriter,
+            appointmentWriter
+        )
     }
 
     @Test
@@ -83,8 +101,8 @@ class AppointmentByPractitionerNightlyLoadTest {
             participant = listOf(location, patient1),
             status = AppointmentStatus.BOOKED.asCode()
         )
-        val appointmentlist = listOf(appt1, appt2)
-        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointmentlist)
+        val appointments = listOf(appt1, appt2)
+        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointments)
 
         val mockAppointmentService = mockk<AppointmentService> {
             every { findLocationAppointments(tenant, any(), any(), any()) } returns findPractitionersResponse
@@ -97,9 +115,7 @@ class AppointmentByPractitionerNightlyLoadTest {
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
         every { vendorFactory.identifierService } returns mockIdentifierService
-        every {
-            serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant("mdaoc")
-        } returns listOf("locationFHIRID")
+        every { tenantConfigurationService.getLocationIDsByTenant("mdaoc") } returns listOf("locationFHIRID")
 
         val messageList = channel.sourceReader(VALID_DEPLOYED_NAME, emptyMap())
         assertEquals(1, messageList.size)
@@ -145,9 +161,7 @@ class AppointmentByPractitionerNightlyLoadTest {
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
         every { vendorFactory.identifierService } returns mockIdentifierService
-        every {
-            serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant("mdaoc")
-        } returns listOf("locationFHIRID")
+        every { tenantConfigurationService.getLocationIDsByTenant("mdaoc") } returns listOf("locationFHIRID")
 
         val messageList = channel.sourceReader(VALID_DEPLOYED_NAME, emptyMap())
         assertEquals(1, messageList.size)
@@ -196,9 +210,7 @@ class AppointmentByPractitionerNightlyLoadTest {
         every { vendorFactory.appointmentService } returns mockAppointmentService
         every { vendorFactory.identifierService } returns mockIdentifierService
 
-        every {
-            serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant("mdaoc")
-        } returns listOf("locationFHIRID")
+        every { tenantConfigurationService.getLocationIDsByTenant("mdaoc") } returns listOf("locationFHIRID")
 
         val messageList = channel.sourceReader(VALID_DEPLOYED_NAME, emptyMap())
         assertEquals(1, messageList.size)
@@ -220,9 +232,7 @@ class AppointmentByPractitionerNightlyLoadTest {
         }
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
-        every {
-            serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant("mdaoc")
-        } returns listOf("locationFHIRID")
+        every { tenantConfigurationService.getLocationIDsByTenant("mdaoc") } returns listOf("locationFHIRID")
 
         mockkObject(JacksonUtil)
         every { JacksonUtil.writeJsonValue(any()) } returns "{}"
@@ -253,8 +263,8 @@ class AppointmentByPractitionerNightlyLoadTest {
             participant = listOf(location1, patient1),
             status = AppointmentStatus.BOOKED.asCode()
         )
-        val appointmentlist = listOf(appt1)
-        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointmentlist)
+        val appointments = listOf(appt1)
+        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointments)
 
         val mockAppointmentService = mockk<AppointmentService> {
             every { findLocationAppointments(tenant, any(), any(), any()) } returns findPractitionersResponse
@@ -268,9 +278,7 @@ class AppointmentByPractitionerNightlyLoadTest {
         every { vendorFactory.appointmentService } returns mockAppointmentService
         every { vendorFactory.identifierService } returns mockIdentifierService
 
-        every {
-            serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant("mdaoc")
-        } returns listOf("locationFHIRID")
+        every { tenantConfigurationService.getLocationIDsByTenant("mdaoc") } returns listOf("locationFHIRID")
 
         val messageList = channel.sourceReader(VALID_DEPLOYED_NAME, emptyMap())
         assertEquals(1, messageList.size)
@@ -291,8 +299,8 @@ class AppointmentByPractitionerNightlyLoadTest {
             participant = listOf(patient1),
             status = AppointmentStatus.BOOKED.asCode()
         )
-        val appointmentlist = listOf(appt1)
-        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointmentlist, listOf(Patient()))
+        val appointments = listOf(appt1)
+        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointments, listOf(Patient()))
 
         val mockAppointmentService = mockk<AppointmentService> {
             every { findLocationAppointments(tenant, any(), any(), any()) } returns findPractitionersResponse
@@ -300,9 +308,7 @@ class AppointmentByPractitionerNightlyLoadTest {
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
 
-        every {
-            serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant("mdaoc")
-        } returns listOf("locationFHIRID")
+        every { tenantConfigurationService.getLocationIDsByTenant("mdaoc") } returns listOf("locationFHIRID")
 
         val messageList = channel.sourceReader(VALID_DEPLOYED_NAME, emptyMap())
         assertEquals(1, messageList.size)
@@ -325,8 +331,8 @@ class AppointmentByPractitionerNightlyLoadTest {
             participant = listOf(location1, patient1),
             status = AppointmentStatus.BOOKED.asCode()
         )
-        val appointmentlist = listOf(appt1)
-        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointmentlist)
+        val appointments = listOf(appt1)
+        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointments)
 
         val mockAppointmentService = mockk<AppointmentService> {
             every { findLocationAppointments(tenant, any(), any(), any()) } returns findPractitionersResponse
@@ -334,9 +340,7 @@ class AppointmentByPractitionerNightlyLoadTest {
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
 
-        every {
-            serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant("mdaoc")
-        } returns listOf("locationFHIRID")
+        every { tenantConfigurationService.getLocationIDsByTenant("mdaoc") } returns listOf("locationFHIRID")
 
         val messageList = channel.sourceReader(VALID_DEPLOYED_NAME, emptyMap())
         assertEquals(1, messageList.size)
@@ -348,7 +352,7 @@ class AppointmentByPractitionerNightlyLoadTest {
 
     @Test
     fun `sourceReader - no practitioners found`() {
-        every { serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant("mdaoc") } returns emptyList()
+        every { tenantConfigurationService.getLocationIDsByTenant("mdaoc") } returns emptyList()
 
         val exception = assertThrows<ResourcesNotFoundException> {
             channel.sourceReader(

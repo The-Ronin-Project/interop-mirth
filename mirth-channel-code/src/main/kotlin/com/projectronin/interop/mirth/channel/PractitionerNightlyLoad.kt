@@ -1,11 +1,13 @@
 package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.fhir.r4.resource.DomainResource
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.r4.resource.PractitionerRole
 import com.projectronin.interop.fhir.r4.resource.Resource
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninLocation
 import com.projectronin.interop.fhir.ronin.resource.RoninPractitioner
 import com.projectronin.interop.fhir.ronin.resource.RoninPractitionerRole
@@ -13,29 +15,40 @@ import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.destinations.PractitionerNightlyLoadWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.connector.ServiceFactory
-import com.projectronin.interop.mirth.connector.ServiceFactoryImpl
+import com.projectronin.interop.mirth.service.TenantConfigurationService
+import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ConfigurationMissingException
 import com.projectronin.interop.tenant.config.exception.ResourcesNotFoundException
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
+import org.springframework.stereotype.Component
 
 private const val PUBLISH_SERVICE = "publish"
 
-class PractitionerNightlyLoad(serviceFactory: ServiceFactory = ServiceFactoryImpl) : ChannelService(serviceFactory) {
+@Component
+class PractitionerNightlyLoad(
+    tenantService: TenantService,
+    transformManager: TransformManager,
+    practitionerNightlyLoadWriter: PractitionerNightlyLoadWriter,
+    private val tenantConfigurationService: TenantConfigurationService,
+    private val ehrFactory: EHRFactory,
+    private val roninPractitioner: RoninPractitioner,
+    private val roninPractitionerRole: RoninPractitionerRole,
+    private val roninLocation: RoninLocation
+) : ChannelService(tenantService, transformManager) {
     companion object : ChannelFactory<PractitionerNightlyLoad>()
 
     override val rootName = "PractitionerLoad"
-    override val destinations = mapOf(PUBLISH_SERVICE to PractitionerNightlyLoadWriter(rootName, serviceFactory))
+    override val destinations = mapOf(PUBLISH_SERVICE to practitionerNightlyLoadWriter)
 
     override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
         // a missing tenant configuration throws an error; also check the configuration for an empty locationIDs list
-        val locationIdsList = serviceFactory.tenantConfigurationFactory().getLocationIDsByTenant(tenantMnemonic)
+        val locationIdsList = tenantConfigurationService.getLocationIDsByTenant(tenantMnemonic)
         if (locationIdsList.isEmpty()) {
             throw ConfigurationMissingException("No Location IDs configured for tenant $tenantMnemonic")
         }
 
-        val tenant = serviceFactory.getTenant(tenantMnemonic)
-        val vendorFactory = serviceFactory.vendorFactory(tenant)
+        val tenant = getTenant(tenantMnemonic)
+        val vendorFactory = ehrFactory.getVendorFactory(tenant)
 
         val response = vendorFactory.practitionerService.findPractitionersByLocation(tenant, locationIdsList)
 
@@ -84,7 +97,7 @@ class PractitionerNightlyLoad(serviceFactory: ServiceFactory = ServiceFactoryImp
             when (key.removePrefix("${MirthKey.RESOURCES_FOUND.code}.")) {
                 "Practitioner" -> {
                     resourcesTransformed =
-                        deserializeAndTransformToList(tenantMnemonic, msg, Practitioner::class, RoninPractitioner)
+                        deserializeAndTransformToList(tenantMnemonic, msg, Practitioner::class, roninPractitioner)
                 }
                 "Location" -> {
                     resourcesTransformed =
@@ -92,12 +105,17 @@ class PractitionerNightlyLoad(serviceFactory: ServiceFactory = ServiceFactoryImp
                             tenantMnemonic,
                             msg,
                             Location::class,
-                            RoninLocation.create(serviceFactory.conceptMapClient())
+                            roninLocation
                         )
                 }
                 "PractitionerRole" -> {
                     resourcesTransformed =
-                        deserializeAndTransformToList(tenantMnemonic, msg, PractitionerRole::class, RoninPractitionerRole)
+                        deserializeAndTransformToList(
+                            tenantMnemonic,
+                            msg,
+                            PractitionerRole::class,
+                            roninPractitionerRole
+                        )
                 }
             }
         }

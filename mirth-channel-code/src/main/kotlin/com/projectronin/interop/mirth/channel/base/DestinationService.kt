@@ -2,12 +2,14 @@ package com.projectronin.interop.mirth.channel.base
 
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.Resource
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.model.MirthResponse
-import com.projectronin.interop.mirth.connector.ServiceFactory
+import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.tenant.config.TenantService
 import kotlin.reflect.KClass
 
 /**
@@ -32,9 +34,12 @@ import kotlin.reflect.KClass
  *
  * For the correct order of execution of all required and optional Mirth channel stages, see [BaseService].
  */
-abstract class DestinationService(override val rootName: String, serviceFactory: ServiceFactory) :
-    BaseService(serviceFactory) {
-
+abstract class DestinationService(
+    tenantService: TenantService,
+    transformManager: TransformManager,
+    private val publishService: PublishService
+) :
+    BaseService(tenantService, transformManager) {
     /**
      * Mirth channels call destinationFilter() from the Destination Filter script,
      * if there is a Filter on this Destination.
@@ -43,26 +48,25 @@ abstract class DestinationService(override val rootName: String, serviceFactory:
      *
      * Next channel stage: Destination Transformer, or later stages.
      *
-     * @param deployedChannelName pass in the Mirth global variable called channelName.
+     * @param unusedValue Deprecated, unused field that Mirth is providing.
      * @param msg a string value from Mirth.
-     * @param sourceMap the sourceMap from Mirth
-     * @param channelMap the channelMap from Mirth, including data collected in the serviceMap from earlier stages.
+     * @param sourceMap the sourceMap from Mirth, including data collected in the serviceMap from earlier stages.
+     * @param channelMap the channelMap from Mirth
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return true if the message should continue processing, false to stop processing the message.
      */
     fun destinationFilter(
-        deployedChannelName: String,
+        unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthFilterResponse {
-        val tenantMap = addTenantToServiceMap(deployedChannelName, channelMap)
         try {
             return channelDestinationFilter(
-                tenantMap[MirthKey.TENANT_MNEMONIC.code] as String,
+                sourceMap[MirthKey.TENANT_MNEMONIC.code] as String,
                 msg,
                 sourceMap,
-                tenantMap
+                channelMap
             )
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during destinationFilter: ${e.message}" }
@@ -101,26 +105,25 @@ abstract class DestinationService(override val rootName: String, serviceFactory:
      *
      * Next channel stage: Destination Writer.
      *
-     * @param deployedChannelName pass in the Mirth global variable called channelName.
+     * @param unusedValue Deprecated, unused field that Mirth is providing.
      * @param msg a string value from Mirth.
-     * @param sourceMap the sourceMap from Mirth
-     * @param channelMap the channelMap from Mirth, including data collected in the serviceMap from earlier stages.
+     * @param sourceMap the sourceMap from Mirth, including data collected in the serviceMap from earlier stages.
+     * @param channelMap the channelMap from Mirth
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a list of Mirth response data to pass to the next channel stage.
      */
     fun destinationTransformer(
-        deployedChannelName: String,
+        unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthMessage {
-        val tenantMap = addTenantToServiceMap(deployedChannelName, channelMap)
         try {
             return channelDestinationTransformer(
-                tenantMap[MirthKey.TENANT_MNEMONIC.code] as String,
+                sourceMap[MirthKey.TENANT_MNEMONIC.code] as String,
                 msg,
                 sourceMap,
-                tenantMap
+                channelMap
             )
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during destinationTransformer: ${e.message}" }
@@ -158,26 +161,25 @@ abstract class DestinationService(override val rootName: String, serviceFactory:
      *
      * Next channel stage: Response Transformer, Postprocessor, or (None).
      *
-     * @param deployedChannelName pass in the Mirth global variable called channelName.
+     * @param unusedValue Deprecated, unused field that Mirth is providing.
      * @param msg a string value from Mirth.
-     * @param sourceMap the sourceMap from Mirth
-     * @param channelMap the channelMap from Mirth, including data collected in the serviceMap from earlier stages.
+     * @param sourceMap the sourceMap from Mirth, including data collected in the serviceMap from earlier stages.
+     * @param channelMap the channelMap from Mirth
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a list of Mirth response data to pass to the next channel stage.
      */
     fun destinationWriter(
-        deployedChannelName: String,
+        unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthResponse {
-        val tenantMap = addTenantToServiceMap(deployedChannelName, channelMap)
         try {
             return channelDestinationWriter(
-                tenantMap[MirthKey.TENANT_MNEMONIC.code] as String,
+                sourceMap[MirthKey.TENANT_MNEMONIC.code] as String,
                 msg,
                 sourceMap,
-                tenantMap
+                channelMap
             )
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during destinationWriter: ${e.message}" }
@@ -209,16 +211,18 @@ abstract class DestinationService(override val rootName: String, serviceFactory:
      * Gets the list of resources to publish from the channelMap[MirthKey.RESOURCES_TRANSFORMED] entry.
      * To construct success or failure messages, derives the resourceType, such as "Observation", from clazz.
      * Publishes the list using publishResources(resourceList, resourceType).
+     * @param sourceMap the Mirth sourceMap from the channelDestinationWriter()
      * @param channelMap the Mirth channelMap from the channelDestinationWriter()
      * @param resourceType label for the resource type, such as "Observation"; default if not supplied is "Resource".
      * @return [MirthResponse] status ERROR if nothing to publish, or return from publishResource()
      */
     @Suppress("UNCHECKED_CAST")
     protected fun <T : Resource<T>> publishTransformed(
-        channelMap: Map<String, Any>,
+        sourceMap: Map<String, Any>,
+        channelMap: Map<String, Any?>,
         resourceType: String = "Resource"
     ): MirthResponse {
-        val tenantMnemonic = channelMap[MirthKey.TENANT_MNEMONIC.code] as String
+        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code] as String
         val resourceList = channelMap[MirthKey.RESOURCES_TRANSFORMED.code]?.let { it as List<T> }
         if (resourceList.isNullOrEmpty()) {
             return MirthResponse(
@@ -272,7 +276,7 @@ abstract class DestinationService(override val rootName: String, serviceFactory:
         resourceType: String? = "Resource",
         successDataMap: Map<String, Any>? = null
     ): MirthResponse {
-        if (!serviceFactory.publishService().publishFHIRResources(tenantMnemonic, resourceList)) {
+        if (!publishService.publishFHIRResources(tenantMnemonic, resourceList)) {
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = JacksonUtil.writeJsonValue(resourceList),
