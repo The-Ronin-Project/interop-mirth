@@ -5,18 +5,18 @@
   <description>Version 1.0.0
 
 Load FHIR Location resources from a tenant, transform them to the Ronin FHIR profile, validates them, and write them to the Ronin database.</description>
-  <revision>4</revision>
+  <revision>5</revision>
   <sourceConnector version="3.11.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.js.JavaScriptReceiverProperties" version="3.11.0">
       <pluginProperties/>
       <pollConnectorProperties version="3.11.0">
-        <pollingType>INTERVAL</pollingType>
+        <pollingType>TIME</pollingType>
         <pollOnStart>true</pollOnStart>
-        <pollingFrequency>86400</pollingFrequency>
-        <pollingHour>0</pollingHour>
-        <pollingMinute>0</pollingMinute>
+        <pollingFrequency>5000</pollingFrequency>
+        <pollingHour>1</pollingHour>
+        <pollingMinute>30</pollingMinute>
         <cronJobs/>
         <pollConnectorPropertiesAdvanced>
           <weekly>true</weekly>
@@ -215,7 +215,7 @@ return;</undeployScript>
     <metadata>
       <enabled>false</enabled>
       <lastModified>
-        <time>1663623352914</time>
+        <time>1671568767052</time>
         <timezone>America/Los_Angeles</timezone>
       </lastModified>
       <pruningSettings>
