@@ -12,6 +12,7 @@ import com.projectronin.interop.mirth.channels.client.data.datatypes.identifier
 import com.projectronin.interop.mirth.channels.client.data.datatypes.name
 import com.projectronin.interop.mirth.channels.client.data.datatypes.participant
 import com.projectronin.interop.mirth.channels.client.data.datatypes.reference
+import com.projectronin.interop.mirth.channels.client.data.primitives.date
 import com.projectronin.interop.mirth.channels.client.data.primitives.daysFromNow
 import com.projectronin.interop.mirth.channels.client.data.resources.appointment
 import com.projectronin.interop.mirth.channels.client.data.resources.condition
@@ -66,12 +67,18 @@ class AppointmentByPractitionerLoadTest :
         val locationFhirId = MockEHRTestData.add(location)
 
         val patient1 = patient {
+            birthDate of date {
+                year of 1990
+                month of 1
+                day of 3
+            }
             identifier of listOf(
                 identifier {
                     system of "mockPatientInternalSystem"
                 },
                 identifier {
                     system of "mockEHRMRNSystem"
+                    value of "1000000001"
                 }
             )
             name of listOf(
@@ -106,8 +113,10 @@ class AppointmentByPractitionerLoadTest :
                     coding {
                         system of "http://terminology.hl7.org/CodeSystem/condition-clinical"
                         code of "active"
+                        display of "Active"
                     }
                 )
+                text of "Active"
             }
             category of listOf(
                 codeableConcept {
@@ -233,8 +242,10 @@ class AppointmentByPractitionerLoadTest :
                     coding {
                         system of "http://terminology.hl7.org/CodeSystem/condition-clinical"
                         code of "active"
+                        display of "Active"
                     }
                 )
+                text of "Active"
             }
             category of listOf(
                 codeableConcept {

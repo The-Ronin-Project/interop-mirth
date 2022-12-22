@@ -94,7 +94,7 @@ object MockOCIServerClient {
 
         // We really should use OCI's ParamEncoder.encode, but that adds a huge demendency on the OCI SDK for one call
         // so this is a hacky version of that
-        return "fhir-r4/date=$date/tenant_id=$testTenant/resource_type=$resourceType/$udpID.json".replace("/", "%2F")
+        return "ehr/${resourceType.lowercase()}/fhir_tenant_id=$testTenant/_date=$date/$udpID.json".replace("/", "%2F")
     }
 
     private fun setPutExpectation(objectName: String) {
