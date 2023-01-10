@@ -5,15 +5,15 @@ import com.projectronin.interop.ehr.AppointmentService
 import com.projectronin.interop.ehr.IdentifierService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
-import com.projectronin.interop.ehr.outputs.FindPractitionerAppointmentsResponse
+import com.projectronin.interop.ehr.outputs.AppointmentsWithNewPatients
 import com.projectronin.interop.fhir.r4.datatype.Identifier
-import com.projectronin.interop.fhir.r4.datatype.Participant
 import com.projectronin.interop.fhir.r4.datatype.Reference
 import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
 import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Appointment
+import com.projectronin.interop.fhir.r4.resource.Participant
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.AppointmentStatus
 import com.projectronin.interop.fhir.r4.valueset.ParticipationStatus
@@ -102,7 +102,7 @@ class AppointmentByPractitionerNightlyLoadTest {
             status = AppointmentStatus.BOOKED.asCode()
         )
         val appointments = listOf(appt1, appt2)
-        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointments)
+        val findPractitionersResponse = AppointmentsWithNewPatients(appointments)
 
         val mockAppointmentService = mockk<AppointmentService> {
             every { findLocationAppointments(tenant, any(), any(), any()) } returns findPractitionersResponse
@@ -148,7 +148,7 @@ class AppointmentByPractitionerNightlyLoadTest {
         )
         val appointmentlist = listOf(appt1, appt2)
         val findPractitionersResponse =
-            FindPractitionerAppointmentsResponse(appointmentlist, listOf(Patient(id = Id(value = "patty"))))
+            AppointmentsWithNewPatients(appointmentlist, listOf(Patient(id = Id(value = "patty"))))
 
         val mockAppointmentService = mockk<AppointmentService> {
             every { findLocationAppointments(tenant, any(), any(), any()) } returns findPractitionersResponse
@@ -200,7 +200,7 @@ class AppointmentByPractitionerNightlyLoadTest {
                     any(),
                     any()
                 )
-            } returns FindPractitionerAppointmentsResponse(appointmentList, listOf(Patient(id = Id(value = null))))
+            } returns AppointmentsWithNewPatients(appointmentList, listOf(Patient(id = Id(value = null))))
         }
         val mockIdentifierService = mockk<IdentifierService> {
             every { getPractitionerProviderIdentifier(tenant, any()) } returns mockk<Identifier> {
@@ -228,7 +228,7 @@ class AppointmentByPractitionerNightlyLoadTest {
                     any(),
                     any()
                 )
-            } returns FindPractitionerAppointmentsResponse(appointmentList)
+            } returns AppointmentsWithNewPatients(appointmentList)
         }
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
@@ -264,7 +264,7 @@ class AppointmentByPractitionerNightlyLoadTest {
             status = AppointmentStatus.BOOKED.asCode()
         )
         val appointments = listOf(appt1)
-        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointments)
+        val findPractitionersResponse = AppointmentsWithNewPatients(appointments)
 
         val mockAppointmentService = mockk<AppointmentService> {
             every { findLocationAppointments(tenant, any(), any(), any()) } returns findPractitionersResponse
@@ -300,7 +300,7 @@ class AppointmentByPractitionerNightlyLoadTest {
             status = AppointmentStatus.BOOKED.asCode()
         )
         val appointments = listOf(appt1)
-        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointments, listOf(Patient()))
+        val findPractitionersResponse = AppointmentsWithNewPatients(appointments, listOf(Patient()))
 
         val mockAppointmentService = mockk<AppointmentService> {
             every { findLocationAppointments(tenant, any(), any(), any()) } returns findPractitionersResponse
@@ -332,7 +332,7 @@ class AppointmentByPractitionerNightlyLoadTest {
             status = AppointmentStatus.BOOKED.asCode()
         )
         val appointments = listOf(appt1)
-        val findPractitionersResponse = FindPractitionerAppointmentsResponse(appointments)
+        val findPractitionersResponse = AppointmentsWithNewPatients(appointments)
 
         val mockAppointmentService = mockk<AppointmentService> {
             every { findLocationAppointments(tenant, any(), any(), any()) } returns findPractitionersResponse
