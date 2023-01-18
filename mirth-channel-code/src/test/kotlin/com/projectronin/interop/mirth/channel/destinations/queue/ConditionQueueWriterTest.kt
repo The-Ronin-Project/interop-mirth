@@ -1,9 +1,8 @@
-package com.projectronin.interop.mirth.channel.destinations
+package com.projectronin.interop.mirth.channel.destinations.queue
 
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.ronin.TransformManager
-import com.projectronin.interop.mirth.channel.destinations.queue.ConditionQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.publishers.PublishService

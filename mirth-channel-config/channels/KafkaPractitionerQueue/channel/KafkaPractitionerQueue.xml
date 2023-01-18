@@ -1,10 +1,10 @@
 <channel version="3.11.0">
   <id>f2956ab4-9c8b-4dbe-b788-12726f91454d</id>
   <nextMetaDataId>5</nextMetaDataId>
-  <name>KafkaPatientQueue</name>
+  <name>KafkaPractitionerQueue</name>
   <description>Version 1.0.0.
 
-Reads Patients off the Kafka Queue. Transforms and publishes them to the clinical data store.</description>
+Reads Practitioners off the Kafka Queue. Transforms and publishes them to the clinical data store.</description>
   <revision>1</revision>
   <sourceConnector version="3.11.0">
     <metaDataId>0</metaDataId>
@@ -91,7 +91,7 @@ Reads Patients off the Kafka Queue. Transforms and publishes them to the clinica
   <destinationConnectors>
     <connector version="3.11.0">
       <metaDataId>1</metaDataId>
-      <name>Publish Patients</name>
+      <name>Publish Practitioners</name>
       <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="3.11.0">
         <pluginProperties/>
         <destinationConnectorProperties version="3.11.0">
@@ -168,7 +168,7 @@ return message;</preprocessingScript>
 return;</postprocessingScript>
   <deployScript>// @apiinfo &quot;&quot;&quot;Get the channel configuration and services.&quot;&quot;&quot;
 
-var channelService = Packages.com.projectronin.interop.mirth.channel.KafkaPatientQueue.Companion.create();
+var channelService = Packages.com.projectronin.interop.mirth.channel.KafkaPractitionerQueue.Companion.create();
 onDeploy(channelService)
 </deployScript>
   <undeployScript>// This script executes once when the channel is undeployed

@@ -15,7 +15,7 @@ import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
 
 /**
- * This channel reads off the API Queue for Patient messages, transforms them into RoninPatient and publishes them
+ * This channel reads off the Kafka Queue for Patient messages, transforms them into RoninPatient and publishes them
  */
 @Component
 class KafkaPatientQueue(

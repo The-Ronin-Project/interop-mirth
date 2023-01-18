@@ -2,11 +2,9 @@ package com.projectronin.interop.mirth.channel.destinations.queue
 
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.Practitioner
-import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.publishers.PublishService
-import com.projectronin.interop.tenant.config.TenantService
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -16,19 +14,17 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class PractitionerQueueWriterTest {
+class PractitionerTenantlessQueueWriterTest {
     private val tenantId = "tenant"
 
     private lateinit var mockPublishService: PublishService
-    private lateinit var writer: PractitionerQueueWriter
+    private lateinit var writer: PractitionerTenantlessQueueWriter
 
     @BeforeEach
     fun setup() {
         mockPublishService = mockk()
 
-        val tenantService = mockk<TenantService>()
-        val transformManager = mockk<TransformManager>()
-        writer = PractitionerQueueWriter(tenantService, transformManager, mockPublishService)
+        writer = PractitionerTenantlessQueueWriter(mockPublishService)
     }
 
     @AfterEach
@@ -53,10 +49,10 @@ class PractitionerQueueWriterTest {
 
         every { mockPublishService.publishFHIRResources(tenantId, any<List<Practitioner>>()) } returns true
 
-        val response = writer.channelDestinationWriter(
-            tenantId,
+        val response = writer.destinationWriter(
+            "",
             mockSerialized,
-            emptyMap(),
+            mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId),
             channelMap
         )
         assertEquals("Published 1 Practitioner(s)", response.message)
