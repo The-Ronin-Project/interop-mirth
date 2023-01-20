@@ -15,6 +15,12 @@ jobs:
         with:
           java-version: 17
           distribution: zulu
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Install DataDog CI
+        run:
+          npm install -g @datadog/datadog-ci
       - uses: gradle/gradle-build-action@v2
       - name: Install Docker Compose
         run: |
@@ -50,3 +56,11 @@ jobs:
         with:
           name: test-results
           path: /runner/_work/mirth-channel-config/mirth-channel-config/build/tests
+
+      - name: Upload report to DataDog
+        if: always() && !cancelled()
+        env:
+          DD_ENV: ci
+          DATADOG_SITE: datadoghq.com
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+        run: datadog-ci junit upload --service mirth-channel-it ./mirth-channel-config/build/test-results/it
