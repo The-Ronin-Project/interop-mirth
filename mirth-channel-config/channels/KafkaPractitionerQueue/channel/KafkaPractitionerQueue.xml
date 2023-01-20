@@ -1,5 +1,5 @@
 <channel version="3.11.0">
-  <id>f2956ab4-9c8b-4dbe-b788-12726f91454d</id>
+  <id>1eaf4bd8-7f32-44d7-8697-0b758e7c581e</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>KafkaPractitionerQueue</name>
   <description>Version 1.0.0.
@@ -215,8 +215,8 @@ return;</undeployScript>
     <metadata>
       <enabled>false</enabled>
       <lastModified>
-        <time>1668721546854</time>
-        <timezone>America/Chicago</timezone>
+        <time>1674247657670</time>
+        <timezone>America/Los_Angeles</timezone>
       </lastModified>
       <pruningSettings>
         <pruneMetaDataDays>60</pruneMetaDataDays>
