@@ -194,5 +194,6 @@ abstract class BaseMirthChannelTest(
         }
     }
 
+    @Deprecated("Use waitForMessage to give Mirth time to receive messages", ReplaceWith("waitForMessage(count, 1000)"))
     protected fun pause(time: Long = 1000) = runBlocking { delay(time) }
 }

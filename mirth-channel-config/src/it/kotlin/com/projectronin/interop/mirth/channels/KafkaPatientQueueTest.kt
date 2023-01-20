@@ -26,8 +26,9 @@ class KafkaPatientQueueTest : BaseMirthChannelTest(kafkaPatientQueueChannelName,
         assertEquals(0, getAidboxResourceCount(patientType))
         // start channel
         deployAndStartChannel(false)
-        // just wait a moment
-        pause()
+        // make sure a message queued in mirth
+        waitForMessage(1)
+
         val list = MirthClient.getChannelMessageIds(testChannelId)
         assertEquals(0, list.size)
 
@@ -71,6 +72,9 @@ class KafkaPatientQueueTest : BaseMirthChannelTest(kafkaPatientQueueChannelName,
 
         // start channel
         deployAndStartChannel(true)
+        // make sure a message queued in mirth
+        waitForMessage(1)
+
         val list = MirthClient.getChannelMessageIds(testChannelId)
         assertEquals(1, list.size)
 

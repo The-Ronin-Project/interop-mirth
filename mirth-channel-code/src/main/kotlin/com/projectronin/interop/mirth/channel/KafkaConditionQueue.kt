@@ -31,7 +31,7 @@ class KafkaConditionQueue(
     }
 
     override val rootName = "KafkaConditionQueue"
-    override val resourceType = ResourceType.PATIENT
+    override val resourceType = ResourceType.CONDITION
 
     override fun deserializeAndTransform(string: String, tenant: Tenant): Condition {
         val condition = JacksonUtil.readJsonObject(string, Condition::class)

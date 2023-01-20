@@ -68,6 +68,8 @@ class KafkaConditionQueueTest : BaseMirthChannelTest(kafkaConditionQueueChannelN
 
         // start channel
         deployAndStartChannel(true)
+        // make sure a message queued in mirth
+        waitForMessage(1)
 
         val list = MirthClient.getChannelMessageIds(testChannelId)
         assertEquals(1, list.size)
@@ -88,8 +90,9 @@ class KafkaConditionQueueTest : BaseMirthChannelTest(kafkaConditionQueueChannelN
         assertEquals(0, getAidboxResourceCount(conditionType))
         // start channel
         deployAndStartChannel(false)
-        // just wait a moment
-        pause()
+        // make sure a message queued in mirth
+        waitForMessage(1)
+
         val list = MirthClient.getChannelMessageIds(testChannelId)
         assertEquals(0, list.size)
         // nothing added

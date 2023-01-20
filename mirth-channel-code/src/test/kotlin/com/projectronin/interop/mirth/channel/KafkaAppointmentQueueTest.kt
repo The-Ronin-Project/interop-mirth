@@ -2,10 +2,10 @@ package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.common.resource.ResourceType
-import com.projectronin.interop.fhir.r4.resource.Condition
+import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.ronin.TransformManager
-import com.projectronin.interop.fhir.ronin.resource.RoninConditions
-import com.projectronin.interop.mirth.channel.destinations.queue.ConditionTenantlessQueueWriter
+import com.projectronin.interop.fhir.ronin.resource.RoninAppointment
+import com.projectronin.interop.mirth.channel.destinations.queue.AppointmentTenantlessQueueWriter
 import com.projectronin.interop.queue.kafka.KafkaQueueService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
@@ -20,13 +20,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
-class KafkaConditionQueueTest {
+class KafkaAppointmentQueueTest {
     private val mockTenant = mockk<Tenant> {
         every { mnemonic } returns "testmnemonic"
     }
     private lateinit var mockTransformManager: TransformManager
-    private lateinit var mockRoninCondition: RoninConditions
-    private lateinit var channel: KafkaConditionQueue
+    private lateinit var mockRoninAppointment: RoninAppointment
+    private lateinit var channel: KafkaAppointmentQueue
 
     @AfterEach
     fun unMock() {
@@ -36,19 +36,19 @@ class KafkaConditionQueueTest {
     @BeforeEach
     fun setup() {
         mockTransformManager = mockk()
-        mockRoninCondition = mockk()
+        mockRoninAppointment = mockk()
         val tenantService = mockk<TenantService> {
             every { getTenantForMnemonic("testmnemonic") } returns mockTenant
         }
         val queueService = mockk<KafkaQueueService>()
-        val queueWriter = mockk<ConditionTenantlessQueueWriter>()
+        val queueWriter = mockk<AppointmentTenantlessQueueWriter>()
 
-        channel = KafkaConditionQueue(tenantService, queueService, queueWriter, mockTransformManager, mockRoninCondition)
+        channel = KafkaAppointmentQueue(tenantService, queueService, queueWriter, mockTransformManager, mockRoninAppointment)
     }
 
     @Test
     fun `create channel - works`() {
-        assertEquals(ResourceType.CONDITION, channel.resourceType)
+        assertEquals(ResourceType.APPOINTMENT, channel.resourceType)
         assertEquals(1, channel.destinations.size)
     }
 
@@ -56,30 +56,30 @@ class KafkaConditionQueueTest {
     fun `deserializeAndTransform - works`() {
         mockkObject(JacksonUtil)
 
-        val mockCondition = mockk<Condition>()
-        every { JacksonUtil.readJsonObject<Condition>(any(), any()) } returns mockCondition
+        val mockAppointment = mockk<Appointment>()
+        every { JacksonUtil.readJsonObject<Appointment>(any(), any()) } returns mockAppointment
 
-        val roninCondition = mockk<Condition>()
+        val roninAppointment = mockk<Appointment>()
         every {
             mockTransformManager.transformResource(
-                mockCondition,
-                mockRoninCondition,
+                mockAppointment,
+                mockRoninAppointment,
                 mockTenant
             )
-        } returns roninCondition
+        } returns roninAppointment
 
-        val transformedCondition = channel.deserializeAndTransform("conditionString", mockTenant)
-        assertEquals(roninCondition, transformedCondition)
+        val transformedAppointment = channel.deserializeAndTransform("conditionString", mockTenant)
+        assertEquals(roninAppointment, transformedAppointment)
     }
 
     @Test
     fun `deserializeAndTransform - fails`() {
         mockkObject(JacksonUtil)
 
-        val mockCondition = mockk<Condition>()
-        every { JacksonUtil.readJsonObject<Condition>(any(), any()) } returns mockCondition
+        val mockAppointment = mockk<Appointment>()
+        every { JacksonUtil.readJsonObject<Appointment>(any(), any()) } returns mockAppointment
 
-        every { mockTransformManager.transformResource(mockCondition, mockRoninCondition, mockTenant) } returns null
+        every { mockTransformManager.transformResource(mockAppointment, mockRoninAppointment, mockTenant) } returns null
 
         assertThrows<ResourcesNotTransformedException> {
             channel.deserializeAndTransform(
