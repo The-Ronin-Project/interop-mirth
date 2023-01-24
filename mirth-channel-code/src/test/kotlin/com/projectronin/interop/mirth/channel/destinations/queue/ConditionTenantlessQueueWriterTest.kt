@@ -5,6 +5,8 @@ import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.tenant.config.TenantService
+import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -16,14 +18,18 @@ import org.junit.jupiter.api.Test
 
 class ConditionTenantlessQueueWriterTest {
     private val tenantId = "tenant"
+    private val mockTenant = mockk<Tenant>()
 
+    private lateinit var mockTenantService: TenantService
     private lateinit var mockPublishService: PublishService
     private lateinit var writer: ConditionTenantlessQueueWriter
 
     @BeforeEach
     fun setup() {
         mockPublishService = mockk()
-
+        mockTenantService = mockk {
+            every { getTenantForMnemonic(tenantId) } returns mockTenant
+        }
         writer = ConditionTenantlessQueueWriter(mockPublishService)
     }
 

@@ -3,6 +3,7 @@ package com.projectronin.interop.mirth.channel.base
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.destinations.queue.TenantlessQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.queue.kafka.KafkaQueueService
@@ -15,11 +16,8 @@ import io.mockk.mockkObject
 import io.mockk.unmockkConstructor
 import io.mockk.unmockkObject
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
-import org.junit.jupiter.api.assertThrows
 
 class KafkaQueueTest {
     private val tenantId = "tenant"
@@ -27,6 +25,7 @@ class KafkaQueueTest {
     private val mockRoninDomainResource = mockk<TestResource>()
 
     private lateinit var mockTenantService: TenantService
+    private lateinit var mockTransformManager: TransformManager
     private lateinit var mockQueueService: KafkaQueueService
     private lateinit var mockQueueWriter: TenantlessQueueWriter<TestResource>
     private lateinit var channel: KafkaTestQueue
@@ -34,11 +33,12 @@ class KafkaQueueTest {
     @BeforeEach
     fun setup() {
         mockQueueService = mockk()
+        mockTransformManager = mockk()
         mockTenantService = mockk {
             every { getTenantForMnemonic(tenantId) } returns mockTenant
         }
         mockQueueWriter = mockk()
-        channel = KafkaTestQueue(mockTenantService, mockQueueService, mockQueueWriter)
+        channel = KafkaTestQueue(mockTenantService, mockTransformManager, mockQueueService, mockQueueWriter)
         mockkObject(JacksonManager)
     }
 
@@ -89,32 +89,13 @@ class KafkaQueueTest {
         mockkObject(JacksonManager)
         every { JacksonManager.objectMapper.writeValueAsString(mockRoninDomainResource) } returns transformedResource
 
-        val channel = KafkaTestQueue(mockTenantService, mockQueueService, mockQueueWriter, mockRoninDomainResource)
+        val channel = KafkaTestQueue(mockTenantService, mockTransformManager, mockQueueService, mockQueueWriter, mockRoninDomainResource)
         val transformedMessage =
             channel.sourceTransformer("name", message, mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId), emptyMap())
         assertEquals(fhirID, transformedMessage.dataMap[MirthKey.FHIR_ID.code])
         assertEquals(transformedResource, transformedMessage.message)
         unmockkConstructor(JsonMapper::class)
         unmockkObject(JacksonManager)
-    }
-
-    @Test
-    fun codeCov() {
-        val channel = KafkaTestQueue(mockTenantService, mockQueueService, mockQueueWriter, mockRoninDomainResource)
-        assertNotNull(channel.destinations["publish"])
-        assertDoesNotThrow {
-            channel.onDeploy("ronin-KafkaPatientQueue", emptyMap())
-        }
-        assertThrows<Exception> {
-            channel.onDeploy("thisnameiscompletelyandutterlymcuhtoolongohno", emptyMap())
-        }
-
-        assertThrows<Exception> {
-            KafkaTestQueueBad(
-                mockTenantService, mockQueueService, mockQueueWriter,
-                mockRoninDomainResource
-            ).onDeploy("thisnameiscompletelyandutterlymcuhtoolongohno", emptyMap())
-        }
     }
 
     @Test
@@ -131,7 +112,7 @@ class KafkaQueueTest {
         mockkObject(JacksonManager)
         every { JacksonManager.objectMapper.writeValueAsString(mockRoninDomainResource) } returns transformedResource
 
-        val channel = KafkaTestQueue(mockTenantService, mockQueueService, mockQueueWriter, mockRoninDomainResource)
+        val channel = KafkaTestQueue(mockTenantService, mockTransformManager, mockQueueService, mockQueueWriter, mockRoninDomainResource)
         val transformedMessage =
             channel.sourceTransformer("name", message, mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId), emptyMap())
         assertEquals(fhirID, transformedMessage.dataMap[MirthKey.FHIR_ID.code])
@@ -143,6 +124,7 @@ class KafkaQueueTest {
 
 class KafkaTestQueue(
     tenantService: TenantService,
+    transformManager: TransformManager,
     queueService: KafkaQueueService,
     queueWriter: TenantlessQueueWriter<TestResource>,
     private val mockRoninDomainResource: TestResource = mockk()
@@ -155,6 +137,7 @@ class KafkaTestQueue(
 
 class KafkaTestQueueBad(
     tenantService: TenantService,
+    transformManager: TransformManager,
     queueService: KafkaQueueService,
     queueWriter: TenantlessQueueWriter<TestResource>,
     private val mockRoninDomainResource: TestResource = mockk()

@@ -3,9 +3,8 @@ package com.projectronin.interop.mirth.channel.destinations.queue
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.DomainResource
-import com.projectronin.interop.mirth.channel.enums.MirthKey
+import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
-import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.model.MirthResponse
 import com.projectronin.interop.publishers.PublishService
 import kotlin.reflect.KClass
@@ -17,15 +16,15 @@ import kotlin.reflect.KClass
 abstract class TenantlessQueueWriter<T : DomainResource<T>>(
     private val publishService: PublishService,
     private val type: KClass<out T>
-) {
-    fun destinationWriter(
-        deployedChannelName: String,
+) : TenantlessDestinationService() {
+
+    override fun channelDestinationWriter(
+        tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthResponse {
         val resource = JacksonManager.objectMapper.readValue(msg, type.java)
-        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code] as String
         val resourceList = listOf(resource)
         val resourceType = type.simpleName
         if (!publishService.publishFHIRResources(tenantMnemonic, resourceList)) {
@@ -41,14 +40,5 @@ abstract class TenantlessQueueWriter<T : DomainResource<T>>(
             message = "Published ${resourceList.size} $resourceType(s)",
             dataMap = emptyMap()
         )
-    }
-
-    fun destinationTransformer(
-        deployedChannelName: String,
-        msg: String,
-        sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
-    ): MirthMessage {
-        return MirthMessage(msg)
     }
 }

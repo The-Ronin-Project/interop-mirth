@@ -1,9 +1,12 @@
 package com.projectronin.interop.mirth.channel.destinations.queue
 
 import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.tenant.config.TenantService
+import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
@@ -15,13 +18,20 @@ import org.junit.jupiter.api.Test
 
 class TenantlessQueueWriterTest {
     private val tenantId = "tenant"
+    private val mockTenant = mockk<Tenant>()
 
+    private lateinit var mockTenantService: TenantService
+    private lateinit var mockTransformManager: TransformManager
     private lateinit var mockPublishService: PublishService
     private lateinit var writer: TenantlessQueueWriter<TestResource>
 
     @BeforeEach
     fun setup() {
         mockPublishService = mockk()
+        mockTransformManager = mockk()
+        mockTenantService = mockk {
+            every { getTenantForMnemonic(tenantId) } returns mockTenant
+        }
         writer = object : TenantlessQueueWriter<TestResource>(mockPublishService, TestResource::class) {}
     }
 
@@ -60,7 +70,7 @@ class TenantlessQueueWriterTest {
 
     @Test
     fun `destination transformer`() {
-        val message = writer.destinationTransformer("name", "message", emptyMap(), emptyMap())
+        val message = writer.channelDestinationTransformer("name", "message", emptyMap(), emptyMap())
         assertEquals("message", message.message)
     }
 

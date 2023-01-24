@@ -19,47 +19,36 @@ abstract class KafkaQueue<K : DomainResource<K>>(
     private val tenantService: TenantService,
     private val queueService: KafkaQueueService,
     queueWriter: TenantlessQueueWriter<K>
-) {
+) : TenantlessSourceService() {
     protected val publishService = "publish"
     open val limit = 20
     abstract val resourceType: ResourceType
-    abstract val rootName: String
-    val destinations by lazy {
+
+    override val destinations by lazy {
         mapOf(
             publishService to queueWriter
         )
     }
 
-    fun onDeploy(deployedChannelName: String, serviceMap: Map<String, Any>): Map<String, Any> {
-        require(rootName.length <= 31) { "Channel root name length is over the limit of 31" }
-        require(deployedChannelName.length <= 40) { "Deployed channel name length is over the limit of 40" }
-        return serviceMap
-    }
-
-    fun sourceReader(
-        deployedChannelName: String,
-        serviceMap: Map<String, Any>
-    ): List<MirthMessage> {
+    override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
         return queueService.dequeueApiMessages("", resourceType, limit).map {
             MirthMessage(it.text, mapOf(MirthKey.TENANT_MNEMONIC.code to it.tenant))
         }
     }
 
-    fun sourceTransformer(
-        deployedChannelName: String,
+    override fun channelSourceTransformer(
+        tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthMessage {
-        val tenantId = sourceMap[MirthKey.TENANT_MNEMONIC.code] as String
-        val tenant =
-            tenantService.getTenantForMnemonic(tenantId) ?: throw IllegalArgumentException("Unknown tenant: $tenantId")
+        val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
         val transformed = deserializeAndTransform(msg, tenant)
         return MirthMessage(
             message = JacksonManager.objectMapper.writeValueAsString(transformed),
             dataMap = mapOf(
                 MirthKey.FHIR_ID.code to (transformed.id?.value ?: ""),
-                MirthKey.TENANT_MNEMONIC.code to tenantId
+                MirthKey.TENANT_MNEMONIC.code to tenantMnemonic
             )
         )
     }
