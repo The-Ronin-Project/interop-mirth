@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.spring
 
-import com.projectronin.interop.kafka.config.KafkaConfig
+import com.projectronin.interop.kafka.spring.KafkaConfig
 import org.ktorm.database.Database
 import org.ktorm.support.mysql.MySqlDialect
 import org.springframework.beans.factory.annotation.Qualifier
