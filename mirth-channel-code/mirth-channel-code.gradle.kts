@@ -9,7 +9,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.interop.aidbox)
     implementation(libs.interop.common)
     implementation(libs.interop.commonHttp)
     implementation(libs.interop.commonJackson)
@@ -17,8 +16,9 @@ dependencies {
     implementation(libs.interop.ehr.epic)
     implementation(libs.interop.fhir)
     implementation(libs.interop.publishers)
-    implementation(libs.interop.kafka)
-    implementation(libs.interop.datalake)
+    implementation(libs.interop.publishers.aidbox)
+    implementation(libs.interop.publishers.datalake)
+    implementation(libs.interop.publishers.kafka)
     implementation(libs.interop.queue.api)
     implementation(libs.interop.queue.db)
     implementation(libs.interop.queue.kafka)
@@ -27,7 +27,6 @@ dependencies {
     implementation(libs.interop.ehr.tenant)
     implementation(libs.interop.validation.client)
     implementation(libs.spring.vault.core)
-    implementation(libs.interop.queue.kafka)
     implementation("org.springframework:spring-context")
     implementation("org.springframework.boot:spring-boot-autoconfigure:2.7.6")
 

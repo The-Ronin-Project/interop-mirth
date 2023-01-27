@@ -27,7 +27,7 @@ dependencies {
     testImplementation(libs.snakeyaml) {
         isForce = true
     }
-    testImplementation(libs.interop.aidbox)
+    testImplementation(libs.interop.publishers.aidbox)
     testImplementation(libs.interop.common)
     testImplementation(libs.interop.commonJackson)
 
@@ -42,4 +42,6 @@ dependencies {
     implementation(project(":mirth-channel-code"))
 
     itImplementation(libs.mockserver.client.java)
+    itImplementation(libs.interop.queue.kafka)
+    itImplementation(libs.interop.publishers.kafka)
 }

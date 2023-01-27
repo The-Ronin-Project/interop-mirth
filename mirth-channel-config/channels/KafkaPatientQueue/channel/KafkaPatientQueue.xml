@@ -5,7 +5,7 @@
   <description>Version 1.0.0.
 
 Reads Patients off the Kafka Queue. Transforms and publishes them to the clinical data store.</description>
-  <revision>1</revision>
+  <revision>4</revision>
   <sourceConnector version="3.11.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
@@ -185,14 +185,9 @@ return;</undeployScript>
     <storeAttachments>false</storeAttachments>
     <metaDataColumns>
       <metaDataColumn>
-        <name>SOURCE</name>
+        <name>TENANT</name>
         <type>STRING</type>
-        <mappingName>mirth_source</mappingName>
-      </metaDataColumn>
-      <metaDataColumn>
-        <name>TYPE</name>
-        <type>STRING</type>
-        <mappingName>mirth_type</mappingName>
+        <mappingName>tenantMnemonic</mappingName>
       </metaDataColumn>
       <metaDataColumn>
         <name>FHIRID</name>
@@ -215,8 +210,8 @@ return;</undeployScript>
     <metadata>
       <enabled>false</enabled>
       <lastModified>
-        <time>1668721546854</time>
-        <timezone>America/Chicago</timezone>
+        <time>1674759068439</time>
+        <timezone>America/Los_Angeles</timezone>
       </lastModified>
       <pruningSettings>
         <pruneMetaDataDays>60</pruneMetaDataDays>

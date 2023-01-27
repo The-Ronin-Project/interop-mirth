@@ -1,22 +1,22 @@
 <channel version="3.11.0">
-  <id>f2956ab5-9c8c-4dbf-b789-12726f91454e</id>
+  <id>83ead971-6f47-4ff9-bc59-e6a5b595522b</id>
   <nextMetaDataId>5</nextMetaDataId>
-  <name>KafkaAppointmentQueue</name>
+  <name>PatientDiscovery</name>
   <description>Version 1.0.0.
 
-Reads Appointments off the Kafka Queue. Transforms and publishes them to the clinical data store.</description>
-  <revision>4</revision>
+Uses a set list of locations to find patients with upcoming appointments and triggers the nightly load</description>
+  <revision>1</revision>
   <sourceConnector version="3.11.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.js.JavaScriptReceiverProperties" version="3.11.0">
       <pluginProperties/>
       <pollConnectorProperties version="3.11.0">
-        <pollingType>INTERVAL</pollingType>
+        <pollingType>TIME</pollingType>
         <pollOnStart>true</pollOnStart>
-        <pollingFrequency>300000</pollingFrequency>
-        <pollingHour>0</pollingHour>
-        <pollingMinute>0</pollingMinute>
+        <pollingFrequency>5000</pollingFrequency>
+        <pollingHour>2</pollingHour>
+        <pollingMinute>30</pollingMinute>
         <cronJobs/>
         <pollConnectorPropertiesAdvanced>
           <weekly>true</weekly>
@@ -91,7 +91,7 @@ Reads Appointments off the Kafka Queue. Transforms and publishes them to the cli
   <destinationConnectors>
     <connector version="3.11.0">
       <metaDataId>1</metaDataId>
-      <name>Publish Appointments</name>
+      <name>Request Patients</name>
       <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="3.11.0">
         <pluginProperties/>
         <destinationConnectorProperties version="3.11.0">
@@ -114,7 +114,7 @@ Reads Appointments off the Kafka Queue. Transforms and publishes them to the cli
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
         </destinationConnectorProperties>
-        <script>return destinationWriter(&quot;publish&quot;);</script>
+        <script>return destinationWriter(&quot;Kafka&quot;);</script>
       </properties>
       <transformer version="3.11.0">
         <elements/>
@@ -168,7 +168,7 @@ return message;</preprocessingScript>
 return;</postprocessingScript>
   <deployScript>// @apiinfo &quot;&quot;&quot;Get the channel configuration and services.&quot;&quot;&quot;
 
-var channelService = Packages.com.projectronin.interop.mirth.channel.KafkaAppointmentQueue.Companion.create();
+var channelService = Packages.com.projectronin.interop.mirth.channel.PatientDiscovery.Companion.create();
 onDeploy(channelService)
 </deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
@@ -210,7 +210,7 @@ return;</undeployScript>
     <metadata>
       <enabled>false</enabled>
       <lastModified>
-        <time>1674759122610</time>
+        <time>1674674041925</time>
         <timezone>America/Los_Angeles</timezone>
       </lastModified>
       <pruningSettings>
