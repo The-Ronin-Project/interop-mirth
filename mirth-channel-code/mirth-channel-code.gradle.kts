@@ -23,6 +23,7 @@ dependencies {
     implementation(libs.interop.queue.db)
     implementation(libs.interop.queue.kafka)
     implementation(libs.interop.ehr.fhir.ronin)
+    implementation(libs.bundles.interop.kafka.events)
 
     implementation(libs.interop.ehr.tenant)
     implementation(libs.interop.validation.client)

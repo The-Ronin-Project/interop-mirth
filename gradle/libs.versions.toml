@@ -21,6 +21,8 @@ interop-queue-db = "com.projectronin.interop.queue:interop-queue-db:1.4.0"
 interop-queue-kafka = "com.projectronin.interop.queue:interop-queue-kafka:1.4.0"
 interop-queue-liquibase = "com.projectronin.interop.queue:interop-queue-liquibase:1.4.0"
 interop-validation-client = "com.projectronin.interop.validation:interop-validation-client:1.1.0"
+interop-kafka-event-resource-publish = "com.projectronin.contract.event:event-interop-resource-publish:1.0.1"
+interop-kafka-event-resource-load = "com.projectronin.contract.event:event-interop-resource-load:1.0.0"
 
 jackson-annotations = "com.fasterxml.jackson.core:jackson-annotations:2.14.1"
 jackson-core = "com.fasterxml.jackson.core:jackson-core:2.14.1"
@@ -56,6 +58,7 @@ xerces = "xerces:xercesImpl:2.12.2"
 test-mysql = ["mysql-connector-java", "testcontainers-mysql"]
 jackson = ["jackson-annotations", "jackson-core", "jackson-databind", "jackson-dataformat-xml", "jackson-dataformat-yaml", "jackson-datatype-jsr310", "jackson-module-kotlin"]
 ktor = ["ktor-client-auth", "ktor-client-cio", "ktor-client-content-negotiation", "ktor-client-core", "ktor-client-logging", "ktor-serialization-jackson"]
+interop-kafka-events = ["interop-kafka-event-resource-publish", "interop-kafka-event-resource-load" ]
 
 
 

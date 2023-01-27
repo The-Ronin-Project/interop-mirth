@@ -58,5 +58,10 @@ enum class MirthKey(val code: String) {
     /**
      * Count of individual failures encountered while operating on a list of resources.
      */
-    FAILURE_COUNT("failureCount");
+    FAILURE_COUNT("failureCount"),
+
+    /**
+     * Trigger type for an event, i.e. DataTrigger.NIGHTLY
+     */
+    DATA_TRIGGER("dataTrigger");
 }
