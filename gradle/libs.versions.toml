@@ -24,7 +24,7 @@ interop-validation-client = "com.projectronin.interop.validation:interop-validat
 interop-kafka-event-resource-publish = "com.projectronin.contract.event:event-interop-resource-publish:1.0.1"
 interop-kafka-event-resource-load = "com.projectronin.contract.event:event-interop-resource-load:1.0.0"
 
-jackson-annotations = "com.fasterxml.jackson.core:jackson-annotations:2.14.1"
+jackson-annotations = "com.fasterxml.jackson.core:jackson-annotations:2.14.2"
 jackson-core = "com.fasterxml.jackson.core:jackson-core:2.14.1"
 jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.14.1"
 jackson-dataformat-xml = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.14.1"
