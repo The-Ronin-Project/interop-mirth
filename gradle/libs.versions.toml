@@ -1,10 +1,10 @@
 [libraries]
 guava = "com.google.guava:guava:31.1-jre"
 
-interop-common = "com.projectronin.interop:interop-common:3.2.1"
-interop-commonHttp = "com.projectronin.interop:interop-common-http:3.2.1"
-interop-commonJackson = "com.projectronin.interop:interop-common-jackson:3.2.1"
-interop-commonTestDb = "com.projectronin.interop:interop-common-test-db:3.2.1"
+interop-common = "com.projectronin.interop:interop-common:3.2.2"
+interop-commonHttp = "com.projectronin.interop:interop-common-http:3.2.2"
+interop-commonJackson = "com.projectronin.interop:interop-common-jackson:3.2.2"
+interop-commonTestDb = "com.projectronin.interop:interop-common-test-db:3.2.2"
 interop-ehr-api = "com.projectronin.interop.ehr:interop-ehr:8.3.0"
 interop-ehr-epic = "com.projectronin.interop.ehr:interop-ehr-epic:8.3.0"
 interop-ehr-fhir-ronin = "com.projectronin.interop.ehr:interop-fhir-ronin:8.3.0"
