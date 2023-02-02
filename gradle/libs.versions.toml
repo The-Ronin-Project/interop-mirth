@@ -25,8 +25,8 @@ interop-kafka-event-resource-publish = "com.projectronin.contract.event:event-in
 interop-kafka-event-resource-load = "com.projectronin.contract.event:event-interop-resource-load:1.0.0"
 
 jackson-annotations = "com.fasterxml.jackson.core:jackson-annotations:2.14.2"
-jackson-core = "com.fasterxml.jackson.core:jackson-core:2.14.1"
-jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.14.1"
+jackson-core = "com.fasterxml.jackson.core:jackson-core:2.14.2"
+jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.14.2"
 jackson-dataformat-xml = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.14.1"
 jackson-dataformat-yaml = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.14.1"
 jackson-datatype-jsr310 = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2"
