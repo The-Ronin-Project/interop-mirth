@@ -63,5 +63,10 @@ enum class MirthKey(val code: String) {
     /**
      * Trigger type for an event, i.e. DataTrigger.NIGHTLY
      */
-    DATA_TRIGGER("dataTrigger");
+    DATA_TRIGGER("dataTrigger"),
+
+    /**
+     * Kafka Event type e.g InteropPublish
+     */
+    KAFKA_EVENT("kafkaEvent"),
 }

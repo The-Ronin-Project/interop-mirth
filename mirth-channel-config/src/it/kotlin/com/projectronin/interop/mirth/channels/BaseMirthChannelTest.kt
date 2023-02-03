@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.Identifier
 import com.projectronin.interop.fhir.r4.resource.Appointment
@@ -10,8 +11,10 @@ import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.r4.resource.PractitionerRole
 import com.projectronin.interop.fhir.r4.resource.Resource
+import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxClient
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
+import com.projectronin.interop.mirth.channels.client.KafkaWrapper
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
@@ -40,7 +43,8 @@ import kotlin.time.Duration.Companion.seconds
 abstract class BaseMirthChannelTest(
     private val channelName: String,
     private val aidboxResourceTypes: List<String>,
-    private val mockEHRResourceTypes: List<String> = emptyList()
+    private val mockEHRResourceTypes: List<String> = emptyList(),
+    private val kafkaQueueResourceTypes: List<ResourceType> = emptyList()
 ) {
     private val testChannelName = "$testTenant-$channelName"
     protected val testChannelId = installChannel()
@@ -49,6 +53,8 @@ abstract class BaseMirthChannelTest(
     fun setup() {
         clearMessages()
         deleteAidboxResources(*aidboxResourceTypes.toTypedArray())
+        // this adds 15 seconds per resource per test, so be judicious
+        drainKafkaEvents(*kafkaQueueResourceTypes.toTypedArray())
         deleteMockEHRResources(*mockEHRResourceTypes.toTypedArray())
         MockOCIServerClient.client.clear("PutObjectExpectation")
     }
@@ -126,6 +132,14 @@ abstract class BaseMirthChannelTest(
     protected fun deleteMockEHRResources(vararg resourceTypes: String) {
         resourceTypes.forEach {
             MockEHRClient.deleteAllResources(it)
+        }
+    }
+
+    protected fun drainKafkaEvents(vararg resourceTypes: ResourceType) {
+        resourceTypes.forEach {
+            KafkaWrapper.kafkaLoadService.retrieveLoadEvents(it)
+            KafkaWrapper.kafkaPublishService.retrievePublishEvents(it, DataTrigger.AD_HOC)
+            KafkaWrapper.kafkaPublishService.retrievePublishEvents(it, DataTrigger.NIGHTLY)
         }
     }
 

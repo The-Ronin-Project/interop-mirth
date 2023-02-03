@@ -17,7 +17,8 @@ const val patientLoadChannelName = "PatientLoad"
 class PatientLoadTest : BaseMirthChannelTest(
     patientLoadChannelName,
     listOf("Patient"),
-    listOf("Patient")
+    listOf("Patient"),
+    listOf(ResourceType.PATIENT)
 ) {
 
     @Test

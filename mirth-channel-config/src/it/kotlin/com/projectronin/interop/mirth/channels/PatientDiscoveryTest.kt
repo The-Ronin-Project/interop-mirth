@@ -25,7 +25,8 @@ const val patientDiscoverChannelName = "PatientDiscovery"
 class PatientDiscoveryTest : BaseMirthChannelTest(
     patientDiscoverChannelName,
     listOf("Location"),
-    listOf("Patient", "Appointment", "Location")
+    listOf("Patient", "Appointment", "Location"),
+    listOf(ResourceType.PATIENT)
 ) {
     private val patientType = "Patient"
 

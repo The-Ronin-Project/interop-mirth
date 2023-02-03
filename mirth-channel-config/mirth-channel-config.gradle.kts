@@ -44,4 +44,5 @@ dependencies {
     itImplementation(libs.mockserver.client.java)
     itImplementation(libs.interop.queue.kafka)
     itImplementation(libs.interop.publishers.kafka)
+    itImplementation(libs.bundles.interop.kafka.events)
 }
