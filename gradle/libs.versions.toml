@@ -36,7 +36,7 @@ jackson-module-kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:2.14
 jakarta-ws = "jakarta.ws.rs:jakarta.ws.rs-api:2.1.2"
 javafaker = "net.datafaker:datafaker:1.7.0"
 jersey-glassfish-client = "org.glassfish.jersey.core:jersey-client:2.35"
-junit-pioneer = "org.junit-pioneer:junit-pioneer:1.9.1"
+junit-pioneer = "org.junit-pioneer:junit-pioneer:2.0.0"
 kotlin-stdlib = "org.jetbrains.kotlin:kotlin-stdlib:1.8.0"
 
 ktor-client-auth = "io.ktor:ktor-client-auth:2.2.3"
