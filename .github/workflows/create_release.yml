@@ -7,10 +7,14 @@ on:
         type: string
         required: true
         default: 'main'
-      version:
-        description: 'Specific version to release as. Leave unset if discoverable'
-        type: string
-        required: false
+      increment:
+        description: 'Type of version increment to perform'
+        type: choice
+        required: true
+        options:
+          - Patch
+          - Minor
+          - Major
       skip_publish:
         description: 'Skip publishing (use if changelog failed)'
         type: boolean
@@ -40,25 +44,21 @@ jobs:
         if: ${{ github.event.inputs.skip_publish == 'false' }}
         run: ./gradlew build
 
-      - name: Get version
-        id: get-version
-        run: |
-          if [ ${{ github.event.inputs.version }} ]
-          then
-             VERSION=${{ github.event.inputs.version }}
-          else 
-             VERSION=$(./gradlew currentVersion | awk '{ if(/Project version:/) { print $3; exit } }' | cut -d\- -f1)
-          fi
-          echo "::set-output name=version::$VERSION"
-
       - name: Axion Release
         id: release
         if: ${{ github.event.inputs.skip_publish == 'false' }}
         run: |
           ./gradlew release \
-             -Prelease.forceVersion=${{ steps.get-version.outputs.version }} \
+             -Prelease.versionIncrementer=increment${{ github.event.inputs.increment }} \
              -Prelease.customUsername=${{ github.actor }} \
              -Prelease.customPassword=${{ github.token }}
+
+      - name: Get version.
+        id: get-version
+        run: |
+          VERSION=$(./gradlew currentVersion | awk '{ if(/Project version:/) { print $3; exit } }' | cut -d\- -f1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
     outputs:
       tag: ${{ steps.get-version.outputs.version }}
 
