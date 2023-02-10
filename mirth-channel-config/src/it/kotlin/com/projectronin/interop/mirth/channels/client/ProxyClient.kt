@@ -74,33 +74,39 @@ object ProxyClient {
                 "endDate" to endDate.format(formatter),
                 "mrn" to mrn,
                 "tenantId" to tenantMnemonic
-            )
+            ),
+            tenantMnemonic
         )
     }
 
     fun getPractitionerByFHIRId(fhirId: String, tenantMnemonic: String): JsonNode = callGraphQLProxy(
         query = this::class.java.getResource("/ProxyPractitionerByIdQuery.graphql")!!.readText(),
-        variables = mapOf("tenantId" to tenantMnemonic, "fhirId" to fhirId)
+        variables = mapOf("tenantId" to tenantMnemonic, "fhirId" to fhirId),
+        tenantMnemonic
     )
 
     fun sendNote(noteInput: Map<String, Any>, tenantMnemonic: String): JsonNode = callGraphQLProxy(
         query = this::class.java.getResource("/ProxySendNoteMutation.graphql")!!.readText(),
-        variables = mapOf("noteInput" to noteInput, "tenantId" to tenantMnemonic)
+        variables = mapOf("noteInput" to noteInput, "tenantId" to tenantMnemonic),
+        tenantMnemonic
     )
 
     fun getConditionsByPatient(tenantMnemonic: String, patientFhirId: String): JsonNode =
         callGraphQLProxy(
             query = this::class.java.getResource("/ProxyConditionsQuery.graphql")!!.readText(),
-            variables = mapOf("tenantId" to tenantMnemonic, "patientFhirId" to patientFhirId)
+            variables = mapOf("tenantId" to tenantMnemonic, "patientFhirId" to patientFhirId),
+            tenantMnemonic
         )
 
     fun getPatientByNameAndDob(tenantMnemonic: String, familyName: String, givenName: String, dob: String): JsonNode =
         callGraphQLProxy(
             query = this::class.java.getResource("/ProxyPatientSearchQuery.graphql")!!.readText(),
-            variables = mapOf("tenantId" to tenantMnemonic, "familyName" to familyName, "givenName" to givenName, "birthdate" to dob)
+            variables = mapOf("tenantId" to tenantMnemonic, "familyName" to familyName, "givenName" to givenName, "birthdate" to dob),
+            tenantMnemonic
         )
 
-    private fun callGraphQLProxy(query: String, variables: Map<String, Any?>): JsonNode = runBlocking {
+    private fun callGraphQLProxy(query: String, variables: Map<String, Any?>, tenantMnemonic: String): JsonNode = runBlocking {
+        MockOCIServerClient.setSekiExpectation(tenantMnemonic)
         httpClient.post(GRAPHQL_URL) {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)

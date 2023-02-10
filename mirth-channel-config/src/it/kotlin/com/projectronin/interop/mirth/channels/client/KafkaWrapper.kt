@@ -14,8 +14,6 @@ import com.projectronin.interop.kafka.spring.KafkaSaslJaasConfig
 import com.projectronin.interop.kafka.spring.KafkaSecurityConfig
 import com.projectronin.interop.kafka.spring.LoadSpringConfig
 import com.projectronin.interop.kafka.spring.PublishSpringConfig
-import com.projectronin.interop.queue.kafka.KafkaQueueService
-import com.projectronin.interop.queue.kafka.spring.KafkaQueueSpringConfig
 
 object KafkaWrapper {
     private val config = KafkaConfig(
@@ -38,5 +36,4 @@ object KafkaWrapper {
 
     val kafkaLoadService = KafkaLoadService(client, LoadSpringConfig().loadTopics())
     val kafkaPublishService = KafkaPublishService(client, PublishSpringConfig().publishTopics())
-    val kafkaQueueService = KafkaQueueService(config, KafkaQueueSpringConfig().topics())
 }

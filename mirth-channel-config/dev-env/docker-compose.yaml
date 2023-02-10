@@ -193,6 +193,7 @@ services:
       - zookeeper
 
   mock-server:
+    platform: linux/amd64
     image: "docker-proxy.devops.projectronin.io/mockserver/mockserver:latest"
     container_name: mirth-mock-oci
     volumes:
@@ -205,6 +206,7 @@ services:
         aliases:
           - oraclecloud.com
           - objectstorage.us-phoenix-1.oraclecloud.com
+          - dev.projectronin.io
 
   zookeeper:
     image: docker-proxy.devops.projectronin.io/zookeeper

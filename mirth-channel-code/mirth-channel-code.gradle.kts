@@ -14,6 +14,7 @@ dependencies {
     implementation(libs.interop.commonJackson)
     implementation(libs.interop.ehr.api)
     implementation(libs.interop.ehr.epic)
+    implementation(libs.interop.ehr.cerner)
     implementation(libs.interop.fhir)
     implementation(libs.interop.publishers)
     implementation(libs.interop.publishers.aidbox)

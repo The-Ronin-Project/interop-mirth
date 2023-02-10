@@ -10,20 +10,22 @@ import com.projectronin.interop.mirth.channels.client.data.datatypes.name
 import com.projectronin.interop.mirth.channels.client.data.primitives.date
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 
 const val patientLoadChannelName = "PatientLoad"
 
-class PatientLoadTest : BaseMirthChannelTest(
+class PatientLoadTest : BaseChannelTest(
     patientLoadChannelName,
     listOf("Patient"),
     listOf("Patient"),
     listOf(ResourceType.PATIENT)
 ) {
 
-    @Test
-    fun `channel works`() {
-
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `channel works`(testTenant: String) {
+        tenantInUse = testTenant
         val patient1 = patient {
             birthDate of date {
                 year of 1990
@@ -47,7 +49,7 @@ class PatientLoadTest : BaseMirthChannelTest(
             gender of "male"
         }
         val patient1Id = MockEHRTestData.add(patient1)
-        MockOCIServerClient.createExpectations("patient", patient1Id)
+        MockOCIServerClient.createExpectations("patient", patient1Id, testTenant)
         // push event to get picked up
         KafkaWrapper.kafkaLoadService.pushLoadEvent(
             testTenant,
@@ -62,9 +64,10 @@ class PatientLoadTest : BaseMirthChannelTest(
         assertEquals(1, events.size)
     }
 
-    @Test
-    fun `channel works with multiple patients`() {
-
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `channel works with multiple patients`(testTenant: String) {
+        tenantInUse = testTenant
         val patient1 = patient {
             birthDate of date {
                 year of 1990
@@ -111,8 +114,8 @@ class PatientLoadTest : BaseMirthChannelTest(
             gender of "female"
         }
         val patient2Id = MockEHRTestData.add(patient2)
-        MockOCIServerClient.createExpectations("patient", patient1Id)
-        MockOCIServerClient.createExpectations("patient", patient2Id)
+        MockOCIServerClient.createExpectations("patient", patient1Id, testTenant)
+        MockOCIServerClient.createExpectations("patient", patient2Id, testTenant)
 
         // push event to get picked up
         KafkaWrapper.kafkaLoadService.pushLoadEvent(

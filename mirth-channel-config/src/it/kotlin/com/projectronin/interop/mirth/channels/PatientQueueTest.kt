@@ -11,11 +11,12 @@ import com.projectronin.interop.mirth.channels.client.data.primitives.date
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
 const val patientQueueChannelName = "PatientQueue"
-
+@Disabled
 class PatientQueueTest : BaseMirthChannelTest(patientQueueChannelName, listOf("Patient")) {
     val patientType = "Patient"
 

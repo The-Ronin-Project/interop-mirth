@@ -13,7 +13,7 @@ mirth {
         baseDirectory = layout.buildDirectory.dir("../channels")
 
         tenant {
-            defaultMnemonic = "ronin"
+            defaultMnemonic = "epicmock"
 
             auth {
                 clientIdKey = "SEKI_AUTH_CLIENT_ID"

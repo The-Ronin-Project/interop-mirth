@@ -60,6 +60,7 @@ object TenantClient {
     private const val MIRTH_CONFIG_URL = "$BASE_TENANT_URL/mirth-config"
 
     fun getMirthConfig(tenantId: String): MirthConfig = runBlocking {
+        MockOCIServerClient.setSekiExpectation(tenantId)
         val url = MIRTH_CONFIG_URL.format(tenantId)
         httpClient.get(url) {
             contentType(ContentType.Application.Json)
@@ -67,6 +68,7 @@ object TenantClient {
     }
 
     fun putMirthConfig(tenantId: String, mirthConfig: MirthConfig) = runBlocking {
+        MockOCIServerClient.setSekiExpectation(tenantId)
         val url = MIRTH_CONFIG_URL.format(tenantId)
         httpClient.put(url) {
             contentType(ContentType.Application.Json)

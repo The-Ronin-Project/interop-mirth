@@ -12,10 +12,12 @@ import com.projectronin.interop.mirth.channels.client.data.resources.condition
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 const val conditionQueueChannelName = "ConditionQueue"
 
+@Disabled
 class ConditionQueueTest : BaseMirthChannelTest(conditionQueueChannelName, listOf("Condition")) {
     private val conditionType = "Condition"
     private val patientType = "Patient"

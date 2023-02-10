@@ -41,7 +41,7 @@ class ConditionLoadTest {
 
     @Test
     fun `create channel - works`() {
-        assertEquals("PatientLoad", channel.rootName)
+        assertEquals("ConditionLoad", channel.rootName)
         assertEquals(1, channel.destinations.size)
     }
 

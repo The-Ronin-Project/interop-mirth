@@ -67,7 +67,7 @@ class PractitionerLoadTest : BaseMirthChannelTest(
             locationType to listOf(locationId),
             practitionerRoleType to listOf(practitionerRoleId)
         )
-        MockOCIServerClient.createExpectations(expectedMap)
+        MockOCIServerClient.createExpectations(expectedMap, testTenant)
 
         TenantClient.putMirthConfig(testTenant, TenantClient.MirthConfig(locationIds = listOf(locationId)))
 

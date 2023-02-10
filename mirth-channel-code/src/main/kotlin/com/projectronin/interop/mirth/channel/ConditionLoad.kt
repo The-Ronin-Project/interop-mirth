@@ -18,7 +18,7 @@ class ConditionLoad(
     private val kafkaLoadService: KafkaLoadService,
     conditionPublish: ConditionPublish
 ) : TenantlessSourceService() {
-    override val rootName = "PatientLoad"
+    override val rootName = "ConditionLoad"
     override val destinations = mapOf("publish" to conditionPublish)
 
     companion object {

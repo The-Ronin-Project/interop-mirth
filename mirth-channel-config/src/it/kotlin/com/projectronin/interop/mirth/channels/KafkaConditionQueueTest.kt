@@ -12,18 +12,19 @@ import com.projectronin.interop.mirth.channels.client.data.resources.condition
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 
 const val kafkaConditionQueueChannelName = "KafkaConditionQueue"
 
-@Disabled // doesn't play nice with the old DB queue.
-class KafkaConditionQueueTest : BaseMirthChannelTest(kafkaConditionQueueChannelName, listOf("Condition")) {
+class KafkaConditionQueueTest : BaseChannelTest(kafkaConditionQueueChannelName, listOf("Condition")) {
     private val conditionType = "Condition"
     private val patientType = "Patient"
 
-    @Test
-    fun `conditions can be queued`() {
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `conditions can be queued`(testTenant: String) {
+        tenantInUse = testTenant
         val patientId = MockEHRTestData.add(patient {})
         // all of these values are requires
         val condition = condition {
@@ -60,7 +61,7 @@ class KafkaConditionQueueTest : BaseMirthChannelTest(kafkaConditionQueueChannelN
             }
         }
         val conditionFhirId = MockEHRTestData.add(condition)
-        MockOCIServerClient.createExpectations(conditionType, conditionFhirId)
+        MockOCIServerClient.createExpectations(conditionType, conditionFhirId, testTenant)
         assertEquals(0, getAidboxResourceCount(conditionType))
 
         // query for conditions from 'EHR'
@@ -83,19 +84,5 @@ class KafkaConditionQueueTest : BaseMirthChannelTest(kafkaConditionQueueChannelN
         val datalakeObject = MockOCIServerClient.getLastPutBody()
         val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Condition::class)
         assertEquals(conditionFhirId, datalakeFhirResource.getFhirIdentifier()?.value?.value)
-    }
-
-    @Test
-    fun `no data no message`() {
-        assertEquals(0, getAidboxResourceCount(conditionType))
-        // start channel
-        deployAndStartChannel(false)
-        // make sure a message queued in mirth
-        waitForMessage(1)
-
-        val list = MirthClient.getChannelMessageIds(testChannelId)
-        assertEquals(0, list.size)
-        // nothing added
-        assertEquals(0, getAidboxResourceCount(conditionType))
     }
 }

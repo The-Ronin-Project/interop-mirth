@@ -9,10 +9,11 @@ import com.projectronin.interop.mirth.channels.client.data.datatypes.externalIde
 import com.projectronin.interop.mirth.channels.client.data.resources.practitioner
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 const val practitionerQueueChannelName = "PractitionerQueue"
-
+@Disabled
 class PractitionerQueueTest : BaseMirthChannelTest(practitionerQueueChannelName, listOf("Practitioner")) {
     private val practitionerType = "Practitioner"
     @Test

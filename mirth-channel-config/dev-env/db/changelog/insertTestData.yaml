@@ -34,7 +34,7 @@ databaseChangeLog:
                   value: "1002"
               - column:
                   name: mnemonic
-                  value: "ronin"
+                  value: "epicmock"
               - column:
                   name: full_name
                   value: "Mock EHR, Ronin Hospital"
@@ -96,3 +96,66 @@ databaseChangeLog:
               - column:
                   name: department_internal_system
                   value: "mockEHRDepartmentInternalSystem"
+        - insert:
+            dbms: 'mysql'
+            tableName: io_ehr
+            columns:
+              - column:
+                  name: io_ehr_id
+                  value: "202"
+              - column:
+                  name: instance_name
+                  value: "Cerner Sandbox"
+              - column:
+                  name: name
+                  value: "CERNER"
+              - column:
+                  name: client_id
+                  value: "client"
+              - column:
+                  name: account_id
+                  value: "acc"
+              - column:
+                  name: secret
+                  value: "secret"
+        - insert:
+            dbms: 'mysql'
+            tableName: io_tenant
+            columns:
+              - column:
+                  name: io_tenant_id
+                  value: "2002"
+              - column:
+                  name: mnemonic
+                  value: "cernmock"
+              - column:
+                  name: full_name
+                  value: "Cerner Mock EHR"
+              - column:
+                  name: io_ehr_id
+                  value: "202"
+              - column:
+                  name: available_batch_start
+                  value: "22:00:00"
+              - column:
+                  name: available_batch_end
+                  value: "06:00:00"
+              - column:
+                  name: timezone
+                  value: "Etc/UTC"
+        - insert:
+            dbms: 'mysql'
+            tableName: io_tenant_cerner
+            columns:
+              - column:
+                  name: io_tenant_id
+                  value: "2002"
+              - column:
+                  name: service_endpoint
+                  value: "http://mockehr:8080/cerner/fhir/r4"
+              - column:
+                  name: auth_endpoint
+                  value: "http://mockehr:8080/cerner/oauth2/token"
+              - column:
+                  name: mrn_system
+                  value: "mockEHRMRNSystem"

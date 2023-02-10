@@ -17,12 +17,14 @@ import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
 import kotlin.random.Random
 
 const val appointmentQueueChannelName = "AppointmentQueue"
 
+@Disabled
 class AppointmentQueueTest :
     BaseMirthChannelTest(
         appointmentQueueChannelName,

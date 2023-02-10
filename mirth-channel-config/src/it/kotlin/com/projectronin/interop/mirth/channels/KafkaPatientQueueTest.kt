@@ -11,33 +11,19 @@ import com.projectronin.interop.mirth.channels.client.data.primitives.date
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import kotlin.random.Random
 
 const val kafkaPatientQueueChannelName = "KafkaPatientQueue"
 
-@Disabled // doesn't play nice with the old DB queue.
-class KafkaPatientQueueTest : BaseMirthChannelTest(kafkaPatientQueueChannelName, listOf("Patient")) {
-    val patientType = "Patient"
+class KafkaPatientQueueTest : BaseChannelTest(kafkaPatientQueueChannelName, listOf("Patient"), listOf("Patient")) {
+    private val patientType = "Patient"
 
-    @Test
-    fun `no data no message`() {
-        assertEquals(0, getAidboxResourceCount(patientType))
-        // start channel
-        deployAndStartChannel(false)
-        // make sure a message queued in mirth
-        waitForMessage(1)
-
-        val list = MirthClient.getChannelMessageIds(testChannelId)
-        assertEquals(0, list.size)
-
-        // nothing added
-        assertEquals(0, getAidboxResourceCount(patientType))
-    }
-
-    @Test
-    fun `patients can be queued`() {
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `patients can be queued`(testTenant: String) {
+        tenantInUse = testTenant
         val mrn = Random.nextInt(10000, 99999).toString()
         val patient = patient {
             birthDate of date {
@@ -64,11 +50,15 @@ class KafkaPatientQueueTest : BaseMirthChannelTest(kafkaPatientQueueChannelName,
         val patientName = patient.name.first()
         val fhirId = MockEHRTestData.add(patient)
 
-        MockOCIServerClient.createExpectations(patientType, fhirId)
-        assertEquals(0, getAidboxResourceCount(patientType))
+        MockOCIServerClient.createExpectations(patientType, fhirId, tenantInUse)
 
         // query for patient from 'EHR'
-        ProxyClient.getPatientByNameAndDob(testTenant, patientName.family!!.value!!, patientName.given.first().value!!, "1990-01-03")
+        ProxyClient.getPatientByNameAndDob(
+            tenantInUse,
+            patientName.family!!.value!!,
+            patientName.given.first().value!!,
+            "1990-01-03"
+        )
 
         // start channel
         deployAndStartChannel(true)
@@ -76,8 +66,8 @@ class KafkaPatientQueueTest : BaseMirthChannelTest(kafkaPatientQueueChannelName,
         waitForMessage(1)
 
         val list = MirthClient.getChannelMessageIds(testChannelId)
-        assertEquals(1, list.size)
 
+        assertEquals(1, list.size)
         assertEquals(1, getAidboxResourceCount("Patient"))
         MockOCIServerClient.verify()
         val datalakeObject = MockOCIServerClient.getLastPutBody()

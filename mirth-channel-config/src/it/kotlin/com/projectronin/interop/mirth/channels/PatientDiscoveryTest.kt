@@ -19,10 +19,12 @@ import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 
 const val patientDiscoverChannelName = "PatientDiscovery"
 
-class PatientDiscoveryTest : BaseMirthChannelTest(
+class PatientDiscoveryTest : BaseChannelTest(
     patientDiscoverChannelName,
     listOf("Location"),
     listOf("Patient", "Appointment", "Location"),
@@ -30,8 +32,10 @@ class PatientDiscoveryTest : BaseMirthChannelTest(
 ) {
     private val patientType = "Patient"
 
-    @Test
-    fun `channel works`() {
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `channel works`(testTenant: String) {
+        tenantInUse = testTenant
         val location = location {
             identifier of listOf(
                 identifier {

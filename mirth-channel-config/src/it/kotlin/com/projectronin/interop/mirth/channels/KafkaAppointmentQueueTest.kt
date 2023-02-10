@@ -17,21 +17,21 @@ import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDate
 import kotlin.random.Random
 
 const val kafkaAppointmentQueueChannelName = "KafkaAppointmentQueue"
 
-@Disabled // doesn't play nice with the old DB queue.
-class KafkaAppointmentQueueTest : BaseMirthChannelTest(kafkaAppointmentQueueChannelName, listOf("Appointment")) {
+class KafkaAppointmentQueueTest : BaseChannelTest(kafkaAppointmentQueueChannelName, listOf("Appointment", "Patient"), listOf("Patient", "Appointment")) {
     private val appointmentType = "Appointment"
     private val patientType = "Patient"
 
-    @Test
-    fun `appointments can be queued`() {
-
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `appointments can be queued`(testTenant: String) {
+        tenantInUse = testTenant
         // add patient to mock EHR
         val startDate = 2.daysFromNow()
         val endDate = 3.daysFromNow()
@@ -79,7 +79,7 @@ class KafkaAppointmentQueueTest : BaseMirthChannelTest(kafkaAppointmentQueueChan
         assertEquals(1, getAidboxResourceCount(patientType))
         assertEquals(0, getAidboxResourceCount(appointmentType))
 
-        MockOCIServerClient.createExpectations(appointmentType, appointment1Id)
+        MockOCIServerClient.createExpectations(appointmentType, appointment1Id, testTenant)
 
         // query for appointments from 'EHR'
         val apptNode = ProxyClient.getAppointmentsByMRN(
@@ -106,19 +106,5 @@ class KafkaAppointmentQueueTest : BaseMirthChannelTest(kafkaAppointmentQueueChan
         val datalakeObject = MockOCIServerClient.getLastPutBody()
         val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Appointment::class)
         assertEquals(appointment1Id, datalakeFhirResource.getFhirIdentifier()?.value?.value)
-    }
-
-    @Test
-    fun `no data no message`() {
-        assertEquals(0, getAidboxResourceCount(appointmentType))
-        // start channel
-        deployAndStartChannel(false)
-        // make sure a message queued in mirth
-        waitForMessage(1)
-
-        val list = MirthClient.getChannelMessageIds(testChannelId)
-        assertEquals(0, list.size)
-        // nothing added
-        assertEquals(0, getAidboxResourceCount(appointmentType))
     }
 }

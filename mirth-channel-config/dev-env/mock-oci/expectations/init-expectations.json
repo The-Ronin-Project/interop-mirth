@@ -40,7 +40,18 @@
         {
           "resource_type": "Appointment",
           "data_element": "Appointment.status",
-          "tenant_id": "ronin",
+          "tenant_id": "epicmock",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "ConceptMaps/v1/published/4ffae118-778f-4df9-bd73-aece934b521b/1.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceAppointmentStatus",
+          "registry_uuid": "13f958c6-87b6-471e-8636-2cabdf0b73e4",
+          "concept_map_name": "AppointmentStatusRonin"
+        },
+        {
+          "resource_type": "Appointment",
+          "data_element": "Appointment.status",
+          "tenant_id": "cernmock",
           "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
           "version": 1,
           "filename": "ConceptMaps/v1/published/4ffae118-778f-4df9-bd73-aece934b521b/1.json",
