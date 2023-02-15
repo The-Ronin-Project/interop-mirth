@@ -8,8 +8,6 @@ import com.projectronin.interop.mirth.channels.client.KafkaWrapper
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
-import com.projectronin.interop.mirth.channels.client.data.datatypes.codeableConcept
-import com.projectronin.interop.mirth.channels.client.data.datatypes.coding
 import com.projectronin.interop.mirth.channels.client.data.datatypes.identifier
 import com.projectronin.interop.mirth.channels.client.data.datatypes.name
 import com.projectronin.interop.mirth.channels.client.data.datatypes.participant
@@ -79,15 +77,7 @@ class AppointmentLoadTest : BaseChannelTest(
             status of "pending"
             participant of listOf(
                 participant {
-                    type of listOf(
-                        codeableConcept {
-                            coding {
-                                system of "thisIsAFakeSystem"
-                                code of "fakeCode"
-                                display of "fakeDisplay"
-                            }
-                        }
-                    )
+                    status of "accepted"
                     actor of reference("Patient", fakePatientId)
                 }
             )
@@ -184,15 +174,7 @@ class AppointmentLoadTest : BaseChannelTest(
             status of "pending"
             participant of listOf(
                 participant {
-                    type of listOf(
-                        codeableConcept {
-                            coding {
-                                system of "thisIsAFakeSystem"
-                                code of "fakeCode"
-                                display of "fakeDisplay"
-                            }
-                        }
-                    )
+                    status of "accepted"
                     actor of reference("Patient", fakePatient1Id)
                 }
             )
@@ -205,15 +187,7 @@ class AppointmentLoadTest : BaseChannelTest(
             status of "pending"
             participant of listOf(
                 participant {
-                    type of listOf(
-                        codeableConcept {
-                            coding {
-                                system of "thisIsAFakeSystem"
-                                code of "fakeCode"
-                                display of "fakeDisplay"
-                            }
-                        }
-                    )
+                    status of "accepted"
                     actor of reference("Patient", fakePatient2Id)
                 }
             )
@@ -254,12 +228,13 @@ class AppointmentLoadTest : BaseChannelTest(
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(2, messageList.size)
-        assertEquals(4, getAidboxResourceCount("Appointment"))
+        assertEquals(7, getAidboxResourceCount("Appointment"))
 
         assertAllConnectorsSent(messageList)
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.APPOINTMENT, DataTrigger.AD_HOC)
-        assertEquals(4, events.size)
+        val events =
+            KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.APPOINTMENT, DataTrigger.AD_HOC)
+        assertEquals(7, events.size)
     }
 
     @ParameterizedTest
@@ -302,15 +277,7 @@ class AppointmentLoadTest : BaseChannelTest(
             status of "pending"
             participant of listOf(
                 participant {
-                    type of listOf(
-                        codeableConcept {
-                            coding {
-                                system of "thisIsAFakeSystem"
-                                code of "fakeCode"
-                                display of "fakeDisplay"
-                            }
-                        }
-                    )
+                    status of "accepted"
                     actor of reference("Patient", fakePatientId)
                 }
             )
@@ -332,7 +299,8 @@ class AppointmentLoadTest : BaseChannelTest(
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Appointment"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.APPOINTMENT, DataTrigger.AD_HOC)
+        val events =
+            KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.APPOINTMENT, DataTrigger.AD_HOC)
         assertEquals(1, events.size)
     }
 

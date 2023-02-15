@@ -159,3 +159,6 @@ databaseChangeLog:
               - column:
                   name: mrn_system
                   value: "mockEHRMRNSystem"
+              - column:
+                  name: message_practitioner
+                  value: "MessagePractitioner"

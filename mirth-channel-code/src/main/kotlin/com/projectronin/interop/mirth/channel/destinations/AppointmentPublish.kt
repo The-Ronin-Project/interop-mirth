@@ -104,10 +104,12 @@ class AppointmentPublish(
                 val event = JacksonUtil.readJsonObject(msg, InteropResourcePublishV1::class)
                 PatientSourceAppointmentLoad(event)
             }
+
             InteropResourceLoadV1::class.simpleName!! -> {
                 val event = JacksonUtil.readJsonObject(msg, InteropResourceLoadV1::class)
                 AdHocSourceAppointmentLoad(event)
             }
+
             else -> throw IllegalStateException("Received a string which cannot deserialize to a known event")
         }
     }
@@ -135,7 +137,7 @@ class AppointmentPublish(
             return appointmentService.findPatientAppointments(
                 tenant,
                 patientFhirId!!.unlocalize(tenant),
-                startDate = LocalDate.now().plusMonths(3),
+                startDate = LocalDate.now(),
                 endDate = LocalDate.now().plusMonths(3),
             )
         }
