@@ -6,7 +6,7 @@ import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.model.MirthResponse
 import mu.KotlinLogging
 
-abstract class TenantlessDestinationService() : MirthDestination {
+abstract class TenantlessDestinationService : MirthDestination {
     protected val logger = KotlinLogging.logger(this::class.java.name)
     override fun destinationFilter(
         unusedValue: String,

@@ -1,7 +1,7 @@
 <channel version="3.11.0">
   <id>9874f7d0-33ae-47cc-b3a9-fe871b3fae22</id>
   <nextMetaDataId>5</nextMetaDataId>
-  <name>LocationLoad</name>
+  <name>LocationNightlyLoad</name>
   <description>Version 1.0.0
 
 Load FHIR Location resources from a tenant, transform them to the Ronin FHIR profile, validates them, and write them to the Ronin database.</description>
@@ -168,7 +168,7 @@ return message;</preprocessingScript>
 return;</postprocessingScript>
   <deployScript>// @apiinfo &quot;&quot;&quot;Get the channel configuration and services.&quot;&quot;&quot;
 
-var channelService = Packages.com.projectronin.interop.mirth.channel.LocationLoad.Companion.create();
+var channelService = Packages.com.projectronin.interop.mirth.channel.LocationNightlyLoad.Companion.create();
 onDeploy(channelService)
 </deployScript>
   <undeployScript>// This script executes once when the channel is undeployed

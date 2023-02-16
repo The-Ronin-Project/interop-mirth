@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component
 private const val PUBLISH_SERVICE = "publish"
 
 @Component
-class LocationLoad(
+class LocationNightlyLoad(
     tenantService: TenantService,
     transformManager: TransformManager,
     locationWriter: LocationWriter,
@@ -27,9 +27,9 @@ class LocationLoad(
     private val tenantConfigurationService: TenantConfigurationService,
     private val roninLocation: RoninLocation
 ) : ChannelService(tenantService, transformManager) {
-    companion object : ChannelFactory<LocationLoad>()
+    companion object : ChannelFactory<LocationNightlyLoad>()
 
-    override val rootName = "LocationLoad"
+    override val rootName = "LocationNightlyLoad"
     override val destinations = mapOf(PUBLISH_SERVICE to locationWriter)
 
     override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {

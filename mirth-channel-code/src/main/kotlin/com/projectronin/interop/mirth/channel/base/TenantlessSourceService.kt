@@ -29,7 +29,7 @@ import mu.KotlinLogging
  * The [TenantlessSourceService] MUST define a unique key to each of its [DestinationService] subclasses in this map:
  * - destinations
  */
-abstract class TenantlessSourceService() : MirthSource {
+abstract class TenantlessSourceService : MirthSource {
     protected val logger = KotlinLogging.logger(this::class.java.name)
 
     abstract override val destinations: Map<String, TenantlessDestinationService>

@@ -7,7 +7,7 @@ __Deploy Script__
 ```
 // @apiinfo """Get the channel configuration and services."""
 
-var channelService = Packages.com.projectronin.interop.mirth.channel.LocationLoad.Companion.create();
+var channelService = Packages.com.projectronin.interop.mirth.channel.LocationNightlyLoad.Companion.create();
 onDeploy(channelService)
 
 ```

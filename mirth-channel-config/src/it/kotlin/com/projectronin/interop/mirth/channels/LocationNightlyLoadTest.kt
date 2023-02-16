@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-const val locationLoadChannelName = "LocationLoad"
+const val locationLoadChannelName = "LocationNightlyLoad"
 
-class LocationLoadTest : BaseMirthChannelTest(locationLoadChannelName, listOf("Location")) {
+class LocationNightlyLoadTest : BaseMirthChannelTest(locationLoadChannelName, listOf("Location")) {
     private val locationType = "Location"
 
     @Test

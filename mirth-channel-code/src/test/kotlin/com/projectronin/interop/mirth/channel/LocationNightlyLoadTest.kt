@@ -24,7 +24,7 @@ import org.junit.jupiter.api.assertThrows
 
 private const val TENANT_ID = "ronin"
 
-internal class LocationLoadTest {
+internal class LocationNightlyLoadTest {
     private val tenant = mockk<Tenant> {
         every { mnemonic } returns TENANT_ID
     }
@@ -33,7 +33,7 @@ internal class LocationLoadTest {
     private var tenantConfigurationFactory = mockk<TenantConfigurationService>()
     private var roninLocation = mockk<RoninLocation>()
 
-    lateinit var channel: LocationLoad
+    lateinit var channel: LocationNightlyLoad
 
     @BeforeEach
     fun setup() {
@@ -44,7 +44,7 @@ internal class LocationLoadTest {
             every { getVendorFactory(tenant) } returns vendorFactory
         }
         val locationWriter = mockk<LocationWriter>()
-        channel = LocationLoad(
+        channel = LocationNightlyLoad(
             tenantService,
             transformManager,
             locationWriter,
