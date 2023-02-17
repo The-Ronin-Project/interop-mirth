@@ -1,10 +1,10 @@
 <channel version="3.11.0">
-  <id>97b6f1db-9bd9-4251-9d04-d25871723b14</id>
+  <id>0f0aec05-3c59-4fd5-8b60-b0d9c441e6ed</id>
   <nextMetaDataId>5</nextMetaDataId>
-  <name>ObservationLoad</name>
-  <description>Version 1.0.0.
+  <name>ObservationNightlyLoad</name>
+  <description>Version 1.0.0
 
-Reads Kafka events and finds appropriate conditions based on those events</description>
+Load FHIR Observation resources from a tenant, transform them to the Ronin FHIR profile, validates them, and write them to the Ronin database.</description>
   <revision>2</revision>
   <sourceConnector version="3.11.0">
     <metaDataId>0</metaDataId>
@@ -12,10 +12,10 @@ Reads Kafka events and finds appropriate conditions based on those events</descr
     <properties class="com.mirth.connect.connectors.js.JavaScriptReceiverProperties" version="3.11.0">
       <pluginProperties/>
       <pollConnectorProperties version="3.11.0">
-        <pollingType>INTERVAL</pollingType>
+        <pollingType>TIME</pollingType>
         <pollOnStart>true</pollOnStart>
         <pollingFrequency>5000</pollingFrequency>
-        <pollingHour>0</pollingHour>
+        <pollingHour>2</pollingHour>
         <pollingMinute>0</pollingMinute>
         <cronJobs/>
         <pollConnectorPropertiesAdvanced>
@@ -55,7 +55,14 @@ Reads Kafka events and finds appropriate conditions based on those events</descr
       <script>return sourceReader()</script>
     </properties>
     <transformer version="3.11.0">
-      <elements/>
+      <elements>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.11.0">
+          <name>Source Transform</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>sourceTransform()</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+      </elements>
       <inboundTemplate encoding="base64"></inboundTemplate>
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>RAW</inboundDataType>
@@ -88,14 +95,14 @@ Reads Kafka events and finds appropriate conditions based on those events</descr
       <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="3.11.0">
         <pluginProperties/>
         <destinationConnectorProperties version="3.11.0">
-          <queueEnabled>true</queueEnabled>
+          <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
           <regenerateTemplate>false</regenerateTemplate>
           <retryCount>0</retryCount>
           <rotate>false</rotate>
           <includeFilterTransformer>false</includeFilterTransformer>
-          <threadCount>5</threadCount>
+          <threadCount>1</threadCount>
           <threadAssignmentVariable></threadAssignmentVariable>
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
@@ -161,7 +168,7 @@ return message;</preprocessingScript>
 return;</postprocessingScript>
   <deployScript>// @apiinfo &quot;&quot;&quot;Get the channel configuration and services.&quot;&quot;&quot;
 
-var channelService = Packages.com.projectronin.interop.mirth.channel.ObservationLoad.Companion.create();
+var channelService = Packages.com.projectronin.interop.mirth.channel.ObservationNightlyLoad.Companion.create();
 onDeploy(channelService)
 </deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
@@ -174,13 +181,23 @@ return;</undeployScript>
     <removeContentOnCompletion>false</removeContentOnCompletion>
     <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
     <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
-    <initialState>STARTED</initialState>
-    <storeAttachments>false</storeAttachments>
+    <initialState>STOPPED</initialState>
+    <storeAttachments>true</storeAttachments>
     <metaDataColumns>
       <metaDataColumn>
-        <name>TENANT</name>
+        <name>RESOURCE_TYPE</name>
         <type>STRING</type>
-        <mappingName>tenantMnemonic</mappingName>
+        <mappingName>resourceType</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>RESOURCE_COUNT</name>
+        <type>STRING</type>
+        <mappingName>resourceCount</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>FHIR_IDS</name>
+        <type>STRING</type>
+        <mappingName>fhirIDs</mappingName>
       </metaDataColumn>
     </metaDataColumns>
     <attachmentProperties version="3.11.0">
@@ -196,9 +213,9 @@ return;</undeployScript>
   </properties>
   <exportData>
     <metadata>
-      <enabled>true</enabled>
+      <enabled>false</enabled>
       <lastModified>
-        <time>1676654042939</time>
+        <time>1663610322037</time>
         <timezone>America/Los_Angeles</timezone>
       </lastModified>
       <pruningSettings>

@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 private const val VALID_TENANT_ID = "mdaoc"
-private const val CHANNEL_ROOT_NAME = "ObservationLoad"
+private const val CHANNEL_ROOT_NAME = "ObservationNightlyLoad"
 private const val VALID_DEPLOYED_NAME = "$VALID_TENANT_ID-$CHANNEL_ROOT_NAME"
 
 class ObservationNightlyLoadTest {

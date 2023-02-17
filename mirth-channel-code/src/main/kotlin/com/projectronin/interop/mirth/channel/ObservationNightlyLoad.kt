@@ -33,7 +33,7 @@ class ObservationNightlyLoad(
 ) : ChannelService(tenantService, transformManager) {
     companion object : ChannelFactory<ObservationNightlyLoad>()
 
-    override val rootName = "ObservationLoad"
+    override val rootName = "ObservationNightlyLoad"
     override val destinations = mapOf(PUBLISH_SERVICE to observationWriter)
 
     override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
