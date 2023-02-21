@@ -15,6 +15,7 @@ pluginManagement {
         id("com.projectronin.interop.gradle.version") version "2.2.0"
 
         id("com.github.johnrengelman.shadow") version "7.1.2"
+        id("org.owasp.dependencycheck") version "8.0.2"
     }
 
     repositories {

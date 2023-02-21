@@ -6,31 +6,39 @@ plugins {
     id("com.projectronin.interop.gradle.spring")
     // Plugin exposing shadowJar task for creating fat JAR
     id("com.github.johnrengelman.shadow")
+    id("org.owasp.dependencycheck")
 }
 
 dependencies {
+    // Force versions
+    implementation(libs.kafka.clients) {
+        isForce = true
+    }
+    implementation(libs.woodstox.core) {
+        isForce = true
+    }
+
     implementation(libs.interop.common)
     implementation(libs.interop.commonHttp)
     implementation(libs.interop.commonJackson)
     implementation(libs.interop.ehr.api)
-    implementation(libs.interop.ehr.epic)
-    implementation(libs.interop.ehr.cerner)
     implementation(libs.interop.fhir)
-    implementation(libs.interop.publishers)
+    implementation(libs.interop.publishers.core)
     implementation(libs.interop.publishers.aidbox)
     implementation(libs.interop.publishers.datalake)
     implementation(libs.interop.publishers.kafka)
     implementation(libs.interop.queue.api)
     implementation(libs.interop.queue.db)
     implementation(libs.interop.queue.kafka)
-    implementation(libs.interop.ehr.fhir.ronin)
+    implementation(libs.interop.ehr.fhir.ronin) {
+        exclude(group = "org.yaml", module = "snakeyaml")
+    }
     implementation(libs.bundles.interop.kafka.events)
 
     implementation(libs.interop.ehr.tenant)
-    implementation(libs.interop.validation.client)
     implementation(libs.spring.vault.core)
     implementation("org.springframework:spring-context")
-    implementation("org.springframework.boot:spring-boot-autoconfigure:2.7.6")
+    implementation(libs.spring.boot.autoconfigure)
 
     implementation(libs.jakarta.ws)
     implementation(libs.kotlin.stdlib)
@@ -41,6 +49,19 @@ dependencies {
     implementation(libs.ktor.client.core)
     implementation(libs.ktorm.core)
     implementation(libs.ktorm.support.mysql)
+
+    runtimeOnly(libs.interop.ehr.epic) {
+        exclude(group = "org.springframework.boot")
+        exclude(group = "org.yaml", module = "snakeyaml")
+    }
+    runtimeOnly(libs.interop.ehr.cerner) {
+        exclude(group = "org.springframework.boot")
+        exclude(group = "org.yaml", module = "snakeyaml")
+    }
+    runtimeOnly(libs.interop.validation.client) {
+        exclude(group = "org.springframework.boot")
+        exclude(group = "org.yaml", module = "snakeyaml")
+    }
 
     testImplementation(libs.mockk)
     testImplementation(libs.interop.commonTestDb)
@@ -71,4 +92,10 @@ tasks.shadowJar {
 
 tasks.withType(Test::class) {
     jvmArgs("--add-opens=java.base/java.util=ALL-UNNAMED")
+}
+
+dependencyCheck {
+    scanConfigurations = listOf("compileClasspath", "runtimeClasspath")
+    skipTestGroups = true
+    suppressionFile = "${project.projectDir}/conf/owasp-suppress.xml"
 }
