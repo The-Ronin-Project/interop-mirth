@@ -35,6 +35,7 @@ class AppointmentLoadTest : BaseChannelTest(
     listOf("Patient", "Appointment"),
     listOf(ResourceType.PATIENT, ResourceType.APPOINTMENT)
 ) {
+    override val groupId = "interop-mirth-appointment"
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -100,7 +101,7 @@ class AppointmentLoadTest : BaseChannelTest(
         assertEquals(1, getAidboxResourceCount("Appointment"))
 
         val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.APPOINTMENT, DataTrigger.NIGHTLY
+            ResourceType.APPOINTMENT, DataTrigger.NIGHTLY, groupId
         )
         assertEquals(1, events.size)
     }
@@ -233,7 +234,7 @@ class AppointmentLoadTest : BaseChannelTest(
         assertAllConnectorsSent(messageList)
 
         val events =
-            KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.APPOINTMENT, DataTrigger.AD_HOC)
+            KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.APPOINTMENT, DataTrigger.AD_HOC, groupId)
         assertEquals(7, events.size)
     }
 
@@ -300,7 +301,7 @@ class AppointmentLoadTest : BaseChannelTest(
         assertEquals(1, getAidboxResourceCount("Appointment"))
 
         val events =
-            KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.APPOINTMENT, DataTrigger.AD_HOC)
+            KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.APPOINTMENT, DataTrigger.AD_HOC, groupId)
         assertEquals(1, events.size)
     }
 
@@ -324,7 +325,7 @@ class AppointmentLoadTest : BaseChannelTest(
         assertEquals(0, getAidboxResourceCount("Appointment"))
 
         val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.APPOINTMENT, DataTrigger.AD_HOC
+            ResourceType.APPOINTMENT, DataTrigger.AD_HOC, groupId
         )
         assertEquals(0, events.size)
     }

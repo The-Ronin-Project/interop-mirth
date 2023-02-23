@@ -50,6 +50,7 @@ abstract class BaseChannelTest(
 ) {
     var tenantInUse = "NOTSET"
     protected val testChannelId = installChannel()
+    protected open val groupId: String? = null
 
     @BeforeEach
     fun setup() {
@@ -81,8 +82,8 @@ abstract class BaseChannelTest(
         }
     }
 
-    private fun installChannel(): String {
-        val channelFile = File("channels/$channelName/channel/$channelName.xml")
+    protected fun installChannel(channelToInstall: String = channelName): String {
+        val channelFile = File("channels/$channelToInstall/channel/$channelToInstall.xml")
         val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
         val document = documentBuilder.parse(channelFile)
 
@@ -105,22 +106,26 @@ abstract class BaseChannelTest(
     /**
      * Clears the messages and statistics for this channel. If the channel is currently running, it will be restarted.
      */
-    protected fun clearMessages() {
+    protected fun clearMessages(channelToClear: String = testChannelId) {
         MirthClient.clearAllStatistics()
-        MirthClient.clearChannelMessages(testChannelId)
+        MirthClient.clearChannelMessages(channelToClear)
     }
 
-    protected fun deployAndStartChannel(waitForMessage: Boolean, timeout: Int = 60) {
-        MirthClient.deployChannel(testChannelId)
-        MirthClient.startChannel(testChannelId)
+    protected fun deployAndStartChannel(
+        waitForMessage: Boolean,
+        timeout: Int = 60,
+        channelToDeploy: String = testChannelId
+    ) {
+        MirthClient.deployChannel(channelToDeploy)
+        MirthClient.startChannel(channelToDeploy)
 
         if (waitForMessage) {
             waitForMessage(1, timeout)
         }
     }
 
-    protected fun stopChannel() {
-        MirthClient.stopChannel(testChannelId)
+    protected fun stopChannel(channelToStop: String = testChannelId) {
+        MirthClient.stopChannel(channelToStop)
     }
 
     protected fun getChannelMessageIds(): List<Int> {
@@ -151,11 +156,11 @@ abstract class BaseChannelTest(
         }
     }
 
-    protected fun drainKafkaEvents(vararg resourceTypes: ResourceType) {
+    protected fun drainKafkaEvents(vararg resourceTypes: ResourceType, overrideGroupId: String? = groupId) {
         resourceTypes.forEach {
-            KafkaWrapper.kafkaLoadService.retrieveLoadEvents(it, null, true)
-            KafkaWrapper.kafkaPublishService.retrievePublishEvents(it, DataTrigger.AD_HOC, null, true)
-            KafkaWrapper.kafkaPublishService.retrievePublishEvents(it, DataTrigger.NIGHTLY, null, true)
+            KafkaWrapper.kafkaLoadService.retrieveLoadEvents(it, overrideGroupId, true)
+            KafkaWrapper.kafkaPublishService.retrievePublishEvents(it, DataTrigger.AD_HOC, overrideGroupId, true)
+            KafkaWrapper.kafkaPublishService.retrievePublishEvents(it, DataTrigger.NIGHTLY, overrideGroupId, true)
         }
     }
 

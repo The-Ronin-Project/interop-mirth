@@ -17,6 +17,7 @@ abstract class KafkaTopicReader(
 ) : TenantlessSourceService() {
     abstract val publishedResourcesSubscriptions: List<ResourceType>
     abstract val resource: ResourceType
+    abstract val channelGroupId: String
 
     override val destinations: Map<String, KafkaEventResourcePublisher<*>> = mapOf("publish" to defaultPublisher)
 
@@ -26,7 +27,7 @@ abstract class KafkaTopicReader(
             return nightlyPublishedEvents.toPublishMirthMessages()
         }
 
-        val loadEvents = kafkaLoadService.retrieveLoadEvents(resourceType = resource)
+        val loadEvents = kafkaLoadService.retrieveLoadEvents(resourceType = resource, groupId = channelGroupId)
         if (loadEvents.isNotEmpty()) {
             return loadEvents.toLoadMirthMessages()
         }
@@ -45,7 +46,13 @@ abstract class KafkaTopicReader(
         // for each resourceType before moving to the next one
         return publishedResourcesSubscriptions
             .asSequence()
-            .map { kafkaPublishService.retrievePublishEvents(resourceType = it, dataTrigger) }
+            .map {
+                kafkaPublishService.retrievePublishEvents(
+                    resourceType = it,
+                    dataTrigger = dataTrigger,
+                    groupId = channelGroupId
+                )
+            }
             .firstOrNull { it.isNotEmpty() }
             ?: emptyList() // this is outside the sequence loop, so it only happens once all events have been drained
     }

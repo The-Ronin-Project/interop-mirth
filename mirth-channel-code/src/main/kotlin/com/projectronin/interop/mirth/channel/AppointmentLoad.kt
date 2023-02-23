@@ -15,6 +15,7 @@ class AppointmentLoad(
     defaultPublisher: AppointmentPublish
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "AppointmentLoad"
+    override val channelGroupId = "interop-mirth-appointment"
     override val publishedResourcesSubscriptions = listOf(ResourceType.PATIENT)
     override val resource = ResourceType.APPOINTMENT
 

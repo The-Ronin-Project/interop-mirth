@@ -1,9 +1,11 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.KafkaWrapper
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
+import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.TenantClient
 import com.projectronin.interop.mirth.channels.client.data.datatypes.identifier
 import com.projectronin.interop.mirth.channels.client.data.datatypes.name
@@ -253,5 +255,79 @@ class PatientDiscoveryTest : BaseChannelTest(
         deployAndStartChannel(true)
         val events = KafkaWrapper.kafkaLoadService.retrieveLoadEvents(ResourceType.PATIENT)
         assertEquals(0, events.size)
+    }
+
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `channel kicks off dag`() {
+        tenantInUse = testTenant
+        val channel = patientLoadChannelName
+        val channelId = installChannel(channel)
+        clearMessages(channelId)
+
+        val location = location {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRDepartmentInternalSystem"
+                    value of "123"
+                }
+            )
+        }
+        val locationFhirId = MockEHRTestData.add(location)
+        val patient1 = patient {
+            birthDate of date {
+                year of 1990
+                month of 1
+                day of 3
+            }
+            identifier of listOf(
+                identifier {
+                    system of "mockPatientInternalSystem"
+                },
+                identifier {
+                    system of "mockEHRMRNSystem"
+                    value of "1000000001"
+                }
+            )
+            name of listOf(
+                name {
+                    use of "usual" // This is required to generate the Epic response.
+                }
+            )
+            gender of "male"
+        }
+        val patient1Id = MockEHRTestData.add(patient1)
+
+        val appointment1 = appointment {
+            status of "arrived"
+            participant of listOf(
+                participant {
+                    status of "accepted"
+                    actor of reference(patientType, patient1Id)
+                },
+                participant {
+                    status of "accepted"
+                    actor of reference("Location", locationFhirId)
+                }
+            )
+            start of 2.daysFromNow()
+            end of 3.daysFromNow()
+        }
+        MockEHRTestData.add(appointment1)
+
+        val aidboxLocation1 = location.copy(
+            identifier = location.identifier + tenantIdentifier(testTenant) + fhirIdentifier(locationFhirId)
+        )
+
+        AidboxTestData.add(aidboxLocation1)
+        TenantClient.putMirthConfig(testTenant, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
+        MockOCIServerClient.createExpectations("patient", patient1Id, testTenant)
+
+        deployAndStartChannel(true)
+        deployAndStartChannel(waitForMessage = true, channelToDeploy = channelId)
+        stopChannel(channelId)
+
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.PATIENT, DataTrigger.NIGHTLY)
+        assertEquals(1, events.size)
     }
 }

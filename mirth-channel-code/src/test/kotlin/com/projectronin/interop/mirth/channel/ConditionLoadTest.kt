@@ -17,6 +17,7 @@ class ConditionLoadTest {
     @Test
     fun `create channel - works`() {
         assertEquals("ConditionLoad", channel.rootName)
+        assertEquals("interop-mirth-condition", channel.channelGroupId)
         assertEquals(1, channel.destinations.size)
     }
 }

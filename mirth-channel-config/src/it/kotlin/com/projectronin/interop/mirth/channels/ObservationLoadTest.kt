@@ -39,6 +39,7 @@ class ObservationLoadTest : BaseChannelTest(
 ) {
     val patientType = "Patient"
     val observationType = "Observation"
+    override val groupId = "interop-mirth-observation"
 
     @ParameterizedTest
     @ValueSource(strings = ["epicmock"]) // INT-1376 @MethodSource("tenantsToTest")
@@ -113,7 +114,9 @@ class ObservationLoadTest : BaseChannelTest(
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount(observationType))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.OBSERVATION, DataTrigger.NIGHTLY)
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
+            ResourceType.OBSERVATION, DataTrigger.NIGHTLY, groupId
+        )
         assertEquals(1, events.size)
     }
 
@@ -264,7 +267,7 @@ class ObservationLoadTest : BaseChannelTest(
         assertEquals(2, messageList.size)
         assertEquals(7, getAidboxResourceCount(observationType))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.OBSERVATION, DataTrigger.AD_HOC)
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.OBSERVATION, DataTrigger.AD_HOC, groupId)
         assertEquals(7, events.size)
     }
 
@@ -340,7 +343,9 @@ class ObservationLoadTest : BaseChannelTest(
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount(observationType))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.OBSERVATION, DataTrigger.AD_HOC)
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
+            ResourceType.OBSERVATION, DataTrigger.AD_HOC, groupId
+        )
         assertEquals(1, events.size)
     }
 
@@ -365,7 +370,9 @@ class ObservationLoadTest : BaseChannelTest(
         assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount(observationType))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.OBSERVATION, DataTrigger.AD_HOC)
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
+            ResourceType.OBSERVATION, DataTrigger.AD_HOC, groupId
+        )
         assertEquals(0, events.size)
     }
 }
