@@ -15,9 +15,13 @@ class TenantConfigurationService(
         return getConfiguration(tenantMnemonic).locationIds.splitToSequence(",").toList()
     }
 
-    private fun getConfiguration(tenantMnemonic: String): MirthTenantConfigDO {
+    fun getConfiguration(tenantMnemonic: String): MirthTenantConfigDO {
         return mirthTenantConfigDAO.getByTenantMnemonic(tenantMnemonic)
             ?: throw IllegalArgumentException("No Mirth Tenant Configuration object found for $tenantMnemonic")
+    }
+
+    fun updateConfiguration(configDO: MirthTenantConfigDO) {
+        mirthTenantConfigDAO.updateConfig(configDO)
     }
 
     fun getMDMInfo(tenantMnemonic: String): Pair<String, Int>? {

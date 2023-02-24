@@ -1,5 +1,8 @@
 package com.projectronin.interop.mirth.channels.client
 
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.annotation.JsonTypeName
 import com.projectronin.interop.common.jackson.JacksonManager
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -18,6 +21,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.jackson.jackson
 import kotlinx.coroutines.runBlocking
+import java.time.LocalTime
+import java.time.OffsetDateTime
 
 object TenantClient {
     val httpClient = HttpClient(CIO) {
@@ -76,5 +81,85 @@ object TenantClient {
         }
     }
 
-    data class MirthConfig(val locationIds: List<String>)
+    fun putTenant(tenant: ProxyTenant) = runBlocking {
+        MockOCIServerClient.setSekiExpectation(tenant.mnemonic)
+        val url = BASE_TENANT_URL.format(tenant.mnemonic)
+        httpClient.put(url) {
+            contentType(ContentType.Application.Json)
+            setBody(tenant)
+        }
+    }
+
+    fun getTenant(tenantId: String): ProxyTenant = runBlocking {
+        MockOCIServerClient.setSekiExpectation(tenantId)
+        val url = BASE_TENANT_URL.format(tenantId)
+        httpClient.get(url) {
+            contentType(ContentType.Application.Json)
+        }.body()
+    }
+
+    data class ProxyTenant(
+        val id: Int,
+        val mnemonic: String,
+        val name: String,
+        val availableStart: LocalTime?,
+        val availableEnd: LocalTime?,
+        val vendor: Vendor,
+        val timezone: String
+    )
+
+    @JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type"
+    )
+    @JsonSubTypes(
+        JsonSubTypes.Type(value = Epic::class, name = "EPIC"),
+        JsonSubTypes.Type(value = Cerner::class, name = "CERNER")
+    )
+    interface Vendor {
+        val vendorType: VendorType
+        val instanceName: String
+    }
+
+    enum class VendorType {
+        EPIC,
+        CERNER
+    }
+
+    @JsonTypeName("EPIC")
+    data class Epic(
+        val release: String,
+        val serviceEndpoint: String,
+        val authEndpoint: String,
+        val ehrUserId: String,
+        val messageType: String,
+        val practitionerProviderSystem: String,
+        val practitionerUserSystem: String,
+        val patientMRNSystem: String,
+        val patientInternalSystem: String,
+        val encounterCSNSystem: String,
+        val patientMRNTypeText: String,
+        val hsi: String?,
+        override val instanceName: String,
+        val departmentInternalSystem: String
+    ) : Vendor {
+        override val vendorType: VendorType = VendorType.EPIC
+    }
+
+    @JsonTypeName("CERNER")
+    data class Cerner(
+        val serviceEndpoint: String,
+        val authEndpoint: String,
+        val patientMRNSystem: String,
+        override val instanceName: String,
+        val messagePractitioner: String,
+        val messageTopic: String?,
+        val messageCategory: String?,
+        val messagePriority: String?
+    ) : Vendor {
+        override val vendorType: VendorType = VendorType.CERNER
+    }
+
+    data class MirthConfig(val locationIds: List<String>, val lastUpdated: OffsetDateTime? = null)
 }

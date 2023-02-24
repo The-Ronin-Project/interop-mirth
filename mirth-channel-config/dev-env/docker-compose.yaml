@@ -80,6 +80,7 @@ services:
 
   devbox-db:
     image: healthsamurai/aidboxdb:13.2
+    platform: linux/amd64
     container_name: mirth-devbox-db
     ports:
       - "${AIDBOX_PGHOSTPORT}:${AIDBOX_PGPORT}"

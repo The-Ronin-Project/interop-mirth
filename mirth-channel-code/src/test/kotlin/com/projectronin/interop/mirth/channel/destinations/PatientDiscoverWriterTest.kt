@@ -39,7 +39,7 @@ class PatientDiscoverWriterTest {
 
         val result = writer.channelDestinationWriter(
             "ronin",
-            "[\"123\",\"456\"]",
+            "[\"Patient/123\",\"Patient/456\"]",
             emptyMap(),
             emptyMap()
         )
@@ -58,7 +58,7 @@ class PatientDiscoverWriterTest {
         } throws Exception("bad")
         val result = writer.channelDestinationWriter(
             "ronin",
-            "[\"123\",\"456\"]",
+            "[\"Patient/123\",\"Patient/456\"]",
             emptyMap(),
             emptyMap()
         )
@@ -75,7 +75,7 @@ class PatientDiscoverWriterTest {
             emptyMap()
         )
         assertEquals(MirthResponseStatus.ERROR, result.status)
-        assertEquals("No Patients for tenant ronin", result.detailedMessage)
+        assertEquals("No Patients or Practitioners found for tenant ronin", result.detailedMessage)
     }
 
     @Test
@@ -92,7 +92,7 @@ class PatientDiscoverWriterTest {
         } returns kafkaPushResponse
         val result = writer.channelDestinationWriter(
             "ronin",
-            "[\"123\"]",
+            "[\"Patient/123\"]",
             emptyMap(),
             emptyMap()
         )
