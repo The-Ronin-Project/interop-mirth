@@ -62,8 +62,8 @@ class AppointmentPublish(
             return fhirService.findPatientAppointments(
                 tenant,
                 patientFhirId!!.unlocalize(tenant),
-                startDate = LocalDate.now(),
-                endDate = LocalDate.now().plusMonths(3),
+                startDate = LocalDate.now().minusMonths(1),
+                endDate = LocalDate.now().plusMonths(1),
             )
         }
     }

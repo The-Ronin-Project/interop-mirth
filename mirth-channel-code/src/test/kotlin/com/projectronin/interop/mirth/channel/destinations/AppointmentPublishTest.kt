@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.LocalDate
 
 class AppointmentPublishTest {
     lateinit var tenant: Tenant
@@ -86,8 +87,14 @@ class AppointmentPublishTest {
         every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
         every { JacksonUtil.readJsonObject("{}", Patient::class) } returns mockPatient
         val mockVendorFactory = mockk<VendorFactory> {
-            every { appointmentService.findPatientAppointments(tenant, "123", any(), any()) } returns
-                listOf(mockAppointment)
+            every {
+                appointmentService.findPatientAppointments(
+                    tenant,
+                    "123",
+                    match { it.isAfter(LocalDate.now().minusMonths(1).minusDays(1)) },
+                    match { it.isBefore(LocalDate.now().plusMonths(1).plusDays(1)) }
+                )
+            } returns listOf(mockAppointment)
         }
         val request = destination.convertEventToRequest(
             "boo",
