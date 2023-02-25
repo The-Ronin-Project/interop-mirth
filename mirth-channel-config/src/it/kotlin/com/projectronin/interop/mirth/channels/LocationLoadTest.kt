@@ -1,0 +1,263 @@
+package com.projectronin.interop.mirth.channels
+
+import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
+import com.projectronin.interop.kafka.model.DataTrigger
+import com.projectronin.interop.mirth.channels.client.AidboxTestData
+import com.projectronin.interop.mirth.channels.client.KafkaWrapper
+import com.projectronin.interop.mirth.channels.client.MockEHRClient
+import com.projectronin.interop.mirth.channels.client.MockEHRTestData
+import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
+import com.projectronin.interop.mirth.channels.client.data.datatypes.identifier
+import com.projectronin.interop.mirth.channels.client.data.datatypes.participant
+import com.projectronin.interop.mirth.channels.client.data.datatypes.reference
+import com.projectronin.interop.mirth.channels.client.data.primitives.daysFromNow
+import com.projectronin.interop.mirth.channels.client.data.resources.appointment
+import com.projectronin.interop.mirth.channels.client.data.resources.location
+import com.projectronin.interop.mirth.channels.client.fhirIdentifier
+import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.tenantIdentifier
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
+
+const val locationLoadChannelName = "LocationLoad"
+
+class LocationLoadTest : BaseChannelTest(
+    locationLoadChannelName,
+    listOf("Appointment", "Location"),
+    listOf("Appointment", "Location"),
+    listOf(ResourceType.APPOINTMENT, ResourceType.LOCATION)
+) {
+    override val groupId = "interop-mirth-location"
+
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `channel works`(testTenant: String) {
+        tenantInUse = testTenant
+        val fakeLocation = location {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRDepartmentInternalSystem"
+                    value of "Location/1"
+                }
+            )
+        }
+        val locationFhirId = MockEHRTestData.add(fakeLocation)
+        val fakeAppointment = appointment {
+            status of "arrived"
+            participant of listOf(
+                participant {
+                    status of "accepted"
+                    actor of reference("Location", locationFhirId)
+                }
+            )
+            start of 2.daysFromNow()
+            end of 3.daysFromNow()
+        }
+        val fakeAppointmentId = MockEHRTestData.add(fakeAppointment)
+
+        val fakeAidboxApptId = "$tenantInUse-$fakeAppointmentId"
+        val fakeAidboxAppt = fakeAppointment.copy(
+            id = Id(fakeAidboxApptId),
+            identifier = fakeAppointment.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(fakeAppointmentId)
+        )
+        AidboxTestData.add(fakeAidboxAppt)
+        MockOCIServerClient.createExpectations("Location", locationFhirId, tenantInUse)
+        KafkaWrapper.kafkaPublishService.publishResources(
+            tenantId = tenantInUse,
+            trigger = DataTrigger.NIGHTLY,
+            resources = listOf(fakeAidboxAppt)
+        )
+        deployAndStartChannel(true)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertAllConnectorsSent(messageList)
+        assertEquals(1, messageList.size)
+        assertEquals(1, getAidboxResourceCount("Location"))
+
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
+            ResourceType.LOCATION, DataTrigger.NIGHTLY, groupId
+        )
+        assertEquals(1, events.size)
+    }
+
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `channel works with multiple locations and appointments`(testTenant: String) {
+        tenantInUse = testTenant
+        val fakeLocation1 = location {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRDepartmentInternalSystem"
+                    value of "Location/1"
+                }
+            )
+        }
+        val locationFhirId1 = MockEHRTestData.add(fakeLocation1)
+        val fakeLocation2 = location {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRDepartmentInternalSystem"
+                    value of "Location/2"
+                }
+            )
+        }
+        val locationFhirId2 = MockEHRTestData.add(fakeLocation2)
+
+        val fakeAppointment1 = appointment {
+            status of "arrived"
+            participant of listOf(
+                participant {
+                    status of "accepted"
+                    actor of reference("Location", locationFhirId1)
+                }
+            )
+            start of 2.daysFromNow()
+            end of 3.daysFromNow()
+        }
+        val appt1Id = MockEHRTestData.add(fakeAppointment1)
+        val aidboxAppt1Id = "$tenantInUse-$appt1Id"
+        val aidboxAppt1 = fakeAppointment1.copy(
+            id = Id(aidboxAppt1Id),
+            identifier = fakeAppointment1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appt1Id)
+        )
+        AidboxTestData.add(aidboxAppt1)
+        val fakeAppointment2 = appointment {
+            status of "arrived"
+            participant of listOf(
+                participant {
+                    status of "accepted"
+                    actor of reference("Location", locationFhirId2)
+                },
+                participant {
+                    status of "accepted"
+                    actor of reference("Location", locationFhirId2) // same location twice
+                }
+            )
+            start of 2.daysFromNow()
+            end of 3.daysFromNow()
+        }
+        val appt2Id = MockEHRTestData.add(fakeAppointment2)
+        val aidboxAppt2Id = "$tenantInUse-$appt2Id"
+        val aidboxAppt2 = fakeAppointment2.copy(
+            id = Id(aidboxAppt2Id),
+            identifier = fakeAppointment2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appt2Id)
+        )
+        AidboxTestData.add(aidboxAppt2)
+
+        val location1ID = MockEHRTestData.add(fakeLocation1)
+        val location2ID = MockEHRTestData.add(fakeLocation1)
+        val location3ID = MockEHRTestData.add(fakeLocation1)
+        val location4ID = MockEHRTestData.add(fakeLocation1)
+        val location5ID = MockEHRTestData.add(fakeLocation1)
+        val location6ID = MockEHRTestData.add(fakeLocation1)
+        val location7ID = MockEHRTestData.add(fakeLocation2)
+        MockOCIServerClient.createExpectations("Location", location1ID, tenantInUse)
+        MockOCIServerClient.createExpectations("Location", location2ID, tenantInUse)
+        MockOCIServerClient.createExpectations("Location", location3ID, tenantInUse)
+        MockOCIServerClient.createExpectations("Location", location4ID, tenantInUse)
+        MockOCIServerClient.createExpectations("Location", location5ID, tenantInUse)
+        MockOCIServerClient.createExpectations("Location", location6ID, tenantInUse)
+        MockOCIServerClient.createExpectations("Location", location7ID, tenantInUse)
+
+        KafkaWrapper.kafkaPublishService.publishResources(
+            tenantId = tenantInUse,
+            trigger = DataTrigger.AD_HOC,
+            resources = listOf(aidboxAppt1, aidboxAppt2),
+        )
+
+        // make sure MockEHR is OK
+        var attempts = 0
+        while (MockEHRClient.getAllResources("Location").size() < 7) {
+            KotlinLogging.logger { }.info { MockEHRClient.getAllResources("Location").size() }
+            runBlocking { delay(2000) }
+            attempts++
+            if (attempts > 5) break
+        }
+        deployAndStartChannel(true)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertAllConnectorsSent(messageList)
+        assertEquals(2, messageList.size)
+        assertEquals(2, getAidboxResourceCount("Location"))
+
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.LOCATION, DataTrigger.AD_HOC, groupId)
+        assertEquals(2, events.size)
+    }
+
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `channel works for ad-hoc requests`(testTenant: String) {
+        tenantInUse = testTenant
+        val fakeLocation1 = location {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRDepartmentInternalSystem"
+                    value of "Location/1"
+                }
+            )
+        }
+        val locationFhirId1 = MockEHRTestData.add(fakeLocation1)
+        val fakeAppointment1 = appointment {
+            status of "arrived"
+            participant of listOf(
+                participant {
+                    status of "accepted"
+                    actor of reference("Location", locationFhirId1)
+                }
+            )
+            start of 2.daysFromNow()
+            end of 3.daysFromNow()
+        }
+        val appt1Id = MockEHRTestData.add(fakeAppointment1)
+        val aidboxAppt1Id = "$tenantInUse-$appt1Id"
+        val aidboxAppt2 = fakeAppointment1.copy(
+            id = Id(aidboxAppt1Id),
+            identifier = fakeAppointment1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appt1Id)
+        )
+        AidboxTestData.add(aidboxAppt2)
+        MockOCIServerClient.createExpectations("Location", locationFhirId1, testTenant)
+        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+            tenantId = testTenant,
+            trigger = DataTrigger.AD_HOC,
+            resourceFHIRIds = listOf(locationFhirId1),
+            resourceType = ResourceType.LOCATION
+        )
+
+        deployAndStartChannel(true)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertAllConnectorsSent(messageList)
+        assertEquals(1, messageList.size)
+        assertEquals(1, getAidboxResourceCount("Location"))
+
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.LOCATION, DataTrigger.AD_HOC, groupId)
+        assertEquals(1, events.size)
+    }
+
+    @Test
+    fun `non-existant request errors`() {
+        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+            tenantId = testTenant,
+            trigger = DataTrigger.AD_HOC,
+            resourceFHIRIds = listOf("nothing to see here"),
+            resourceType = ResourceType.LOCATION
+        )
+
+        deployAndStartChannel(true)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        messageList.forEach { ids ->
+            val message = MirthClient.getMessageById(testChannelId, ids)
+            message.destinationMessages.forEach {
+                assertEquals("ERROR", it.status)
+            }
+        }
+        assertEquals(1, messageList.size)
+        assertEquals(0, getAidboxResourceCount("Location"))
+
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.LOCATION, DataTrigger.AD_HOC, groupId)
+        assertEquals(0, events.size)
+    }
+}

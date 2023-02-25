@@ -15,6 +15,7 @@ import com.projectronin.interop.mirth.channels.client.data.datatypes.reference
 import com.projectronin.interop.mirth.channels.client.data.primitives.date
 import com.projectronin.interop.mirth.channels.client.data.primitives.daysFromNow
 import com.projectronin.interop.mirth.channels.client.data.resources.appointment
+import com.projectronin.interop.mirth.channels.client.data.resources.location
 import com.projectronin.interop.mirth.channels.client.data.resources.patient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
@@ -328,5 +329,78 @@ class AppointmentLoadTest : BaseChannelTest(
             ResourceType.APPOINTMENT, DataTrigger.AD_HOC, groupId
         )
         assertEquals(0, events.size)
+    }
+
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `channel works with dag`(testTenant: String) {
+        drainKafkaEvents(ResourceType.APPOINTMENT, overrideGroupId = "interop-mirth-location")
+
+        val appointmentType = "Appointment"
+        val locationType = "Location"
+        val types = listOf(
+            appointmentType,
+            locationType
+        )
+
+        val channels = listOf(
+            locationLoadChannelName
+        )
+        val channelIds = channels.map {
+            val id = installChannel(it)
+            clearMessages(id)
+            id
+        }
+
+        tenantInUse = testTenant
+        val fakeLocation = location {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRDepartmentInternalSystem"
+                    value of "Location/1"
+                }
+            )
+        }
+        val locationId = MockEHRTestData.add(fakeLocation)
+        MockOCIServerClient.createExpectations(locationType, locationId, testTenant)
+
+        val fakeAppointment = appointment {
+            status of "arrived"
+            participant of listOf(
+                participant {
+                    status of "accepted"
+                    actor of reference(locationType, locationId)
+                }
+            )
+            start of 2.daysFromNow()
+            end of 3.daysFromNow()
+        }
+        val appointmentId = MockEHRTestData.add(fakeAppointment)
+        MockOCIServerClient.createExpectations(appointmentType, appointmentId, testTenant)
+
+        // push event to get picked up
+        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+            testTenant,
+            DataTrigger.NIGHTLY,
+            listOf(appointmentId),
+            ResourceType.APPOINTMENT
+        )
+        deployAndStartChannel(true)
+        channelIds.forEach {
+            deployAndStartChannel(
+                waitForMessage = true,
+                channelToDeploy = it
+            )
+            stopChannel(it)
+        }
+
+        // check that publish event was triggered
+        val locationEvents = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
+            ResourceType.LOCATION, DataTrigger.NIGHTLY, groupId
+        )
+        assertEquals(1, locationEvents.size)
+        types.forEach {
+            assertEquals(1, getAidboxResourceCount(it))
+        }
     }
 }
