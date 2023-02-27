@@ -12,9 +12,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-const val practitionerLoadName = "PractitionerLoad"
+const val practitionerLoadName = "PractitionerNightlyLoad"
 
-class PractitionerLoadTest : BaseMirthChannelTest(
+class PractitionerNightlyLoadTest : BaseMirthChannelTest(
     practitionerLoadName,
     listOf("Practitioner", "PractitionerRole", "Location"),
     listOf("Practitioner", "PractitionerRole", "Location"),

@@ -45,7 +45,7 @@ import org.junit.jupiter.api.assertThrows
 import com.projectronin.interop.ehr.PractitionerService as EHRPractitionerService
 
 private const val VALID_TENANT_ID = "mdaoc"
-private const val CHANNEL_ROOT_NAME = "PractitionerLoad"
+private const val CHANNEL_ROOT_NAME = "PractitionerNightlyLoad"
 private const val VALID_DEPLOYED_NAME = "$VALID_TENANT_ID-$CHANNEL_ROOT_NAME"
 
 class PractitionerNightlyLoadTest {

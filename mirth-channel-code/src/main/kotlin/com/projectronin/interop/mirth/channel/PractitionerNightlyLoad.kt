@@ -37,7 +37,7 @@ class PractitionerNightlyLoad(
 ) : ChannelService(tenantService, transformManager) {
     companion object : ChannelFactory<PractitionerNightlyLoad>()
 
-    override val rootName = "PractitionerLoad"
+    override val rootName = "PractitionerNightlyLoad"
     override val destinations = mapOf(PUBLISH_SERVICE to practitionerNightlyLoadWriter)
 
     override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {

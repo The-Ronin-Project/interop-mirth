@@ -64,7 +64,7 @@ Under [channels](channels)
 
 * [AppointmentByPractitionerLoad](channels/AppointmentByPractitionerLoad) - channel for loading the
   appointments for tenant practitioners
-* [PractitionerLoad](channels/PractitionerLoad) - channel for loading tenant practitioners once a day
+* [PractitionerNightlyLoad](channels/PractitionerNightlyLoad) - channel for loading tenant practitioners once a day
 * ... (and more)
 
 Under [channels](channels)*/channelName*

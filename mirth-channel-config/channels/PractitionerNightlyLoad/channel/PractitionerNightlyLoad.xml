@@ -1,7 +1,7 @@
 <channel version="3.11.0">
   <id>26ab27c7-31b7-4c61-9403-6f4e61b789e0</id>
   <nextMetaDataId>5</nextMetaDataId>
-  <name>PractitionerLoad</name>
+  <name>PractitionerNightlyLoad</name>
   <description>Version 1.0.0
 
 Load FHIR Practitioner and related resources from a tenant, transform them to the Ronin FHIR profile, validates them, and write them to the Ronin database.</description>
