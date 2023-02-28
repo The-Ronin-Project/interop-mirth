@@ -55,7 +55,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: test-results
-          path: /runner/_work/mirth-channel-config/mirth-channel-config/build/tests
+          path: /runner/_work/interop-mirth/interop-mirth/mirth-channel-config/build/reports/tests 
 
       - name: Upload report to DataDog
         if: always() && !cancelled()
