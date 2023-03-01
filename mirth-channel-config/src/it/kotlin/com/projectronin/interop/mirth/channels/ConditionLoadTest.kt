@@ -1,6 +1,14 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
+import com.projectronin.interop.fhir.generators.datatypes.coding
+import com.projectronin.interop.fhir.generators.datatypes.identifier
+import com.projectronin.interop.fhir.generators.datatypes.name
+import com.projectronin.interop.fhir.generators.datatypes.reference
+import com.projectronin.interop.fhir.generators.primitives.date
+import com.projectronin.interop.fhir.generators.resources.condition
+import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
@@ -8,14 +16,6 @@ import com.projectronin.interop.mirth.channels.client.KafkaWrapper
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
-import com.projectronin.interop.mirth.channels.client.data.datatypes.codeableConcept
-import com.projectronin.interop.mirth.channels.client.data.datatypes.coding
-import com.projectronin.interop.mirth.channels.client.data.datatypes.identifier
-import com.projectronin.interop.mirth.channels.client.data.datatypes.name
-import com.projectronin.interop.mirth.channels.client.data.datatypes.reference
-import com.projectronin.interop.mirth.channels.client.data.primitives.date
-import com.projectronin.interop.mirth.channels.client.data.resources.condition
-import com.projectronin.interop.mirth.channels.client.data.resources.patient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier

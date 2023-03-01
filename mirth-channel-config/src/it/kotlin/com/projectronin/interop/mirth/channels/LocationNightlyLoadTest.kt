@@ -1,11 +1,11 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.fhir.generators.resources.location
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.TenantClient
-import com.projectronin.interop.mirth.channels.client.data.resources.location
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals

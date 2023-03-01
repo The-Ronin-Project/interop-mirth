@@ -40,9 +40,10 @@ dependencies {
     testImplementation(libs.xerces)
 
     implementation(project(":mirth-channel-code"))
-
     itImplementation(libs.mockserver.client.java)
+    itImplementation(libs.interop.fhir.generators)
     itImplementation(libs.interop.queue.kafka)
     itImplementation(libs.interop.publishers.kafka)
     itImplementation(libs.bundles.interop.kafka.events)
+    itImplementation(libs.ronin.test.data.generator)
 }

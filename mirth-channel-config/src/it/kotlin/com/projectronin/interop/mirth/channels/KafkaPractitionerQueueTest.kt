@@ -1,13 +1,13 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.fhir.generators.datatypes.identifier
+import com.projectronin.interop.fhir.generators.datatypes.name
+import com.projectronin.interop.fhir.generators.resources.practitioner
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.ProxyClient
-import com.projectronin.interop.mirth.channels.client.data.datatypes.identifier
-import com.projectronin.interop.mirth.channels.client.data.datatypes.name
-import com.projectronin.interop.mirth.channels.client.data.resources.practitioner
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource

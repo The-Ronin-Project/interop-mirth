@@ -1,12 +1,13 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.fhir.generators.datatypes.externalIdentifier
+import com.projectronin.interop.fhir.generators.datatypes.identifier
+import com.projectronin.interop.fhir.generators.resources.practitioner
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.ProxyClient
-import com.projectronin.interop.mirth.channels.client.data.datatypes.externalIdentifier
-import com.projectronin.interop.mirth.channels.client.data.resources.practitioner
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Disabled
@@ -19,10 +20,13 @@ class PractitionerQueueTest : BaseMirthChannelTest(practitionerQueueChannelName,
     @Test
     fun `queued practitioners are processed`() {
         val practitioner = practitioner {
-            identifier generate 1 plus externalIdentifier {
-                system of "mockEHRProviderSystem"
-                value of "1234"
-            }
+            identifier of listOf(
+                identifier {},
+                externalIdentifier {
+                    system of "mockEHRProviderSystem"
+                    value of "1234"
+                }
+            )
         }
         val practitionerId = MockEHRTestData.add(practitioner)
         MockOCIServerClient.createExpectations(practitionerType, practitionerId)

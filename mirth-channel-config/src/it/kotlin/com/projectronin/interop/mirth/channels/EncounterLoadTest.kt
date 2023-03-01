@@ -5,14 +5,13 @@ import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
+import com.projectronin.interop.fhir.generators.datatypes.period
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.date
-import com.projectronin.interop.fhir.generators.resources.observation
+import com.projectronin.interop.fhir.generators.primitives.dateTime
+import com.projectronin.interop.fhir.generators.resources.encounter
 import com.projectronin.interop.fhir.generators.resources.patient
-import com.projectronin.interop.fhir.r4.CodeSystem
-import com.projectronin.interop.fhir.r4.datatype.primitive.Code
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
-import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.KafkaWrapper
@@ -26,23 +25,24 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
+import org.junit.jupiter.params.provider.MethodSource
+import java.time.LocalDate
 
-const val observationLoadChannelName = "ObservationLoad"
+const val encounterLoadChannelName = "EncounterLoad"
 
-class ObservationLoadTest : BaseChannelTest(
-    observationLoadChannelName,
-    listOf("Patient", "Observation"),
-    listOf("Patient", "Observation"),
-    listOf(ResourceType.PATIENT, ResourceType.CONDITION)
+class EncounterLoadTest : BaseChannelTest(
+    encounterLoadChannelName,
+    listOf("Patient", "Encounter"),
+    listOf("Patient", "Encounter"),
+    listOf(ResourceType.PATIENT, ResourceType.ENCOUNTER)
 ) {
-    val patientType = "Patient"
-    val observationType = "Observation"
-    override val groupId = "interop-mirth-observation"
-
+    val nowish = LocalDate.now().minusDays(1)
+    val laterish = nowish.plusDays(1)
+    override val groupId = "interop-mirth-encounter"
     @ParameterizedTest
-    @ValueSource(strings = ["epicmock"]) // INT-1376 @MethodSource("tenantsToTest")
+    @MethodSource("tenantsToTest")
     fun `channel works`(testTenant: String) {
         tenantInUse = testTenant
         val patient1 = patient {
@@ -75,33 +75,27 @@ class ObservationLoadTest : BaseChannelTest(
         )
         AidboxTestData.add(aidboxPatient)
 
-        val observation = observation {
-            subject of reference(patientType, patient1Id)
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri
-                            code of ObservationCategoryCodes.VITAL_SIGNS.code
-                        }
-                    )
+        val encounter = encounter {
+            subject of reference("Patient", patient1Id)
+            period of period {
+                start of dateTime {
+                    year of nowish.year
+                    month of nowish.monthValue
+                    day of nowish.dayOfMonth
                 }
-            )
-            status of "final"
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of CodeSystem.LOINC.uri
-                        display of "Body Weight"
-                        code of Code("29463-7")
-                    }
-                )
+                end of dateTime {
+                    year of laterish.year
+                    month of laterish.monthValue
+                    day of laterish.dayOfMonth
+                }
             }
+            status of "planned"
+            `class` of coding { display of "test" }
+            type of listOf(codeableConcept { text of "type" })
         }
-        val obsvId = MockEHRTestData.add(observation)
 
-        MockOCIServerClient.createExpectations(observationType, obsvId)
-
+        val encounterId = MockEHRTestData.add(encounter)
+        MockOCIServerClient.createExpectations("Encounter", encounterId, tenantInUse)
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
@@ -112,17 +106,15 @@ class ObservationLoadTest : BaseChannelTest(
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
-        assertEquals(1, getAidboxResourceCount(observationType))
+        assertEquals(1, getAidboxResourceCount("Encounter"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.OBSERVATION, DataTrigger.NIGHTLY, groupId
-        )
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.ENCOUNTER, DataTrigger.NIGHTLY)
         assertEquals(1, events.size)
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["epicmock"]) // INT-1376 @MethodSource("tenantsToTest")
-    fun `channel works with multiple patients and observations`(testTenant: String) {
+    @MethodSource("tenantsToTest")
+    fun `channel works with multiple patients and encounters`(testTenant: String) {
         tenantInUse = testTenant
         val patient1 = patient {
             birthDate of date {
@@ -185,67 +177,47 @@ class ObservationLoadTest : BaseChannelTest(
         AidboxTestData.add(aidboxPatient1)
         AidboxTestData.add(aidboxPatient2)
 
-        val observation1 = observation {
-            subject of reference(patientType, patient1Id)
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri
-                            code of ObservationCategoryCodes.VITAL_SIGNS.code
-                        }
-                    )
+        val encounter1 = encounter {
+            subject of reference("Patient", patient1Id)
+            period of period {
+                start of dateTime {
+                    year of nowish.year
+                    month of nowish.monthValue
+                    day of nowish.dayOfMonth
                 }
-            )
-            status of "final"
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of CodeSystem.LOINC.uri
-                        display of "Body Weight"
-                        code of Code("29463-7")
-                    }
-                )
             }
+            status of "planned"
+            `class` of coding { display of "test" }
+            type of listOf(codeableConcept { text of "type" })
         }
 
-        val observation2 = observation {
-            subject of reference(patientType, patient2Id)
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri
-                            code of ObservationCategoryCodes.VITAL_SIGNS.code
-                        }
-                    )
+        val encounter2 = encounter {
+            subject of reference("Patient", patient2Id)
+            period of period {
+                start of dateTime {
+                    year of nowish.year
+                    month of nowish.monthValue
+                    day of nowish.dayOfMonth
                 }
-            )
-            status of "final"
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of CodeSystem.LOINC.uri
-                        display of "Body Weight"
-                        code of Code("29463-7")
-                    }
-                )
             }
+            status of "planned"
+            `class` of coding { display of "test" }
+            type of listOf(codeableConcept { text of "type" })
         }
-        val observation1ID = MockEHRTestData.add(observation1)
-        val observation2ID = MockEHRTestData.add(observation1)
-        val observation3ID = MockEHRTestData.add(observation1)
-        val observation4ID = MockEHRTestData.add(observation1)
-        val observation5ID = MockEHRTestData.add(observation1)
-        val observation6ID = MockEHRTestData.add(observation1)
-        val observationPat2ID = MockEHRTestData.add(observation2)
-        MockOCIServerClient.createExpectations(observationType, observation1ID, tenantInUse)
-        MockOCIServerClient.createExpectations(observationType, observation2ID, tenantInUse)
-        MockOCIServerClient.createExpectations(observationType, observation3ID, tenantInUse)
-        MockOCIServerClient.createExpectations(observationType, observation4ID, tenantInUse)
-        MockOCIServerClient.createExpectations(observationType, observation5ID, tenantInUse)
-        MockOCIServerClient.createExpectations(observationType, observation6ID, tenantInUse)
-        MockOCIServerClient.createExpectations(observationType, observationPat2ID, tenantInUse)
+        val encounter1ID = MockEHRTestData.add(encounter1)
+        val encounter2ID = MockEHRTestData.add(encounter1)
+        val encounter3ID = MockEHRTestData.add(encounter1)
+        val encounter4ID = MockEHRTestData.add(encounter1)
+        val encounter5ID = MockEHRTestData.add(encounter1)
+        val encounter6ID = MockEHRTestData.add(encounter1)
+        val encounterPat2ID = MockEHRTestData.add(encounter2)
+        MockOCIServerClient.createExpectations("Encounter", encounter1ID, tenantInUse)
+        MockOCIServerClient.createExpectations("Encounter", encounter2ID, tenantInUse)
+        MockOCIServerClient.createExpectations("Encounter", encounter3ID, tenantInUse)
+        MockOCIServerClient.createExpectations("Encounter", encounter4ID, tenantInUse)
+        MockOCIServerClient.createExpectations("Encounter", encounter5ID, tenantInUse)
+        MockOCIServerClient.createExpectations("Encounter", encounter6ID, tenantInUse)
+        MockOCIServerClient.createExpectations("Encounter", encounterPat2ID, tenantInUse)
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
@@ -254,8 +226,8 @@ class ObservationLoadTest : BaseChannelTest(
 
         // make sure MockEHR is OK
         var attempts = 0
-        while (MockEHRClient.getAllResources(observationType).size() < 7) {
-            KotlinLogging.logger { }.info { MockEHRClient.getAllResources(observationType).size() }
+        while (MockEHRClient.getAllResources("Encounter").size() < 7) {
+            KotlinLogging.logger { }.info { MockEHRClient.getAllResources("Encounter").size() }
             runBlocking { delay(2000) }
             attempts++
             if (attempts > 5) break
@@ -265,14 +237,14 @@ class ObservationLoadTest : BaseChannelTest(
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(2, messageList.size)
-        assertEquals(7, getAidboxResourceCount(observationType))
+        assertEquals(7, getAidboxResourceCount("Encounter"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.OBSERVATION, DataTrigger.AD_HOC, groupId)
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.ENCOUNTER, DataTrigger.AD_HOC)
         assertEquals(7, events.size)
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["epicmock"]) // INT-1376 @MethodSource("tenantsToTest")
+    @MethodSource("tenantsToTest")
     fun `channel works for ad-hoc requests`(testTenant: String) {
         tenantInUse = testTenant
         val patient1 = patient {
@@ -305,58 +277,45 @@ class ObservationLoadTest : BaseChannelTest(
         )
         AidboxTestData.add(aidboxPatient)
 
-        val observation = observation {
-            subject of reference(patientType, patient1Id)
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri
-                            code of ObservationCategoryCodes.VITAL_SIGNS.code
-                        }
-                    )
+        val encounter1 = encounter {
+            subject of reference("Patient", patient1Id)
+            period of period {
+                start of dateTime {
+                    year of nowish.year
+                    month of nowish.monthValue
+                    day of nowish.dayOfMonth
                 }
-            )
-            status of "final"
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of CodeSystem.LOINC.uri
-                        display of "Body Weight"
-                        code of Code("29463-7")
-                    }
-                )
             }
+            status of "planned"
+            `class` of coding { display of "test" }
+            type of listOf(codeableConcept { text of "type" })
         }
-        val observationID = MockEHRTestData.add(observation)
-        MockOCIServerClient.createExpectations(observationType, observationID, testTenant)
+        val encounterId = MockEHRTestData.add(encounter1)
+        MockOCIServerClient.createExpectations("Encounter", encounterId, testTenant)
         KafkaWrapper.kafkaLoadService.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
-            resourceFHIRIds = listOf(observationID),
-            resourceType = ResourceType.OBSERVATION
+            resourceFHIRIds = listOf(encounterId),
+            resourceType = ResourceType.ENCOUNTER
         )
 
         deployAndStartChannel(true)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
-        assertEquals(1, getAidboxResourceCount(observationType))
+        assertEquals(1, getAidboxResourceCount("Encounter"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.OBSERVATION, DataTrigger.AD_HOC, groupId
-        )
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.ENCOUNTER, DataTrigger.AD_HOC)
         assertEquals(1, events.size)
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = ["epicmock"]) // INT-1376 @MethodSource("tenantsToTest")
-    fun `non-existant request errors`() {
+    @Test
+    fun `non-existent request errors`() {
         KafkaWrapper.kafkaLoadService.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.OBSERVATION
+            resourceType = ResourceType.ENCOUNTER
         )
 
         deployAndStartChannel(true)
@@ -368,11 +327,9 @@ class ObservationLoadTest : BaseChannelTest(
             }
         }
         assertEquals(1, messageList.size)
-        assertEquals(0, getAidboxResourceCount(observationType))
+        assertEquals(0, getAidboxResourceCount("Encounter"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.OBSERVATION, DataTrigger.AD_HOC, groupId
-        )
+        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.ENCOUNTER, DataTrigger.AD_HOC)
         assertEquals(0, events.size)
     }
 }

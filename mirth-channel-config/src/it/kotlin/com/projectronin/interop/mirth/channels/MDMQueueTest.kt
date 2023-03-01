@@ -1,11 +1,11 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.interop.fhir.generators.resources.patient
+import com.projectronin.interop.fhir.generators.resources.practitioner
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.ProxyClient
-import com.projectronin.interop.mirth.channels.client.data.resources.patient
-import com.projectronin.interop.mirth.channels.client.data.resources.practitioner
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
