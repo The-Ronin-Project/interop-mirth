@@ -1,10 +1,10 @@
 <channel version="3.11.0">
-  <id>97b6f1db-9bd9-4251-9d04-d25871723b14</id>
+  <id>41b32717-852d-40d9-1524-9db9bd1f6b79</id>
   <nextMetaDataId>5</nextMetaDataId>
-  <name>ObservationLoad</name>
+  <name>PractitionerLoad</name>
   <description>Version 1.0.0.
 
-Reads Kafka events and finds appropriate observations based on those events</description>
+Reads Kafka events and finds appropriate practitioners based on those events</description>
   <revision>2</revision>
   <sourceConnector version="3.11.0">
     <metaDataId>0</metaDataId>
@@ -84,7 +84,7 @@ Reads Kafka events and finds appropriate observations based on those events</des
   <destinationConnectors>
     <connector version="3.11.0">
       <metaDataId>1</metaDataId>
-      <name>Publish Observations</name>
+      <name>Publish Practitioners</name>
       <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="3.11.0">
         <pluginProperties/>
         <destinationConnectorProperties version="3.11.0">
@@ -161,7 +161,7 @@ return message;</preprocessingScript>
 return;</postprocessingScript>
   <deployScript>// @apiinfo &quot;&quot;&quot;Get the channel configuration and services.&quot;&quot;&quot;
 
-var channelService = Packages.com.projectronin.interop.mirth.channel.ObservationLoad.Companion.create();
+var channelService = Packages.com.projectronin.interop.mirth.channel.PractitionerLoad.Companion.create();
 onDeploy(channelService)
 </deployScript>
   <undeployScript>// This script executes once when the channel is undeployed

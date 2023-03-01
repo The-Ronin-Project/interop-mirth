@@ -223,7 +223,7 @@ class AppointmentLoadTest : BaseChannelTest(
             KotlinLogging.logger { }.info { MockEHRClient.getAllResources("Appointment").size() }
             runBlocking { delay(2000) }
             attempts++
-            if (attempts > 5) break
+            if (attempts > 10) break
         }
 
         deployAndStartChannel(true)

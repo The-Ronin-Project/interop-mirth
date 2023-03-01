@@ -130,6 +130,9 @@ class ConditionLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `channel works with multiple patients and conditions`(testTenant: String) {
         tenantInUse = testTenant
+
+        // mock: patients at the EHR got published to Ronin
+
         val patient1 = patient {
             birthDate of date {
                 year of 1990
@@ -190,6 +193,8 @@ class ConditionLoadTest : BaseChannelTest(
         )
         AidboxTestData.add(aidboxPatient1)
         AidboxTestData.add(aidboxPatient2)
+
+        // mock: conditions at the EHR
 
         val condition1 = condition {
             clinicalStatus of codeableConcept {
@@ -276,13 +281,17 @@ class ConditionLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("Condition", condition5ID, tenantInUse)
         MockOCIServerClient.createExpectations("Condition", condition6ID, tenantInUse)
         MockOCIServerClient.createExpectations("Condition", conditionPat2ID, tenantInUse)
+
+        // mock: patient-publish event
+
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(aidboxPatient1, aidboxPatient2),
         )
 
-        // make sure MockEHR is OK
+        // larger data sets: make sure MockEHR is OK
+
         var attempts = 0
         while (MockEHRClient.getAllResources("Condition").size() < 7) {
             KotlinLogging.logger { }.info { MockEHRClient.getAllResources("Condition").size() }
@@ -291,11 +300,15 @@ class ConditionLoadTest : BaseChannelTest(
             if (attempts > 5) break
         }
 
+        // start channel: patient-publish triggers condition-load
+
         deployAndStartChannel(true)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(2, messageList.size)
         assertEquals(7, getAidboxResourceCount("Condition"))
+
+        // verify: condition-publish success
 
         val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
             ResourceType.CONDITION, DataTrigger.AD_HOC, groupId
@@ -394,7 +407,7 @@ class ConditionLoadTest : BaseChannelTest(
     }
 
     @Test
-    fun `non-existant request errors`() {
+    fun `non-existent request errors`() {
         KafkaWrapper.kafkaLoadService.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,

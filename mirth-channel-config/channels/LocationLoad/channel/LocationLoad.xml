@@ -4,7 +4,7 @@
   <name>LocationLoad</name>
   <description>Version 1.0.0.
 
-Reads Kafka events and finds appropriate appointment based on those events</description>
+Reads Kafka events and finds appropriate locations based on those events</description>
   <revision>2</revision>
   <sourceConnector version="3.11.0">
     <metaDataId>0</metaDataId>

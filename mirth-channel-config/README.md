@@ -62,9 +62,11 @@ To update the Mirth Connector JAR to use with local Mirth:
 
 Under [channels](channels)
 
-* [AppointmentByPractitionerLoad](channels/AppointmentByPractitionerLoad) - channel for loading the
-  appointments for tenant practitioners
-* [PractitionerNightlyLoad](channels/PractitionerNightlyLoad) - channel for loading tenant practitioners once a day
+* [LocationLoad](channels/PatientLoad) - channel for loading the tenant locations
+* [AppointmentLoad](channels/PatientLoad) - channel for loading the appointments for tenant locations
+* [PatientLoad](channels/PatientLoad) - channel for loading the patients for tenant appointments
+* [PractitionerLoad](channels/PractitionerLoad) - channel for loading the practitioners for tenant appointments
+* [ConditionLoad](channels/ConditionLoadd) - channel for loading the conditions for tenant patients
 * ... (and more)
 
 Under [channels](channels)*/channelName*
