@@ -5,7 +5,6 @@ import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninLocation
-import com.projectronin.interop.fhir.ronin.util.unlocalize
 import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.destinations.LocationWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
@@ -44,7 +43,7 @@ class LocationNightlyLoad(
 
         val response = vendorFactory.locationService.getLocationsByFHIRId(
             tenant,
-            locationIdsList.unlocalize(tenant)
+            locationIdsList
         )
         return response.values.chunked(confirmMaxChunkSize(serviceMap)).map { locations ->
             MirthMessage(

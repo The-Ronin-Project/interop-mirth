@@ -2,6 +2,7 @@ package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.event.interop.resource.load.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.resource.publish.v1.InteropResourcePublishV1
+import com.projectronin.interop.aidbox.utils.findFhirID
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.ObservationService
 import com.projectronin.interop.ehr.factory.EHRFactory
@@ -13,7 +14,6 @@ import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninObservations
-import com.projectronin.interop.fhir.ronin.util.unlocalize
 import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
@@ -59,11 +59,13 @@ class ObservationPublish(
 
         private val categoryValueSet = CodeSystem.OBSERVATION_CATEGORY.uri.value
         override fun loadResources(): List<Observation> {
-            val patientFhirId = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class).id?.value
+            val patientFhirId = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
+                .identifier
+                .findFhirID()
             return fhirService.findObservationsByPatientAndCategory(
                 tenant,
                 listOf(
-                    patientFhirId!!.unlocalize(tenant),
+                    patientFhirId,
                 ),
                 listOf(
                     FHIRSearchToken(categoryValueSet, ObservationCategoryCodes.VITAL_SIGNS.code),

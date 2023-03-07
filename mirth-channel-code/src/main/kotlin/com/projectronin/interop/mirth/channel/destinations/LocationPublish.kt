@@ -10,8 +10,8 @@ import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninLocation
-import com.projectronin.interop.fhir.ronin.util.unlocalize
 import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher
+import com.projectronin.interop.mirth.channel.util.unlocalize
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant

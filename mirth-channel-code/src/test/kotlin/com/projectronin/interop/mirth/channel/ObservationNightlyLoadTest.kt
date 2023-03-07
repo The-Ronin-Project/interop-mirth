@@ -291,8 +291,8 @@ class ObservationNightlyLoadTest {
         every { vendorFactory.observationService } returns mockObservationService
 
         every { patientService.getPatientFHIRIdsByTenant("mdaoc") } returns listOf(
-            "mdaoc-123",
-            "mdaoc-456"
+            "123",
+            "456"
         )
 
         val actualList = channel.sourceReader(

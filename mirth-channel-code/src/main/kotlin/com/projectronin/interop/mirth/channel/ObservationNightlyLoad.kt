@@ -9,7 +9,6 @@ import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninObservations
-import com.projectronin.interop.fhir.ronin.util.unlocalize
 import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.destinations.ObservationWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
@@ -48,8 +47,7 @@ class ObservationNightlyLoad(
         val vendorFactory = ehrFactory.getVendorFactory(tenant)
 
         // Query the tenant EHR system 1 patient at a time. Collect results and send to Mirth
-        val mirthMessageList = patientList.flatMap { fhirId ->
-            val patientFhirId = fhirId.unlocalize(tenant)
+        val mirthMessageList = patientList.flatMap { patientFhirId ->
             val response = vendorFactory.observationService.findObservationsByPatientAndCategory(
                 tenant,
                 listOf(

@@ -81,7 +81,10 @@ class PractitionerPublishTest {
             "{}",
         )
         val mockParticipant = mockk<Participant> {
-            every { actor?.reference?.value } returns "Practitioner/456"
+            every { actor } returns mockk {
+                every { decomposedType() } returns "Practitioner"
+                every { decomposedId() } returns "tenant-456"
+            }
         }
         val mockAppointment = mockk<Appointment> {
             every { id?.value } returns "123"

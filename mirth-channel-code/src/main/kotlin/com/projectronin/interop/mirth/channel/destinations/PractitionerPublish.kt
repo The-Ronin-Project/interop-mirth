@@ -11,6 +11,7 @@ import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninPractitioner
 import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher
+import com.projectronin.interop.mirth.channel.util.unlocalize
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -55,12 +56,17 @@ class PractitionerPublish(
         PublishEventResourceLoadRequest<Practitioner>(sourceEvent) {
 
         override fun loadResources(): List<Practitioner> {
-            return JacksonUtil.readJsonObject(sourceEvent.resourceJson, Appointment::class)
-                .participant
-                .mapNotNull { it.actor?.reference?.value }
-                .filter { it.contains("Practitioner/") }
-                .map { fhirService.getPractitioner(tenant, it.split("/")[1]) }
-                .toList()
+            val appointment = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Appointment::class)
+            val practitionerFhirUDPIds = appointment.participant
+                .filter { it.actor?.decomposedType()?.startsWith("Practitioner") == true }
+                .mapNotNull { it.actor?.decomposedId() }
+                .map { it.unlocalize(tenant) }
+                .distinct()
+
+            return practitionerFhirUDPIds.map {
+                val fhirID = it.unlocalize(tenant)
+                fhirService.getPractitioner(tenant, fhirID)
+            }
         }
     }
 

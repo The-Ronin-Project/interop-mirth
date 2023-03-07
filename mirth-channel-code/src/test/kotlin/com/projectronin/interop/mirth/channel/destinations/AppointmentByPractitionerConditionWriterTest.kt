@@ -99,7 +99,7 @@ class AppointmentByPractitionerConditionWriterTest {
             "unused",
             "",
             mapOf(
-                MirthKey.PATIENT_FHIR_ID.code to "${tenant.mnemonic}-blah",
+                MirthKey.PATIENT_FHIR_ID.code to "blah",
                 MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
             ),
             emptyMap()
@@ -147,7 +147,7 @@ class AppointmentByPractitionerConditionWriterTest {
             "unused",
             "",
             mapOf(
-                MirthKey.PATIENT_FHIR_ID.code to "${tenant.mnemonic}-blah",
+                MirthKey.PATIENT_FHIR_ID.code to "blah",
                 MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
             ),
             emptyMap()
@@ -184,7 +184,7 @@ class AppointmentByPractitionerConditionWriterTest {
             "unused",
             "",
             mapOf(
-                MirthKey.PATIENT_FHIR_ID.code to "${tenant.mnemonic}-blah",
+                MirthKey.PATIENT_FHIR_ID.code to "blah",
                 MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
             ),
             emptyMap()
@@ -215,7 +215,7 @@ class AppointmentByPractitionerConditionWriterTest {
             "unused",
             "",
             mapOf(
-                MirthKey.PATIENT_FHIR_ID.code to "${tenant.mnemonic}-blah",
+                MirthKey.PATIENT_FHIR_ID.code to "blah",
                 MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
             ),
             emptyMap()

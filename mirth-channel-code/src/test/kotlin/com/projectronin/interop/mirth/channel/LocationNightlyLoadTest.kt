@@ -68,7 +68,7 @@ internal class LocationNightlyLoadTest {
     @Test
     fun `sourceReader - works`() {
         every { tenantConfigurationFactory.getLocationIDsByTenant(TENANT_ID) } returns listOf(
-            "$TENANT_ID-location1", "$TENANT_ID-location2"
+            "location1", "location2"
         )
         every {
             vendorFactory.locationService.getLocationsByFHIRId(

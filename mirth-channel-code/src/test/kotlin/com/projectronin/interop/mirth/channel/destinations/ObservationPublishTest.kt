@@ -4,6 +4,8 @@ import com.projectronin.event.interop.resource.load.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.resource.publish.v1.InteropResourcePublishV1
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.fhir.r4.CodeSystem
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -80,7 +82,12 @@ class ObservationPublishTest {
             "{}",
         )
         val mockPatient = mockk<Patient> {
-            every { id?.value } returns "123"
+            every { identifier } returns listOf(
+                mockk {
+                    every { system } returns CodeSystem.RONIN_FHIR_ID.uri
+                    every { value } returns "123".asFHIR()
+                }
+            )
         }
         val mockObservation = mockk<Observation> {}
         every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event

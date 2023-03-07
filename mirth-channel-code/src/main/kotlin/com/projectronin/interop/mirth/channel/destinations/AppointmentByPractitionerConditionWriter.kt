@@ -8,7 +8,6 @@ import com.projectronin.interop.fhir.r4.valueset.ConditionCategoryCodes
 import com.projectronin.interop.fhir.r4.valueset.ConditionClinicalStatusCodes
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
-import com.projectronin.interop.fhir.ronin.util.unlocalize
 import com.projectronin.interop.mirth.channel.base.DestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
@@ -48,7 +47,7 @@ class AppointmentByPractitionerConditionWriter(
         val conditions: List<Condition> =
             vendorFactory.conditionService.findConditionsByCodes(
                 tenant,
-                patientFHIRId.unlocalize(tenant),
+                patientFHIRId,
                 listOf(
                     FHIRSearchToken(categoryValueSet, ConditionCategoryCodes.PROBLEM_LIST_ITEM.code),
                     FHIRSearchToken(categoryValueSet, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code)
