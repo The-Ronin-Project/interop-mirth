@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.Identifier
 import com.projectronin.interop.fhir.r4.resource.Appointment
@@ -11,7 +10,6 @@ import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.r4.resource.PractitionerRole
 import com.projectronin.interop.fhir.r4.resource.Resource
-import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxClient
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.KafkaWrapper
@@ -22,10 +20,13 @@ import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.extension.ExtendWith
 import java.io.File
 import java.io.StringWriter
 import java.util.stream.Stream
@@ -42,11 +43,11 @@ import kotlin.time.Duration.Companion.seconds
  * a list of resources  types to clear in mockERH
  */
 
+@ExtendWith(TestListener::class)
 abstract class BaseChannelTest(
     private val channelName: String,
     private val aidboxResourceTypes: List<String>,
     private val mockEHRResourceTypes: List<String> = emptyList(),
-    private val kafkaQueueResourceTypes: List<ResourceType> = emptyList()
 ) {
     var tenantInUse = "NOTSET"
     protected val testChannelId = installChannel()
@@ -55,8 +56,9 @@ abstract class BaseChannelTest(
     @BeforeEach
     fun setup() {
         clearMessages()
+        MockEHRTestData.purge()
+        AidboxTestData.purge()
         deleteAidboxResources(*aidboxResourceTypes.toTypedArray())
-        drainKafkaEvents(*kafkaQueueResourceTypes.toTypedArray())
         deleteMockEHRResources(*mockEHRResourceTypes.toTypedArray())
         MockOCIServerClient.client.clear("PutObjectExpectation")
     }
@@ -69,6 +71,14 @@ abstract class BaseChannelTest(
     }
 
     companion object {
+        @JvmStatic
+        @BeforeAll
+        @AfterAll
+        fun cleanup() {
+            KafkaWrapper.kafkaPublishService.deleteAllPublishTopics()
+            KafkaWrapper.kafkaLoadService.deleteAllLoadTopics()
+        }
+
         @JvmStatic
         fun tenantsToTest(): Stream<String> {
             val tenants =
@@ -153,14 +163,6 @@ abstract class BaseChannelTest(
     protected fun deleteMockEHRResources(vararg resourceTypes: String) {
         resourceTypes.forEach {
             MockEHRClient.deleteAllResources(it)
-        }
-    }
-
-    protected fun drainKafkaEvents(vararg resourceTypes: ResourceType, overrideGroupId: String? = groupId) {
-        resourceTypes.forEach {
-            KafkaWrapper.kafkaLoadService.retrieveLoadEvents(it, overrideGroupId, true)
-            KafkaWrapper.kafkaPublishService.retrievePublishEvents(it, DataTrigger.AD_HOC, overrideGroupId, true)
-            KafkaWrapper.kafkaPublishService.retrievePublishEvents(it, DataTrigger.NIGHTLY, overrideGroupId, true)
         }
     }
 

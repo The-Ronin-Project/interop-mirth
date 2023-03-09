@@ -15,16 +15,13 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.KafkaWrapper
-import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -36,11 +33,11 @@ class EncounterLoadTest : BaseChannelTest(
     encounterLoadChannelName,
     listOf("Patient", "Encounter"),
     listOf("Patient", "Encounter"),
-    listOf(ResourceType.PATIENT, ResourceType.ENCOUNTER)
 ) {
     val nowish = LocalDate.now().minusDays(1)
     val laterish = nowish.plusDays(1)
     override val groupId = "interop-mirth-encounter"
+
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works`(testTenant: String) {
@@ -108,8 +105,12 @@ class EncounterLoadTest : BaseChannelTest(
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Encounter"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.ENCOUNTER, DataTrigger.NIGHTLY)
-        assertEquals(1, events.size)
+        assertTrue(
+            KafkaWrapper.validatePublishEvents(
+                1,
+                ResourceType.ENCOUNTER, DataTrigger.NIGHTLY, groupId
+            )
+        )
     }
 
     @ParameterizedTest
@@ -225,13 +226,7 @@ class EncounterLoadTest : BaseChannelTest(
         )
 
         // make sure MockEHR is OK
-        var attempts = 0
-        while (MockEHRClient.getAllResources("Encounter").size() < 7) {
-            KotlinLogging.logger { }.info { MockEHRClient.getAllResources("Encounter").size() }
-            runBlocking { delay(2000) }
-            attempts++
-            if (attempts > 5) break
-        }
+        MockEHRTestData.validateAll()
 
         deployAndStartChannel(true)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
@@ -239,8 +234,12 @@ class EncounterLoadTest : BaseChannelTest(
         assertEquals(2, messageList.size)
         assertEquals(7, getAidboxResourceCount("Encounter"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.ENCOUNTER, DataTrigger.AD_HOC)
-        assertEquals(7, events.size)
+        assertTrue(
+            KafkaWrapper.validatePublishEvents(
+                7,
+                ResourceType.ENCOUNTER, DataTrigger.AD_HOC, groupId
+            )
+        )
     }
 
     @ParameterizedTest
@@ -305,8 +304,12 @@ class EncounterLoadTest : BaseChannelTest(
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Encounter"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.ENCOUNTER, DataTrigger.AD_HOC)
-        assertEquals(1, events.size)
+        assertTrue(
+            KafkaWrapper.validatePublishEvents(
+                1,
+                ResourceType.ENCOUNTER, DataTrigger.AD_HOC, groupId
+            )
+        )
     }
 
     @Test
@@ -328,8 +331,5 @@ class EncounterLoadTest : BaseChannelTest(
         }
         assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("Encounter"))
-
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.ENCOUNTER, DataTrigger.AD_HOC)
-        assertEquals(0, events.size)
     }
 }

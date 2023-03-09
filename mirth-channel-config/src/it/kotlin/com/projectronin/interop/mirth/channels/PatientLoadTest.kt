@@ -21,6 +21,7 @@ import com.projectronin.interop.mirth.channels.client.KafkaWrapper
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
@@ -30,7 +31,6 @@ class PatientLoadTest : BaseChannelTest(
     patientLoadChannelName,
     listOf("Patient", "Condition", "Appointment", "Observation"),
     listOf("Patient", "Condition", "Appointment", "Observation"),
-    listOf(ResourceType.PATIENT, ResourceType.APPOINTMENT, ResourceType.CONDITION)
 ) {
     override val groupId = "interop-mirth-patient"
 
@@ -72,8 +72,8 @@ class PatientLoadTest : BaseChannelTest(
         deployAndStartChannel(true)
 
         // check that publish event was triggered
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.PATIENT, DataTrigger.NIGHTLY, groupId)
-        assertEquals(1, events.size)
+
+        assertTrue(KafkaWrapper.validatePublishEvents(1, ResourceType.PATIENT, DataTrigger.NIGHTLY, groupId))
     }
 
     @ParameterizedTest
@@ -139,17 +139,12 @@ class PatientLoadTest : BaseChannelTest(
         deployAndStartChannel(true)
 
         // check that publish event was triggered
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.PATIENT, DataTrigger.NIGHTLY, groupId)
-        assertEquals(2, events.size)
+        assertTrue(KafkaWrapper.validatePublishEvents(2, ResourceType.PATIENT, DataTrigger.NIGHTLY, groupId))
     }
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with dag`(testTenant: String) {
-        drainKafkaEvents(ResourceType.PATIENT, overrideGroupId = "interop-mirth-condition")
-        drainKafkaEvents(ResourceType.PATIENT, overrideGroupId = "interop-mirth-appointment")
-        drainKafkaEvents(ResourceType.PATIENT, overrideGroupId = "interop-mirth-patient")
-
         val conditionType = "Condition"
         val patientType = "Patient"
         val appointmentType = "Appointment"
@@ -293,11 +288,11 @@ class PatientLoadTest : BaseChannelTest(
         }
 
         // check that publish event was triggered
-        val conditionEvents = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.CONDITION, DataTrigger.NIGHTLY, "interop-mirth-patient")
-        val appointmentEvents = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.APPOINTMENT, DataTrigger.NIGHTLY, "interop-mirth-patient")
         // INT-1376 val observationEvents = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.OBSERVATION, DataTrigger.NIGHTLY)
-        assertEquals(1, conditionEvents.size)
-        assertEquals(1, appointmentEvents.size)
+
+        assertTrue(KafkaWrapper.validatePublishEvents(1, ResourceType.CONDITION, DataTrigger.NIGHTLY, "interop-mirth-patient"))
+        assertTrue(KafkaWrapper.validatePublishEvents(1, ResourceType.APPOINTMENT, DataTrigger.NIGHTLY, "interop-mirth-patient"))
+        assertTrue(KafkaWrapper.validatePublishEvents(1, ResourceType.PATIENT, DataTrigger.NIGHTLY, "interop-mirth-patient"))
         // INT-1376 assertEquals(1, observationEvents.size)
         types.forEach {
             assertEquals(1, getAidboxResourceCount(it))

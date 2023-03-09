@@ -103,11 +103,11 @@ class PatientDiscovery(
             endDate
         )
 
-        val usefulParticipants = fullAppointments.appointments.flatMap { appointment ->
+        val patients = fullAppointments.appointments.flatMap { appointment ->
             appointment.participant.mapNotNull { it.actor?.reference?.value }
-                .filter { it.contains("Patient") || it.contains("Practitioner") }
+                .filter { it.contains("Patient") }
         }.distinct()
 
-        return MirthMessage(message = JacksonUtil.writeJsonValue(usefulParticipants))
+        return MirthMessage(message = JacksonUtil.writeJsonValue(patients))
     }
 }

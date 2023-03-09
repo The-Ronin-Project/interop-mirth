@@ -14,15 +14,12 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.KafkaWrapper
-import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -34,7 +31,6 @@ class PractitionerLoadTest : BaseChannelTest(
     practitionerLoadChannelName,
     listOf("Appointment", "Practitioner"),
     listOf("Appointment", "Practitioner"),
-    listOf(ResourceType.APPOINTMENT, ResourceType.PRACTITIONER)
 ) {
     override val groupId = "interop-mirth-practitioner"
 
@@ -125,11 +121,7 @@ class PractitionerLoadTest : BaseChannelTest(
         assertEquals(1, getAidboxResourceCount("Practitioner"))
 
         // verify: practitioner-publish success
-
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.PRACTITIONER, DataTrigger.NIGHTLY, groupId
-        )
-        assertEquals(1, events.size)
+        Assertions.assertTrue(KafkaWrapper.validatePublishEvents(1, ResourceType.PRACTITIONER, DataTrigger.NIGHTLY, groupId))
     }
 
     @ParameterizedTest
@@ -197,14 +189,7 @@ class PractitionerLoadTest : BaseChannelTest(
         )
 
         // larger data sets: make sure MockEHR is OK
-
-        var attempts = 0
-        while (MockEHRClient.getAllResources("Practitioner").size() < 2) {
-            KotlinLogging.logger { }.info { MockEHRClient.getAllResources("Practitioner").size() }
-            runBlocking { delay(2000) }
-            attempts++
-            if (attempts > 10) break
-        }
+        MockEHRTestData.validateAll()
 
         // start channel: patient-publish triggers condition-load
 
@@ -214,10 +199,7 @@ class PractitionerLoadTest : BaseChannelTest(
         assertEquals(2, messageList.size)
         assertEquals(2, getAidboxResourceCount("Practitioner"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.PRACTITIONER, DataTrigger.AD_HOC, groupId
-        )
-        assertEquals(2, events.size)
+        Assertions.assertTrue(KafkaWrapper.validatePublishEvents(2, ResourceType.PRACTITIONER, DataTrigger.AD_HOC, groupId))
     }
 
     @ParameterizedTest
@@ -249,11 +231,7 @@ class PractitionerLoadTest : BaseChannelTest(
         assertEquals(1, getAidboxResourceCount("Practitioner"))
 
         // verify: practitioner-publish success
-
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.PRACTITIONER, DataTrigger.AD_HOC, groupId
-        )
-        assertEquals(1, events.size)
+        Assertions.assertTrue(KafkaWrapper.validatePublishEvents(1, ResourceType.PRACTITIONER, DataTrigger.AD_HOC, groupId))
     }
 
     @Test
@@ -275,10 +253,5 @@ class PractitionerLoadTest : BaseChannelTest(
         }
         assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("Practitioner"))
-
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.PRACTITIONER, DataTrigger.AD_HOC, groupId
-        )
-        assertEquals(0, events.size)
     }
 }

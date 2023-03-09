@@ -10,7 +10,6 @@ import com.projectronin.interop.fhir.generators.primitives.daysFromNow
 import com.projectronin.interop.fhir.generators.resources.appointment
 import com.projectronin.interop.fhir.generators.resources.location
 import com.projectronin.interop.fhir.generators.resources.patient
-import com.projectronin.interop.fhir.generators.resources.practitioner
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.KafkaWrapper
@@ -19,6 +18,7 @@ import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.TenantClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Disabled
@@ -31,11 +31,9 @@ class PatientDiscoveryTest : BaseChannelTest(
     patientDiscoverChannelName,
     listOf("Location"),
     listOf("Patient", "Appointment", "Location"),
-    listOf(ResourceType.PATIENT)
 ) {
     private val patientType = "Patient"
-    private val practitionerType = "Practitioner"
-
+    override val groupId = "interop-mirth-discovery"
     @Test
     fun `channel works`() {
         tenantsToTest().forEach {
@@ -72,15 +70,7 @@ class PatientDiscoveryTest : BaseChannelTest(
                 gender of "male"
             }
             val patient1Id = MockEHRTestData.add(patient1)
-            val pract1 = practitioner {
-                identifier of listOf(
-                    identifier {
-                        system of "mockEHRProviderSystem"
-                        value of "12345"
-                    }
-                )
-            }
-            val pract1Id = MockEHRTestData.add(pract1)
+
             val appointment1 = appointment {
                 status of "arrived"
                 participant of listOf(
@@ -88,10 +78,7 @@ class PatientDiscoveryTest : BaseChannelTest(
                         status of "accepted"
                         actor of reference(patientType, patient1Id)
                     },
-                    participant {
-                        status of "accepted"
-                        actor of reference(practitionerType, pract1Id)
-                    },
+
                     participant {
                         status of "accepted"
                         actor of reference("Location", locationFhirId)
@@ -106,10 +93,6 @@ class PatientDiscoveryTest : BaseChannelTest(
                 identifier = location.identifier + tenantIdentifier(it) + fhirIdentifier(locationFhirId)
             )
             AidboxTestData.add(aidboxLocation1)
-            val aidboxPractitioner1 = pract1.copy(
-                identifier = pract1.identifier + tenantIdentifier(it) + fhirIdentifier(pract1Id)
-            )
-            AidboxTestData.add(aidboxPractitioner1)
 
             val newTenant = TenantClient.getTenant(it)
                 .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
@@ -119,8 +102,7 @@ class PatientDiscoveryTest : BaseChannelTest(
 
         deployAndStartChannel(false)
         waitForMessage(2)
-        assertEquals(2, KafkaWrapper.kafkaLoadService.retrieveLoadEvents(ResourceType.PATIENT).size)
-        assertEquals(2, KafkaWrapper.kafkaLoadService.retrieveLoadEvents(ResourceType.PRACTITIONER).size)
+        Assertions.assertTrue(KafkaWrapper.validateLoadEvents(2, ResourceType.PATIENT, groupId))
         val tenantConfig = TenantClient.getMirthConfig(tenantInUse)
         assertNotNull(tenantConfig.lastUpdated)
     }
@@ -224,8 +206,7 @@ class PatientDiscoveryTest : BaseChannelTest(
 
         AidboxTestData.add(aidboxLocation1)
         deployAndStartChannel(true)
-        val events = KafkaWrapper.kafkaLoadService.retrieveLoadEvents(ResourceType.PATIENT)
-        assertEquals(2, events.size)
+        Assertions.assertTrue(KafkaWrapper.validateLoadEvents(2, ResourceType.PATIENT))
     }
 
     @Test
@@ -359,7 +340,8 @@ class PatientDiscoveryTest : BaseChannelTest(
         deployAndStartChannel(waitForMessage = true, channelToDeploy = channelId)
         stopChannel(channelId)
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.PATIENT, DataTrigger.NIGHTLY)
-        assertEquals(2, events.size)
+        Assertions.assertTrue(KafkaWrapper.validatePublishEvents(2, ResourceType.PATIENT, DataTrigger.NIGHTLY, groupId))
+        // grab load events cause the channel has a different group id
+        Assertions.assertTrue(KafkaWrapper.validateLoadEvents(2, ResourceType.PATIENT, groupId))
     }
 }

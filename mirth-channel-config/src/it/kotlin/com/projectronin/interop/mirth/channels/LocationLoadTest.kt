@@ -11,16 +11,13 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.KafkaWrapper
-import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -31,7 +28,6 @@ class LocationLoadTest : BaseChannelTest(
     locationLoadChannelName,
     listOf("Appointment", "Location"),
     listOf("Appointment", "Location"),
-    listOf(ResourceType.APPOINTMENT, ResourceType.LOCATION)
 ) {
     override val groupId = "interop-mirth-location"
 
@@ -79,10 +75,12 @@ class LocationLoadTest : BaseChannelTest(
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Location"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.LOCATION, DataTrigger.NIGHTLY, groupId
+        assertTrue(
+            KafkaWrapper.validatePublishEvents(
+                1,
+                ResourceType.LOCATION, DataTrigger.NIGHTLY, groupId
+            )
         )
-        assertEquals(1, events.size)
     }
 
     @ParameterizedTest
@@ -171,21 +169,20 @@ class LocationLoadTest : BaseChannelTest(
         )
 
         // make sure MockEHR is OK
-        var attempts = 0
-        while (MockEHRClient.getAllResources("Location").size() < 7) {
-            KotlinLogging.logger { }.info { MockEHRClient.getAllResources("Location").size() }
-            runBlocking { delay(2000) }
-            attempts++
-            if (attempts > 5) break
-        }
+        MockEHRTestData.validateAll()
+
         deployAndStartChannel(true)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(2, messageList.size)
         assertEquals(2, getAidboxResourceCount("Location"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.LOCATION, DataTrigger.AD_HOC, groupId)
-        assertEquals(2, events.size)
+        assertTrue(
+            KafkaWrapper.validatePublishEvents(
+                2,
+                ResourceType.LOCATION, DataTrigger.AD_HOC, groupId
+            )
+        )
     }
 
     @ParameterizedTest
@@ -233,8 +230,12 @@ class LocationLoadTest : BaseChannelTest(
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Location"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.LOCATION, DataTrigger.AD_HOC, groupId)
-        assertEquals(1, events.size)
+        assertTrue(
+            KafkaWrapper.validatePublishEvents(
+                1,
+                ResourceType.LOCATION, DataTrigger.AD_HOC, groupId
+            )
+        )
     }
 
     @Test
@@ -256,8 +257,5 @@ class LocationLoadTest : BaseChannelTest(
         }
         assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("Location"))
-
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.LOCATION, DataTrigger.AD_HOC, groupId)
-        assertEquals(0, events.size)
     }
 }

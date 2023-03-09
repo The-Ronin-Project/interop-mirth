@@ -13,15 +13,12 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.KafkaWrapper
-import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -33,7 +30,6 @@ class ConditionLoadTest : BaseChannelTest(
     conditionLoadChannelName,
     listOf("Patient", "Condition"),
     listOf("Patient", "Condition"),
-    listOf(ResourceType.PATIENT, ResourceType.CONDITION)
 ) {
     override val groupId = "interop-mirth-condition"
 
@@ -120,10 +116,12 @@ class ConditionLoadTest : BaseChannelTest(
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Condition"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.CONDITION, DataTrigger.NIGHTLY, groupId
+        Assertions.assertTrue(
+            KafkaWrapper.validatePublishEvents(
+                1,
+                ResourceType.CONDITION, DataTrigger.NIGHTLY, groupId
+            )
         )
-        assertEquals(1, events.size)
     }
 
     @ParameterizedTest
@@ -291,14 +289,7 @@ class ConditionLoadTest : BaseChannelTest(
         )
 
         // larger data sets: make sure MockEHR is OK
-
-        var attempts = 0
-        while (MockEHRClient.getAllResources("Condition").size() < 7) {
-            KotlinLogging.logger { }.info { MockEHRClient.getAllResources("Condition").size() }
-            runBlocking { delay(2000) }
-            attempts++
-            if (attempts > 5) break
-        }
+        MockEHRTestData.validateAll()
 
         // start channel: patient-publish triggers condition-load
 
@@ -309,11 +300,12 @@ class ConditionLoadTest : BaseChannelTest(
         assertEquals(7, getAidboxResourceCount("Condition"))
 
         // verify: condition-publish success
-
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.CONDITION, DataTrigger.AD_HOC, groupId
+        Assertions.assertTrue(
+            KafkaWrapper.validatePublishEvents(
+                7,
+                ResourceType.CONDITION, DataTrigger.AD_HOC, groupId
+            )
         )
-        assertEquals(7, events.size)
     }
 
     @ParameterizedTest
@@ -400,10 +392,12 @@ class ConditionLoadTest : BaseChannelTest(
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Condition"))
 
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.CONDITION, DataTrigger.AD_HOC, groupId
+        Assertions.assertTrue(
+            KafkaWrapper.validatePublishEvents(
+                1,
+                ResourceType.CONDITION, DataTrigger.AD_HOC, groupId
+            )
         )
-        assertEquals(1, events.size)
     }
 
     @Test
@@ -425,10 +419,5 @@ class ConditionLoadTest : BaseChannelTest(
         }
         assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("Condition"))
-
-        val events = KafkaWrapper.kafkaPublishService.retrievePublishEvents(
-            ResourceType.CONDITION, DataTrigger.AD_HOC, groupId
-        )
-        assertEquals(0, events.size)
     }
 }

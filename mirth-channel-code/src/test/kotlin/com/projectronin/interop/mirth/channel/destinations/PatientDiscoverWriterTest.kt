@@ -75,7 +75,7 @@ class PatientDiscoverWriterTest {
             emptyMap()
         )
         assertEquals(MirthResponseStatus.ERROR, result.status)
-        assertEquals("No Patients or Practitioners found for tenant ronin", result.detailedMessage)
+        assertEquals("No Patients found for tenant ronin", result.detailedMessage)
     }
 
     @Test

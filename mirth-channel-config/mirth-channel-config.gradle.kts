@@ -42,4 +42,5 @@ dependencies {
     itImplementation(libs.interop.publishers.kafka)
     itImplementation(libs.bundles.interop.kafka.events)
     itImplementation(libs.ronin.test.data.generator)
+    itImplementation(libs.ronin.kafka)
 }
