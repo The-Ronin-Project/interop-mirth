@@ -280,6 +280,7 @@ class AppointmentByPractitionerLoadTest :
                     coding {
                         system of "http://terminology.hl7.org/CodeSystem/condition-clinical"
                         code of "active"
+                        display of "Active"
                     }
                 )
             }
@@ -313,6 +314,7 @@ class AppointmentByPractitionerLoadTest :
                     coding {
                         system of "http://terminology.hl7.org/CodeSystem/condition-clinical"
                         code of "active"
+                        display of "Active"
                     }
                 )
             }
@@ -320,9 +322,9 @@ class AppointmentByPractitionerLoadTest :
                 codeableConcept {
                     coding of listOf(
                         coding {
-                            system of "http://hl7.org/fhir/us/core/ValueSet/us-core-condition-category"
-                            code of "health-concern"
-                            display of "Health Concern"
+                            system of "http://hl7.org/fhir/us/core/CodeSystem/condition-category"
+                            code of ConditionCategoryCodes.HEALTH_CONCERN.code
+                            display of "Health concern"
                         }
                     )
                     text of "Health Concern"
@@ -398,13 +400,13 @@ class AppointmentByPractitionerLoadTest :
 
         val cond1Id = MockEHRTestData.add(condition1)
         val cond2Id = MockEHRTestData.add(condition2)
-        MockEHRTestData.add(condition3)
+        val cond3Id = MockEHRTestData.add(condition3)
         MockEHRTestData.add(condition4)
         MockEHRTestData.add(condition5)
 
         val expectedMap = mapOf(
             patientType to listOf(patient1Id),
-            conditionType to listOf(cond1Id, cond2Id),
+            conditionType to listOf(cond1Id, cond2Id, cond3Id),
             appointmentType to listOf(appointmentID)
         )
         MockOCIServerClient.createExpectations(expectedMap)
@@ -431,10 +433,10 @@ class AppointmentByPractitionerLoadTest :
 
         assertEquals(1, getAidboxResourceCount(patientType))
         assertEquals(1, getAidboxResourceCount(appointmentType))
-        assertEquals(2, getAidboxResourceCount(conditionType))
+        assertEquals(3, getAidboxResourceCount(conditionType))
 
         // ensure data lake gets what it needs
-        MockOCIServerClient.verify(4)
+        MockOCIServerClient.verify(5)
         val resources = MockOCIServerClient.getAllPutsAsResources()
         verifyAllPresent(resources, expectedMap)
     }

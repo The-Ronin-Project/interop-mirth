@@ -193,7 +193,6 @@ class ConditionLoadTest : BaseChannelTest(
         AidboxTestData.add(aidboxPatient2)
 
         // mock: conditions at the EHR
-
         val condition1 = condition {
             clinicalStatus of codeableConcept {
                 coding of listOf(
@@ -245,12 +244,12 @@ class ConditionLoadTest : BaseChannelTest(
                 codeableConcept {
                     coding of listOf(
                         coding {
-                            system of "http://terminology.hl7.org/CodeSystem/condition-category"
-                            code of "problem-list-item"
-                            display of "Problem list item"
+                            system of "http://hl7.org/fhir/us/core/CodeSystem/condition-category"
+                            code of "health-concern"
+                            display of "Health concern"
                         }
                     )
-                    text of "Problem List Item"
+                    text of "Health Concern"
                 }
             )
             code of codeableConcept {
@@ -281,7 +280,6 @@ class ConditionLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("Condition", conditionPat2ID, tenantInUse)
 
         // mock: patient-publish event
-
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
@@ -292,7 +290,6 @@ class ConditionLoadTest : BaseChannelTest(
         MockEHRTestData.validateAll()
 
         // start channel: patient-publish triggers condition-load
-
         deployAndStartChannel(true)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)

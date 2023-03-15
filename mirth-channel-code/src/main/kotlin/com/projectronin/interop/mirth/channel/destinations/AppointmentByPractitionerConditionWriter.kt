@@ -16,8 +16,9 @@ import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import org.springframework.stereotype.Component
 
-private val clinicalValueSet = CodeSystem.CONDITION_CLINICAL.uri.value
-private val categoryValueSet = CodeSystem.CONDITION_CATEGORY.uri.value
+private val clinicalSystem = CodeSystem.CONDITION_CLINICAL.uri.value
+private val categorySystem = CodeSystem.CONDITION_CATEGORY.uri.value
+private val categoryHealthConcernSystem = CodeSystem.CONDITION_CATEGORY_HEALTH_CONCERN.uri.value
 
 @Component
 class AppointmentByPractitionerConditionWriter(
@@ -49,11 +50,12 @@ class AppointmentByPractitionerConditionWriter(
                 tenant,
                 patientFHIRId,
                 listOf(
-                    FHIRSearchToken(categoryValueSet, ConditionCategoryCodes.PROBLEM_LIST_ITEM.code),
-                    FHIRSearchToken(categoryValueSet, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code)
+                    FHIRSearchToken(categorySystem, ConditionCategoryCodes.PROBLEM_LIST_ITEM.code),
+                    FHIRSearchToken(categoryHealthConcernSystem, ConditionCategoryCodes.HEALTH_CONCERN.code),
+                    FHIRSearchToken(categorySystem, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code)
                 ),
                 listOf(
-                    FHIRSearchToken(clinicalValueSet, ConditionClinicalStatusCodes.ACTIVE.code)
+                    FHIRSearchToken(clinicalSystem, ConditionClinicalStatusCodes.ACTIVE.code)
                 )
             )
         if (conditions.isEmpty()) {
