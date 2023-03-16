@@ -18,11 +18,12 @@ const val mdmQueueChannelName = "MDMQueueOut"
 class MDMQueueTest : BaseMirthChannelTest(
     mdmQueueChannelName,
     emptyList(),
-    listOf("DocumentReference", "Binary"),
+    listOf("DocumentReference", "Binary")
 ) {
     // Personally, I'm sick of misspelling one of these and having my test blow up while developing
     private val documentReference = "DocumentReference"
     private val binary = "Binary"
+
     @Test
     fun `mdm queue can be sent`() {
         val mockEHRPractitioner = practitioner { }

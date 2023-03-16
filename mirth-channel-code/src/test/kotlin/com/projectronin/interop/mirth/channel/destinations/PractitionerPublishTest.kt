@@ -78,7 +78,7 @@ class PractitionerPublishTest {
             "tenant",
             "appointment",
             InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
+            "{}"
         )
         val mockParticipant = mockk<Participant> {
             every { actor } returns mockk {

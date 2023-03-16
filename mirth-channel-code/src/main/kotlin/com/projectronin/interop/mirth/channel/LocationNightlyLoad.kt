@@ -32,7 +32,6 @@ class LocationNightlyLoad(
     override val destinations = mapOf(PUBLISH_SERVICE to locationWriter)
 
     override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
-
         val locationIdsList = tenantConfigurationService.getLocationIDsByTenant(tenantMnemonic)
         if (locationIdsList.isEmpty()) {
             throw ResourcesNotFoundException("No Location IDs configured for tenant $tenantMnemonic")
@@ -63,7 +62,6 @@ class LocationNightlyLoad(
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthMessage {
-
         val locations = JacksonUtil.readJsonList(msg, Location::class)
         if (locations.isEmpty()) {
             throw ResourcesNotFoundException("No Locations found for tenant $tenantMnemonic")

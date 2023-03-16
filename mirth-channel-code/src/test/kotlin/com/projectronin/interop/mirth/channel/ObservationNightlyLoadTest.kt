@@ -87,7 +87,8 @@ class ObservationNightlyLoadTest {
             |  "code" : {
             |    "text" : "code1"
             |  }
-            |}""".trimMargin()
+            |}
+    """.trimMargin()
     val expectedObservationJson2 = """
             |{
             |  "resourceType" : "Observation",
@@ -97,7 +98,8 @@ class ObservationNightlyLoadTest {
             |  "code" : {
             |    "text" : "code2"
             |  }
-            |}""".trimMargin()
+            |}
+    """.trimMargin()
     val expectedObservationJson3 = """
             |{
             |  "resourceType" : "Observation",
@@ -107,7 +109,8 @@ class ObservationNightlyLoadTest {
             |  "code" : {
             |    "text" : "code3"
             |  }
-            |}""".trimMargin()
+            |}
+    """.trimMargin()
     val expectedObservationJson4 = """
             |{
             |  "resourceType" : "Observation",
@@ -117,7 +120,8 @@ class ObservationNightlyLoadTest {
             |  "code" : {
             |    "text" : "code4"
             |  }
-            |}""".trimMargin()
+            |}
+    """.trimMargin()
     val expectedObservationJson5 = """
             |{
             |  "resourceType" : "Observation",
@@ -127,41 +131,42 @@ class ObservationNightlyLoadTest {
             |  "code" : {
             |    "text" : "code5"
             |  }
-            |}""".trimMargin()
+            |}
+    """.trimMargin()
     private val r4Observation1 = Observation(
         id = Id("12345"),
         status = ObservationStatus.FINAL.asCode(),
         category = listOf(CodeableConcept(text = "category".asFHIR())),
         code = CodeableConcept(text = "code1".asFHIR()),
-        subject = Reference(reference = "Patient/123".asFHIR()),
+        subject = Reference(reference = "Patient/123".asFHIR())
     )
     val r4Observation2 = Observation(
         id = Id("23456"),
         status = ObservationStatus.FINAL.asCode(),
         category = listOf(CodeableConcept(text = "category2".asFHIR())),
         code = CodeableConcept(text = "code2".asFHIR()),
-        subject = Reference(reference = "Patient/456".asFHIR()),
+        subject = Reference(reference = "Patient/456".asFHIR())
     )
     val r4Observation3 = Observation(
         id = Id("34567"),
         status = ObservationStatus.FINAL.asCode(),
         category = listOf(CodeableConcept(text = "category3".asFHIR())),
         code = CodeableConcept(text = "code3".asFHIR()),
-        subject = Reference(reference = "Patient/123".asFHIR()),
+        subject = Reference(reference = "Patient/123".asFHIR())
     )
     val r4Observation4 = Observation(
         id = Id("45678"),
         status = ObservationStatus.FINAL.asCode(),
         category = listOf(CodeableConcept(text = "category4".asFHIR())),
         code = CodeableConcept(text = "code4".asFHIR()),
-        subject = Reference(reference = "Patient/456".asFHIR()),
+        subject = Reference(reference = "Patient/456".asFHIR())
     )
     val r4Observation5 = Observation(
         id = Id("56789"),
         status = ObservationStatus.FINAL.asCode(),
         category = listOf(CodeableConcept(text = "category5".asFHIR())),
         code = CodeableConcept(text = "code5".asFHIR()),
-        subject = Reference(reference = "Patient/456".asFHIR()),
+        subject = Reference(reference = "Patient/456".asFHIR())
     )
 
     @Test
@@ -192,7 +197,7 @@ class ObservationNightlyLoadTest {
         val resourcesFound = listOf(r4Observation1)
 
         val sourceMap = mapOf(
-            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
         )
         val expectedList = listOf(
             MirthMessage(
@@ -212,7 +217,7 @@ class ObservationNightlyLoadTest {
                     MirthKey.RESOURCE_TYPE.code to ResourceType.OBSERVATION.name,
                     MirthKey.RESOURCE_COUNT.code to 1
                 )
-            ),
+            )
         )
 
         val mockObservationService = mockk<ObservationService> {
@@ -234,7 +239,6 @@ class ObservationNightlyLoadTest {
 
     @Test
     fun `sourceReader - resources found for tenant - multiple patients and observations`() {
-
         val resourcesFound123 = listOf(
             r4Observation1,
             r4Observation3,
@@ -243,11 +247,11 @@ class ObservationNightlyLoadTest {
 
         val resourcesFound456 = listOf(
             r4Observation2,
-            r4Observation4,
+            r4Observation4
         )
 
         val sourceMap = mapOf(
-            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
         )
         val expectedList = listOf(
             MirthMessage(
@@ -281,7 +285,7 @@ class ObservationNightlyLoadTest {
                     MirthKey.RESOURCE_TYPE.code to ResourceType.OBSERVATION.name,
                     MirthKey.RESOURCE_COUNT.code to 2
                 )
-            ),
+            )
         )
 
         val mockObservationService = mockk<ObservationService> {

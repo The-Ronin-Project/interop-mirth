@@ -23,7 +23,7 @@ class PatientDiscovery(
     val tenantService: TenantService,
     patientDiscoveryWriter: PatientDiscoveryWriter,
     private val ehrFactory: EHRFactory,
-    private val tenantConfigurationService: TenantConfigurationService,
+    private val tenantConfigurationService: TenantConfigurationService
 ) : TenantlessSourceService() {
     override val rootName = "PatientDiscovery"
     override val destinations = mapOf("Kafka" to patientDiscoveryWriter)
@@ -45,7 +45,9 @@ class PatientDiscovery(
             config.lastUpdated = OffsetDateTime.now(ZoneOffset.UTC)
             tenantConfigurationService.updateConfiguration(config)
             true
-        } else false
+        } else {
+            false
+        }
     }
 
     fun isTimeInRange(tenant: Tenant): Boolean {

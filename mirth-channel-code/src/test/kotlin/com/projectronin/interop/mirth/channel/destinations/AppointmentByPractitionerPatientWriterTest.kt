@@ -171,7 +171,10 @@ class AppointmentByPractitionerPatientWriterTest {
         every { JacksonUtil.readJsonObject(any(), Patient::class) } returns mockPatient
         assertThrows<java.lang.NullPointerException> {
             writer.destinationWriter(
-                "unused", "", mapOf(MirthKey.NEW_PATIENT_JSON.code to "patient"), emptyMap()
+                "unused",
+                "",
+                mapOf(MirthKey.NEW_PATIENT_JSON.code to "patient"),
+                emptyMap()
             )
         }
     }
@@ -192,7 +195,10 @@ class AppointmentByPractitionerPatientWriterTest {
         every { JacksonUtil.readJsonObject(any(), Patient::class) } returns mockPatient
         assertThrows<java.lang.NullPointerException> {
             writer.destinationWriter(
-                "unused", "", mapOf(MirthKey.NEW_PATIENT_JSON.code to "patient"), emptyMap()
+                "unused",
+                "",
+                mapOf(MirthKey.NEW_PATIENT_JSON.code to "patient"),
+                emptyMap()
             )
         }
     }

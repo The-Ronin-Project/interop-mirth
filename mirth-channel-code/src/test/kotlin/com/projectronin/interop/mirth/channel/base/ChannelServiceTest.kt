@@ -626,7 +626,7 @@ class ChannelServiceTest {
     @Test
     fun `sourceFilter - tenant ok in map, valid empty result`() {
         val serviceMap = mapOf<String, Any>(
-            TENANT_MNEMONIC to VALID_TENANT_ID,
+            TENANT_MNEMONIC to VALID_TENANT_ID
         )
         assertTrue(
             TestChannelService().sourceFilter(

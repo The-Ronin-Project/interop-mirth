@@ -96,7 +96,7 @@ fun HttpClientConfig<*>.auth0ClientCredentials(block: Auth0ClientCredentialsConf
                     "client_id" to config.clientId,
                     "client_secret" to config.clientSecret,
                     "audience" to config.audience,
-                    "grant_type" to "client_credentials",
+                    "grant_type" to "client_credentials"
                 )
             )
         }.body<Auth0ClientCredentialsResponse>()

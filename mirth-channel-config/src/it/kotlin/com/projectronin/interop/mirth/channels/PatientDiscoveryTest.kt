@@ -30,10 +30,11 @@ const val patientDiscoverChannelName = "PatientDiscovery"
 class PatientDiscoveryTest : BaseChannelTest(
     patientDiscoverChannelName,
     listOf("Location"),
-    listOf("Patient", "Appointment", "Location"),
+    listOf("Patient", "Appointment", "Location")
 ) {
     private val patientType = "Patient"
     override val groupId = "interop-mirth-discovery"
+
     @Test
     fun `channel works`() {
         tenantsToTest().forEach {

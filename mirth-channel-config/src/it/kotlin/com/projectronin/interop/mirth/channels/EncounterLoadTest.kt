@@ -32,7 +32,7 @@ const val encounterLoadChannelName = "EncounterLoad"
 class EncounterLoadTest : BaseChannelTest(
     encounterLoadChannelName,
     listOf("Patient", "Encounter"),
-    listOf("Patient", "Encounter"),
+    listOf("Patient", "Encounter")
 ) {
     val nowish = LocalDate.now().minusDays(1)
     val laterish = nowish.plusDays(1)
@@ -96,7 +96,7 @@ class EncounterLoadTest : BaseChannelTest(
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(aidboxPatient),
+            resources = listOf(aidboxPatient)
         )
 
         deployAndStartChannel(true)
@@ -108,7 +108,9 @@ class EncounterLoadTest : BaseChannelTest(
         assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
-                ResourceType.ENCOUNTER, DataTrigger.NIGHTLY, groupId
+                ResourceType.ENCOUNTER,
+                DataTrigger.NIGHTLY,
+                groupId
             )
         )
     }
@@ -222,7 +224,7 @@ class EncounterLoadTest : BaseChannelTest(
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(aidboxPatient1, aidboxPatient2),
+            resources = listOf(aidboxPatient1, aidboxPatient2)
         )
 
         // make sure MockEHR is OK
@@ -237,7 +239,9 @@ class EncounterLoadTest : BaseChannelTest(
         assertTrue(
             KafkaWrapper.validatePublishEvents(
                 7,
-                ResourceType.ENCOUNTER, DataTrigger.AD_HOC, groupId
+                ResourceType.ENCOUNTER,
+                DataTrigger.AD_HOC,
+                groupId
             )
         )
     }
@@ -307,7 +311,9 @@ class EncounterLoadTest : BaseChannelTest(
         assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
-                ResourceType.ENCOUNTER, DataTrigger.AD_HOC, groupId
+                ResourceType.ENCOUNTER,
+                DataTrigger.AD_HOC,
+                groupId
             )
         )
     }

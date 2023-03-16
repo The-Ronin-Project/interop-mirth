@@ -22,7 +22,11 @@ class PatientPublish(
     transformManager: TransformManager,
     profileTransformer: RoninPatient
 ) : KafkaEventResourcePublisher<Patient>(
-    tenantService, ehrFactory, transformManager, publishService, profileTransformer
+    tenantService,
+    ehrFactory,
+    transformManager,
+    publishService,
+    profileTransformer
 ) {
 
     override fun convertEventToRequest(

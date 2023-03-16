@@ -30,7 +30,7 @@ const val patientLoadChannelName = "PatientLoad"
 class PatientLoadTest : BaseChannelTest(
     patientLoadChannelName,
     listOf("Patient", "Condition", "Appointment", "Observation"),
-    listOf("Patient", "Condition", "Appointment", "Observation"),
+    listOf("Patient", "Condition", "Appointment", "Observation")
 ) {
     override val groupId = "interop-mirth-patient"
 
@@ -152,12 +152,13 @@ class PatientLoadTest : BaseChannelTest(
         val types = listOf(
             patientType,
             conditionType,
-            appointmentType,
+            appointmentType
             // INT-1376 observationType
         )
 
         val channels = listOf(
-            conditionLoadChannelName, appointmentLoadChannelName, // INT-1376 observationLoadChannelName
+            conditionLoadChannelName,
+            appointmentLoadChannelName // INT-1376 observationLoadChannelName
         )
         val channelIds = channels.map {
             val id = installChannel(it)

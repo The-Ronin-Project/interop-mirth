@@ -34,7 +34,7 @@ object KafkaWrapper {
             security = KafkaSecurityConfig(protocol = "PLAINTEXT"),
             sasl = KafkaSaslConfig(
                 mechanism = "GSSAPI",
-                jaas = KafkaSaslJaasConfig("nothing"),
+                jaas = KafkaSaslJaasConfig("nothing")
             )
         )
     )

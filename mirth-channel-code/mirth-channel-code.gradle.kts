@@ -10,12 +10,13 @@ plugins {
 }
 
 dependencies {
-    // Force versions
-    implementation(libs.kafka.clients) {
-        isForce = true
-    }
-    implementation(libs.woodstox.core) {
-        isForce = true
+    implementation(libs.kafka.clients)
+    implementation(libs.woodstox.core)
+    configurations.all {
+        resolutionStrategy {
+            force(libs.kafka.clients)
+            force(libs.woodstox.core)
+        }
     }
 
     implementation(libs.interop.common)
@@ -74,8 +75,16 @@ dependencies {
     testImplementation(libs.junit.pioneer)
 
     testRuntimeOnly(libs.bundles.test.mysql)
-
     itImplementation(libs.guava)
+    itImplementation(libs.rider.junit)
+    itImplementation(libs.junit.pioneer)
+    itImplementation(libs.mysql.connector.java)
+    itImplementation(libs.ktorm.core)
+    itImplementation(libs.ktorm.support.mysql)
+    itImplementation("org.springframework:spring-context")
+    itImplementation(libs.spring.boot.autoconfigure)
+    itImplementation(libs.testcontainers.mysql)
+    itImplementation(libs.junit.pioneer)
 }
 
 // Set up ShadowJar to run at the end of the Jar task, thus ensuring both are always built.
@@ -92,6 +101,7 @@ tasks.shadowJar {
 
 tasks.withType(Test::class) {
     jvmArgs("--add-opens=java.base/java.util=ALL-UNNAMED")
+    jvmArgs("--add-opens=java.base/java.lang=ALL-UNNAMED")
 }
 
 dependencyCheck {

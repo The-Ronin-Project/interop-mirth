@@ -20,8 +20,8 @@ import org.springframework.vault.annotation.VaultPropertySource
 @EnableConfigurationProperties(KafkaConfig::class)
 @VaultPropertySource("interop-mirth-connector/\${ENVIRONMENT}")
 class SpringConfig {
-    @Bean
     // allows placeholder values like ${aidbox.url} to work.
+    @Bean
     fun property(): PropertySourcesPlaceholderConfigurer {
         val ret = PropertySourcesPlaceholderConfigurer()
         ret.setNullValue("null") // allow easy null defaults

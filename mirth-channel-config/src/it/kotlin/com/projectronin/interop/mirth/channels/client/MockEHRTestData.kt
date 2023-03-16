@@ -24,7 +24,6 @@ object MockEHRTestData {
     }
 
     fun validateAll() {
-
         repeat(5) {
             var goodToGo = true
             currentResources.keys.forEach { resourceType ->

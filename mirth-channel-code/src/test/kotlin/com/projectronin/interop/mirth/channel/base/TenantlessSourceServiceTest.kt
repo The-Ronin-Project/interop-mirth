@@ -105,7 +105,7 @@ class TenantlessSourceServiceTest {
             )
         }
 
-        assertThrows< MapVariableMissing> { channel.sourceReader("test", mapOf("Bad Message" to true)) }
+        assertThrows<MapVariableMissing> { channel.sourceReader("test", mapOf("Bad Message" to true)) }
     }
     class TestChannelService : TenantlessSourceService() {
         override val rootName = CHANNEL_ROOT_NAME

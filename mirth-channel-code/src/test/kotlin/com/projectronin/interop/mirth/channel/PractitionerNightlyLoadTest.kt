@@ -113,7 +113,7 @@ class PractitionerNightlyLoadTest {
     )
     private val r4Practitioner = Practitioner(
         id = Id("12345"),
-        name = listOf(HumanName(family = "Doe".asFHIR())),
+        name = listOf(HumanName(family = "Doe".asFHIR()))
     )
 
     private val r4Location = Location(
@@ -147,7 +147,7 @@ class PractitionerNightlyLoadTest {
         every { tenantConfigurationService.getLocationIDsByTenant(VALID_TENANT_ID) } returns emptyList()
 
         val serviceMap = mapOf<String, Any>(
-            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
         )
 
         val ex = assertThrows<ConfigurationMissingException> {
@@ -168,7 +168,7 @@ class PractitionerNightlyLoadTest {
         every { tenantConfigurationService.getLocationIDsByTenant(VALID_TENANT_ID) } returns listOf("aaa")
 
         val serviceMap = mapOf<String, Any>(
-            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
         )
 
         val ex = assertThrows<ResourcesNotFoundException> {
@@ -183,7 +183,7 @@ class PractitionerNightlyLoadTest {
             tenantConfigurationService.getLocationIDsByTenant("notenant")
         } throws IllegalArgumentException("No Mirth Tenant Configuration object found for notenant")
         val serviceMap = mapOf<String, Any>(
-            MirthKey.TENANT_MNEMONIC.code to "notenant",
+            MirthKey.TENANT_MNEMONIC.code to "notenant"
         )
 
         val ex = assertThrows<IllegalArgumentException> {
@@ -194,7 +194,6 @@ class PractitionerNightlyLoadTest {
 
     @Test
     fun `sourceReader - works`() {
-
         val epicPractitionerList = listOf(r4Practitioner)
 
         val epicLocationsList = listOf(r4Location)
@@ -208,7 +207,7 @@ class PractitionerNightlyLoadTest {
             every { practitionerRoles } returns epicRolesList
         }
         val sourceMap = mapOf(
-            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
         )
         val expectedList = listOf(
             MirthMessage(
@@ -253,7 +252,6 @@ class PractitionerNightlyLoadTest {
 
     @Test
     fun `sourceReader - works - a max chunk size is input`() {
-
         val epicPractitionerList = listOf(r4Practitioner)
 
         val epicLocationsList = listOf(r4Location)
@@ -316,7 +314,6 @@ class PractitionerNightlyLoadTest {
 
     @Test
     fun `sourceTransformer - RESOURCES_FOUND in sourceMap - practitioner only`() {
-
         val transformedPractitioner = mockk<Practitioner> {
             every { id } returns Id("$VALID_TENANT_ID-12345")
             every { resourceType } returns "Practitioner"
@@ -376,7 +373,6 @@ class PractitionerNightlyLoadTest {
 
     @Test
     fun `sourceTransformer - RESOURCES_FOUND in sourceMap - location only`() {
-
         val transformedLocation = mockk<Location> {
             every { id } returns Id("$VALID_TENANT_ID-12345")
             every { resourceType } returns "Location"
@@ -404,7 +400,6 @@ class PractitionerNightlyLoadTest {
 
     @Test
     fun `sourceTransformer - RESOURCES_FOUND in sourceMap - practitionerRole only`() {
-
         val transformedPractitionerRole = mockk<PractitionerRole> {
             every { id } returns Id("$VALID_TENANT_ID-12345")
             every { resourceType } returns "Practitioner"
@@ -438,7 +433,6 @@ class PractitionerNightlyLoadTest {
 
     @Test
     fun `sourceTransformer - RESOURCES_FOUND in sourceMap - practitionerRole that can't be transformed`() {
-
         val sourceMap = mapOf(
             MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
             "${MirthKey.RESOURCES_FOUND.code}.PractitionerRole" to listOf(r4PractitionerRole)

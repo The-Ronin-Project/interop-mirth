@@ -23,9 +23,13 @@ class PractitionerPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninPractitioner,
+    profileTransformer: RoninPractitioner
 ) : KafkaEventResourcePublisher<Practitioner>(
-    tenantService, ehrFactory, transformManager, publishService, profileTransformer
+    tenantService,
+    ehrFactory,
+    transformManager,
+    publishService,
+    profileTransformer
 ) {
 
     // turn a kafka event into an abstract class we can deal with

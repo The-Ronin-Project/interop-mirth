@@ -31,7 +31,7 @@ const val observationLoadChannelName = "ObservationLoad"
 class ObservationLoadTest : BaseChannelTest(
     observationLoadChannelName,
     listOf("Patient", "Observation"),
-    listOf("Patient", "Observation"),
+    listOf("Patient", "Observation")
 ) {
     val patientType = "Patient"
     val observationType = "Observation"
@@ -101,7 +101,7 @@ class ObservationLoadTest : BaseChannelTest(
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(aidboxPatient),
+            resources = listOf(aidboxPatient)
         )
 
         deployAndStartChannel(true)
@@ -113,7 +113,9 @@ class ObservationLoadTest : BaseChannelTest(
         Assertions.assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
-                ResourceType.OBSERVATION, DataTrigger.NIGHTLY, groupId
+                ResourceType.OBSERVATION,
+                DataTrigger.NIGHTLY,
+                groupId
             )
         )
     }
@@ -247,7 +249,7 @@ class ObservationLoadTest : BaseChannelTest(
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(aidboxPatient1, aidboxPatient2),
+            resources = listOf(aidboxPatient1, aidboxPatient2)
         )
 
         // make sure MockEHR is OK
@@ -262,7 +264,9 @@ class ObservationLoadTest : BaseChannelTest(
         Assertions.assertTrue(
             KafkaWrapper.validatePublishEvents(
                 7,
-                ResourceType.OBSERVATION, DataTrigger.AD_HOC, groupId
+                ResourceType.OBSERVATION,
+                DataTrigger.AD_HOC,
+                groupId
             )
         )
     }
@@ -342,7 +346,9 @@ class ObservationLoadTest : BaseChannelTest(
         Assertions.assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
-                ResourceType.OBSERVATION, DataTrigger.AD_HOC, groupId
+                ResourceType.OBSERVATION,
+                DataTrigger.AD_HOC,
+                groupId
             )
         )
     }

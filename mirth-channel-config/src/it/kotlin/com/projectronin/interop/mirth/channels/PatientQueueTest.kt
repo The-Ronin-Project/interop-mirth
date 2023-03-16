@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test
 import kotlin.random.Random
 
 const val patientQueueChannelName = "PatientQueue"
+
 @Disabled
 class PatientQueueTest : BaseMirthChannelTest(patientQueueChannelName, listOf("Patient")) {
     val patientType = "Patient"

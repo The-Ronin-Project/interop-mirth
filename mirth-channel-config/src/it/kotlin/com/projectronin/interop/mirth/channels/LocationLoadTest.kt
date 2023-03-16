@@ -27,7 +27,7 @@ const val locationLoadChannelName = "LocationLoad"
 class LocationLoadTest : BaseChannelTest(
     locationLoadChannelName,
     listOf("Appointment", "Location"),
-    listOf("Appointment", "Location"),
+    listOf("Appointment", "Location")
 ) {
     override val groupId = "interop-mirth-location"
 
@@ -78,7 +78,9 @@ class LocationLoadTest : BaseChannelTest(
         assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
-                ResourceType.LOCATION, DataTrigger.NIGHTLY, groupId
+                ResourceType.LOCATION,
+                DataTrigger.NIGHTLY,
+                groupId
             )
         )
     }
@@ -165,7 +167,7 @@ class LocationLoadTest : BaseChannelTest(
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(aidboxAppt1, aidboxAppt2),
+            resources = listOf(aidboxAppt1, aidboxAppt2)
         )
 
         // make sure MockEHR is OK
@@ -180,7 +182,9 @@ class LocationLoadTest : BaseChannelTest(
         assertTrue(
             KafkaWrapper.validatePublishEvents(
                 2,
-                ResourceType.LOCATION, DataTrigger.AD_HOC, groupId
+                ResourceType.LOCATION,
+                DataTrigger.AD_HOC,
+                groupId
             )
         )
     }
@@ -233,7 +237,9 @@ class LocationLoadTest : BaseChannelTest(
         assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
-                ResourceType.LOCATION, DataTrigger.AD_HOC, groupId
+                ResourceType.LOCATION,
+                DataTrigger.AD_HOC,
+                groupId
             )
         )
     }

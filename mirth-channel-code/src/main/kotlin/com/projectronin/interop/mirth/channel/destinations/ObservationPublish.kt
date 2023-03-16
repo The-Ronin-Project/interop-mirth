@@ -26,9 +26,13 @@ class ObservationPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninObservations,
+    profileTransformer: RoninObservations
 ) : KafkaEventResourcePublisher<Observation>(
-    tenantService, ehrFactory, transformManager, publishService, profileTransformer
+    tenantService,
+    ehrFactory,
+    transformManager,
+    publishService,
+    profileTransformer
 ) {
 
     // turn a kafka event into an abstract class we can deal with
@@ -65,7 +69,7 @@ class ObservationPublish(
             return fhirService.findObservationsByPatientAndCategory(
                 tenant,
                 listOf(
-                    patientFhirId,
+                    patientFhirId
                 ),
                 listOf(
                     FHIRSearchToken(categoryValueSet, ObservationCategoryCodes.VITAL_SIGNS.code),

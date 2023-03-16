@@ -24,9 +24,13 @@ class EncounterPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninEncounter,
+    profileTransformer: RoninEncounter
 ) : KafkaEventResourcePublisher<Encounter>(
-    tenantService, ehrFactory, transformManager, publishService, profileTransformer
+    tenantService,
+    ehrFactory,
+    transformManager,
+    publishService,
+    profileTransformer
 ) {
 
     // turn a kafka event into an abstract class we can deal with

@@ -126,7 +126,7 @@ object MockOCIServerClient {
             Times.exactly(1)
         ).respond(
             HttpResponse.response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON)
-                .withBody(JacksonUtil.writeJsonValue(response)),
+                .withBody(JacksonUtil.writeJsonValue(response))
         )
     }
 

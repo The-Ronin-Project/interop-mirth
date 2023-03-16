@@ -119,7 +119,7 @@ open class TenantConfigAuthExtension {
     /**
      * The audience under which to register the auth token.
      */
-    var audience: String = "https://interop-proxy-server.dev.projectronin.io"
+    var audience: String = "https://interop-proxy-server-oci.dev.projectronin.io"
 }
 
 open class AidboxExtension {

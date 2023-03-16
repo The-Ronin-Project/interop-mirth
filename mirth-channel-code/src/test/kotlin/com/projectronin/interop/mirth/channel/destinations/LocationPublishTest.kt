@@ -82,7 +82,7 @@ class LocationPublishTest {
             "tenant",
             "location",
             InteropResourcePublishV1.DataTrigger.adhoc,
-            "123",
+            "123"
         )
         val mockApptParticipant = mockk<Appointment> {
             every { participant } returns listOf(

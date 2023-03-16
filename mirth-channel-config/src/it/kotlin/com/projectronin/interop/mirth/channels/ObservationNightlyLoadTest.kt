@@ -46,6 +46,7 @@ class ObservationNightlyLoadTest : BaseMirthChannelTest(observationNightlyLoadCh
         assertEquals(0, getAidboxResourceCount(patientType))
         assertEquals(0, getAidboxResourceCount(observationType))
     }
+
     @Test
     fun `no observations`() {
         val patient = patient {}
@@ -175,7 +176,7 @@ class ObservationNightlyLoadTest : BaseMirthChannelTest(observationNightlyLoadCh
         val obsv2Id = MockEHRTestData.add(observation2)
 
         val expectedMap = mapOf(
-            observationType to listOf(obsv1Id, obsv2Id),
+            observationType to listOf(obsv1Id, obsv2Id)
         )
         MockOCIServerClient.createExpectations(expectedMap)
 

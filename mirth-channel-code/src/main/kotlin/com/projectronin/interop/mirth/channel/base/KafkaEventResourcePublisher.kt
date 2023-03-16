@@ -95,7 +95,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         return MirthResponse(
             status = MirthResponseStatus.SENT,
             detailedMessage = transformedResources.truncateList(),
-            message = "Published ${transformedResources.size} resource(s)",
+            message = "Published ${transformedResources.size} resource(s)"
         )
     }
 

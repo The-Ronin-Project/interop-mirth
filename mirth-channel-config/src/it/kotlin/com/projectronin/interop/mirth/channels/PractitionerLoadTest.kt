@@ -30,7 +30,7 @@ const val practitionerLoadChannelName = "PractitionerLoad"
 class PractitionerLoadTest : BaseChannelTest(
     practitionerLoadChannelName,
     listOf("Appointment", "Practitioner"),
-    listOf("Appointment", "Practitioner"),
+    listOf("Appointment", "Practitioner")
 ) {
     override val groupId = "interop-mirth-practitioner"
 
@@ -109,7 +109,7 @@ class PractitionerLoadTest : BaseChannelTest(
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(fakeAidboxAppointment),
+            resources = listOf(fakeAidboxAppointment)
         )
 
         // start channel: appointment-publish triggers practitioner-load
@@ -185,7 +185,7 @@ class PractitionerLoadTest : BaseChannelTest(
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(aidboxAppointment1, aidboxAppointment2),
+            resources = listOf(aidboxAppointment1, aidboxAppointment2)
         )
 
         // larger data sets: make sure MockEHR is OK

@@ -1,12 +1,14 @@
 package com.projectronin.interop.mirth.channel
 
 import com.google.common.reflect.ClassPath
-import com.projectronin.interop.mirth.channel.base.ChannelService
+import com.projectronin.interop.mirth.channel.base.MirthSource
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.junitpioneer.jupiter.SetEnvironmentVariable
 import org.junitpioneer.jupiter.SetEnvironmentVariable.SetEnvironmentVariables
+import org.springframework.beans.factory.annotation.Autowired
+import javax.sql.DataSource
 import kotlin.reflect.full.companionObject
 import kotlin.reflect.full.functions
 
@@ -48,11 +50,13 @@ import kotlin.reflect.full.functions
 )
 class SpringMirthChannelsIT {
     // This test requires a real DB to be stood up, so the initial test will take about 30s.
+    @Autowired
+    private lateinit var ehrDatasource: DataSource
 
     @Test
     fun `can create all ChannelServices`() {
         ClassPath.from(this.javaClass.classLoader).getTopLevelClasses("com.projectronin.interop.mirth.channel")
-            .map { Class.forName(it.name) }.filter { ChannelService::class.java.isAssignableFrom(it) }.forEach {
+            .map { Class.forName(it.name) }.filter { MirthSource::class.java.isAssignableFrom(it) }.forEach {
                 val companion = it.kotlin.companionObject!!
                 val create = companion.functions.find { f -> f.name == "create" }!!
                 val channel = create.call(companion.objectInstance)

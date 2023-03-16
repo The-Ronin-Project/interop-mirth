@@ -5,7 +5,7 @@ data class TenantServer(
     val messageType: String = "MDM",
     val address: String,
     val port: Int,
-    val serverType: String = "N",
+    val serverType: String = "N"
 )
 
 private val SUPPORTED_KEYS = setOf("address", "port")

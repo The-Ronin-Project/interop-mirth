@@ -27,9 +27,13 @@ class ConditionPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninConditions,
+    profileTransformer: RoninConditions
 ) : KafkaEventResourcePublisher<Condition>(
-    tenantService, ehrFactory, transformManager, publishService, profileTransformer
+    tenantService,
+    ehrFactory,
+    transformManager,
+    publishService,
+    profileTransformer
 ) {
 
     // turn a kafka event into an abstract class we can deal with

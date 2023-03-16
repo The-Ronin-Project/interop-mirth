@@ -17,7 +17,7 @@ const val practitionerLoadName = "PractitionerNightlyLoad"
 class PractitionerNightlyLoadTest : BaseMirthChannelTest(
     practitionerLoadName,
     listOf("Practitioner", "PractitionerRole", "Location"),
-    listOf("Practitioner", "PractitionerRole", "Location"),
+    listOf("Practitioner", "PractitionerRole", "Location")
 ) {
     private val practitionerType = "Practitioner"
     private val practitionerRoleType = "PractitionerRole"
@@ -50,6 +50,7 @@ class PractitionerNightlyLoadTest : BaseMirthChannelTest(
             assertEquals("ERROR", message.sourceStatus)
         }
     }
+
     @Test
     fun `can load resources`() {
         val locationResource = location { }

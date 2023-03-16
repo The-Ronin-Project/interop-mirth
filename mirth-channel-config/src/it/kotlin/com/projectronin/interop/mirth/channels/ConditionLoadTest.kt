@@ -29,7 +29,7 @@ const val conditionLoadChannelName = "ConditionLoad"
 class ConditionLoadTest : BaseChannelTest(
     conditionLoadChannelName,
     listOf("Patient", "Condition"),
-    listOf("Patient", "Condition"),
+    listOf("Patient", "Condition")
 ) {
     override val groupId = "interop-mirth-condition"
 
@@ -107,7 +107,7 @@ class ConditionLoadTest : BaseChannelTest(
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(aidboxPatient),
+            resources = listOf(aidboxPatient)
         )
 
         deployAndStartChannel(true)
@@ -119,7 +119,9 @@ class ConditionLoadTest : BaseChannelTest(
         Assertions.assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
-                ResourceType.CONDITION, DataTrigger.NIGHTLY, groupId
+                ResourceType.CONDITION,
+                DataTrigger.NIGHTLY,
+                groupId
             )
         )
     }
@@ -283,7 +285,7 @@ class ConditionLoadTest : BaseChannelTest(
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(aidboxPatient1, aidboxPatient2),
+            resources = listOf(aidboxPatient1, aidboxPatient2)
         )
 
         // larger data sets: make sure MockEHR is OK
@@ -300,7 +302,9 @@ class ConditionLoadTest : BaseChannelTest(
         Assertions.assertTrue(
             KafkaWrapper.validatePublishEvents(
                 7,
-                ResourceType.CONDITION, DataTrigger.AD_HOC, groupId
+                ResourceType.CONDITION,
+                DataTrigger.AD_HOC,
+                groupId
             )
         )
     }
@@ -392,7 +396,9 @@ class ConditionLoadTest : BaseChannelTest(
         Assertions.assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
-                ResourceType.CONDITION, DataTrigger.AD_HOC, groupId
+                ResourceType.CONDITION,
+                DataTrigger.AD_HOC,
+                groupId
             )
         )
     }

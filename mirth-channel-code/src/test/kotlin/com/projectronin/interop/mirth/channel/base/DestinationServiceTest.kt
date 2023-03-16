@@ -27,7 +27,7 @@ class DestinationServiceTest {
     @Test
     fun `destinationFilter - non-empty map`() {
         val serviceMap = mapOf<String, Any>(
-            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
         )
         assertTrue(
             TestDestinationService().destinationFilter(
@@ -91,7 +91,7 @@ class DestinationServiceTest {
     @Test
     fun `destinationTransformer - non-empty map`() {
         val serviceMap = mapOf<String, Any>(
-            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
         )
         val actualMessage = TestDestinationService().destinationTransformer(
             "unused",
@@ -154,7 +154,7 @@ class DestinationServiceTest {
     @Test
     fun `destinationWriter - non-empty map`() {
         val serviceMap = mapOf<String, Any>(
-            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
         )
         val actualMessage = TestDestinationService().destinationWriter(
             "unused",

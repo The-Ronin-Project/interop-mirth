@@ -12,6 +12,7 @@ class MirthFilterResponseTest {
         assertTrue(test.result)
         assertTrue(test.dataMap.isEmpty())
     }
+
     @Test
     fun `object works more`() {
         val test = MirthFilterResponse(false, mapOf("wow" to "woah"))

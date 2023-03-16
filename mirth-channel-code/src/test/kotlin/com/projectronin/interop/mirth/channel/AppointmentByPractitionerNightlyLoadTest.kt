@@ -324,7 +324,7 @@ class AppointmentByPractitionerNightlyLoadTest {
             )
         )
         val location1 = Participant(
-            status = ParticipationStatus.ACCEPTED.asCode(),
+            status = ParticipationStatus.ACCEPTED.asCode()
         )
         val appt1 = Appointment(
             id = Id("2"),

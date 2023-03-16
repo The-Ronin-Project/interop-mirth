@@ -45,7 +45,11 @@ class KafkaEventResourcePublisherTest {
         publishService: PublishService,
         profileTransformer: RoninLocation
     ) : KafkaEventResourcePublisher<Location>(
-        tenantService, ehrFactory, transformManager, publishService, profileTransformer
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer
     ) {
 
         override fun convertEventToRequest(
@@ -73,7 +77,7 @@ class KafkaEventResourcePublisherTest {
                         mockk<Location> { every { id ?.value } returns "4" },
                         mockk<Location> { every { id ?.value } returns "5" },
                         mockk<Location> { every { id } returns null },
-                        mockk<Location> { every { id ?.value } returns null },
+                        mockk<Location> { every { id ?.value } returns null }
                     )
                 }
                 else -> {

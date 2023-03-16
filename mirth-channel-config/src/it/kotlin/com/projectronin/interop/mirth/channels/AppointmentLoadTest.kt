@@ -30,7 +30,7 @@ const val appointmentLoadChannelName = "AppointmentLoad"
 class AppointmentLoadTest : BaseChannelTest(
     appointmentLoadChannelName,
     listOf("Patient", "Appointment", "Location"),
-    listOf("Patient", "Appointment", "Location"),
+    listOf("Patient", "Appointment", "Location")
 ) {
     override val groupId = "interop-mirth-appointment"
 
@@ -100,7 +100,9 @@ class AppointmentLoadTest : BaseChannelTest(
         assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
-                ResourceType.APPOINTMENT, DataTrigger.NIGHTLY, groupId
+                ResourceType.APPOINTMENT,
+                DataTrigger.NIGHTLY,
+                groupId
             )
         )
     }
@@ -212,7 +214,7 @@ class AppointmentLoadTest : BaseChannelTest(
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(fakeAidboxPatient1, fakeAidboxPatient2),
+            resources = listOf(fakeAidboxPatient1, fakeAidboxPatient2)
         )
 
         // make sure MockEHR is OK
@@ -301,7 +303,9 @@ class AppointmentLoadTest : BaseChannelTest(
         assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
-                ResourceType.APPOINTMENT, DataTrigger.AD_HOC, groupId
+                ResourceType.APPOINTMENT,
+                DataTrigger.AD_HOC,
+                groupId
             )
         )
     }
@@ -329,7 +333,6 @@ class AppointmentLoadTest : BaseChannelTest(
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with dag`(testTenant: String) {
-
         val appointmentType = "Appointment"
         val locationType = "Location"
         val types = listOf(
@@ -392,13 +395,17 @@ class AppointmentLoadTest : BaseChannelTest(
         assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
-                ResourceType.LOCATION, DataTrigger.NIGHTLY, groupId
+                ResourceType.LOCATION,
+                DataTrigger.NIGHTLY,
+                groupId
             )
         )
         assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
-                ResourceType.APPOINTMENT, DataTrigger.NIGHTLY, groupId
+                ResourceType.APPOINTMENT,
+                DataTrigger.NIGHTLY,
+                groupId
             )
         )
 

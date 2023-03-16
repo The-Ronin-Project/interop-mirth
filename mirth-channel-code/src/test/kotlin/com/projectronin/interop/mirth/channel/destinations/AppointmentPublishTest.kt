@@ -78,7 +78,7 @@ class AppointmentPublishTest {
             "tenant",
             "patient",
             InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
+            "{}"
         )
         val mockPatient = mockk<Patient> {
             every { id?.value } returns "123"

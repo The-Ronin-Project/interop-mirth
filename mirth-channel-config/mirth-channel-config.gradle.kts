@@ -24,18 +24,18 @@ mirth {
 }
 
 dependencies {
-    testImplementation(libs.interop.publishers.aidbox)
-    testImplementation(libs.interop.common)
-    testImplementation(libs.interop.commonJackson)
+    itImplementation(libs.interop.publishers.aidbox)
+    itImplementation(libs.interop.common)
+    itImplementation(libs.interop.commonJackson)
 
-    testImplementation(libs.interop.fhir)
-    testImplementation(libs.interop.ehr.fhir.ronin)
+    itImplementation(libs.interop.fhir)
+    itImplementation(libs.interop.ehr.fhir.ronin)
 
-    testImplementation(libs.bundles.jackson)
-    testImplementation(libs.bundles.ktor)
-    testImplementation(libs.xerces)
+    itImplementation(libs.bundles.jackson)
+    itImplementation(libs.bundles.ktor)
+    itImplementation(libs.xerces)
 
-    implementation(project(":mirth-channel-code"))
+    itImplementation(project(":mirth-channel-code"))
     itImplementation(libs.mockserver.client.java)
     itImplementation(libs.interop.fhir.generators)
     itImplementation(libs.interop.queue.kafka)
@@ -43,4 +43,5 @@ dependencies {
     itImplementation(libs.bundles.interop.kafka.events)
     itImplementation(libs.ronin.test.data.generator)
     itImplementation(libs.ronin.kafka)
+    itImplementation("io.github.microutils:kotlin-logging:3.0.5")
 }

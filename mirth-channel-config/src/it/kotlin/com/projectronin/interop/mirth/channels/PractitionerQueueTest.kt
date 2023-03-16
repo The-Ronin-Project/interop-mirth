@@ -14,9 +14,11 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 const val practitionerQueueChannelName = "PractitionerQueue"
+
 @Disabled
 class PractitionerQueueTest : BaseMirthChannelTest(practitionerQueueChannelName, listOf("Practitioner")) {
     private val practitionerType = "Practitioner"
+
     @Test
     fun `queued practitioners are processed`() {
         val practitioner = practitioner {

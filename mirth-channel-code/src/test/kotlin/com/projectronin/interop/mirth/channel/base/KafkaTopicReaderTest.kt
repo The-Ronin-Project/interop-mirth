@@ -170,6 +170,7 @@ class KafkaTopicReaderTest {
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(0, messages.size)
     }
+
     @Test
     fun `load event only channel works`() {
         val loadChannel = LoadOnlyTestChannel(kafkaPublishService, kafkaLoadService)

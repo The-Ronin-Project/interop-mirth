@@ -24,9 +24,13 @@ class AppointmentPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninAppointment,
+    profileTransformer: RoninAppointment
 ) : KafkaEventResourcePublisher<Appointment>(
-    tenantService, ehrFactory, transformManager, publishService, profileTransformer
+    tenantService,
+    ehrFactory,
+    transformManager,
+    publishService,
+    profileTransformer
 ) {
 
     override fun convertEventToRequest(
@@ -63,7 +67,7 @@ class AppointmentPublish(
                 tenant,
                 patientFhirId!!.unlocalize(tenant),
                 startDate = LocalDate.now().minusMonths(1),
-                endDate = LocalDate.now().plusMonths(1),
+                endDate = LocalDate.now().plusMonths(1)
             )
         }
     }

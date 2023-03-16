@@ -68,5 +68,5 @@ enum class MirthKey(val code: String) {
     /**
      * Kafka Event type e.g InteropPublish
      */
-    KAFKA_EVENT("kafkaEvent"),
+    KAFKA_EVENT("kafkaEvent")
 }

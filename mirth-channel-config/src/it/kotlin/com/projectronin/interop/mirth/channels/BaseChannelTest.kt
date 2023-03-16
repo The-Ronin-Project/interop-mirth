@@ -47,7 +47,7 @@ import kotlin.time.Duration.Companion.seconds
 abstract class BaseChannelTest(
     private val channelName: String,
     private val aidboxResourceTypes: List<String>,
-    private val mockEHRResourceTypes: List<String> = emptyList(),
+    private val mockEHRResourceTypes: List<String> = emptyList()
 ) {
     var tenantInUse = "NOTSET"
     protected val testChannelId = installChannel()
@@ -172,7 +172,6 @@ abstract class BaseChannelTest(
         }
         messages.forEach { connectorMessage ->
             connectorMessage.destinationMessages.forEach {
-
                 assertEquals(
                     "SENT",
                     it.status,
@@ -220,7 +219,8 @@ abstract class BaseChannelTest(
     protected fun verifyAllPresent(resources: List<Resource<*>>, expectedMap: Map<String, List<String>>) {
         assertEquals(resources.size, expectedMap.flatMap { it.value }.size)
         val found = resources.groupBy(
-            { it.resourceType }, { it.getFhirIdentifier()?.value?.value }
+            { it.resourceType },
+            { it.getFhirIdentifier()?.value?.value }
         )
 
         expectedMap.forEach {

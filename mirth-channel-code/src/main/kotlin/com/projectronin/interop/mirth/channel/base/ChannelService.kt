@@ -248,6 +248,7 @@ abstract class ChannelService(tenantService: TenantService, transformManager: Tr
     open fun channelOnPostprocessor(tenantMnemonic: String, serviceMap: Map<String, Any>): Map<String, Any> {
         return emptyMap()
     }
+
     /**
      * Required: Mirth channels call sourceReader() from the Source Reader script.
      *

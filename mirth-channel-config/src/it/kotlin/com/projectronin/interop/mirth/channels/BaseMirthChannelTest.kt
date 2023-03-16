@@ -196,7 +196,8 @@ abstract class BaseMirthChannelTest(
     protected fun verifyAllPresent(resources: List<Resource<*>>, expectedMap: Map<String, List<String>>) {
         assertEquals(resources.size, expectedMap.flatMap { it.value }.size)
         val found = resources.groupBy(
-            { it.resourceType }, { it.getFhirIdentifier()?.value?.value }
+            { it.resourceType },
+            { it.getFhirIdentifier()?.value?.value }
         )
 
         expectedMap.forEach {

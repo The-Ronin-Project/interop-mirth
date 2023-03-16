@@ -79,7 +79,7 @@ class EncounterPublishTest {
             "tenant",
             "patient",
             InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
+            "{}"
         )
         val mockPatient = mockk<Patient> {
             every { identifier } returns listOf(

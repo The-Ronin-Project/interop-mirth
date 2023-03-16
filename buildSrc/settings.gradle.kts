@@ -1,5 +1,5 @@
 pluginManagement {
-    val interopGradleVersion = "2.0.0"
+    val interopGradleVersion = "3.0.0"
     plugins {
         id("com.projectronin.interop.gradle.base") version interopGradleVersion
     }
