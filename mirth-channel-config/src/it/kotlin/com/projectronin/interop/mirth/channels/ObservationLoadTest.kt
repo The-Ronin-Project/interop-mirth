@@ -24,7 +24,7 @@ import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.ValueSource
+import org.junit.jupiter.params.provider.MethodSource
 
 const val observationLoadChannelName = "ObservationLoad"
 
@@ -38,7 +38,7 @@ class ObservationLoadTest : BaseChannelTest(
     override val groupId = "interop-mirth-observation"
 
     @ParameterizedTest
-    @ValueSource(strings = ["epicmock"]) // INT-1376 @MethodSource("tenantsToTest")
+    @MethodSource("tenantsToTest")
     fun `channel works`(testTenant: String) {
         tenantInUse = testTenant
         val patient1 = patient {
@@ -119,7 +119,7 @@ class ObservationLoadTest : BaseChannelTest(
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["epicmock"]) // INT-1376 @MethodSource("tenantsToTest")
+    @MethodSource("tenantsToTest")
     fun `channel works with multiple patients and observations`(testTenant: String) {
         tenantInUse = testTenant
         val patient1 = patient {
@@ -268,7 +268,7 @@ class ObservationLoadTest : BaseChannelTest(
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["epicmock"]) // INT-1376 @MethodSource("tenantsToTest")
+    @MethodSource("tenantsToTest")
     fun `channel works for ad-hoc requests`(testTenant: String) {
         tenantInUse = testTenant
         val patient1 = patient {
@@ -348,7 +348,7 @@ class ObservationLoadTest : BaseChannelTest(
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["epicmock"]) // INT-1376 @MethodSource("tenantsToTest")
+    @MethodSource("tenantsToTest")
     fun `non-existant request errors`() {
         KafkaWrapper.kafkaLoadService.pushLoadEvent(
             tenantId = testTenant,
