@@ -15,7 +15,7 @@ class LocationLoad(
     defaultPublisher: LocationPublish
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "LocationLoad"
-    override val channelGroupId = "interop-mirth-location"
+    override val channelGroupId = "interop-mirth-location_group"
     override val publishedResourcesSubscriptions = listOf(ResourceType.APPOINTMENT)
     override val resource = ResourceType.LOCATION
 

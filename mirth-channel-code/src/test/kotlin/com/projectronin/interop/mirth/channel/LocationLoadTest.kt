@@ -17,7 +17,7 @@ class LocationLoadTest {
     @Test
     fun `channel creation works`() {
         assertEquals("LocationLoad", channel.rootName)
-        assertEquals("interop-mirth-location", channel.channelGroupId)
+        assertEquals("interop-mirth-location_group", channel.channelGroupId)
         assertEquals(1, channel.destinations.size)
     }
 }

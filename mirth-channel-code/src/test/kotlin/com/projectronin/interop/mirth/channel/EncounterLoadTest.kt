@@ -17,7 +17,7 @@ class EncounterLoadTest {
     @Test
     fun `create channel - works`() {
         Assertions.assertEquals("EncounterLoad", channel.rootName)
-        Assertions.assertEquals("interop-mirth-encounter", channel.channelGroupId)
+        Assertions.assertEquals("interop-mirth-encounter_group", channel.channelGroupId)
         Assertions.assertEquals(1, channel.destinations.size)
     }
 }

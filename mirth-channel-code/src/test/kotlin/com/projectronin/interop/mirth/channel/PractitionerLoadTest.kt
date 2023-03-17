@@ -16,7 +16,7 @@ class PractitionerLoadTest {
     @Test
     fun `channel creation works`() {
         assertEquals("PractitionerLoad", channel.rootName)
-        assertEquals("interop-mirth-practitioner", channel.channelGroupId)
+        assertEquals("interop-mirth-practitioner_group", channel.channelGroupId)
         assertEquals(1, channel.destinations.size)
     }
 }

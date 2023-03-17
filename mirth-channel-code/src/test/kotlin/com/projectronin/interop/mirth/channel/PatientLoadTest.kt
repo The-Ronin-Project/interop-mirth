@@ -16,7 +16,7 @@ class PatientLoadTest {
     @Test
     fun `channel creation works`() {
         assertEquals("PatientLoad", channel.rootName)
-        assertEquals("interop-mirth-patient", channel.channelGroupId)
+        assertEquals("interop-mirth-patient_group", channel.channelGroupId)
         assertEquals(1, channel.destinations.size)
     }
 }

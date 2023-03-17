@@ -15,7 +15,7 @@ class ConditionLoad(
     defaultPublisher: ConditionPublish
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "ConditionLoad"
-    override val channelGroupId = "interop-mirth-condition"
+    override val channelGroupId = "interop-mirth-condition_group"
     override val publishedResourcesSubscriptions = listOf(ResourceType.PATIENT)
     override val resource = ResourceType.CONDITION
 

@@ -17,7 +17,7 @@ class ObservationLoadTest {
     @Test
     fun `create channel - works`() {
         assertEquals("ObservationLoad", channel.rootName)
-        assertEquals("interop-mirth-observation", channel.channelGroupId)
+        assertEquals("interop-mirth-observation_group", channel.channelGroupId)
         assertEquals(1, channel.destinations.size)
     }
 }

@@ -15,7 +15,7 @@ class EncounterLoad(
     defaultPublisher: EncounterPublish
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "EncounterLoad"
-    override val channelGroupId = "interop-mirth-encounter"
+    override val channelGroupId = "interop-mirth-encounter_group"
     override val publishedResourcesSubscriptions = listOf(ResourceType.PATIENT)
     override val resource = ResourceType.ENCOUNTER
 

@@ -15,7 +15,7 @@ class PatientLoad(
     defaultPublisher: PatientPublish
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "PatientLoad"
-    override val channelGroupId = "interop-mirth-patient"
+    override val channelGroupId = "interop-mirth-patient_group"
     override val publishedResourcesSubscriptions = emptyList<ResourceType>() // patient is not dependent on any resources
     override val resource = ResourceType.PATIENT
 
