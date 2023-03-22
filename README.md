@@ -4,8 +4,8 @@ Multi-project build containing InterOps data pipeline code featuring the Mirth i
 
 ### Components
 
-* [interop-channel-code](interop-channel-code) - Kotlin code: we build this to create a Java .jar file that we load into Mirth and invoke from our Mirth channels
-* [interop-channel-config](interop-channel-config) - Mirth artifacts: channel exports as XML, Mirth code templates that call into our .jar file, and environment setup for running Mirth
+* [mirth-channel-code](mirth-channel-code) - Kotlin code: we build this to create a Java .jar file that we load into Mirth and invoke from our Mirth channels
+* [mirth-channel-config](mirth-channel-config) - Mirth artifacts: channel exports as XML, Mirth code templates that call into our .jar file, and environment setup for running Mirth
 
 ## OWASP Dependency Check
 

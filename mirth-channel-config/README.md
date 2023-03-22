@@ -40,34 +40,26 @@ utilized by this project:
 
 ### Configuration
 
-[build.gradle.kts](build.gradle.kts) contains the base configuration for the Gradle build. If further information is
+[build.gradle.kts](mirth-channel-config.gradle.kts) contains the base configuration for the Gradle build. If further information is
 needed about any possible configuration options, please consult
-the [MirthExtension](buildSrc/src/main/kotlin/com/projectronin/interop/gradle/mirth/MirthExtension.kt).
+the [MirthExtension](../buildSrc/src/main/kotlin/com/projectronin/interop/gradle/mirth/MirthExtension.kt).
 
 ## Docker
 
 Detailed instuctions for using docker compose with this repo are in the `dev-env README.md`
 [here](https://github.com/projectronin/interop-mirth-channels/blob/1eb260e3ac4572474a0498400a77eb38395cf600/dev-env/README.md)
 
-## Mirth Connector
+## Mirth Channel Code
 
 To update the Mirth Connector JAR to use with local Mirth:
 
 1. Modify Mirth Connector and rebuild the JAR.
-   See: [interop-mirth-connector](https://github.com/projectronin/interop-mirth-connector)
+   See: [mirth-channel-code](../mirth-channel-code)
 2. Run `./gradlew mirth` or `./gradlew copyMirthConnector`
 3. Redeploy all channels in the currently running Mirth instance.
 
 ## Channel Subfolders
 
-Under [channels](channels)
-
-* [LocationLoad](channels/PatientLoad) - channel for loading the tenant locations
-* [AppointmentLoad](channels/PatientLoad) - channel for loading the appointments for tenant locations
-* [PatientLoad](channels/PatientLoad) - channel for loading the patients for tenant appointments
-* [PractitionerLoad](channels/PractitionerLoad) - channel for loading the practitioners for tenant appointments
-* [ConditionLoad](channels/ConditionLoadd) - channel for loading the conditions for tenant patients
-* ... (and more)
 
 Under [channels](channels)*/channelName*
 
@@ -115,3 +107,11 @@ increase automation.
         - The DiagramChannel inserts SVG snippets from this file into different XSLT steps.
         - This file is the only place a developer can view or modify the full drawing.
         - &lt;svg> is wrapped in &lt;html> for easy testing of SVG changes in a browser.
+
+## Writing a new channel
+Create a new channel in the [channels directory](./channels) with the same root name as the Kotlin class.
+
+In Mirth, copy an existing channel or create one from a scratch. Use the standard code templates for the different steps needed,
+rename the channel to be the root name, and reference the Kotlin channel's class name in the deploy script.
+
+Write a set of [integration tests](./src/it/kotlin) to ensure the channel works as expected.
