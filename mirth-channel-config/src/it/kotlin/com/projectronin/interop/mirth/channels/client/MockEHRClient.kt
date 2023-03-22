@@ -39,7 +39,7 @@ object MockEHRClient {
 
         // Enable logging.
         install(Logging) {
-            level = LogLevel.ALL
+            level = LogLevel.NONE
         }
     }
 

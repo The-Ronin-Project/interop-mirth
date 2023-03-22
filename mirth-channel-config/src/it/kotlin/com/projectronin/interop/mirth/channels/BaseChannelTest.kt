@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.extension.ExtendWith
 import java.io.File
 import java.io.StringWriter
 import java.util.stream.Stream
@@ -43,7 +42,6 @@ import kotlin.time.Duration.Companion.seconds
  * a list of resources  types to clear in mockERH
  */
 
-@ExtendWith(TestListener::class)
 abstract class BaseChannelTest(
     private val channelName: String,
     private val aidboxResourceTypes: List<String>,

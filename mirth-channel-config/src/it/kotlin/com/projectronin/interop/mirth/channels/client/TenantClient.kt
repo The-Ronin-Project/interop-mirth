@@ -56,7 +56,7 @@ object TenantClient {
         }
         // Enable logging.
         install(Logging) {
-            level = LogLevel.ALL
+            level = LogLevel.NONE
         }
     }
     private const val BASE_URL = "http://localhost:8082"
