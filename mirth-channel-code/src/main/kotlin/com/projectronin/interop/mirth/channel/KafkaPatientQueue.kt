@@ -30,6 +30,7 @@ class KafkaPatientQueue(
         fun create() = SpringUtil.applicationContext.getBean(KafkaPatientQueue::class.java)
     }
 
+    override val limit = 3 // this is used as a hack to give the channel a unique group ID
     override val rootName = "KafkaPatientQueue"
     override val resourceType = ResourceType.PATIENT
 

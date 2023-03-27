@@ -21,7 +21,7 @@ abstract class KafkaQueue<K : DomainResource<K>>(
     queueWriter: TenantlessQueueWriter<K>
 ) : TenantlessSourceService() {
     protected val publishService = "publish"
-    open val limit = 20
+    open val limit = 1
     abstract val resourceType: ResourceType
 
     override val destinations by lazy {

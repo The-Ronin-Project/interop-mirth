@@ -193,6 +193,17 @@ services:
     depends_on:
       - zookeeper
 
+  # available at http://localhost:8090. Can view topics and messages
+  kafka-ui:
+    image: provectuslabs/kafka-ui
+    container_name: kafka-ui
+    ports:
+      - "8090:8080"
+    restart: always
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:19092
+
   mock-server:
     platform: linux/amd64
     image: "docker-proxy.devops.projectronin.io/mockserver/mockserver:latest"

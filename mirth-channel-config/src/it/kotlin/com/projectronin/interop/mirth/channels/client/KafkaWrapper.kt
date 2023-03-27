@@ -36,9 +36,17 @@ object KafkaWrapper {
         )
     )
     private val client = KafkaClient(config, AdminWrapper(config))
+    val adminClient = AdminWrapper(config).client
+    val kafkaLoadService = KafkaLoadService(client, LoadSpringConfig(config).loadTopics())
+    val kafkaPublishService = KafkaPublishService(client, PublishSpringConfig(config).publishTopics())
 
-    val kafkaLoadService = KafkaLoadService(client, LoadSpringConfig().loadTopics())
-    val kafkaPublishService = KafkaPublishService(client, PublishSpringConfig().publishTopics())
+    fun reset() {
+        val consumerGroups = adminClient.listConsumerGroups().all().get()
+        val groupIds = consumerGroups.map { it.groupId() }.toSet()
+        adminClient.deleteConsumerGroups(groupIds)
+        val topics = adminClient.listTopics().names().get()
+        adminClient.deleteTopics(topics)
+    }
 
     // publish events
     fun validatePublishEvents(

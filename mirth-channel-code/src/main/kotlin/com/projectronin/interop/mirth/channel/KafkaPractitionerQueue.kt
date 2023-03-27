@@ -30,6 +30,7 @@ class KafkaPractitionerQueue(
         fun create() = SpringUtil.applicationContext.getBean(KafkaPractitionerQueue::class.java)
     }
 
+    override val limit = 4 // this is used as a hack to give the channel a unique group ID
     override val rootName = "KafkaPractitionerQueue"
     override val resourceType = ResourceType.PRACTITIONER
 

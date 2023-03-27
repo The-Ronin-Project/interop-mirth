@@ -73,8 +73,7 @@ abstract class BaseChannelTest(
         @BeforeAll
         @AfterAll
         fun cleanup() {
-            KafkaWrapper.kafkaPublishService.deleteAllPublishTopics()
-            KafkaWrapper.kafkaLoadService.deleteAllLoadTopics()
+            KafkaWrapper.reset()
         }
 
         @JvmStatic

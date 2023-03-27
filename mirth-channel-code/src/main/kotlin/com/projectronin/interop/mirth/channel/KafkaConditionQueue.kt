@@ -30,6 +30,7 @@ class KafkaConditionQueue(
         fun create() = SpringUtil.applicationContext.getBean(KafkaConditionQueue::class.java)
     }
 
+    override val limit = 2 // this is used as a hack to give the channel a unique group ID
     override val rootName = "KafkaConditionQueue"
     override val resourceType = ResourceType.CONDITION
 

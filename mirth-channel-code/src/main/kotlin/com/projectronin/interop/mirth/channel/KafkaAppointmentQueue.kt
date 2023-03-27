@@ -30,6 +30,7 @@ class KafkaAppointmentQueue(
         fun create() = SpringUtil.applicationContext.getBean(KafkaAppointmentQueue::class.java)
     }
 
+    override val limit = 1 // this is used as a hack to give the channel a unique group ID
     override val rootName = "KafkaAppointmentQueue"
     override val resourceType = ResourceType.APPOINTMENT
 
