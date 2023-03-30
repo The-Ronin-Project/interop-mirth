@@ -14,7 +14,7 @@ pluginManagement {
         id("com.projectronin.interop.gradle.spring") version "3.0.0"
         id("com.projectronin.interop.gradle.version") version "3.0.0"
         id("com.github.johnrengelman.shadow") version "8.1.1"
-        id("org.owasp.dependencycheck") version "8.1.2"
+        id("org.owasp.dependencycheck") version "8.2.1"
     }
 
     repositories {
