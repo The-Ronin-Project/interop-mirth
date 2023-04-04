@@ -9,12 +9,14 @@ import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.ehr.inputs.FHIRSearchToken
 import com.projectronin.interop.fhir.r4.CodeSystem
+import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninObservations
 import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher
+import com.projectronin.interop.mirth.channel.util.unlocalize
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -45,7 +47,13 @@ class ObservationPublish(
         return when (eventClassName) {
             InteropResourcePublishV1::class.simpleName!! -> {
                 val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourcePublishV1::class)
-                PatientSourceObservationLoadRequest(event, vendorFactory.observationService, tenant)
+                when (event.resourceType) {
+                    Patient::class.simpleName!! ->
+                        PatientSourceObservationLoadRequest(event, vendorFactory.observationService, tenant)
+                    Condition::class.simpleName!! ->
+                        ConditionSourceObservationLoadRequest(event, vendorFactory.observationService, tenant)
+                    else -> throw IllegalStateException("Received resource type that cannot be used to load observations")
+                }
             }
             InteropResourceLoadV1::class.simpleName!! -> {
                 val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourceLoadV1::class)
@@ -76,6 +84,26 @@ class ObservationPublish(
                     FHIRSearchToken(categoryValueSet, ObservationCategoryCodes.LABORATORY.code)
                 )
             )
+        }
+    }
+
+    private class ConditionSourceObservationLoadRequest(
+        sourceEvent: InteropResourcePublishV1,
+        override val fhirService: ObservationService,
+        override val tenant: Tenant
+    ) : PublishEventResourceLoadRequest<Observation>(sourceEvent) {
+        override fun loadResources(): List<Observation> {
+            val condition = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Condition::class)
+
+            return condition.stage.map { stage ->
+                stage.assessment
+                    .filter { reference -> reference.isForType(fhirService.fhirResourceType.simpleName) }
+                    .map { reference ->
+                        // decomposedId should never return null once we've filtered on observation type
+                        val observationFhirId = reference.decomposedId()!!.unlocalize(tenant)
+                        fhirService.getByID(tenant, observationFhirId)
+                    }
+            }.flatten()
         }
     }
 

@@ -6,6 +6,7 @@ import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
+import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -74,10 +75,10 @@ class ObservationPublishTest {
     }
 
     @Test
-    fun `works for publish events`() {
+    fun `works for publish patient events`() {
         val event = InteropResourcePublishV1(
             "tenant",
-            "patient",
+            "Patient",
             InteropResourcePublishV1.DataTrigger.adhoc,
             "{}"
         )
@@ -104,5 +105,66 @@ class ObservationPublishTest {
         )
         val results = request.loadResources()
         assertEquals(mockObservation, results.first())
+    }
+
+    @Test
+    fun `works for publish condition events`() {
+        val event = InteropResourcePublishV1(
+            "tenant",
+            "Condition",
+            InteropResourcePublishV1.DataTrigger.adhoc,
+            "{}"
+        )
+        val mockCondition = mockk<Condition> {
+            every { stage } returns listOf(
+                mockk {
+                    every { assessment } returns listOf(
+                        mockk {
+                            every { isForType("Observation") } returns true
+                            every { decomposedId() } returns "123"
+                        }
+                    )
+                }
+            )
+        }
+        val mockObservation = mockk<Observation>()
+        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
+        every { JacksonUtil.readJsonObject("{}", Condition::class) } returns mockCondition
+
+        val mockVendorFactory = mockk<VendorFactory> {
+            every { observationService } returns mockk {
+                every { fhirResourceType } returns Observation::class.java
+                every { getByID(tenant, "123") } returns mockObservation
+            }
+        }
+
+        val request = destination.convertEventToRequest(
+            "boo",
+            InteropResourcePublishV1::class.simpleName!!,
+            mockVendorFactory,
+            tenant
+        )
+        val results = request.loadResources()
+        assertEquals(mockObservation, results.first())
+    }
+
+    @Test
+    fun `fails on unknown publish request`() {
+        val event = InteropResourcePublishV1(
+            "tenant",
+            "Fake",
+            InteropResourcePublishV1.DataTrigger.adhoc,
+            "{}"
+        )
+        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
+
+        assertThrows<IllegalStateException> {
+            destination.convertEventToRequest(
+                "boo",
+                InteropResourcePublishV1::class.simpleName!!,
+                mockk(),
+                mockk()
+            )
+        }
     }
 }

@@ -3,14 +3,17 @@ package com.projectronin.interop.mirth.channels
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
+import com.projectronin.interop.fhir.generators.datatypes.conditionStage
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.date
+import com.projectronin.interop.fhir.generators.resources.condition
 import com.projectronin.interop.fhir.generators.resources.observation
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
+import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
 import com.projectronin.interop.kafka.model.DataTrigger
@@ -21,8 +24,8 @@ import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
@@ -30,8 +33,8 @@ const val observationLoadChannelName = "ObservationLoad"
 
 class ObservationLoadTest : BaseChannelTest(
     observationLoadChannelName,
-    listOf("Patient", "Observation"),
-    listOf("Patient", "Observation")
+    listOf("Patient", "Observation", "Condition"),
+    listOf("Patient", "Observation", "Condition")
 ) {
     val patientType = "Patient"
     val observationType = "Observation"
@@ -39,7 +42,7 @@ class ObservationLoadTest : BaseChannelTest(
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
-    fun `channel works`(testTenant: String) {
+    fun `channel works triggered by patient publish`(testTenant: String) {
         tenantInUse = testTenant
         val patient1 = patient {
             birthDate of date {
@@ -110,7 +113,7 @@ class ObservationLoadTest : BaseChannelTest(
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount(observationType))
 
-        Assertions.assertTrue(
+        assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
                 ResourceType.OBSERVATION,
@@ -122,7 +125,86 @@ class ObservationLoadTest : BaseChannelTest(
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
-    fun `channel works with multiple patients and observations`(testTenant: String) {
+    fun `channel works triggered by condition publish`(testTenant: String) {
+        tenantInUse = testTenant
+
+        val observation = observation {
+            subject of reference(patientType, "123")
+            category of listOf(
+                codeableConcept {
+                    coding of listOf(
+                        coding {
+                            system of CodeSystem.OBSERVATION_CATEGORY.uri
+                            code of ObservationCategoryCodes.VITAL_SIGNS.code
+                        }
+                    )
+                }
+            )
+            status of "final"
+            code of codeableConcept {
+                coding of listOf(
+                    coding {
+                        system of CodeSystem.LOINC.uri
+                        display of "Body Weight"
+                        code of Code("29463-7")
+                    }
+                )
+            }
+        }
+        val obsvId = MockEHRTestData.add(observation)
+        MockOCIServerClient.createExpectations(observationType, obsvId)
+
+        val condition1 = condition {
+            stage of listOf(
+                conditionStage {
+                    assessment of listOf(
+                        reference("Observation", obsvId)
+                    )
+                }
+            )
+        }
+        val condition1Id = MockEHRTestData.add(condition1)
+
+        val aidboxConditionId = "$tenantInUse-$condition1Id"
+        val aidboxCondition = condition1.copy(
+            id = Id(aidboxConditionId),
+            stage = condition1.stage.map { stage ->
+                stage.copy(
+                    assessment = stage.assessment.map { reference ->
+                        reference.copy(
+                            id = FHIRString("$tenantInUse-$obsvId")
+                        )
+                    }
+                )
+            }
+        )
+        AidboxTestData.add(aidboxCondition)
+
+        KafkaWrapper.kafkaPublishService.publishResources(
+            tenantId = tenantInUse,
+            trigger = DataTrigger.NIGHTLY,
+            resources = listOf(aidboxCondition)
+        )
+
+        deployAndStartChannel(true)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertAllConnectorsSent(messageList)
+        assertEquals(1, messageList.size)
+        assertEquals(1, getAidboxResourceCount(observationType))
+
+        assertTrue(
+            KafkaWrapper.validatePublishEvents(
+                1,
+                ResourceType.OBSERVATION,
+                DataTrigger.NIGHTLY,
+                groupId
+            )
+        )
+    }
+
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `channel works with multiple patients, conditions and observations`(testTenant: String) {
         tenantInUse = testTenant
         val patient1 = patient {
             birthDate of date {
@@ -237,31 +319,60 @@ class ObservationLoadTest : BaseChannelTest(
         val observation3ID = MockEHRTestData.add(observation1)
         val observation4ID = MockEHRTestData.add(observation1)
         val observation5ID = MockEHRTestData.add(observation1)
-        val observation6ID = MockEHRTestData.add(observation1)
+        val observationConditionID = MockEHRTestData.add(observation1)
         val observationPat2ID = MockEHRTestData.add(observation2)
         MockOCIServerClient.createExpectations(observationType, observation1ID, tenantInUse)
         MockOCIServerClient.createExpectations(observationType, observation2ID, tenantInUse)
         MockOCIServerClient.createExpectations(observationType, observation3ID, tenantInUse)
         MockOCIServerClient.createExpectations(observationType, observation4ID, tenantInUse)
         MockOCIServerClient.createExpectations(observationType, observation5ID, tenantInUse)
-        MockOCIServerClient.createExpectations(observationType, observation6ID, tenantInUse)
+        MockOCIServerClient.createExpectations(observationType, observationConditionID, tenantInUse)
         MockOCIServerClient.createExpectations(observationType, observationPat2ID, tenantInUse)
+
+        val condition = condition {
+            stage of listOf(
+                conditionStage {
+                    assessment of listOf(
+                        reference("Observation", observationConditionID)
+                    )
+                }
+            )
+        }
+        val conditionId = MockEHRTestData.add(condition)
+
+        val aidboxConditionId = "$tenantInUse-$conditionId"
+        val aidboxCondition = condition.copy(
+            id = Id(aidboxConditionId),
+            stage = condition.stage.map { stage ->
+                stage.copy(
+                    assessment = stage.assessment.map { reference ->
+                        reference.copy(
+                            id = FHIRString("$tenantInUse-$observationConditionID")
+                        )
+                    }
+                )
+            }
+        )
+        AidboxTestData.add(aidboxCondition)
+
         KafkaWrapper.kafkaPublishService.publishResources(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(aidboxPatient1, aidboxPatient2)
+            resources = listOf(aidboxPatient1, aidboxPatient2, aidboxCondition)
         )
 
         // make sure MockEHR is OK
         MockEHRTestData.validateAll()
 
         deployAndStartChannel(true)
+        waitForMessage(3, 30)
+
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
-        assertEquals(2, messageList.size)
+        assertEquals(3, messageList.size)
         assertEquals(7, getAidboxResourceCount(observationType))
 
-        Assertions.assertTrue(
+        assertTrue(
             KafkaWrapper.validatePublishEvents(
                 7,
                 ResourceType.OBSERVATION,
@@ -343,7 +454,7 @@ class ObservationLoadTest : BaseChannelTest(
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount(observationType))
 
-        Assertions.assertTrue(
+        assertTrue(
             KafkaWrapper.validatePublishEvents(
                 1,
                 ResourceType.OBSERVATION,

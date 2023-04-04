@@ -16,7 +16,7 @@ class ObservationLoad(
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "ObservationLoad"
     override val channelGroupId = "interop-mirth-observation_group"
-    override val publishedResourcesSubscriptions = listOf(ResourceType.PATIENT)
+    override val publishedResourcesSubscriptions = listOf(ResourceType.PATIENT, ResourceType.CONDITION)
     override val resource = ResourceType.OBSERVATION
 
     companion object {
