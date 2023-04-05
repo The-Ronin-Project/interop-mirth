@@ -6,7 +6,7 @@ interop-commonHttp = "com.projectronin.interop:interop-common-http:3.4.0"
 interop-commonJackson = "com.projectronin.interop:interop-common-jackson:3.4.0"
 interop-commonTestDb = "com.projectronin.interop:interop-common-test-db:3.4.0"
 
-interop-fhir = "com.projectronin.interop.fhir:interop-fhir:7.6.0"
+interop-fhir = "com.projectronin.interop.fhir:interop-fhir:7.7.0"
 interop-fhir-generators = "com.projectronin.interop.fhir:interop-fhir-generators:7.7.0"
 
 interop-ehr-api = "com.projectronin.interop.ehr:interop-ehr:9.3.1"
