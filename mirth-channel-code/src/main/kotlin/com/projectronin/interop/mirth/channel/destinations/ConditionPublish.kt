@@ -12,7 +12,6 @@ import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.ConditionCategoryCodes
-import com.projectronin.interop.fhir.r4.valueset.ConditionClinicalStatusCodes
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
 import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher
@@ -62,7 +61,6 @@ class ConditionPublish(
         override val tenant: Tenant
     ) : PublishEventResourceLoadRequest<Condition>(sourceEvent) {
 
-        private val clinicalSystem = CodeSystem.CONDITION_CLINICAL.uri.value
         private val categorySystem = CodeSystem.CONDITION_CATEGORY.uri.value
         private val categoryHealthConcernSystem = CodeSystem.CONDITION_CATEGORY_HEALTH_CONCERN.uri.value
 
@@ -77,9 +75,6 @@ class ConditionPublish(
                     FHIRSearchToken(categorySystem, ConditionCategoryCodes.PROBLEM_LIST_ITEM.code),
                     FHIRSearchToken(categoryHealthConcernSystem, ConditionCategoryCodes.HEALTH_CONCERN.code),
                     FHIRSearchToken(categorySystem, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code)
-                ),
-                listOf(
-                    FHIRSearchToken(clinicalSystem, ConditionClinicalStatusCodes.ACTIVE.code)
                 )
             )
         }

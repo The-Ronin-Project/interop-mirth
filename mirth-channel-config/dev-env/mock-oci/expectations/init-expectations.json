@@ -27,7 +27,7 @@
   {
     "httpRequest": {
       "method": "GET",
-      "path": "/n/namespace/b/infx-bucket/o/DataNormalizationRegistry%2Fv1%2Fregistry.json"
+      "path": "/n/namespace/b/infx-bucket/o/DataNormalizationRegistry%2Fv2%2Fregistry.json"
     },
     "httpResponse": {
       "statusCode": 200,
@@ -40,24 +40,101 @@
         {
           "resource_type": "Appointment",
           "data_element": "Appointment.status",
-          "tenant_id": "epicmock",
+          "tenant_id": null,
           "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
           "version": 1,
-          "filename": "ConceptMaps/v1/published/4ffae118-778f-4df9-bd73-aece934b521b/1.json",
+          "filename": "ConceptMap.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceAppointmentStatus",
-          "registry_uuid": "13f958c6-87b6-471e-8636-2cabdf0b73e4",
+          "registry_uuid": "1",
           "concept_map_name": "AppointmentStatusRonin"
         },
         {
-          "resource_type": "Appointment",
-          "data_element": "Appointment.status",
-          "tenant_id": "cernmock",
-          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "resource_type": "Observation",
+          "data_element": "Observation.coding.code",
+          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationBodyMassIndex",
+          "tenant_id": "tenantAgnosticRegistryKey",
           "version": 1,
-          "filename": "ConceptMaps/v1/published/4ffae118-778f-4df9-bd73-aece934b521b/1.json",
-          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceAppointmentStatus",
-          "registry_uuid": "13f958c6-87b6-471e-8636-2cabdf0b73e4",
-          "concept_map_name": "AppointmentStatusRonin"
+          "filename": "EmptyValueSet.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-bodyMass",
+          "registry_uuid": "2",
+          "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
+        },
+        {
+          "resource_type": "Observation",
+          "data_element": "Observation.coding.code",
+          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationBodySurfaceArea",
+          "tenant_id": "tenantAgnosticRegistryKey",
+          "version": 1,
+          "filename": "EmptyValueSet.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
+          "registry_uuid": "3",
+          "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
+        },
+        {
+          "resource_type": "Observation",
+          "data_element": "Observation.coding.code",
+          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationBodyTemperature",
+          "tenant_id": "tenantAgnosticRegistryKey",
+          "version": 1,
+          "filename": "EmptyValueSet.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
+          "registry_uuid": "4",
+          "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
+        },
+        {
+          "resource_type": "Observation",
+          "data_element": "Observation.coding.code",
+          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationBloodPressure",
+          "tenant_id": "tenantAgnosticRegistryKey",
+          "version": 1,
+          "filename": "EmptyValueSet.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
+          "registry_uuid": "5",
+          "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
+        },
+        {
+          "resource_type": "Observation",
+          "data_element": "Observation.coding.code",
+          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationRespiratoryRate",
+          "tenant_id": "tenantAgnosticRegistryKey",
+          "version": 1,
+          "filename": "EmptyValueSet.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
+          "registry_uuid": "6",
+          "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
+        },
+        {
+          "resource_type": "Observation",
+          "data_element": "Observation.coding.code",
+          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationHeartRate",
+          "tenant_id": "tenantAgnosticRegistryKey",
+          "version": 1,
+          "filename": "EmptyValueSet.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
+          "registry_uuid": "7",
+          "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
+        },
+        {
+          "resource_type": "Observation",
+          "data_element": "Observation.coding.code",
+          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationPulseOximetry",
+          "tenant_id": "tenantAgnosticRegistryKey",
+          "version": 1,
+          "filename": "EmptyValueSet.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
+          "registry_uuid": "8",
+          "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
+        },
+        {
+          "resource_type": "Observation",
+          "data_element": "Observation.coding.code",
+          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationRespiratoryRate",
+          "tenant_id": "tenantAgnosticRegistryKey",
+          "version": 1,
+          "filename": "EmptyValueSet.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
+          "registry_uuid": "9",
+          "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         }
       ]
     },
@@ -73,7 +150,7 @@
   {
     "httpRequest": {
       "method": "GET",
-      "path": "/n/.*/b/.*/o/ConceptMaps%2Fv1%2Fpublished%2F4ffae118-778f-4df9-bd73-aece934b521b%2F1.json"
+      "path": "/n/.*/b/.*/o/ConceptMap.json"
     },
     "httpResponse": {
       "statusCode": 200,
@@ -239,5 +316,45 @@
     "times": {
       "unlimited": true
     }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/EmptyValueSet.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ValueSet",
+        "title": " ",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a2",
+        "version": 1,
+        "status" : "draft",
+        "expansion": {
+          "timestamp" : "2020-01-01 14:01:01",
+          "contains" : [
+            {
+              "system" : "NO",
+              "version" : "NO",
+              "code" : "NO",
+              "display" : "NO"
+            }
+          ]
+        }
+      }
+    },
+    "id": "GetRoninObservationEmptyValueSets",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
   }
-]
+  ]

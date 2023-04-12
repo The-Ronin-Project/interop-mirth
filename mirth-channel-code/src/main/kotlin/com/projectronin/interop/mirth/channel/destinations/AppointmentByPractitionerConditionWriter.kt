@@ -5,7 +5,6 @@ import com.projectronin.interop.ehr.inputs.FHIRSearchToken
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.r4.valueset.ConditionCategoryCodes
-import com.projectronin.interop.fhir.r4.valueset.ConditionClinicalStatusCodes
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
 import com.projectronin.interop.mirth.channel.base.DestinationService
@@ -16,7 +15,6 @@ import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import org.springframework.stereotype.Component
 
-private val clinicalSystem = CodeSystem.CONDITION_CLINICAL.uri.value
 private val categorySystem = CodeSystem.CONDITION_CATEGORY.uri.value
 private val categoryHealthConcernSystem = CodeSystem.CONDITION_CATEGORY_HEALTH_CONCERN.uri.value
 
@@ -53,9 +51,6 @@ class AppointmentByPractitionerConditionWriter(
                     FHIRSearchToken(categorySystem, ConditionCategoryCodes.PROBLEM_LIST_ITEM.code),
                     FHIRSearchToken(categoryHealthConcernSystem, ConditionCategoryCodes.HEALTH_CONCERN.code),
                     FHIRSearchToken(categorySystem, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code)
-                ),
-                listOf(
-                    FHIRSearchToken(clinicalSystem, ConditionClinicalStatusCodes.ACTIVE.code)
                 )
             )
         if (conditions.isEmpty()) {

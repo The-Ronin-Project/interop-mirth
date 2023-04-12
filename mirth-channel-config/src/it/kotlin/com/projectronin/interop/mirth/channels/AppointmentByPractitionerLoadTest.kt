@@ -347,7 +347,7 @@ class AppointmentByPractitionerLoadTest :
                 coding of listOf(
                     coding {
                         system of "http://terminology.hl7.org/CodeSystem/condition-clinical"
-                        code of "inactive"
+                        code of "remission"
                     }
                 )
             }
