@@ -52,7 +52,7 @@ ktor-serialization-jackson = "io.ktor:ktor-serialization-jackson:2.2.4"
 
 ktorm-core = "org.ktorm:ktorm-core:3.6.0"
 ktorm-support-mysql = "org.ktorm:ktorm-support-mysql:3.6.0"
-mockk = "io.mockk:mockk:1.13.4"
+mockk = "io.mockk:mockk:1.13.5"
 mockserver-client-java = "org.mock-server:mockserver-client-java-no-dependencies:5.15.0"
 mysql-connector-java = "com.mysql:mysql-connector-j:8.0.32"
 okhttp3-mockwebserver = "com.squareup.okhttp3:mockwebserver:4.10.0"
