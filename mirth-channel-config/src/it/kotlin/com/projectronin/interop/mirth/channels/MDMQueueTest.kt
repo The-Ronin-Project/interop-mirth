@@ -2,6 +2,7 @@ package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.generators.resources.practitioner
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
@@ -35,10 +36,12 @@ class MDMQueueTest : BaseMirthChannelTest(
         assertEquals(0, getMockEHRResourceCount(binary))
 
         val aidboxPractitioner = mockEHRPractitioner.copy(
-            identifier = mockEHRPractitioner.identifier + tenantIdentifier(testTenant) + fhirIdentifier(practitionerId)
+            identifier = mockEHRPractitioner.identifier + tenantIdentifier(testTenant) + fhirIdentifier(practitionerId),
+            id = Id("$testTenant-$practitionerId")
         )
         val aidboxPatient = mockEHRPatient.copy(
-            identifier = mockEHRPatient.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patientId)
+            identifier = mockEHRPatient.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patientId),
+            id = Id("$testTenant-$patientId")
         )
         val aidboxPractitionerId = AidboxTestData.add(aidboxPractitioner)
         val aidboxPatientId = AidboxTestData.add(aidboxPatient)

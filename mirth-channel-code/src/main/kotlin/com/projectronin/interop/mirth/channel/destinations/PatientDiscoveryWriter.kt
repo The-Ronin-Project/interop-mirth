@@ -18,10 +18,11 @@ class PatientDiscoveryWriter(val kafkaLoadService: KafkaLoadService) : Tenantles
         channelMap: Map<String, Any>
     ): MirthResponse {
         val references = JacksonUtil.readJsonList(msg, String::class)
-        // this could be benign, but likely something has gone wrong if we're finding no patients for a tenant
+        // no patients found for a given location, log an error and move on
         if (references.isEmpty()) {
+            logger.warn { "No Patients found for tenant $tenantMnemonic" }
             return MirthResponse(
-                MirthResponseStatus.ERROR,
+                MirthResponseStatus.SENT,
                 "No Patients found for tenant $tenantMnemonic"
             )
         }

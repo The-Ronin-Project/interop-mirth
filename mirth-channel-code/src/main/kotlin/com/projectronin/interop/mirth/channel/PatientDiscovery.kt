@@ -35,34 +35,6 @@ class PatientDiscovery(
         fun create() = SpringUtil.applicationContext.getBean(PatientDiscovery::class.java)
     }
 
-    fun needsLoad(tenant: Tenant): Boolean {
-        if (!isTimeInRange(tenant)) return false
-        val config = tenantConfigurationService.getConfiguration(tenant.mnemonic)
-        // either this tenant has never had a load, or it has been at least 24 hours.
-        return if (config.lastUpdated == null ||
-            config.lastUpdated!! <= OffsetDateTime.now(ZoneOffset.UTC).minusDays(1)
-        ) {
-            config.lastUpdated = OffsetDateTime.now(ZoneOffset.UTC)
-            tenantConfigurationService.updateConfiguration(config)
-            true
-        } else {
-            false
-        }
-    }
-
-    fun isTimeInRange(tenant: Tenant): Boolean {
-        val batch = tenant.batchConfig ?: return true // if no batch config, we are good to go
-        val tz = tenant.timezone.rules.getOffset(LocalDateTime.now())
-        val now = OffsetTime.now(ZoneOffset.UTC)
-        val start = batch.availableStart.atOffset(tz)
-        val end = batch.availableEnd.atOffset(tz)
-        return if (start < end) {
-            now in start..end
-        } else {
-            now >= start || now <= end
-        }
-    }
-
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
         return tenantService.getAllTenants()
             .filter { needsLoad(it) }
@@ -111,5 +83,87 @@ class PatientDiscovery(
         }.distinct()
 
         return MirthMessage(message = JacksonUtil.writeJsonValue(patients))
+    }
+
+    // Given a tenantDO, should we run for tonight's nightly load?
+    fun needsLoad(tenant: Tenant): Boolean {
+        val now = OffsetDateTime.now(ZoneOffset.UTC)
+        val config = try {
+            tenantConfigurationService.getConfiguration(tenant.mnemonic)
+        } catch (e: IllegalArgumentException) {
+            logger.warn { "No Mirth Tenant Config found for tenant: ${tenant.mnemonic}" }
+            return false // don't attempt to load a tenant with no config
+        }
+
+        val shouldRun = AvailableWindow(tenant).shouldRun(now, config.lastUpdated)
+        return if (shouldRun) {
+            config.lastUpdated = now
+            tenantConfigurationService.updateConfiguration(config)
+            true
+        } else {
+            false
+        }
+    }
+
+    /***
+     * Helper class which takes a tenant, and creates an object which represents the "Availability Window" for when are
+     * allowed to call this tenant
+     * Tenants with no config default to always being available
+     */
+    class AvailableWindow(tenant: Tenant) {
+        private val tenantTimeZone = tenant.timezone.rules.getOffset(LocalDateTime.now())
+
+        // These are public mostly to make testing easier
+        val windowStartTime: OffsetTime = tenant.batchConfig?.availableStart?.atOffset(tenantTimeZone)
+            ?: OffsetTime.MIN.withOffsetSameLocal(tenantTimeZone)
+        val windowEndTime: OffsetTime = tenant.batchConfig ?.availableEnd?.atOffset(tenantTimeZone)
+            ?: OffsetTime.MAX.withOffsetSameLocal(tenantTimeZone)
+        val spansMidnight: Boolean = windowStartTime > windowEndTime
+
+        // Is right now in the current window?
+        fun isInWindow(now: OffsetDateTime): Boolean {
+            val currentWindow = getCurrentWindow(now)
+            return now in currentWindow.first..currentWindow.second
+        }
+
+        // given a OffsetDateTime, calculate the current window
+        private fun getCurrentWindow(now: OffsetDateTime): Pair<OffsetDateTime, OffsetDateTime> {
+            val midnightLocalTime = OffsetTime.MIN.withOffsetSameLocal(tenantTimeZone)
+            val betweenMidnightAndEndTime = now.toOffsetTime() in midnightLocalTime..windowEndTime
+            if (spansMidnight) {
+                // if we're in the early morning and the window is still open from last night
+                return if (betweenMidnightAndEndTime) {
+                    val currentWindowOpen = now.with(windowStartTime).minusDays(1)
+                    val currentWindowEnd = now.with(windowEndTime)
+                    Pair(currentWindowOpen, currentWindowEnd)
+                } else {
+                    val currentWindowOpen = now.with(windowStartTime)
+                    val currentWindowEnd = now.with(windowEndTime).plusDays(1)
+                    Pair(currentWindowOpen, currentWindowEnd)
+                }
+
+                // same day window, it's just today
+            } else {
+                val currentWindowOpen = now.with(windowStartTime)
+                val currentWindowEnd = now.with(windowEndTime)
+                return Pair(currentWindowOpen, currentWindowEnd)
+            }
+        }
+
+        fun ranTodayAlready(now: OffsetDateTime, lastRunTime: OffsetDateTime?): Boolean {
+            return if (lastRunTime == null) {
+                false
+                // somehow the last time we ran is in the future, so we've already run
+            } else if (now <= lastRunTime) {
+                return true
+            } else {
+                val currentWindow = getCurrentWindow(now)
+                return lastRunTime in currentWindow.first..currentWindow.second
+            }
+        }
+
+        fun shouldRun(now: OffsetDateTime, lastRunTime: OffsetDateTime?): Boolean {
+            return isInWindow(now) && !ranTodayAlready(now, lastRunTime)
+        }
     }
 }

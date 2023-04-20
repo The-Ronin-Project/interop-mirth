@@ -104,7 +104,7 @@ open class TenantConfigAuthExtension {
     /**
      * The URL from which auth tokens should be retrieved.
      */
-    var tokenUrl: String = "https://ronin-dev.auth0.com/oauth/token"
+    var tokenUrl: String = "http://localhost:1081/oauth/token" // do not call the real oauth server, call your local one
 
     /**
      * The key from which the client ID will be looked up in the environment variables.

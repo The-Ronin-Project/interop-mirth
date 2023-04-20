@@ -31,8 +31,10 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.Instant
 import java.time.LocalTime
 import java.time.OffsetDateTime
+import java.time.OffsetTime
 import java.time.ZoneId
 
 class PatientDiscoveryTest {
@@ -99,95 +101,6 @@ class PatientDiscoveryTest {
     }
 
     @Test
-    fun `batch time null`() {
-        val batchTenant = mockk<Tenant> {
-            every { batchConfig } returns null
-        }
-        assertTrue(channel.isTimeInRange(batchTenant))
-    }
-
-    @Test
-    fun `batch time outside of range`() {
-        val batchTenant = mockk<Tenant> {
-            every { batchConfig } returns mockk {
-                every { availableEnd } returns LocalTime.now().plusHours(2)
-                every { availableStart } returns LocalTime.now().plusHours(1)
-            }
-            every { timezone } returns ZoneId.of("Etc/UTC")
-        }
-        assertFalse(channel.isTimeInRange(batchTenant))
-    }
-
-    @Test
-    fun `batch time over midnight`() {
-        val batchTenant = mockk<Tenant> {
-            every { batchConfig } returns mockk {
-                every { availableEnd } returns LocalTime.now().plusHours(1)
-                every { availableStart } returns LocalTime.now().plusHours(2)
-            }
-            every { timezone } returns ZoneId.of("Etc/UTC")
-        }
-        assertTrue(channel.isTimeInRange(batchTenant))
-    }
-
-    @Test
-    fun `need load not in range`() {
-        val batchTenant = mockk<Tenant> {
-            every { batchConfig } returns mockk {
-                every { availableEnd } returns LocalTime.now().plusHours(2)
-                every { availableStart } returns LocalTime.now().plusHours(1)
-            }
-            every { timezone } returns ZoneId.of("Etc/UTC")
-        }
-        assertFalse(channel.needsLoad(batchTenant))
-    }
-
-    @Test
-    fun `need load outdated`() {
-        val batchTenant = mockk<Tenant> {
-            every { batchConfig } returns null
-            every { mnemonic } returns "ronin"
-        }
-
-        every { tenantConfigurationService.getConfiguration("ronin") } returns mockk {
-            every { lastUpdated } returns OffsetDateTime.now().minusDays(2)
-            every { lastUpdated = any() } returns mockk()
-        }
-
-        assertTrue(channel.needsLoad(batchTenant))
-    }
-
-    @Test
-    fun `need load too soon`() {
-        val batchTenant = mockk<Tenant> {
-            every { batchConfig } returns null
-            every { mnemonic } returns "ronin"
-        }
-
-        every { tenantConfigurationService.getConfiguration("ronin") } returns mockk {
-            every { lastUpdated } returns OffsetDateTime.now().minusHours(15)
-            every { lastUpdated = any() } returns mockk()
-        }
-
-        assertFalse(channel.needsLoad(batchTenant))
-    }
-
-    @Test
-    fun `need load never loaded`() {
-        val batchTenant = mockk<Tenant> {
-            every { batchConfig } returns null
-            every { mnemonic } returns "ronin"
-        }
-
-        every { tenantConfigurationService.getConfiguration("ronin") } returns mockk {
-            every { lastUpdated } returns null
-            every { lastUpdated = any() } returns mockk()
-        }
-
-        assertTrue(channel.needsLoad(batchTenant))
-    }
-
-    @Test
     fun `sourceReader works`() {
         val list = channel.channelSourceReader(emptyMap())
         assertEquals(2, list.size)
@@ -195,6 +108,225 @@ class PatientDiscoveryTest {
         assertEquals("456", list[1].message)
         assertEquals("ronin", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
         assertEquals("ronin", list[1].dataMap[MirthKey.TENANT_MNEMONIC.code])
+    }
+
+    @Test
+    fun `tenants that already ran shouldn't run again`() {
+        every { tenantConfigurationService.getConfiguration(any()) } returns mockk {
+            every { lastUpdated } returns OffsetDateTime.now().plusHours(2)
+        }
+        val list = channel.channelSourceReader(emptyMap())
+        assertEquals(0, list.size)
+    }
+
+    @Test
+    fun `tenants without config aren't asked to run`() {
+        every { tenantConfigurationService.getConfiguration(any()) } throws IllegalArgumentException("oops")
+        val list = channel.channelSourceReader(emptyMap())
+        assertEquals(0, list.size)
+    }
+
+    @Test
+    fun `AvailableWindow inits correctly with blank values`() {
+        val tenant = mockk<Tenant> {
+            every { timezone } returns ZoneId.of("America/Los_Angeles")
+            every { batchConfig } returns null
+        }
+        val availableWindow = PatientDiscovery.AvailableWindow(tenant)
+        val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
+        assertEquals(OffsetTime.of(0, 0, 0, 0, zone), availableWindow.windowStartTime)
+        assertEquals(OffsetTime.of(23, 59, 59, 999999999, zone), availableWindow.windowEndTime)
+        assertFalse(availableWindow.spansMidnight)
+    }
+
+    @Test
+    fun `AvailableWindow inits correctly with passed values`() {
+        val tenant = mockk<Tenant> {
+            every { timezone } returns ZoneId.of("America/Los_Angeles")
+            every { batchConfig } returns mockk {
+                every { availableStart } returns LocalTime.of(20, 0)
+                every { availableEnd } returns LocalTime.of(3, 0)
+            }
+        }
+        val availableWindow = PatientDiscovery.AvailableWindow(tenant)
+        val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
+        assertEquals(OffsetTime.of(20, 0, 0, 0, zone), availableWindow.windowStartTime)
+        assertEquals(OffsetTime.of(3, 0, 0, 0, zone), availableWindow.windowEndTime)
+        assertTrue(availableWindow.spansMidnight)
+    }
+
+    @Test
+    fun `AvailableWindow can correctly determine the right window`() {
+        val tenant = mockk<Tenant> {
+            every { timezone } returns ZoneId.of("America/Los_Angeles")
+            every { batchConfig } returns mockk {
+                every { availableStart } returns LocalTime.of(1, 30)
+                every { availableEnd } returns LocalTime.of(7, 0)
+            }
+        }
+        val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
+        val availableWindow = PatientDiscovery.AvailableWindow(tenant)
+        val oneAm = OffsetDateTime.of(2023, 4, 1, 1, 0, 0, 0, zone)
+        val twoAm = oneAm.withHour(2)
+        val eightAm = oneAm.withHour(8)
+        val sixPm = oneAm.withHour(18)
+        val midNight = oneAm.withHour(0)
+
+        assertFalse(availableWindow.isInWindow(oneAm))
+        assertTrue(availableWindow.isInWindow(twoAm))
+        assertFalse(availableWindow.isInWindow(eightAm))
+        assertFalse(availableWindow.isInWindow(sixPm))
+        assertFalse(availableWindow.isInWindow(midNight))
+    }
+
+    @Test
+    fun `AvailableWindow can correctly determine the right window for spanning midnight`() {
+        val tenant = mockk<Tenant> {
+            every { timezone } returns ZoneId.of("America/Los_Angeles")
+            every { batchConfig } returns mockk {
+                every { availableStart } returns LocalTime.of(21, 0)
+                every { availableEnd } returns LocalTime.of(3, 0)
+            }
+        }
+        val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
+        val availableWindow = PatientDiscovery.AvailableWindow(tenant)
+        val oneAm = OffsetDateTime.of(2023, 4, 1, 1, 0, 0, 0, zone)
+        val twoAm = oneAm.withHour(1)
+        val eightAm = oneAm.withHour(8)
+        val sixPm = oneAm.withHour(18)
+        val elevenPm = oneAm.withHour(23)
+        val midNight = oneAm.withHour(0)
+
+        assertTrue(availableWindow.isInWindow(oneAm))
+        assertTrue(availableWindow.isInWindow(twoAm))
+        assertFalse(availableWindow.isInWindow(eightAm))
+        assertFalse(availableWindow.isInWindow(sixPm))
+        assertTrue(availableWindow.isInWindow(elevenPm))
+        assertTrue(availableWindow.isInWindow(midNight))
+    }
+
+    @Test
+    fun `AvailableWindow can correctly determine if something ran when spans midnight`() {
+        val spansMidnightTenant = mockk<Tenant> {
+            every { timezone } returns ZoneId.of("America/Los_Angeles")
+            every { batchConfig } returns mockk {
+                every { availableStart } returns LocalTime.of(20, 0)
+                every { availableEnd } returns LocalTime.of(3, 0)
+            }
+        }
+        val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
+        val spansMidnightAvailableWindow = PatientDiscovery.AvailableWindow(spansMidnightTenant)
+        val earlyMorningRunToday = OffsetDateTime.of(2023, 4, 8, 0, 30, 0, 0, zone)
+
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(earlyMorningRunToday, null))
+
+        val eightAmYesterday = earlyMorningRunToday.withHour(8).minusDays(1)
+        val elevenPMYesterday = earlyMorningRunToday.withHour(23).minusDays(1)
+        val oneAmToday = earlyMorningRunToday.withHour(1)
+        val eightAmToday = earlyMorningRunToday.withHour(8)
+        val sixPmToday = earlyMorningRunToday.withHour(18)
+        val elevenPmToday = earlyMorningRunToday.withHour(23)
+        val eightAmTomorrow = eightAmToday.plusDays(1)
+        val elevenPmTomorrow = elevenPmToday.plusDays(1)
+
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(eightAmYesterday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(elevenPMYesterday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(oneAmToday, earlyMorningRunToday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(eightAmToday, earlyMorningRunToday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(sixPmToday, earlyMorningRunToday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(elevenPmToday, earlyMorningRunToday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(eightAmTomorrow, earlyMorningRunToday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(elevenPmTomorrow, earlyMorningRunToday))
+
+        val lateNightRunYesterday = earlyMorningRunToday.withHour(23).withMinute(30).minusDays(1)
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(eightAmYesterday, lateNightRunYesterday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(elevenPMYesterday, lateNightRunYesterday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(oneAmToday, lateNightRunYesterday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(eightAmToday, lateNightRunYesterday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(sixPmToday, lateNightRunYesterday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(elevenPmToday, lateNightRunYesterday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(eightAmTomorrow, lateNightRunYesterday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(elevenPmTomorrow, lateNightRunYesterday))
+    }
+
+    @Test
+    fun `AvailableWindow can correctly determine if something ran `() {
+        val spansMidnightTenant = mockk<Tenant> {
+            every { timezone } returns ZoneId.of("America/Los_Angeles")
+            every { batchConfig } returns mockk {
+                every { availableStart } returns LocalTime.of(0, 30)
+                every { availableEnd } returns LocalTime.of(7, 0)
+            }
+        }
+        val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
+        val spansMidnightAvailableWindow = PatientDiscovery.AvailableWindow(spansMidnightTenant)
+        val earlyMorningRunToday = OffsetDateTime.of(2023, 4, 8, 1, 30, 0, 0, zone)
+
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(earlyMorningRunToday, null))
+
+        val eightAmYesterday = earlyMorningRunToday.withHour(8).minusDays(1)
+        val elevenPMYesterday = earlyMorningRunToday.withHour(23).minusDays(1)
+        val oneAmToday = earlyMorningRunToday.withHour(1)
+        val threeAmToday = earlyMorningRunToday.withHour(3)
+        val eightAmToday = earlyMorningRunToday.withHour(8)
+        val sixPmToday = earlyMorningRunToday.withHour(18)
+        val elevenPmToday = earlyMorningRunToday.withHour(23)
+        val eightAmTomorrow = eightAmToday.plusDays(1)
+        val elevenPmTomorrow = elevenPmToday.plusDays(1)
+        val threeAmTomorrow = threeAmToday.plusDays(1)
+
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(eightAmYesterday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(elevenPMYesterday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(oneAmToday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(threeAmToday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(eightAmToday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(sixPmToday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(elevenPmToday, earlyMorningRunToday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(threeAmTomorrow, earlyMorningRunToday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(eightAmTomorrow, earlyMorningRunToday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(elevenPmTomorrow, earlyMorningRunToday))
+    }
+
+    @Test
+    fun `AvailableWindow can correctly determine if something ran when passed UTC`() {
+        val spansMidnightTenant = mockk<Tenant> {
+            every { timezone } returns ZoneId.of("America/Los_Angeles")
+            every { batchConfig } returns mockk {
+                every { availableStart } returns LocalTime.of(0, 30)
+                every { availableEnd } returns LocalTime.of(7, 0)
+            }
+        }
+        val utcZone = ZoneId.of("Etc/UTC").rules.getOffset(Instant.now())
+        val clientTimeZone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
+        val spansMidnightAvailableWindow = PatientDiscovery.AvailableWindow(spansMidnightTenant)
+        // this in utc, but starting from  Los Angeles time to match client for easy reading, then adjuysting to utc
+        val earlyMorningRunToday =
+            OffsetDateTime.of(2023, 4, 8, 1, 30, 0, 0, clientTimeZone)
+                .withOffsetSameInstant(utcZone)
+
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(earlyMorningRunToday, null))
+
+        val eightAmYesterday = earlyMorningRunToday.withHour(8).minusDays(1).withOffsetSameInstant(utcZone)
+        val elevenPMYesterday = earlyMorningRunToday.withHour(23).minusDays(1).withOffsetSameInstant(utcZone)
+        val oneAmToday = earlyMorningRunToday.withHour(1).withOffsetSameInstant(utcZone)
+        val threeAmToday = earlyMorningRunToday.withHour(3).withOffsetSameInstant(utcZone)
+        val eightAmToday = earlyMorningRunToday.withHour(8).withOffsetSameInstant(utcZone)
+        val sixPmToday = earlyMorningRunToday.withHour(18).withOffsetSameInstant(utcZone)
+        val elevenPmToday = earlyMorningRunToday.withHour(23).withOffsetSameInstant(utcZone)
+        val eightAmTomorrow = earlyMorningRunToday.withHour(8).plusDays(1).withOffsetSameInstant(utcZone)
+        val elevenPmTomorrow = earlyMorningRunToday.withHour(23).plusDays(1).withOffsetSameInstant(utcZone)
+        val threeAmTomorrow = earlyMorningRunToday.withHour(3).plusDays(1).withOffsetSameInstant(utcZone)
+
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(eightAmYesterday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(elevenPMYesterday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(oneAmToday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(threeAmToday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(eightAmToday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(sixPmToday, earlyMorningRunToday))
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(elevenPmToday, earlyMorningRunToday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(threeAmTomorrow, earlyMorningRunToday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(eightAmTomorrow, earlyMorningRunToday))
+        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(elevenPmTomorrow, earlyMorningRunToday))
     }
 
     @Test
