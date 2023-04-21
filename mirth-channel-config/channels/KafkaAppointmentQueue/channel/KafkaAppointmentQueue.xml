@@ -1,222 +1,234 @@
 <channel version="3.11.0">
-  <id>f2956ab5-9c8c-4dbf-b789-12726f91454e</id>
-  <nextMetaDataId>5</nextMetaDataId>
-  <name>KafkaAppointmentQueue</name>
-  <description>Version 1.0.0.
+    <id>f2956ab5-9c8c-4dbf-b789-12726f91454e</id>
+    <nextMetaDataId>5</nextMetaDataId>
+    <name>KafkaAppointmentQueue</name>
+    <description>Version 1.0.0.
 
-Reads Appointments off the Kafka Queue. Transforms and publishes them to the clinical data store.</description>
-  <revision>4</revision>
-  <sourceConnector version="3.11.0">
-    <metaDataId>0</metaDataId>
-    <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.js.JavaScriptReceiverProperties" version="3.11.0">
-      <pluginProperties/>
-      <pollConnectorProperties version="3.11.0">
-        <pollingType>INTERVAL</pollingType>
-        <pollOnStart>true</pollOnStart>
-        <pollingFrequency>300000</pollingFrequency>
-        <pollingHour>0</pollingHour>
-        <pollingMinute>0</pollingMinute>
-        <cronJobs/>
-        <pollConnectorPropertiesAdvanced>
-          <weekly>true</weekly>
-          <inactiveDays>
-            <boolean>false</boolean>
-            <boolean>false</boolean>
-            <boolean>false</boolean>
-            <boolean>false</boolean>
-            <boolean>false</boolean>
-            <boolean>false</boolean>
-            <boolean>false</boolean>
-            <boolean>false</boolean>
-          </inactiveDays>
-          <dayOfMonth>1</dayOfMonth>
-          <allDay>true</allDay>
-          <startingHour>8</startingHour>
-          <startingMinute>0</startingMinute>
-          <endingHour>17</endingHour>
-          <endingMinute>0</endingMinute>
-        </pollConnectorPropertiesAdvanced>
-      </pollConnectorProperties>
-      <sourceConnectorProperties version="3.11.0">
-        <responseVariable>None</responseVariable>
-        <respondAfterProcessing>true</respondAfterProcessing>
-        <processBatch>false</processBatch>
-        <firstResponse>false</firstResponse>
-        <processingThreads>1</processingThreads>
+        Reads Appointments off the Kafka Queue. Transforms and publishes them to the clinical data store.
+    </description>
+    <revision>4</revision>
+    <sourceConnector version="3.11.0">
+        <metaDataId>0</metaDataId>
+        <name>sourceConnector</name>
+        <properties class="com.mirth.connect.connectors.js.JavaScriptReceiverProperties" version="3.11.0">
+            <pluginProperties/>
+            <pollConnectorProperties version="3.11.0">
+                <pollingType>INTERVAL</pollingType>
+                <pollOnStart>true</pollOnStart>
+                <pollingFrequency>5000</pollingFrequency>
+                <pollingHour>0</pollingHour>
+                <pollingMinute>0</pollingMinute>
+                <cronJobs/>
+                <pollConnectorPropertiesAdvanced>
+                    <weekly>true</weekly>
+                    <inactiveDays>
+                        <boolean>false</boolean>
+                        <boolean>false</boolean>
+                        <boolean>false</boolean>
+                        <boolean>false</boolean>
+                        <boolean>false</boolean>
+                        <boolean>false</boolean>
+                        <boolean>false</boolean>
+                        <boolean>false</boolean>
+                    </inactiveDays>
+                    <dayOfMonth>1</dayOfMonth>
+                    <allDay>true</allDay>
+                    <startingHour>8</startingHour>
+                    <startingMinute>0</startingMinute>
+                    <endingHour>17</endingHour>
+                    <endingMinute>0</endingMinute>
+                </pollConnectorPropertiesAdvanced>
+            </pollConnectorProperties>
+            <sourceConnectorProperties version="3.11.0">
+                <responseVariable>None</responseVariable>
+                <respondAfterProcessing>true</respondAfterProcessing>
+                <processBatch>false</processBatch>
+                <firstResponse>false</firstResponse>
+                <processingThreads>1</processingThreads>
+                <resourceIds class="linked-hash-map">
+                    <entry>
+                        <string>206087b7-266c-464f-af3b-7477264b3b89</string>
+                        <string>Interop</string>
+                    </entry>
+                </resourceIds>
+                <queueBufferSize>1000</queueBufferSize>
+            </sourceConnectorProperties>
+            <script>return sourceReader()</script>
+        </properties>
+        <transformer version="3.11.0">
+            <elements>
+                <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.11.0">
+                    <name>Source Transform</name>
+                    <sequenceNumber>0</sequenceNumber>
+                    <enabled>true</enabled>
+                    <script>sourceTransform()</script>
+                </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+            </elements>
+            <inboundTemplate encoding="base64"></inboundTemplate>
+            <outboundTemplate encoding="base64"></outboundTemplate>
+            <inboundDataType>RAW</inboundDataType>
+            <outboundDataType>RAW</outboundDataType>
+            <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
+                <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
+                    <splitType>JavaScript</splitType>
+                    <batchScript></batchScript>
+                </batchProperties>
+            </inboundProperties>
+            <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
+                <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
+                    <splitType>JavaScript</splitType>
+                    <batchScript></batchScript>
+                </batchProperties>
+            </outboundProperties>
+        </transformer>
+        <filter version="3.11.0">
+            <elements/>
+        </filter>
+        <transportName>JavaScript Reader</transportName>
+        <mode>SOURCE</mode>
+        <enabled>true</enabled>
+        <waitForPrevious>true</waitForPrevious>
+    </sourceConnector>
+    <destinationConnectors>
+        <connector version="3.11.0">
+            <metaDataId>1</metaDataId>
+            <name>Publish Appointments</name>
+            <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="3.11.0">
+                <pluginProperties/>
+                <destinationConnectorProperties version="3.11.0">
+                    <queueEnabled>false</queueEnabled>
+                    <sendFirst>false</sendFirst>
+                    <retryIntervalMillis>10000</retryIntervalMillis>
+                    <regenerateTemplate>false</regenerateTemplate>
+                    <retryCount>0</retryCount>
+                    <rotate>false</rotate>
+                    <includeFilterTransformer>false</includeFilterTransformer>
+                    <threadCount>1</threadCount>
+                    <threadAssignmentVariable></threadAssignmentVariable>
+                    <validateResponse>false</validateResponse>
+                    <resourceIds class="linked-hash-map">
+                        <entry>
+                            <string>206087b7-266c-464f-af3b-7477264b3b89</string>
+                            <string>Interop</string>
+                        </entry>
+                    </resourceIds>
+                    <queueBufferSize>1000</queueBufferSize>
+                    <reattachAttachments>true</reattachAttachments>
+                </destinationConnectorProperties>
+                <script>return destinationWriter(&quot;publish&quot;);</script>
+            </properties>
+            <transformer version="3.11.0">
+                <elements/>
+                <inboundTemplate encoding="base64"></inboundTemplate>
+                <outboundTemplate encoding="base64"></outboundTemplate>
+                <inboundDataType>RAW</inboundDataType>
+                <outboundDataType>RAW</outboundDataType>
+                <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties"
+                                   version="3.11.0">
+                    <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties"
+                                     version="3.11.0">
+                        <splitType>JavaScript</splitType>
+                        <batchScript></batchScript>
+                    </batchProperties>
+                </inboundProperties>
+                <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties"
+                                    version="3.11.0">
+                    <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties"
+                                     version="3.11.0">
+                        <splitType>JavaScript</splitType>
+                        <batchScript></batchScript>
+                    </batchProperties>
+                </outboundProperties>
+            </transformer>
+            <responseTransformer version="3.11.0">
+                <elements/>
+                <inboundDataType>RAW</inboundDataType>
+                <outboundDataType>RAW</outboundDataType>
+                <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties"
+                                   version="3.11.0">
+                    <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties"
+                                     version="3.11.0">
+                        <splitType>JavaScript</splitType>
+                        <batchScript></batchScript>
+                    </batchProperties>
+                </inboundProperties>
+                <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties"
+                                    version="3.11.0">
+                    <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties"
+                                     version="3.11.0">
+                        <splitType>JavaScript</splitType>
+                        <batchScript></batchScript>
+                    </batchProperties>
+                </outboundProperties>
+            </responseTransformer>
+            <filter version="3.11.0">
+                <elements/>
+            </filter>
+            <transportName>JavaScript Writer</transportName>
+            <mode>DESTINATION</mode>
+            <enabled>true</enabled>
+            <waitForPrevious>true</waitForPrevious>
+        </connector>
+    </destinationConnectors>
+    <preprocessingScript>// Modify the message variable below to pre process data
+        return message;
+    </preprocessingScript>
+    <postprocessingScript>// This script executes once after a message has been processed
+        // Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
+        return;
+    </postprocessingScript>
+    <deployScript>// @apiinfo &quot;&quot;&quot;Get the channel configuration and services.&quot;&quot;&quot;
+
+        var channelService = Packages.com.projectronin.interop.mirth.channel.KafkaAppointmentQueue.Companion.create();
+        onDeploy(channelService)
+    </deployScript>
+    <undeployScript>// This script executes once when the channel is undeployed
+        // You only have access to the globalMap and globalChannelMap here to persist data
+        return;
+    </undeployScript>
+    <properties version="3.11.0">
+        <clearGlobalChannelMap>true</clearGlobalChannelMap>
+        <messageStorageMode>DEVELOPMENT</messageStorageMode>
+        <encryptData>false</encryptData>
+        <removeContentOnCompletion>false</removeContentOnCompletion>
+        <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
+        <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
+        <initialState>STARTED</initialState>
+        <storeAttachments>false</storeAttachments>
+        <metaDataColumns>
+            <metaDataColumn>
+                <name>TENANT</name>
+                <type>STRING</type>
+                <mappingName>tenantMnemonic</mappingName>
+            </metaDataColumn>
+            <metaDataColumn>
+                <name>FHIRID</name>
+                <type>STRING</type>
+                <mappingName>fhirID</mappingName>
+            </metaDataColumn>
+        </metaDataColumns>
+        <attachmentProperties version="3.11.0">
+            <type>None</type>
+            <properties/>
+        </attachmentProperties>
         <resourceIds class="linked-hash-map">
-          <entry>
-            <string>206087b7-266c-464f-af3b-7477264b3b89</string>
-            <string>Interop</string>
-          </entry>
-        </resourceIds>
-        <queueBufferSize>1000</queueBufferSize>
-      </sourceConnectorProperties>
-      <script>return sourceReader()</script>
-    </properties>
-    <transformer version="3.11.0">
-      <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.11.0">
-          <name>Source Transform</name>
-          <sequenceNumber>0</sequenceNumber>
-          <enabled>true</enabled>
-          <script>sourceTransform()</script>
-        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-      </elements>
-      <inboundTemplate encoding="base64"></inboundTemplate>
-      <outboundTemplate encoding="base64"></outboundTemplate>
-      <inboundDataType>RAW</inboundDataType>
-      <outboundDataType>RAW</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
-          <splitType>JavaScript</splitType>
-          <batchScript></batchScript>
-        </batchProperties>
-      </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
-          <splitType>JavaScript</splitType>
-          <batchScript></batchScript>
-        </batchProperties>
-      </outboundProperties>
-    </transformer>
-    <filter version="3.11.0">
-      <elements/>
-    </filter>
-    <transportName>JavaScript Reader</transportName>
-    <mode>SOURCE</mode>
-    <enabled>true</enabled>
-    <waitForPrevious>true</waitForPrevious>
-  </sourceConnector>
-  <destinationConnectors>
-    <connector version="3.11.0">
-      <metaDataId>1</metaDataId>
-      <name>Publish Appointments</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="3.11.0">
-        <pluginProperties/>
-        <destinationConnectorProperties version="3.11.0">
-          <queueEnabled>false</queueEnabled>
-          <sendFirst>false</sendFirst>
-          <retryIntervalMillis>10000</retryIntervalMillis>
-          <regenerateTemplate>false</regenerateTemplate>
-          <retryCount>0</retryCount>
-          <rotate>false</rotate>
-          <includeFilterTransformer>false</includeFilterTransformer>
-          <threadCount>1</threadCount>
-          <threadAssignmentVariable></threadAssignmentVariable>
-          <validateResponse>false</validateResponse>
-          <resourceIds class="linked-hash-map">
             <entry>
-              <string>206087b7-266c-464f-af3b-7477264b3b89</string>
-              <string>Interop</string>
+                <string>206087b7-266c-464f-af3b-7477264b3b89</string>
+                <string>Interop</string>
             </entry>
-          </resourceIds>
-          <queueBufferSize>1000</queueBufferSize>
-          <reattachAttachments>true</reattachAttachments>
-        </destinationConnectorProperties>
-        <script>return destinationWriter(&quot;publish&quot;);</script>
-      </properties>
-      <transformer version="3.11.0">
-        <elements/>
-        <inboundTemplate encoding="base64"></inboundTemplate>
-        <outboundTemplate encoding="base64"></outboundTemplate>
-        <inboundDataType>RAW</inboundDataType>
-        <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
-            <splitType>JavaScript</splitType>
-            <batchScript></batchScript>
-          </batchProperties>
-        </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
-            <splitType>JavaScript</splitType>
-            <batchScript></batchScript>
-          </batchProperties>
-        </outboundProperties>
-      </transformer>
-      <responseTransformer version="3.11.0">
-        <elements/>
-        <inboundDataType>RAW</inboundDataType>
-        <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
-            <splitType>JavaScript</splitType>
-            <batchScript></batchScript>
-          </batchProperties>
-        </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
-            <splitType>JavaScript</splitType>
-            <batchScript></batchScript>
-          </batchProperties>
-        </outboundProperties>
-      </responseTransformer>
-      <filter version="3.11.0">
-        <elements/>
-      </filter>
-      <transportName>JavaScript Writer</transportName>
-      <mode>DESTINATION</mode>
-      <enabled>true</enabled>
-      <waitForPrevious>true</waitForPrevious>
-    </connector>
-  </destinationConnectors>
-  <preprocessingScript>// Modify the message variable below to pre process data
-return message;</preprocessingScript>
-  <postprocessingScript>// This script executes once after a message has been processed
-// Responses returned from here will be stored as &quot;Postprocessor&quot; in the response map
-return;</postprocessingScript>
-  <deployScript>// @apiinfo &quot;&quot;&quot;Get the channel configuration and services.&quot;&quot;&quot;
-
-var channelService = Packages.com.projectronin.interop.mirth.channel.KafkaAppointmentQueue.Companion.create();
-onDeploy(channelService)
-</deployScript>
-  <undeployScript>// This script executes once when the channel is undeployed
-// You only have access to the globalMap and globalChannelMap here to persist data
-return;</undeployScript>
-  <properties version="3.11.0">
-    <clearGlobalChannelMap>true</clearGlobalChannelMap>
-    <messageStorageMode>DEVELOPMENT</messageStorageMode>
-    <encryptData>false</encryptData>
-    <removeContentOnCompletion>false</removeContentOnCompletion>
-    <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
-    <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
-    <initialState>STARTED</initialState>
-    <storeAttachments>false</storeAttachments>
-    <metaDataColumns>
-      <metaDataColumn>
-        <name>TENANT</name>
-        <type>STRING</type>
-        <mappingName>tenantMnemonic</mappingName>
-      </metaDataColumn>
-      <metaDataColumn>
-        <name>FHIRID</name>
-        <type>STRING</type>
-        <mappingName>fhirID</mappingName>
-      </metaDataColumn>
-    </metaDataColumns>
-    <attachmentProperties version="3.11.0">
-      <type>None</type>
-      <properties/>
-    </attachmentProperties>
-    <resourceIds class="linked-hash-map">
-      <entry>
-        <string>206087b7-266c-464f-af3b-7477264b3b89</string>
-        <string>Interop</string>
-      </entry>
-    </resourceIds>
-  </properties>
-  <exportData>
-    <metadata>
-      <enabled>false</enabled>
-      <lastModified>
-        <time>1674759122610</time>
-        <timezone>America/Los_Angeles</timezone>
-      </lastModified>
-      <pruningSettings>
-        <pruneMetaDataDays>60</pruneMetaDataDays>
-        <archiveEnabled>true</archiveEnabled>
-      </pruningSettings>
-    </metadata>
-  </exportData>
+        </resourceIds>
+    </properties>
+    <exportData>
+        <metadata>
+            <enabled>false</enabled>
+            <lastModified>
+                <time>1674759122610</time>
+                <timezone>America/Los_Angeles</timezone>
+            </lastModified>
+            <pruningSettings>
+                <pruneMetaDataDays>60</pruneMetaDataDays>
+                <archiveEnabled>true</archiveEnabled>
+            </pruningSettings>
+        </metadata>
+    </exportData>
 </channel>
