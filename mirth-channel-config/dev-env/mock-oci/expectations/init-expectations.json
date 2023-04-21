@@ -135,6 +135,58 @@
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
           "registry_uuid": "9",
           "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
+        },
+        {
+          "registry_uuid": "11eeb3d5-103d-453d-89cb-c36664973ad3",
+          "resource_type": "Observation",
+          "data_element": "Observation.component:systolic.code",
+          "tenant_id": "tenantAgnosticRegistryKey",
+          "source_extension_url": null,
+          "registry_entry_type": "value_set",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationBloodPressure",
+          "value_set_name": "systolicbloodpressure",
+          "value_set_uuid": "800f4e2b-d716-44e8-9183-87d3ed8cba9b",
+          "version": 1,
+          "filename": "EmptyValueSet.json"
+        },
+        {
+          "registry_uuid": "bb1f0163-773c-435c-80d4-c4d2e3118741",
+          "resource_type": "Observation",
+          "data_element": "Observation.component:diastolic.code",
+          "tenant_id": "tenantAgnosticRegistryKey",
+          "source_extension_url": null,
+          "registry_entry_type": "value_set",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationBloodPressure",
+          "value_set_name": "diastolicbloodpressure",
+          "value_set_uuid": "0718bdad-3386-4193-8b47-1cf9220b4bb3",
+          "version": 1,
+          "filename": "EmptyValueSet.json"
+        },
+        {
+          "registry_uuid": "5f52bd1b-a4fd-40e9-9c17-8dcde0293c67",
+          "resource_type": "Observation",
+          "data_element": "Observation.component:FlowRate.code",
+          "tenant_id": "tenantAgnosticRegistryKey",
+          "source_extension_url": null,
+          "registry_entry_type": "value_set",
+          "profile_url": " http://projectronin.io/fhir/StructureDefinition/ronin-observationPulseOximetry",
+          "value_set_name": "inhaledoxygenflowrate",
+          "value_set_uuid": "44bf0223-00e1-4424-89ee-048a2f8dbf7d",
+          "version": 2,
+          "filename": "EmptyValueSet.json"
+        },
+        {
+          "registry_uuid": "f73328f9-accd-484c-8a69-1f9307cc1577",
+          "resource_type": "Observation",
+          "data_element": "Observation.component:Concentration.code",
+          "tenant_id": "tenantAgnosticRegistryKey",
+          "source_extension_url": null,
+          "registry_entry_type": "value_set",
+          "profile_url": " http://projectronin.io/fhir/StructureDefinition/ronin-observationPulseOximetry",
+          "value_set_name": "inhaledoxygenconcentration",
+          "value_set_uuid": "74e038f6-d57c-483e-90cb-215af0a5e0ed",
+          "version": 2,
+          "filename": "EmptyValueSet.json"
         }
       ]
     },
