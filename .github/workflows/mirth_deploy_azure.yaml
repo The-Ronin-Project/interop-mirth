@@ -1,0 +1,62 @@
+name: Mirth deploy in Azure
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: 'Version number of target artifact'
+        required: true
+      env:
+        type: choice
+        description: 'environment targetted for deployment'
+        required: true
+        options:
+          - prod
+      dry-run:
+        type: boolean
+        description: 'if enabled, dry-run tests the workflow without side effects'
+        required: true
+        default: true
+       
+
+jobs:
+  generate_command:
+    runs-on: ubuntu-latest
+    outputs:
+      command_args: ${{ steps.compose_command.outputs.args }}
+    steps:
+      - name: dry-run flag
+        run: echo "DRY_RUN_FLAG=${{ fromJSON('["", "--dry"]')[github.event.inputs.dry-run == 'true'] }}" >> $GITHUB_ENV
+
+      - name: compose command
+        id: compose_command
+        run: echo "args=mirth deploy --env ${{inputs.env}} $DRY_RUN_FLAG ${{inputs.version}}" >> "$GITHUB_OUTPUT"
+
+  ronin-ctl-container-action:
+    runs-on: [self-hosted-azure]
+    needs: generate_command
+    steps:
+      - id: roninctl
+        name: roninctl
+        uses: projectronin/github/ronin-ctl@ronin-ctl/v2
+        with:
+          settings: |-
+            [mirth]
+            prod_server = "10.203.16.5"
+            prod_user = "adminuser"
+            home = "/usr/local/mirthconnect"
+            jar_home = "/usr/local/mirthconnect/interops.d/"
+            live_jar = "/usr/local/mirthconnect/interops/interop-mirth-connector.jar"
+            artifact_name = "mirth-channel-code"
+            artifact_group = "com.projectronin.interop.mirth"
+          mirth-identity-b64: ${{ secrets.MIRTH_AZURE_DEPLOYMENT_SSH_KEY_B64 }}
+          arguments: ${{ needs.generate_command.outputs.command_args }}
+
+      - id: output
+        name: output
+        run: |
+          echo "exit code: ${{ steps.roninctl.outputs.exit-code }}"
+          echo "stdout: ${{ steps.roninctl.outputs.stdout }}"
+          echo "stderr: ${{ steps.roninctl.outputs.stderr }}"
+
