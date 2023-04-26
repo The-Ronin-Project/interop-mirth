@@ -60,8 +60,6 @@ class KafkaPatientQueueTest : BaseChannelTest(kafkaPatientQueueChannelName, list
             "1990-01-03"
         )
 
-        // start channel
-        deployAndStartChannel(true)
         // make sure a message queued in mirth
         waitForMessage(1)
 

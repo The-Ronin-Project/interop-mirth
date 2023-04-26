@@ -12,7 +12,7 @@ import com.projectronin.interop.fhir.r4.resource.PractitionerRole
 import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.mirth.channels.client.AidboxClient
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
-import com.projectronin.interop.mirth.channels.client.KafkaWrapper
+import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
@@ -20,11 +20,8 @@ import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import java.io.File
 import java.io.StringWriter
@@ -49,7 +46,6 @@ abstract class BaseChannelTest(
 ) {
     var tenantInUse = "NOTSET"
     protected val testChannelId = installChannel()
-    protected open val groupId: String? = null
 
     @BeforeEach
     fun setup() {
@@ -59,6 +55,8 @@ abstract class BaseChannelTest(
         deleteAidboxResources(*aidboxResourceTypes.toTypedArray())
         deleteMockEHRResources(*mockEHRResourceTypes.toTypedArray())
         MockOCIServerClient.client.clear("PutObjectExpectation")
+        KafkaClient.reset()
+        deployAndStartChannel()
     }
 
     @AfterEach
@@ -66,15 +64,10 @@ abstract class BaseChannelTest(
         MockEHRTestData.purge()
         AidboxTestData.purge()
         stopChannel()
+        KafkaClient.reset()
     }
 
     companion object {
-        @JvmStatic
-        @BeforeAll
-        @AfterAll
-        fun cleanup() {
-            KafkaWrapper.reset()
-        }
 
         @JvmStatic
         fun tenantsToTest(): Stream<String> {
@@ -119,7 +112,7 @@ abstract class BaseChannelTest(
     }
 
     protected fun deployAndStartChannel(
-        waitForMessage: Boolean,
+        waitForMessage: Boolean = false,
         timeout: Int = 60,
         channelToDeploy: String = testChannelId
     ) {
@@ -141,11 +134,6 @@ abstract class BaseChannelTest(
 
     protected fun getAidboxResourceCount(resourceType: String): Int {
         val resources = AidboxClient.getAllResourcesForTenant(resourceType, tenantInUse)
-        return resources.get("total").asInt()
-    }
-
-    protected fun getMockEHRResourceCount(resourceType: String): Int {
-        val resources = MockEHRClient.getAllResources(resourceType)
         return resources.get("total").asInt()
     }
 
@@ -178,17 +166,17 @@ abstract class BaseChannelTest(
         }
     }
 
-    protected fun waitForMessage(minimumCount: Int, timeout: Int = 600) {
+    protected fun waitForMessage(minimumCount: Int, timeout: Int = 600, channelID: String = testChannelId) {
         runBlocking {
             withTimeout(timeout = timeout.seconds) {
-                waitForMessage(minimumCount)
+                waitForMessage(minimumCount, channelID)
             }
         }
     }
 
-    private suspend fun waitForMessage(minimumCount: Int) {
+    private suspend fun waitForMessage(minimumCount: Int, channelID: String) {
         while (true) {
-            val count = MirthClient.getCompletedMessageCount(testChannelId)
+            val count = MirthClient.getCompletedMessageCount(channelID)
             if (count >= minimumCount) {
                 // delay a moment to allow message to process, one destination might complete but give others a chance
                 delay(1000)
@@ -211,22 +199,6 @@ abstract class BaseChannelTest(
             else -> throw IllegalStateException("Resource has not been cast or has no identifier field")
         }
         return identifiers.firstOrNull { it.system == CodeSystem.RONIN_FHIR_ID.uri }
-    }
-
-    protected fun verifyAllPresent(resources: List<Resource<*>>, expectedMap: Map<String, List<String>>) {
-        assertEquals(resources.size, expectedMap.flatMap { it.value }.size)
-        val found = resources.groupBy(
-            { it.resourceType },
-            { it.getFhirIdentifier()?.value?.value }
-        )
-
-        expectedMap.forEach {
-            val expectedFhirIDs = it.value
-            val foundFhirIds = found[it.key]
-            expectedFhirIDs.forEach { fhirId ->
-                assertTrue(foundFhirIds?.contains(fhirId) == true)
-            }
-        }
     }
 
     @Deprecated("Use waitForMessage to give Mirth time to receive messages", ReplaceWith("waitForMessage(count, 1000)"))

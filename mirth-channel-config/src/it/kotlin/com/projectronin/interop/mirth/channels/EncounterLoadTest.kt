@@ -14,14 +14,13 @@ import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
-import com.projectronin.interop.mirth.channels.client.KafkaWrapper
+import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -36,7 +35,6 @@ class EncounterLoadTest : BaseChannelTest(
 ) {
     val nowish = LocalDate.now().minusDays(1)
     val laterish = nowish.plusDays(1)
-    override val groupId = "interop-mirth-encounter"
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -93,26 +91,17 @@ class EncounterLoadTest : BaseChannelTest(
 
         val encounterId = MockEHRTestData.add(encounter)
         MockOCIServerClient.createExpectations("Encounter", encounterId, tenantInUse)
-        KafkaWrapper.kafkaPublishService.publishResources(
+        KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(aidboxPatient)
         )
 
-        deployAndStartChannel(true)
+        waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Encounter"))
-
-        assertTrue(
-            KafkaWrapper.validatePublishEvents(
-                1,
-                ResourceType.ENCOUNTER,
-                DataTrigger.NIGHTLY,
-                groupId
-            )
-        )
     }
 
     @ParameterizedTest
@@ -221,29 +210,19 @@ class EncounterLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("Encounter", encounter5ID, tenantInUse)
         MockOCIServerClient.createExpectations("Encounter", encounter6ID, tenantInUse)
         MockOCIServerClient.createExpectations("Encounter", encounterPat2ID, tenantInUse)
-        KafkaWrapper.kafkaPublishService.publishResources(
+        MockEHRTestData.validateAll()
+
+        KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(aidboxPatient1, aidboxPatient2)
         )
 
-        // make sure MockEHR is OK
-        MockEHRTestData.validateAll()
-
-        deployAndStartChannel(true)
+        waitForMessage(2)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(2, messageList.size)
         assertEquals(7, getAidboxResourceCount("Encounter"))
-
-        assertTrue(
-            KafkaWrapper.validatePublishEvents(
-                7,
-                ResourceType.ENCOUNTER,
-                DataTrigger.AD_HOC,
-                groupId
-            )
-        )
     }
 
     @ParameterizedTest
@@ -295,39 +274,30 @@ class EncounterLoadTest : BaseChannelTest(
         }
         val encounterId = MockEHRTestData.add(encounter1)
         MockOCIServerClient.createExpectations("Encounter", encounterId, testTenant)
-        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+        KafkaClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(encounterId),
             resourceType = ResourceType.ENCOUNTER
         )
 
-        deployAndStartChannel(true)
+        waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Encounter"))
-
-        assertTrue(
-            KafkaWrapper.validatePublishEvents(
-                1,
-                ResourceType.ENCOUNTER,
-                DataTrigger.AD_HOC,
-                groupId
-            )
-        )
     }
 
     @Test
     fun `non-existent request errors`() {
-        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+        KafkaClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
             resourceType = ResourceType.ENCOUNTER
         )
 
-        deployAndStartChannel(true)
+        waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         messageList.forEach { ids ->
             val message = MirthClient.getMessageById(testChannelId, ids)

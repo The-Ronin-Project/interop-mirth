@@ -16,10 +16,10 @@ interop-ehr-fhir-ronin = "com.projectronin.interop.ehr:interop-fhir-ronin:9.7.1"
 interop-ehr-liquibase = "com.projectronin.interop.ehr:interop-ehr-liquibase:9.7.1"
 interop-ehr-tenant = "com.projectronin.interop.ehr:interop-tenant:9.7.1"
 
-interop-publishers-aidbox = "com.projectronin.interop.publish:interop-aidbox:7.6.0"
-interop-publishers-datalake = "com.projectronin.interop.publish:interop-datalake:7.6.0"
-interop-publishers-core = "com.projectronin.interop.publish:interop-publishers:7.6.0"
-interop-publishers-kafka = "com.projectronin.interop.publish:interop-kafka:7.6.0"
+interop-publishers-aidbox = "com.projectronin.interop.publish:interop-aidbox:7.7.0"
+interop-publishers-datalake = "com.projectronin.interop.publish:interop-datalake:7.7.0"
+interop-publishers-core = "com.projectronin.interop.publish:interop-publishers:7.7.0"
+interop-publishers-kafka = "com.projectronin.interop.publish:interop-kafka:7.7.0"
 
 interop-queue-api = "com.projectronin.interop.queue:interop-queue:1.6.1"
 interop-queue-db = "com.projectronin.interop.queue:interop-queue-db:1.6.1"
@@ -29,6 +29,8 @@ interop-queue-liquibase = "com.projectronin.interop.queue:interop-queue-liquibas
 interop-validation-client = "com.projectronin.interop.validation:interop-validation-client:2.0.0"
 interop-kafka-event-resource-publish = "com.projectronin.contract.event:event-interop-resource-publish:1.0.1"
 interop-kafka-event-resource-load = "com.projectronin.contract.event:event-interop-resource-load:1.0.0"
+interop-kafka-event-resource-request = "com.projectronin.contract.event:event-interop-resource-request:1.0.0"
+
 
 jackson-annotations = "com.fasterxml.jackson.core:jackson-annotations:2.14.2"
 jackson-core = "com.fasterxml.jackson.core:jackson-core:2.14.2"
@@ -72,7 +74,11 @@ xerces = "xerces:xercesImpl:2.12.2"
 test-mysql = ["mysql-connector-java", "testcontainers-mysql"]
 jackson = ["jackson-annotations", "jackson-core", "jackson-databind", "jackson-dataformat-xml", "jackson-dataformat-yaml", "jackson-datatype-jsr310", "jackson-module-kotlin"]
 ktor = ["ktor-client-auth", "ktor-client-cio", "ktor-client-content-negotiation", "ktor-client-core", "ktor-client-logging", "ktor-serialization-jackson"]
-interop-kafka-events = ["interop-kafka-event-resource-publish", "interop-kafka-event-resource-load"]
+interop-kafka-events = [
+    "interop-kafka-event-resource-publish",
+    "interop-kafka-event-resource-load",
+    "interop-kafka-event-resource-request"
+]
 
 
 

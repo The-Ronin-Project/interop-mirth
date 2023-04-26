@@ -67,8 +67,6 @@ class KafkaConditionQueueTest : BaseChannelTest(kafkaConditionQueueChannelName, 
         // query for conditions from 'EHR'
         ProxyClient.getConditionsByPatient(testTenant, patientId)
 
-        // start channel
-        deployAndStartChannel(true)
         // make sure a message queued in mirth
         waitForMessage(1)
 

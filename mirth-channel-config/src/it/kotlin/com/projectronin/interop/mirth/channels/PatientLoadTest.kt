@@ -17,11 +17,10 @@ import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
 import com.projectronin.interop.kafka.model.DataTrigger
-import com.projectronin.interop.mirth.channels.client.KafkaWrapper
+import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
@@ -32,8 +31,6 @@ class PatientLoadTest : BaseChannelTest(
     listOf("Patient", "Condition", "Appointment", "Observation"),
     listOf("Patient", "Condition", "Appointment", "Observation")
 ) {
-    override val groupId = "interop-mirth-patient"
-
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works`(testTenant: String) {
@@ -62,18 +59,19 @@ class PatientLoadTest : BaseChannelTest(
         }
         val patient1Id = MockEHRTestData.add(patient1)
         MockOCIServerClient.createExpectations("patient", patient1Id, testTenant)
+
         // push event to get picked up
-        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+        KafkaClient.pushLoadEvent(
             testTenant,
             DataTrigger.NIGHTLY,
             listOf(patient1Id),
             ResourceType.PATIENT
         )
-        deployAndStartChannel(true)
+        waitForMessage(1)
 
-        // check that publish event was triggered
-
-        assertTrue(KafkaWrapper.validatePublishEvents(1, ResourceType.PATIENT, DataTrigger.NIGHTLY, groupId))
+        val messages = getChannelMessageIds()
+        assertAllConnectorsSent(messages)
+        assertEquals(1, getAidboxResourceCount("Patient"))
     }
 
     @ParameterizedTest
@@ -130,21 +128,25 @@ class PatientLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("patient", patient2Id, testTenant)
 
         // push event to get picked up
-        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+        // push event to get picked up
+        KafkaClient.pushLoadEvent(
             testTenant,
             DataTrigger.NIGHTLY,
             listOf(patient1Id, patient2Id),
             ResourceType.PATIENT
         )
-        deployAndStartChannel(true)
 
-        // check that publish event was triggered
-        assertTrue(KafkaWrapper.validatePublishEvents(2, ResourceType.PATIENT, DataTrigger.NIGHTLY, groupId))
+        waitForMessage(2)
+        val messages = getChannelMessageIds()
+        assertAllConnectorsSent(messages)
+        assertEquals(2, getAidboxResourceCount("Patient"))
     }
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with dag`(testTenant: String) {
+        val patientPublishTopics = KafkaClient.publishTopics(ResourceType.PATIENT)
+
         val conditionType = "Condition"
         val patientType = "Patient"
         val appointmentType = "Appointment"
@@ -272,29 +274,28 @@ class PatientLoadTest : BaseChannelTest(
 
         MockOCIServerClient.createExpectations(observationType, observationFhirId)
 
+        // deploy dag channels
+        channelIds.forEach {
+            deployAndStartChannel(channelToDeploy = it)
+        }
+        patientPublishTopics.forEach {
+            KafkaClient.ensureStability(it.topicName)
+        }
         // push event to get picked up
-        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+        KafkaClient.pushLoadEvent(
             testTenant,
             DataTrigger.NIGHTLY,
             listOf(patientFhirId),
             ResourceType.PATIENT
         )
-        deployAndStartChannel(waitForMessage = true)
+        waitForMessage(1)
+        val patientPublishTopic = KafkaClient.publishTopics(ResourceType.PATIENT).first { it.topicName.contains("nightly") }
+        KafkaClient.ensureStability(patientPublishTopic.topicName)
         channelIds.forEach {
-            deployAndStartChannel(
-                waitForMessage = true,
-                channelToDeploy = it
-            )
+            waitForMessage(1, channelID = it)
             stopChannel(it)
         }
 
-        // check that publish event was triggered
-        // INT-1376 val observationEvents = KafkaWrapper.kafkaPublishService.retrievePublishEvents(ResourceType.OBSERVATION, DataTrigger.NIGHTLY)
-
-        assertTrue(KafkaWrapper.validatePublishEvents(1, ResourceType.CONDITION, DataTrigger.NIGHTLY, "interop-mirth-patient"))
-        assertTrue(KafkaWrapper.validatePublishEvents(1, ResourceType.APPOINTMENT, DataTrigger.NIGHTLY, "interop-mirth-patient"))
-        assertTrue(KafkaWrapper.validatePublishEvents(1, ResourceType.PATIENT, DataTrigger.NIGHTLY, "interop-mirth-patient"))
-        // INT-1376 assertEquals(1, observationEvents.size)
         types.forEach {
             assertEquals(1, getAidboxResourceCount(it))
         }

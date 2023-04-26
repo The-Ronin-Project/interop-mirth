@@ -46,9 +46,7 @@ class KafkaPractitionerQueueTest : BaseChannelTest(kafkaPractitionerQueueChannel
 
         // query for practitioner from 'EHR'
         ProxyClient.getPractitionerByFHIRId(fhirId, testTenant)
-
-        // start channel
-        deployAndStartChannel(true)
+        waitForMessage(1)
 
         assertEquals(1, getAidboxResourceCount("Practitioner"))
         MockOCIServerClient.verify()

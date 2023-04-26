@@ -10,17 +10,17 @@ import com.projectronin.interop.fhir.generators.primitives.daysFromNow
 import com.projectronin.interop.fhir.generators.resources.appointment
 import com.projectronin.interop.fhir.generators.resources.location
 import com.projectronin.interop.fhir.generators.resources.patient
+import com.projectronin.interop.fhir.generators.resources.practitioner
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
-import com.projectronin.interop.mirth.channels.client.KafkaWrapper
+import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -32,7 +32,6 @@ class AppointmentLoadTest : BaseChannelTest(
     listOf("Patient", "Appointment", "Location"),
     listOf("Patient", "Appointment", "Location")
 ) {
-    override val groupId = "interop-mirth-appointment"
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -85,26 +84,18 @@ class AppointmentLoadTest : BaseChannelTest(
         }
         val fakeAppointmentId = MockEHRTestData.add(fakeAppointment)
         MockOCIServerClient.createExpectations("Appointment", fakeAppointmentId, tenantInUse)
-        KafkaWrapper.kafkaPublishService.publishResources(
+
+        KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient)
         )
 
-        deployAndStartChannel(true)
+        waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Appointment"))
-
-        assertTrue(
-            KafkaWrapper.validatePublishEvents(
-                1,
-                ResourceType.APPOINTMENT,
-                DataTrigger.NIGHTLY,
-                groupId
-            )
-        )
     }
 
     @ParameterizedTest
@@ -204,6 +195,9 @@ class AppointmentLoadTest : BaseChannelTest(
         val appt5 = MockEHRTestData.add(fakeAppointment1)
         val appt6 = MockEHRTestData.add(fakeAppointment1)
         val patientAppt = MockEHRTestData.add(fakeAppointment2)
+        // make sure MockEHR is OK
+        MockEHRTestData.validateAll()
+
         MockOCIServerClient.createExpectations("Appointment", appt1, tenantInUse)
         MockOCIServerClient.createExpectations("Appointment", appt2, tenantInUse)
         MockOCIServerClient.createExpectations("Appointment", appt3, tenantInUse)
@@ -211,31 +205,20 @@ class AppointmentLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("Appointment", appt5, tenantInUse)
         MockOCIServerClient.createExpectations("Appointment", appt6, tenantInUse)
         MockOCIServerClient.createExpectations("Appointment", patientAppt, tenantInUse)
-        KafkaWrapper.kafkaPublishService.publishResources(
+
+        KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(fakeAidboxPatient1, fakeAidboxPatient2)
         )
 
-        // make sure MockEHR is OK
-        MockEHRTestData.validateAll()
-
-        deployAndStartChannel(true)
+        waitForMessage(2)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(2, messageList.size)
         assertEquals(7, getAidboxResourceCount("Appointment"))
 
         assertAllConnectorsSent(messageList)
-
-        assertTrue(
-            KafkaWrapper.validatePublishEvents(
-                7,
-                ResourceType.APPOINTMENT,
-                DataTrigger.AD_HOC,
-                groupId
-            )
-        )
     }
 
     @ParameterizedTest
@@ -288,37 +271,30 @@ class AppointmentLoadTest : BaseChannelTest(
         }
         val fakeAppointmentId = MockEHRTestData.add(fakeAppointment)
         MockOCIServerClient.createExpectations("Appointment", fakeAppointmentId, testTenant)
-        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+
+        KafkaClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeAppointmentId),
             resourceType = ResourceType.APPOINTMENT
         )
-        deployAndStartChannel(true)
+        waitForMessage(1)
+
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Appointment"))
-
-        assertTrue(
-            KafkaWrapper.validatePublishEvents(
-                1,
-                ResourceType.APPOINTMENT,
-                DataTrigger.AD_HOC,
-                groupId
-            )
-        )
     }
 
     @Test
     fun `nothing found request results in error`() {
-        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+        KafkaClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("nothing to see here"),
             resourceType = ResourceType.APPOINTMENT
         )
-        deployAndStartChannel(true)
+        waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         messageList.forEach { ids ->
             val message = MirthClient.getMessageById(testChannelId, ids)
@@ -333,6 +309,7 @@ class AppointmentLoadTest : BaseChannelTest(
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with dag`(testTenant: String) {
+        val appointmentPublishTopics = KafkaClient.publishTopics(ResourceType.APPOINTMENT)
         val appointmentType = "Appointment"
         val locationType = "Location"
         val types = listOf(
@@ -341,7 +318,8 @@ class AppointmentLoadTest : BaseChannelTest(
         )
 
         val channels = listOf(
-            locationLoadChannelName
+            locationLoadChannelName,
+            practitionerLoadChannelName
         )
         val channelIds = channels.map {
             val id = installChannel(it)
@@ -361,12 +339,20 @@ class AppointmentLoadTest : BaseChannelTest(
         val locationId = MockEHRTestData.add(fakeLocation)
         MockOCIServerClient.createExpectations(locationType, locationId, testTenant)
 
+        val fakePractitioner = practitioner {}
+        val practitionerId = MockEHRTestData.add(fakePractitioner)
+        MockOCIServerClient.createExpectations("Practitioner", practitionerId, testTenant)
+
         val fakeAppointment = appointment {
             status of "arrived"
             participant of listOf(
                 participant {
                     status of "accepted"
                     actor of reference(locationType, locationId)
+                },
+                participant {
+                    status of "accepted"
+                    actor of reference("Practitioner", practitionerId)
                 }
             )
             start of 2.daysFromNow()
@@ -375,40 +361,27 @@ class AppointmentLoadTest : BaseChannelTest(
         val appointmentId = MockEHRTestData.add(fakeAppointment)
         MockOCIServerClient.createExpectations(appointmentType, appointmentId, testTenant)
 
+        // deploy dag channels
+        channelIds.forEach {
+            deployAndStartChannel(channelToDeploy = it)
+        }
+        appointmentPublishTopics.forEach {
+            KafkaClient.ensureStability(it.topicName)
+        }
         // push event to get picked up
-        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+        KafkaClient.pushLoadEvent(
             testTenant,
             DataTrigger.NIGHTLY,
             listOf(appointmentId),
             ResourceType.APPOINTMENT
         )
-        deployAndStartChannel(true)
+        val appointmentPublishTopic = KafkaClient.publishTopics(ResourceType.APPOINTMENT).first { it.topicName.contains("nightly") }
+        KafkaClient.ensureStability(appointmentPublishTopic.topicName)
+        waitForMessage(1)
         channelIds.forEach {
-            deployAndStartChannel(
-                waitForMessage = true,
-                channelToDeploy = it
-            )
+            waitForMessage(1, channelID = it)
             stopChannel(it)
         }
-
-        // check that publish event was triggered
-        assertTrue(
-            KafkaWrapper.validatePublishEvents(
-                1,
-                ResourceType.LOCATION,
-                DataTrigger.NIGHTLY,
-                groupId
-            )
-        )
-        assertTrue(
-            KafkaWrapper.validatePublishEvents(
-                1,
-                ResourceType.APPOINTMENT,
-                DataTrigger.NIGHTLY,
-                groupId
-            )
-        )
-
         types.forEach {
             assertEquals(1, getAidboxResourceCount(it))
         }

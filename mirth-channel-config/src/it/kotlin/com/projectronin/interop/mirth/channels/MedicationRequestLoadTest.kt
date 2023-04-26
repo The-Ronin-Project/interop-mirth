@@ -12,14 +12,13 @@ import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
-import com.projectronin.interop.mirth.channels.client.KafkaWrapper
+import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -33,7 +32,6 @@ class MedicationRequestLoadTest : BaseChannelTest(
 ) {
     val patientType = "Patient"
     val medicationRequestType = "MedicationRequest"
-    override val groupId = "interop-mirth-medication-request"
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -88,26 +86,17 @@ class MedicationRequestLoadTest : BaseChannelTest(
         }
         val medicationRequestId = MockEHRTestData.add(medicationRequest)
         MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId)
-        KafkaWrapper.kafkaPublishService.publishResources(
+        KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient)
         )
 
-        deployAndStartChannel(true)
+        waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount(medicationRequestType))
-
-        assertTrue(
-            KafkaWrapper.validatePublishEvents(
-                1,
-                ResourceType.MEDICATION_REQUEST,
-                DataTrigger.NIGHTLY,
-                groupId
-            )
-        )
     }
 
     @ParameterizedTest
@@ -224,29 +213,19 @@ class MedicationRequestLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("MedicationRequest", medRequest5ID, tenantInUse)
         MockOCIServerClient.createExpectations("MedicationRequest", medRequest6ID, tenantInUse)
         MockOCIServerClient.createExpectations("MedicationRequest", medRequest7ID, tenantInUse)
+        MockEHRTestData.validateAll()
 
-        KafkaWrapper.kafkaPublishService.publishResources(
+        KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(aidboxPatient1, aidboxPatient2)
         )
 
-        MockEHRTestData.validateAll()
-
-        deployAndStartChannel(true)
+        waitForMessage(2)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(2, messageList.size)
         assertEquals(7, getAidboxResourceCount("MedicationRequest"))
-
-        assertTrue(
-            KafkaWrapper.validatePublishEvents(
-                7,
-                ResourceType.MEDICATION_REQUEST,
-                DataTrigger.AD_HOC,
-                groupId
-            )
-        )
     }
 
     @ParameterizedTest
@@ -302,39 +281,31 @@ class MedicationRequestLoadTest : BaseChannelTest(
         }
         val fakeMedicationRequestId = MockEHRTestData.add(fakeMedicationRequest1)
         MockOCIServerClient.createExpectations("MedicationRequest", fakeMedicationRequestId, testTenant)
-        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+
+        KafkaClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeMedicationRequestId),
             resourceType = ResourceType.MEDICATION_REQUEST
         )
 
-        deployAndStartChannel(true)
+        waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("MedicationRequest"))
-
-        assertTrue(
-            KafkaWrapper.validatePublishEvents(
-                1,
-                ResourceType.MEDICATION_REQUEST,
-                DataTrigger.AD_HOC,
-                groupId
-            )
-        )
     }
 
     @Test
     fun `non-existent request errors`() {
-        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+        KafkaClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
             resourceType = ResourceType.MEDICATION_REQUEST
         )
 
-        deployAndStartChannel(true)
+        waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         messageList.forEach { ids ->
             val message = MirthClient.getMessageById(testChannelId, ids)

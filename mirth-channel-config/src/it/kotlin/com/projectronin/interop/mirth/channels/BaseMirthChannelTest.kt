@@ -14,7 +14,7 @@ import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxClient
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
-import com.projectronin.interop.mirth.channels.client.KafkaWrapper
+import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
@@ -137,9 +137,9 @@ abstract class BaseMirthChannelTest(
 
     protected fun drainKafkaEvents(vararg resourceTypes: ResourceType) {
         resourceTypes.forEach {
-            KafkaWrapper.kafkaLoadService.retrieveLoadEvents(it)
-            KafkaWrapper.kafkaPublishService.retrievePublishEvents(it, DataTrigger.AD_HOC)
-            KafkaWrapper.kafkaPublishService.retrievePublishEvents(it, DataTrigger.NIGHTLY)
+            KafkaClient.kafkaLoadService.retrieveLoadEvents(it)
+            KafkaClient.kafkaPublishService.retrievePublishEvents(it, DataTrigger.AD_HOC)
+            KafkaClient.kafkaPublishService.retrievePublishEvents(it, DataTrigger.NIGHTLY)
         }
     }
 

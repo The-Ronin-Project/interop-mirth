@@ -1,10 +1,10 @@
 <channel version="3.11.0">
-  <id>735716c7-fbd9-4c9c-b7e2-f33153fda6c2</id>
+  <id>1c1cc5bc-bfca-4ff8-a7fd-099c3d8f4959</id>
   <nextMetaDataId>5</nextMetaDataId>
-  <name>PatientLoad</name>
+  <name>ResourceRequest</name>
   <description>Version 1.0.0.
 
-Uses a set list of locations to find patients with upcoming appointments and triggers the nightly load</description>
+Reads Kafka request events and writes to the appropriate load topic</description>
   <revision>2</revision>
   <sourceConnector version="3.11.0">
     <metaDataId>0</metaDataId>
@@ -55,14 +55,7 @@ Uses a set list of locations to find patients with upcoming appointments and tri
       <script>return sourceReader()</script>
     </properties>
     <transformer version="3.11.0">
-      <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.11.0">
-          <name>Source Transform</name>
-          <sequenceNumber>0</sequenceNumber>
-          <enabled>true</enabled>
-          <script>sourceTransform()</script>
-        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-      </elements>
+      <elements/>
       <inboundTemplate encoding="base64"></inboundTemplate>
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>RAW</inboundDataType>
@@ -91,18 +84,18 @@ Uses a set list of locations to find patients with upcoming appointments and tri
   <destinationConnectors>
     <connector version="3.11.0">
       <metaDataId>1</metaDataId>
-      <name>Publish Patient</name>
+      <name>Publish Load Events</name>
       <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="3.11.0">
         <pluginProperties/>
         <destinationConnectorProperties version="3.11.0">
-          <queueEnabled>false</queueEnabled>
+          <queueEnabled>true</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
           <regenerateTemplate>false</regenerateTemplate>
           <retryCount>0</retryCount>
           <rotate>false</rotate>
           <includeFilterTransformer>false</includeFilterTransformer>
-          <threadCount>1</threadCount>
+          <threadCount>5</threadCount>
           <threadAssignmentVariable></threadAssignmentVariable>
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">
@@ -117,14 +110,7 @@ Uses a set list of locations to find patients with upcoming appointments and tri
         <script>return destinationWriter(&quot;publish&quot;);</script>
       </properties>
       <transformer version="3.11.0">
-        <elements>
-          <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.11.0">
-            <name>Tranform to Ronin Patient</name>
-            <sequenceNumber>0</sequenceNumber>
-            <enabled>true</enabled>
-            <script>destinationTransform(&quot;publish&quot;);</script>
-          </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
-        </elements>
+        <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
@@ -175,7 +161,7 @@ return message;</preprocessingScript>
 return;</postprocessingScript>
   <deployScript>// @apiinfo &quot;&quot;&quot;Get the channel configuration and services.&quot;&quot;&quot;
 
-var channelService = Packages.com.projectronin.interop.mirth.channel.PatientLoad.Companion.create();
+var channelService = Packages.com.projectronin.interop.mirth.channel.ResourceRequest.Companion.create();
 onDeploy(channelService)
 </deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
@@ -196,11 +182,6 @@ return;</undeployScript>
         <type>STRING</type>
         <mappingName>tenantMnemonic</mappingName>
       </metaDataColumn>
-      <metaDataColumn>
-        <name>FHIRID</name>
-        <type>STRING</type>
-        <mappingName>fhirID</mappingName>
-      </metaDataColumn>
     </metaDataColumns>
     <attachmentProperties version="3.11.0">
       <type>None</type>
@@ -217,7 +198,7 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1682454001524</time>
+        <time>1682372250835</time>
         <timezone>America/Los_Angeles</timezone>
       </lastModified>
       <pruningSettings>

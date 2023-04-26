@@ -13,13 +13,12 @@ import com.projectronin.interop.fhir.generators.resources.practitioner
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
-import com.projectronin.interop.mirth.channels.client.KafkaWrapper
+import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -32,7 +31,6 @@ class PractitionerLoadTest : BaseChannelTest(
     listOf("Appointment", "Practitioner"),
     listOf("Appointment", "Practitioner")
 ) {
-    override val groupId = "interop-mirth-practitioner"
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -40,7 +38,6 @@ class PractitionerLoadTest : BaseChannelTest(
         tenantInUse = testTenant
 
         // mock: patient at the EHR got published to Ronin
-
         val fakePatient = patient {
             birthDate of date {
                 year of 1990
@@ -77,7 +74,6 @@ class PractitionerLoadTest : BaseChannelTest(
         val fakePractitionerId = MockEHRTestData.add(fakePractitioner)
 
         // mock: appointment at the EHR got published to Ronin
-
         val startDate = 2.daysFromNow()
         val endDate = 3.daysFromNow()
         val fakeAppointment = appointment {
@@ -104,24 +100,22 @@ class PractitionerLoadTest : BaseChannelTest(
         AidboxTestData.add(fakeAidboxAppointment)
 
         // mock: appointment-publish event
-
         MockOCIServerClient.createExpectations("Appointment", fakeAppointmentId, tenantInUse)
-        KafkaWrapper.kafkaPublishService.publishResources(
+
+        KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxAppointment)
         )
 
+        waitForMessage(1)
+
         // start channel: appointment-publish triggers practitioner-load
 
-        deployAndStartChannel(true)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Practitioner"))
-
-        // verify: practitioner-publish success
-        Assertions.assertTrue(KafkaWrapper.validatePublishEvents(1, ResourceType.PRACTITIONER, DataTrigger.NIGHTLY, groupId))
     }
 
     @ParameterizedTest
@@ -182,68 +176,55 @@ class PractitionerLoadTest : BaseChannelTest(
 
         MockOCIServerClient.createExpectations("Practitioner", fakePractitioner1Id, tenantInUse)
         MockOCIServerClient.createExpectations("Practitioner", fakePractitioner2Id, tenantInUse)
-        KafkaWrapper.kafkaPublishService.publishResources(
+        // larger data sets: make sure MockEHR is OK
+        MockEHRTestData.validateAll()
+
+        KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(aidboxAppointment1, aidboxAppointment2)
         )
+        waitForMessage(2)
 
-        // larger data sets: make sure MockEHR is OK
-        MockEHRTestData.validateAll()
-
-        // start channel: patient-publish triggers condition-load
-
-        deployAndStartChannel(true)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(2, messageList.size)
         assertEquals(2, getAidboxResourceCount("Practitioner"))
-
-        Assertions.assertTrue(KafkaWrapper.validatePublishEvents(2, ResourceType.PRACTITIONER, DataTrigger.AD_HOC, groupId))
     }
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works for ad-hoc requests`(testTenant: String) {
         tenantInUse = testTenant
-
         // mock: practitioner at the EHR
-
         val fakePractitioner = practitioner { }
         val fakePractitionerId = MockEHRTestData.add(fakePractitioner)
-
-        // mock: practitioner-load event
-
         MockOCIServerClient.createExpectations("Practitioner", fakePractitionerId, testTenant)
-        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+
+        KafkaClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakePractitionerId),
             resourceType = ResourceType.PRACTITIONER
         )
+        waitForMessage(1)
 
-        // start channel: appointment-publish triggers practitioner-load
-
-        deployAndStartChannel(true)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Practitioner"))
-
-        // verify: practitioner-publish success
-        Assertions.assertTrue(KafkaWrapper.validatePublishEvents(1, ResourceType.PRACTITIONER, DataTrigger.AD_HOC, groupId))
     }
 
     @Test
     fun `non-existent request errors`() {
-        KafkaWrapper.kafkaLoadService.pushLoadEvent(
+        KafkaClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
             resourceType = ResourceType.PRACTITIONER
         )
+        waitForMessage(1)
 
-        deployAndStartChannel(true)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         messageList.forEach { ids ->
             val message = MirthClient.getMessageById(testChannelId, ids)

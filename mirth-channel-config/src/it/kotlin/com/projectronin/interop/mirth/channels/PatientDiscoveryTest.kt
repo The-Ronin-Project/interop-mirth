@@ -10,15 +10,13 @@ import com.projectronin.interop.fhir.generators.primitives.daysFromNow
 import com.projectronin.interop.fhir.generators.resources.appointment
 import com.projectronin.interop.fhir.generators.resources.location
 import com.projectronin.interop.fhir.generators.resources.patient
-import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
-import com.projectronin.interop.mirth.channels.client.KafkaWrapper
+import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.TenantClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Disabled
@@ -33,7 +31,6 @@ class PatientDiscoveryTest : BaseChannelTest(
     listOf("Patient", "Appointment", "Location")
 ) {
     private val patientType = "Patient"
-    override val groupId = "interop-mirth-discovery"
 
     @Test
     fun `channel works`() {
@@ -103,8 +100,9 @@ class PatientDiscoveryTest : BaseChannelTest(
 
         deployAndStartChannel(false)
         waitForMessage(2)
-        Assertions.assertTrue(KafkaWrapper.validateLoadEvents(2, ResourceType.PATIENT, groupId))
         val tenantConfig = TenantClient.getMirthConfig(tenantInUse)
+        val messages = getChannelMessageIds()
+        assertAllConnectorsSent(messages)
         assertNotNull(tenantConfig.lastUpdated)
     }
 
@@ -207,7 +205,8 @@ class PatientDiscoveryTest : BaseChannelTest(
 
         AidboxTestData.add(aidboxLocation1)
         deployAndStartChannel(true)
-        Assertions.assertTrue(KafkaWrapper.validateLoadEvents(2, ResourceType.PATIENT))
+        val messages = getChannelMessageIds()
+        assertAllConnectorsSent(messages)
     }
 
     @Test
@@ -263,15 +262,16 @@ class PatientDiscoveryTest : BaseChannelTest(
             TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
         }
         deployAndStartChannel(true)
-        val events = KafkaWrapper.kafkaLoadService.retrieveLoadEvents(ResourceType.PATIENT)
+        val events = KafkaClient.kafkaLoadService.retrieveLoadEvents(ResourceType.PATIENT)
         assertEquals(0, events.size)
     }
 
     @Test
     fun `channel kicks off dag`() {
-        val channel = patientLoadChannelName
-        val channelId = installChannel(channel)
-        clearMessages(channelId)
+        val patientLoadTopic = KafkaClient.loadTopic(ResourceType.PATIENT)
+
+        val patientChannelId = installChannel(patientLoadChannelName)
+        clearMessages(patientChannelId)
         tenantsToTest().forEach {
             tenantInUse = it
 
@@ -337,12 +337,13 @@ class PatientDiscoveryTest : BaseChannelTest(
             TenantClient.putTenant(newTenant)
             TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
         }
-        deployAndStartChannel(true)
-        deployAndStartChannel(waitForMessage = true, channelToDeploy = channelId)
-        stopChannel(channelId)
 
-        Assertions.assertTrue(KafkaWrapper.validatePublishEvents(2, ResourceType.PATIENT, DataTrigger.NIGHTLY, groupId))
-        // grab load events cause the channel has a different group id
-        Assertions.assertTrue(KafkaWrapper.validateLoadEvents(2, ResourceType.PATIENT, groupId))
+        deployAndStartChannel()
+        deployAndStartChannel(channelToDeploy = patientChannelId)
+        KafkaClient.ensureStability(patientLoadTopic.topicName)
+        waitForMessage(1, channelID = patientChannelId)
+        stopChannel(patientChannelId)
+
+        assertEquals(1, getAidboxResourceCount(patientType))
     }
 }

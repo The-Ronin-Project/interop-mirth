@@ -82,15 +82,13 @@ class KafkaAppointmentQueueTest : BaseChannelTest(kafkaAppointmentQueueChannelNa
         MockOCIServerClient.createExpectations(appointmentType, appointment1Id, testTenant)
 
         // query for appointments from 'EHR'
-        val apptNode = ProxyClient.getAppointmentsByMRN(
+        ProxyClient.getAppointmentsByMRN(
             mrn,
             testTenant,
             LocalDate.now().plusDays(2),
             LocalDate.now().plusDays(3)
         )
 
-        // start channel
-        deployAndStartChannel(true)
         // make sure a message queued in mirth
         waitForMessage(1)
 
