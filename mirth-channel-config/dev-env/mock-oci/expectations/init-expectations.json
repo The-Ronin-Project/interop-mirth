@@ -187,6 +187,71 @@
           "value_set_uuid": "74e038f6-d57c-483e-90cb-215af0a5e0ed",
           "version": 2,
           "filename": "EmptyValueSet.json"
+        },
+        {
+          "registry_uuid": "156e7ad2-bba5-4005-ad7d-a6753f9024ac",
+          "resource_type": "Condition",
+          "data_element": "Condition.code",
+          "tenant_id": null,
+          "source_extension_url": null,
+          "registry_entry_type": "value_set",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-conditionEncounterDiagnosis",
+          "value_set_name": "RoninConditionCode",
+          "value_set_uuid": "201ad507-64f7-4429-810f-94bdbd51f80a",
+          "version": 2,
+          "filename": "ValueSets/v2/published/201ad507-64f7-4429-810f-94bdbd51f80a/2.json"
+        },
+        {
+          "registry_uuid": "24be0046-e2d8-41e4-8d81-5e4b82067117",
+          "resource_type": "Condition",
+          "data_element": "Condition.code",
+          "tenant_id": null,
+          "source_extension_url": null,
+          "registry_entry_type": "value_set",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-conditionProblemsHealthConcerns",
+          "value_set_name": "RoninConditionCode",
+          "value_set_uuid": "201ad507-64f7-4429-810f-94bdbd51f80a",
+          "version": 2,
+          "filename": "ValueSets/v2/published/201ad507-64f7-4429-810f-94bdbd51f80a/2.json"
+        },
+        {
+          "registry_uuid": "778d1301-da4c-4f0c-9ad4-7fb0656eb544",
+          "resource_type": "DocumentReference",
+          "data_element": "DocumentReference.status",
+          "tenant_id": null,
+          "source_extension_url": null,
+          "registry_entry_type": "value_set",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-documentReference",
+          "value_set_name": "DocumentReferenceStatus",
+          "value_set_uuid": "be3ed339-0ef5-4669-b0ce-ee16736245dd",
+          "version": 1,
+          "filename": "ValueSets/v2/published/be3ed339-0ef5-4669-b0ce-ee16736245dd/1.json"
+        },
+        {
+          "registry_uuid": "523c5f2e-8531-48d2-908d-c0c968adc58d",
+          "resource_type": "DocumentReference",
+          "data_element": "DocumentReference.type",
+          "tenant_id": null,
+          "source_extension_url": null,
+          "registry_entry_type": "value_set",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-documentReference",
+          "value_set_name": "USCoreDocumentReferenceType",
+          "value_set_uuid": "1766914c-ee0d-4f12-b82b-701b9b5bcec3",
+          "version": 2,
+          "filename": "ValueSets/v2/published/1766914c-ee0d-4f12-b82b-701b9b5bcec3/2.json"
+        },
+        {
+          "registry_uuid": "76e25046-50ed-4a67-9a42-a2f1daf9635c",
+          "resource_type": "Medication",
+          "data_element": "Medication.code",
+          "tenant_id": null,
+          "source_extension_url": null,
+          "registry_entry_type": "value_set",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-medication",
+          "value_set_name": "RoninMedicationClinicalDrug",
+          "value_set_uuid": "835662e6-5379-4801-ba27-01b4481e33ff",
+          "version": 1,
+          "filename": "ValueSets/v2/published/835662e6-5379-4801-ba27-01b4481e33ff/1.json"
         }
       ]
     },
