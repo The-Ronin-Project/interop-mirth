@@ -4,20 +4,17 @@ import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.conditionStage
-import com.projectronin.interop.fhir.generators.datatypes.identifier
-import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.datatypes.reference
-import com.projectronin.interop.fhir.generators.primitives.date
 import com.projectronin.interop.fhir.generators.resources.condition
 import com.projectronin.interop.fhir.generators.resources.observation
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
+import com.projectronin.interop.fhir.r4.datatype.primitive.DateTime
 import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
 import com.projectronin.interop.kafka.model.DataTrigger
-import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
@@ -27,6 +24,8 @@ import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 const val observationLoadChannelName = "ObservationLoad"
 
@@ -37,40 +36,18 @@ class ObservationLoadTest : BaseChannelTest(
 ) {
     val patientType = "Patient"
     val observationType = "Observation"
+    private val nowDate = DateTime(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works triggered by patient publish`(testTenant: String) {
         tenantInUse = testTenant
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-            gender of "male"
-        }
+        val patient1 = patient {}
         val patient1Id = MockEHRTestData.add(patient1)
-        val aidboxPatientId = "$tenantInUse-$patient1Id"
-        val aidboxPatient = patient1.copy(
-            id = Id(aidboxPatientId),
+        val roninPatient = patient1.copy(
+            id = Id("$tenantInUse-$patient1Id"),
             identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
         )
-        AidboxTestData.add(aidboxPatient)
 
         val observation = observation {
             subject of reference(patientType, patient1Id)
@@ -94,6 +71,7 @@ class ObservationLoadTest : BaseChannelTest(
                     }
                 )
             }
+            effective of nowDate
         }
         val obsvId = MockEHRTestData.add(observation)
 
@@ -102,7 +80,7 @@ class ObservationLoadTest : BaseChannelTest(
         KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(aidboxPatient)
+            resources = listOf(roninPatient)
         )
         waitForMessage(1)
 
@@ -154,9 +132,8 @@ class ObservationLoadTest : BaseChannelTest(
         }
         val condition1Id = MockEHRTestData.add(condition1)
 
-        val aidboxConditionId = "$tenantInUse-$condition1Id"
-        val aidboxCondition = condition1.copy(
-            id = Id(aidboxConditionId),
+        val roninCondition = condition1.copy(
+            id = Id("$tenantInUse-$condition1Id"),
             stage = condition1.stage.map { stage ->
                 stage.copy(
                     assessment = stage.assessment.map { reference ->
@@ -167,12 +144,11 @@ class ObservationLoadTest : BaseChannelTest(
                 )
             }
         )
-        AidboxTestData.add(aidboxCondition)
 
         KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(aidboxCondition)
+            resources = listOf(roninCondition)
         )
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
@@ -185,66 +161,20 @@ class ObservationLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `channel works with multiple patients, conditions and observations`(testTenant: String) {
         tenantInUse = testTenant
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-            gender of "male"
-        }
+        val patient1 = patient {}
         val patient1Id = MockEHRTestData.add(patient1)
 
-        val patient2 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000002"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-            gender of "male"
-        }
+        val patient2 = patient {}
         val patient2Id = MockEHRTestData.add(patient2)
 
-        val aidboxPatient1Id = "$tenantInUse-$patient1Id"
-        val aidboxPatient2Id = "$tenantInUse-$patient2Id"
-        val aidboxPatient1 = patient1.copy(
-            id = Id(aidboxPatient1Id),
+        val roninPatient1 = patient1.copy(
+            id = Id("$tenantInUse-$patient1Id"),
             identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
         )
-        val aidboxPatient2 = patient2.copy(
-            id = Id(aidboxPatient2Id),
+        val roninPatient2 = patient2.copy(
+            id = Id("$tenantInUse-$patient2Id"),
             identifier = patient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id)
         )
-        AidboxTestData.add(aidboxPatient1)
-        AidboxTestData.add(aidboxPatient2)
 
         val observation1 = observation {
             subject of reference(patientType, patient1Id)
@@ -268,6 +198,7 @@ class ObservationLoadTest : BaseChannelTest(
                     }
                 )
             }
+            effective of nowDate
         }
 
         val observation2 = observation {
@@ -292,6 +223,7 @@ class ObservationLoadTest : BaseChannelTest(
                     }
                 )
             }
+            effective of nowDate
         }
         val observation1ID = MockEHRTestData.add(observation1)
         val observation2ID = MockEHRTestData.add(observation1)
@@ -319,9 +251,8 @@ class ObservationLoadTest : BaseChannelTest(
         }
         val conditionId = MockEHRTestData.add(condition)
 
-        val aidboxConditionId = "$tenantInUse-$conditionId"
-        val aidboxCondition = condition.copy(
-            id = Id(aidboxConditionId),
+        val roninCondition = condition.copy(
+            id = Id("$tenantInUse-$conditionId"),
             stage = condition.stage.map { stage ->
                 stage.copy(
                     assessment = stage.assessment.map { reference ->
@@ -332,14 +263,13 @@ class ObservationLoadTest : BaseChannelTest(
                 )
             }
         )
-        AidboxTestData.add(aidboxCondition)
         // make sure MockEHR is OK
         MockEHRTestData.validateAll()
 
         KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(aidboxPatient1, aidboxPatient2, aidboxCondition)
+            resources = listOf(roninPatient1, roninPatient2, roninCondition)
         )
 
         waitForMessage(3, 30)
@@ -354,36 +284,8 @@ class ObservationLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `channel works for ad-hoc requests`(testTenant: String) {
         tenantInUse = testTenant
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-            gender of "male"
-        }
+        val patient1 = patient {}
         val patient1Id = MockEHRTestData.add(patient1)
-        val aidboxPatientId = "$testTenant-$patient1Id"
-        val aidboxPatient = patient1.copy(
-            id = Id(aidboxPatientId),
-            identifier = patient1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patient1Id)
-        )
-        AidboxTestData.add(aidboxPatient)
-
         val observation = observation {
             subject of reference(patientType, patient1Id)
             category of listOf(

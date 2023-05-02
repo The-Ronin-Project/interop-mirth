@@ -66,6 +66,7 @@ class ResourceRequestTest : BaseChannelTest(
                 }
             )
             gender of "male"
+            telecom of emptyList()
         }
         val patientFhirId = MockEHRTestData.add(patient)
         MockOCIServerClient.createExpectations(patientType, patientFhirId, testTenant)

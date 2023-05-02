@@ -104,66 +104,20 @@ class MedicationRequestLoadTest : BaseChannelTest(
     fun `channel works with multiple patients and medication requests`(testTenant: String) {
         tenantInUse = testTenant
 
-        val fakePatient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // required
-                }
-            )
-            gender of "male"
-        }
+        val fakePatient1 = patient {}
         val patient1Id = MockEHRTestData.add(fakePatient1)
 
-        val fakePatient2 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000002"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // required
-                }
-            )
-            gender of "male"
-        }
+        val fakePatient2 = patient {}
         val patient2Id = MockEHRTestData.add(fakePatient2)
 
-        val aidboxPatient1Id = "$tenantInUse-$patient1Id"
-        val aidboxPatient2Id = "$tenantInUse-$patient2Id"
-        val aidboxPatient1 = fakePatient1.copy(
-            id = Id(aidboxPatient1Id),
+        val roninPatient1 = fakePatient1.copy(
+            id = Id("$tenantInUse-$patient1Id"),
             identifier = fakePatient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
         )
-        val aidboxPatient2 = fakePatient2.copy(
-            id = Id(aidboxPatient2Id),
+        val roninPatient2 = fakePatient2.copy(
+            id = Id("$tenantInUse-$patient2Id"),
             identifier = fakePatient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id)
         )
-        AidboxTestData.add(aidboxPatient1)
-        AidboxTestData.add(aidboxPatient2)
 
         val fakeMedicationRequest1 = medicationRequest {
             subject of reference(patientType, patient1Id)
@@ -218,7 +172,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
         KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(aidboxPatient1, aidboxPatient2)
+            resources = listOf(roninPatient1, roninPatient2)
         )
 
         waitForMessage(2)
@@ -233,35 +187,8 @@ class MedicationRequestLoadTest : BaseChannelTest(
     fun `channel works for add-hoc requests`(testTenant: String) {
         tenantInUse = testTenant
 
-        val fakePatient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // required
-                }
-            )
-            gender of "male"
-        }
+        val fakePatient1 = patient {}
         val patient1Id = MockEHRTestData.add(fakePatient1)
-        val aidboxPatientId = "$testTenant-$patient1Id"
-        val aidboxPatient = fakePatient1.copy(
-            id = Id(aidboxPatientId),
-            identifier = fakePatient1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patient1Id)
-        )
-        AidboxTestData.add(aidboxPatient)
 
         val fakeMedicationRequest1 = medicationRequest {
             subject of reference(patientType, patient1Id)

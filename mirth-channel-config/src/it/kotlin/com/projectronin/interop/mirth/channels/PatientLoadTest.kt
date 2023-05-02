@@ -56,6 +56,7 @@ class PatientLoadTest : BaseChannelTest(
                 }
             )
             gender of "male"
+            telecom of emptyList()
         }
         val patient1Id = MockEHRTestData.add(patient1)
         MockOCIServerClient.createExpectations("patient", patient1Id, testTenant)
@@ -99,6 +100,7 @@ class PatientLoadTest : BaseChannelTest(
                 }
             )
             gender of "male"
+            telecom of emptyList()
         }
         val patient1Id = MockEHRTestData.add(patient1)
         val patient2 = patient {
@@ -122,6 +124,7 @@ class PatientLoadTest : BaseChannelTest(
                 }
             )
             gender of "female"
+            telecom of emptyList()
         }
         val patient2Id = MockEHRTestData.add(patient2)
         MockOCIServerClient.createExpectations("patient", patient1Id, testTenant)
@@ -190,6 +193,7 @@ class PatientLoadTest : BaseChannelTest(
                 }
             )
             gender of "male"
+            telecom of emptyList()
         }
         val patientFhirId = MockEHRTestData.add(patient)
         MockOCIServerClient.createExpectations(patientType, patientFhirId, testTenant)

@@ -3,17 +3,13 @@ package com.projectronin.interop.mirth.channels
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
-import com.projectronin.interop.fhir.generators.datatypes.identifier
-import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.datatypes.period
 import com.projectronin.interop.fhir.generators.datatypes.reference
-import com.projectronin.interop.fhir.generators.primitives.date
 import com.projectronin.interop.fhir.generators.primitives.dateTime
 import com.projectronin.interop.fhir.generators.resources.encounter
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.kafka.model.DataTrigger
-import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
@@ -40,35 +36,13 @@ class EncounterLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `channel works`(testTenant: String) {
         tenantInUse = testTenant
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-            gender of "male"
-        }
+        val patient1 = patient {}
         val patient1Id = MockEHRTestData.add(patient1)
-        val aidboxPatientId = "$tenantInUse-$patient1Id"
-        val aidboxPatient = patient1.copy(
-            id = Id(aidboxPatientId),
+        val roninPatientId = "$tenantInUse-$patient1Id"
+        val roninPatient = patient1.copy(
+            id = Id(roninPatientId),
             identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
         )
-        AidboxTestData.add(aidboxPatient)
 
         val encounter = encounter {
             subject of reference("Patient", patient1Id)
@@ -94,7 +68,7 @@ class EncounterLoadTest : BaseChannelTest(
         KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(aidboxPatient)
+            resources = listOf(roninPatient)
         )
 
         waitForMessage(1)
@@ -108,66 +82,20 @@ class EncounterLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `channel works with multiple patients and encounters`(testTenant: String) {
         tenantInUse = testTenant
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-            gender of "male"
-        }
+        val patient1 = patient { }
         val patient1Id = MockEHRTestData.add(patient1)
 
-        val patient2 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000002"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-            gender of "male"
-        }
+        val patient2 = patient { }
         val patient2Id = MockEHRTestData.add(patient2)
 
-        val aidboxPatient1Id = "$tenantInUse-$patient1Id"
-        val aidboxPatient2Id = "$tenantInUse-$patient2Id"
-        val aidboxPatient1 = patient1.copy(
-            id = Id(aidboxPatient1Id),
+        val roninPatient1 = patient1.copy(
+            id = Id("$tenantInUse-$patient1Id"),
             identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
         )
-        val aidboxPatient2 = patient2.copy(
-            id = Id(aidboxPatient2Id),
+        val roninPatient2 = patient2.copy(
+            id = Id("$tenantInUse-$patient2Id"),
             identifier = patient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id)
         )
-        AidboxTestData.add(aidboxPatient1)
-        AidboxTestData.add(aidboxPatient2)
 
         val encounter1 = encounter {
             subject of reference("Patient", patient1Id)
@@ -215,7 +143,7 @@ class EncounterLoadTest : BaseChannelTest(
         KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(aidboxPatient1, aidboxPatient2)
+            resources = listOf(roninPatient1, roninPatient2)
         )
 
         waitForMessage(2)
@@ -229,35 +157,8 @@ class EncounterLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `channel works for ad-hoc requests`(testTenant: String) {
         tenantInUse = testTenant
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-            gender of "male"
-        }
+        val patient1 = patient {}
         val patient1Id = MockEHRTestData.add(patient1)
-        val aidboxPatientId = "$testTenant-$patient1Id"
-        val aidboxPatient = patient1.copy(
-            id = Id(aidboxPatientId),
-            identifier = patient1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patient1Id)
-        )
-        AidboxTestData.add(aidboxPatient)
 
         val encounter1 = encounter {
             subject of reference("Patient", patient1Id)

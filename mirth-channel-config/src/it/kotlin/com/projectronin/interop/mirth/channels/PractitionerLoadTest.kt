@@ -1,11 +1,8 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.common.resource.ResourceType
-import com.projectronin.interop.fhir.generators.datatypes.identifier
-import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.datatypes.participant
 import com.projectronin.interop.fhir.generators.datatypes.reference
-import com.projectronin.interop.fhir.generators.primitives.date
 import com.projectronin.interop.fhir.generators.primitives.daysFromNow
 import com.projectronin.interop.fhir.generators.resources.appointment
 import com.projectronin.interop.fhir.generators.resources.patient
@@ -38,38 +35,10 @@ class PractitionerLoadTest : BaseChannelTest(
         tenantInUse = testTenant
 
         // mock: patient at the EHR got published to Ronin
-        val fakePatient = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // required
-                }
-            )
-            gender of "male"
-        }
+        val fakePatient = patient {}
         val fakePatientId = MockEHRTestData.add(fakePatient)
-        val fakeAidboxPatientId = "$tenantInUse-$fakePatientId"
-        val fakeAidboxPatient = fakePatient.copy(
-            id = Id(fakeAidboxPatientId),
-            identifier = fakePatient.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(fakePatientId)
-        )
-        AidboxTestData.add(fakeAidboxPatient)
 
         // mock: practitioner at the EHR
-
         val fakePractitioner = practitioner { }
         val fakePractitionerId = MockEHRTestData.add(fakePractitioner)
 

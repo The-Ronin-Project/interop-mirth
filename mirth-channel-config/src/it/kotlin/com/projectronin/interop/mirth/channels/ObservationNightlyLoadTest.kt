@@ -3,12 +3,12 @@ package com.projectronin.interop.mirth.channels
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
-import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.resources.observation
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
+import com.projectronin.interop.fhir.r4.datatype.primitive.DateTime
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
@@ -20,12 +20,15 @@ import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 const val observationNightlyLoadChannelName = "ObservationNightlyLoad"
 
 class ObservationNightlyLoadTest : BaseMirthChannelTest(observationNightlyLoadChannelName, listOf("Patient", "Observation"), listOf("Patient", "Observation")) {
     val patientType = "Patient"
     val observationType = "Observation"
+    private val nowDate = DateTime(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
 
     @Test
     fun `no patient errors`() {
@@ -92,6 +95,7 @@ class ObservationNightlyLoadTest : BaseMirthChannelTest(observationNightlyLoadCh
                     }
                 )
             }
+            effective of nowDate
         }
         val obsvId = MockEHRTestData.add(observation)
 
@@ -148,6 +152,7 @@ class ObservationNightlyLoadTest : BaseMirthChannelTest(observationNightlyLoadCh
                     }
                 )
             }
+            effective of nowDate
         }
         val observation2 = observation {
             subject of reference(patientType, patient2Id)
@@ -171,10 +176,10 @@ class ObservationNightlyLoadTest : BaseMirthChannelTest(observationNightlyLoadCh
                     }
                 )
             }
+            effective of nowDate
         }
         val obsv1Id = MockEHRTestData.add(observation1)
         val obsv2Id = MockEHRTestData.add(observation2)
-
         val expectedMap = mapOf(
             observationType to listOf(obsv1Id, obsv2Id)
         )

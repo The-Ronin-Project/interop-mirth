@@ -87,6 +87,7 @@ class AppointmentByPractitionerLoadTest :
                 }
             )
             gender of "male"
+            telecom of emptyList()
         }
         val patient1Id = MockEHRTestData.add(patient1)
 
@@ -215,6 +216,7 @@ class AppointmentByPractitionerLoadTest :
                 }
             )
             gender of "male"
+            telecom of emptyList()
         }
         val patient1Id = MockEHRTestData.add(patient1)
 

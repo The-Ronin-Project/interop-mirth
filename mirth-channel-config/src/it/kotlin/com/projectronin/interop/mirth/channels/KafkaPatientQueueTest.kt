@@ -46,6 +46,7 @@ class KafkaPatientQueueTest : BaseChannelTest(kafkaPatientQueueChannelName, list
                 }
             )
             gender of "male"
+            telecom of emptyList()
         }
         val patientName = patient.name.first()
         val fhirId = MockEHRTestData.add(patient)
