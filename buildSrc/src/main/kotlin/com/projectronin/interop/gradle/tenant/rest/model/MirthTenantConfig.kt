@@ -1,9 +1,12 @@
 package com.projectronin.interop.gradle.tenant.rest.model
 
+import java.time.OffsetDateTime
+
 // MirthTenantConfig is copied from interop-proxy-server. If new attributes are added, we will need to include them.
 
 data class MirthTenantConfig(
-    val locationIds: List<String>
+    val locationIds: List<String>,
+    val lastUpdated: OffsetDateTime? = null
 )
 
 private val SUPPORTED_KEYS = setOf("locationIds")

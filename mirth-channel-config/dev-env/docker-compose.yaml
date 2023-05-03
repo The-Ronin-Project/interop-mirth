@@ -143,7 +143,7 @@ services:
       retries: 30
 
   liquibase-queue:
-    image: docker-repo.devops.projectronin.io/interop-queue-liquibase:1.1.1
+    image: docker-repo.devops.projectronin.io/interop-queue-liquibase:dev
     container_name: mirth-queue-liquibase
     environment:
       - JDBC_URL=jdbc:mysql://${QUEUE_DB_USERNAME}:${QUEUE_DB_PASSWORD}@mockehrmysql:3306/interop-queue
@@ -263,7 +263,7 @@ services:
     volumes:
       - ./vault/secrets.json:/secrets.json
       - ./vault/policy.hcl:/policy.hcl
-    entrypoint: ["/bin/sh","-c"]
+    entrypoint: [ "/bin/sh","-c" ]
     environment:
       VAULT_ADDR: "http://vault:8200"
     command:

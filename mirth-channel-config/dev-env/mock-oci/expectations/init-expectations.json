@@ -239,5 +239,48 @@
     "times": {
       "unlimited": true
     }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/seki/session/validate"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "content-type": [
+          "application/json"
+        ]
+      },
+      "body": "{\"user\":{\"tenant_id\":\"epicmock\"},\"user_session\":{\"expires_at\":\"2030-03-14T21:16:05\"}}"
+    },
+    "id": "seki-mock",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "POST",
+      "path": "/oauth/token"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "content-type": [
+          "application/json"
+        ]
+      },
+      "body": "{\"access_token\": \"123\", \"expires_in\":999999, \"token_type\": \"garbagge and trash\"}"
+    },
+    "id": "oauthMock",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
   }
 ]
