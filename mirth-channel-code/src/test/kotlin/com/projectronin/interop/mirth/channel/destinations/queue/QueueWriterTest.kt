@@ -109,6 +109,6 @@ class TestResource(
     override val id: Id?,
     override val implicitRules: Uri?,
     override val language: Code?,
-    override val meta: Meta?,
+    override var meta: Meta?,
     override val resourceType: String = "TestResourceType"
 ) : DomainResource<TestResource>

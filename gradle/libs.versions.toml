@@ -6,8 +6,8 @@ interop-commonHttp = "com.projectronin.interop:interop-common-http:3.6.0"
 interop-commonJackson = "com.projectronin.interop:interop-common-jackson:3.6.0"
 interop-commonTestDb = "com.projectronin.interop:interop-common-test-db:3.6.0"
 
-interop-fhir = "com.projectronin.interop.fhir:interop-fhir:7.8.1"
-interop-fhir-generators = "com.projectronin.interop.fhir:interop-fhir-generators:7.8.1"
+interop-fhir = "com.projectronin.interop.fhir:interop-fhir:7.8.2"
+interop-fhir-generators = "com.projectronin.interop.fhir:interop-fhir-generators:7.8.2"
 
 interop-ehr-api = "com.projectronin.interop.ehr:interop-ehr:9.9.0"
 interop-ehr-cerner = "com.projectronin.interop.ehr:interop-ehr-cerner:9.9.0"

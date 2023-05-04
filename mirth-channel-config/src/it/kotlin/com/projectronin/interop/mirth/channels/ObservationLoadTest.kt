@@ -1,6 +1,7 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.conditionStage
@@ -9,10 +10,13 @@ import com.projectronin.interop.fhir.generators.resources.condition
 import com.projectronin.interop.fhir.generators.resources.observation
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.CodeSystem
+import com.projectronin.interop.fhir.r4.datatype.Reference
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
 import com.projectronin.interop.fhir.r4.datatype.primitive.DateTime
 import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
+import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.KafkaClient
@@ -36,7 +40,7 @@ class ObservationLoadTest : BaseChannelTest(
 ) {
     val patientType = "Patient"
     val observationType = "Observation"
-    private val nowDate = DateTime(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")))
+    private val nowDate = DynamicValues.dateTime(DateTime(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))))
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -72,6 +76,7 @@ class ObservationLoadTest : BaseChannelTest(
                 )
             }
             effective of nowDate
+            encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
         }
         val obsvId = MockEHRTestData.add(observation)
 
@@ -117,6 +122,7 @@ class ObservationLoadTest : BaseChannelTest(
                     }
                 )
             }
+            encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
         }
         val obsvId = MockEHRTestData.add(observation)
         MockOCIServerClient.createExpectations(observationType, obsvId)
@@ -199,6 +205,7 @@ class ObservationLoadTest : BaseChannelTest(
                 )
             }
             effective of nowDate
+            encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
         }
 
         val observation2 = observation {
@@ -224,6 +231,7 @@ class ObservationLoadTest : BaseChannelTest(
                 )
             }
             effective of nowDate
+            encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
         }
         val observation1ID = MockEHRTestData.add(observation1)
         val observation2ID = MockEHRTestData.add(observation1)
@@ -308,6 +316,7 @@ class ObservationLoadTest : BaseChannelTest(
                     }
                 )
             }
+            encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
         }
         val observationID = MockEHRTestData.add(observation)
         MockOCIServerClient.createExpectations(observationType, observationID, testTenant)
@@ -327,7 +336,7 @@ class ObservationLoadTest : BaseChannelTest(
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
-    fun `non-existant request errors`() {
+    fun `non-existent request errors`() {
         KafkaClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
