@@ -63,7 +63,7 @@ rider-junit = "com.github.database-rider:rider-junit5:1.36.0"
 
 ronin-test-data-generator = "com.projectronin.test:ronin-test-data-generator:0.0.2"
 ronin-kafka = "com.projectronin:ronin-kafka:0.3.0"
-snakeyaml = "org.yaml:snakeyaml:1.33"
+snakeyaml = "org.yaml:snakeyaml:2.0"
 spring-boot-autoconfigure = "org.springframework.boot:spring-boot-autoconfigure:2.7.8"
 spring-vault-core = "org.springframework.vault:spring-vault-core:2.3.2"
 testcontainers-mysql = "org.testcontainers:mysql:1.18.0"
