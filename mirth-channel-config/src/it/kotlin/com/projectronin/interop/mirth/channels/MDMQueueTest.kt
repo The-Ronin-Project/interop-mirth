@@ -3,6 +3,7 @@ package com.projectronin.interop.mirth.channels
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.generators.resources.practitioner
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
+import com.projectronin.interop.fhir.r4.resource.DocumentReference
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
@@ -55,7 +56,7 @@ class MDMQueueTest : BaseMirthChannelTest(
             "isAlert" to false,
             "noteSender" to "PRACTITIONER"
         )
-        val documentID = ProxyClient.sendNote(noteInput, testTenant)["data"]["sendNote"]
+        val documentID = ProxyClient.sendNote(noteInput, testTenant)["data"]["sendNote"].asText()
         assertNotNull(documentID)
 
         deployAndStartChannel(true)
@@ -65,15 +66,9 @@ class MDMQueueTest : BaseMirthChannelTest(
         assertEquals(1, getMockEHRResourceCount(documentReference))
         assertEquals(1, getMockEHRResourceCount(binary))
 
-        /*
-        currently, we don't have FHIR objects for DocumentReference or Binary in FHIR
-        (in mockEHR they're off the hapi models), in the future, if we do have those object
-        you could cast these to those object so these checks became easier
-         */
-        val document = MockEHRClient.getAllResources(documentReference).get("entry")[0].get("resource")
-
-        assertEquals(documentID, document.get("identifier")[0].get("value"))
-        val binaryId = document.get("content")[0].get("attachment").get("url").asText().substringAfterLast("/")
+        val document = MockEHRClient.getAllResources(documentReference).entry.first().resource as DocumentReference
+        assertEquals(documentID, document.identifier.first().value?.value)
+        val binaryId = document.content.first().attachment?.url?.value?.substringAfterLast("/") ?: ""
         val binary = MockEHRClient.getPlainBinary(binaryId)
 
         assertEquals("integration testing\nsecond line", binary)
@@ -85,7 +80,6 @@ class MDMQueueTest : BaseMirthChannelTest(
         assertEquals(0, getMockEHRResourceCount(binary))
         // start channel
         deployAndStartChannel(false)
-        pause()
         val list = MirthClient.getChannelMessageIds(testChannelId)
         assertEquals(0, list.size)
 

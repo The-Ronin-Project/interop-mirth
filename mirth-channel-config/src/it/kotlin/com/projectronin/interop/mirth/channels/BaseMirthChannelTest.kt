@@ -120,7 +120,7 @@ abstract class BaseMirthChannelTest(
 
     protected fun getMockEHRResourceCount(resourceType: String): Int {
         val resources = MockEHRClient.getAllResources(resourceType)
-        return resources.get("total").asInt()
+        return resources.total?.value!!
     }
 
     protected fun deleteAidboxResources(vararg resourceTypes: String) {

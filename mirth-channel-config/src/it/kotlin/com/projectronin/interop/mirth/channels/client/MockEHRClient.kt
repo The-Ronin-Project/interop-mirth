@@ -1,7 +1,7 @@
 package com.projectronin.interop.mirth.channels.client
 
-import com.fasterxml.jackson.databind.JsonNode
 import com.projectronin.interop.common.jackson.JacksonManager
+import com.projectronin.interop.fhir.r4.resource.Bundle
 import com.projectronin.interop.fhir.r4.resource.Resource
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -69,13 +69,13 @@ object MockEHRClient {
     fun deleteAllResources(resourceType: String) = runBlocking {
         val resources = getAllResources(resourceType)
         KotlinLogging.logger { }.warn { resources }
-        resources.get("entry")?.forEach {
-            val resourceId = it.get("resource").get("id").asText()
-            deleteResource(resourceType, resourceId)
+        resources.entry.forEach {
+            val resourceId = it.resource?.id?.value
+            resourceId?.let { deleteResource(resourceType, resourceId) }
         }
     }
 
-    fun getAllResources(resourceType: String): JsonNode = runBlocking {
+    fun getAllResources(resourceType: String): Bundle = runBlocking {
         val url = RESOURCES_FORMAT.format(resourceType)
         httpClient.get(url) {
         }.body()

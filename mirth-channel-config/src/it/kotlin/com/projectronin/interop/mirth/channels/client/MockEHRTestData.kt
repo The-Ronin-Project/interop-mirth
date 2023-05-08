@@ -27,7 +27,7 @@ object MockEHRTestData {
         repeat(5) {
             var goodToGo = true
             currentResources.keys.forEach { resourceType ->
-                val resources = MockEHRClient.getAllResources(resourceType).get("total").asInt()
+                val resources = MockEHRClient.getAllResources(resourceType).total?.value
                 if (resources != currentResources[resourceType]!!.size) {
                     goodToGo = false
                 }
