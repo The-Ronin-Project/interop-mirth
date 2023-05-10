@@ -24,7 +24,11 @@ import kotlin.random.Random
 
 const val kafkaAppointmentQueueChannelName = "KafkaAppointmentQueue"
 
-class KafkaAppointmentQueueTest : BaseChannelTest(kafkaAppointmentQueueChannelName, listOf("Appointment", "Patient"), listOf("Patient", "Appointment")) {
+class KafkaAppointmentQueueTest : BaseChannelTest(
+    kafkaAppointmentQueueChannelName,
+    listOf("Appointment", "Patient"),
+    listOf("Patient", "Appointment")
+) {
     private val appointmentType = "Appointment"
     private val patientType = "Patient"
 
@@ -101,7 +105,7 @@ class KafkaAppointmentQueueTest : BaseChannelTest(kafkaAppointmentQueueChannelNa
 
         // datalake received the object
         MockOCIServerClient.verify()
-        val datalakeObject = MockOCIServerClient.getLastPutBody()
+        val datalakeObject = MockOCIServerClient.getLastPublishPutBody()
         val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Appointment::class)
         assertEquals(appointment1Id, datalakeFhirResource.getFhirIdentifier()?.value?.value)
     }

@@ -53,7 +53,7 @@ class LocationNightlyLoadTest : BaseMirthChannelTest(locationNightlyLoadChannelN
 
         // ensure data lake gets what it needs
         MockOCIServerClient.verify()
-        val datalakeObject = MockOCIServerClient.getLastPutBody()
+        val datalakeObject = MockOCIServerClient.getLastPublishPutBody()
         val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Location::class)
         assertEquals(locationId, datalakeFhirResource.getFhirIdentifier()?.value?.value)
     }

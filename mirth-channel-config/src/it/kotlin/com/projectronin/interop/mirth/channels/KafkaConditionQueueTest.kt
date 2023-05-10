@@ -79,7 +79,7 @@ class KafkaConditionQueueTest : BaseChannelTest(kafkaConditionQueueChannelName, 
 
         // datalake received the object
         MockOCIServerClient.verify()
-        val datalakeObject = MockOCIServerClient.getLastPutBody()
+        val datalakeObject = MockOCIServerClient.getLastPublishPutBody()
         val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Condition::class)
         assertEquals(conditionFhirId, datalakeFhirResource.getFhirIdentifier()?.value?.value)
     }

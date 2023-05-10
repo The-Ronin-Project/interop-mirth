@@ -75,7 +75,7 @@ class PractitionerNightlyLoadTest : BaseMirthChannelTest(
         deployAndStartChannel(true)
 
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        val resources = MockOCIServerClient.getAllPutsAsResources()
+        val resources = MockOCIServerClient.getAllPublishPutsAsResources()
 
         assertEquals(3, messageList.size)
         assertEquals(1, getAidboxResourceCount(practitionerType))

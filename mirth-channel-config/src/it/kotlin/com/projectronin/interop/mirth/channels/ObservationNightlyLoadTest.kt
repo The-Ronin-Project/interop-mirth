@@ -29,7 +29,11 @@ import java.time.format.DateTimeFormatter
 
 const val observationNightlyLoadChannelName = "ObservationNightlyLoad"
 
-class ObservationNightlyLoadTest : BaseMirthChannelTest(observationNightlyLoadChannelName, listOf("Patient", "Observation"), listOf("Patient", "Observation")) {
+class ObservationNightlyLoadTest : BaseMirthChannelTest(
+    observationNightlyLoadChannelName,
+    listOf("Patient", "Observation"),
+    listOf("Patient", "Observation")
+) {
     val patientType = "Patient"
     val observationType = "Observation"
     private val nowDate = DynamicValues.dateTime(
@@ -125,7 +129,7 @@ class ObservationNightlyLoadTest : BaseMirthChannelTest(observationNightlyLoadCh
 
         // ensure data lake gets what it needs
         MockOCIServerClient.verify()
-        val datalakeObject = MockOCIServerClient.getLastPutBody()
+        val datalakeObject = MockOCIServerClient.getLastPublishPutBody()
         val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Observation::class)
         assertEquals(obsvId, datalakeFhirResource.getFhirIdentifier()?.value?.value)
     }
@@ -217,7 +221,7 @@ class ObservationNightlyLoadTest : BaseMirthChannelTest(observationNightlyLoadCh
 
         // ensure data lake gets what it needs
         MockOCIServerClient.verify(2)
-        val resources = MockOCIServerClient.getAllPutsAsResources()
+        val resources = MockOCIServerClient.getAllPublishPutsAsResources()
         verifyAllPresent(resources, expectedMap)
     }
 }

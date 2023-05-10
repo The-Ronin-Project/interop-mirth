@@ -176,7 +176,7 @@ class AppointmentByPractitionerLoadTest :
 
         // ensure data lake gets what it needs
         MockOCIServerClient.verify(3)
-        val resources = MockOCIServerClient.getAllPutsAsResources()
+        val resources = MockOCIServerClient.getAllPublishPutsAsResources()
         verifyAllPresent(resources, expectedMap)
     }
 
@@ -439,7 +439,7 @@ class AppointmentByPractitionerLoadTest :
 
         // ensure data lake gets what it needs
         MockOCIServerClient.verify(5)
-        val resources = MockOCIServerClient.getAllPutsAsResources()
+        val resources = MockOCIServerClient.getAllPublishPutsAsResources()
         verifyAllPresent(resources, expectedMap)
     }
 }

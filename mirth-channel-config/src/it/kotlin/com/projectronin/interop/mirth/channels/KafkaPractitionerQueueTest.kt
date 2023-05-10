@@ -50,7 +50,7 @@ class KafkaPractitionerQueueTest : BaseChannelTest(kafkaPractitionerQueueChannel
 
         assertEquals(1, getAidboxResourceCount("Practitioner"))
         MockOCIServerClient.verify()
-        val datalakeObject = MockOCIServerClient.getLastPutBody()
+        val datalakeObject = MockOCIServerClient.getLastPublishPutBody()
         val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Practitioner::class)
         assertEquals(fhirId, datalakeFhirResource.getFhirIdentifier()?.value?.value)
     }

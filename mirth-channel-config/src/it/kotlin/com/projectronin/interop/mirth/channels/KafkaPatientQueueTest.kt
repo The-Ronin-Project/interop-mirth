@@ -69,7 +69,7 @@ class KafkaPatientQueueTest : BaseChannelTest(kafkaPatientQueueChannelName, list
         assertEquals(1, list.size)
         assertEquals(1, getAidboxResourceCount("Patient"))
         MockOCIServerClient.verify()
-        val datalakeObject = MockOCIServerClient.getLastPutBody()
+        val datalakeObject = MockOCIServerClient.getLastPublishPutBody()
         val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Patient::class)
         assertEquals(fhirId, datalakeFhirResource.getFhirIdentifier()?.value?.value)
     }
