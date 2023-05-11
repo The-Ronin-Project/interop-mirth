@@ -2,7 +2,7 @@
   {
     "httpRequest": {
       "method": "PUT",
-      "path": "/n/.*/b/.*/o/.*"
+      "path": "/n/.*/b/.*/o/ehr.*"
     },
     "httpResponse": {
       "statusCode": 200,
@@ -16,6 +16,31 @@
       }
     },
     "id": "PutObjectExpectation",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "PUT",
+      "path": "/n/.*/b/.*/o/raw_data_response.*"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "FakeNode": "Fake Object Retrieved From Mock Server"
+      }
+    },
+    "id": "PutRawExpectation",
     "priority": 0,
     "timeToLive": {
       "unlimited": true
@@ -51,7 +76,7 @@
         {
           "resource_type": "Observation",
           "data_element": "Observation.code",
-          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationBodyMassIndex",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationBodyMassIndex",
           "tenant_id": "tenantAgnosticRegistryKey",
           "version": 1,
           "filename": "EmptyValueSet.json",
@@ -62,7 +87,7 @@
         {
           "resource_type": "Observation",
           "data_element": "Observation.code",
-          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationBodySurfaceArea",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationBodySurfaceArea",
           "tenant_id": "tenantAgnosticRegistryKey",
           "version": 1,
           "filename": "EmptyValueSet.json",
@@ -73,7 +98,7 @@
         {
           "resource_type": "Observation",
           "data_element": "Observation.code",
-          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationBodyTemperature",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationBodyTemperature",
           "tenant_id": "tenantAgnosticRegistryKey",
           "version": 1,
           "filename": "EmptyValueSet.json",
@@ -84,7 +109,7 @@
         {
           "resource_type": "Observation",
           "data_element": "Observation.code",
-          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationBloodPressure",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationBloodPressure",
           "tenant_id": "tenantAgnosticRegistryKey",
           "version": 1,
           "filename": "EmptyValueSet.json",
@@ -95,7 +120,7 @@
         {
           "resource_type": "Observation",
           "data_element": "Observation.code",
-          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationRespiratoryRate",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationRespiratoryRate",
           "tenant_id": "tenantAgnosticRegistryKey",
           "version": 1,
           "filename": "EmptyValueSet.json",
@@ -106,7 +131,7 @@
         {
           "resource_type": "Observation",
           "data_element": "Observation.code",
-          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationHeartRate",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationHeartRate",
           "tenant_id": "tenantAgnosticRegistryKey",
           "version": 1,
           "filename": "EmptyValueSet.json",
@@ -117,7 +142,7 @@
         {
           "resource_type": "Observation",
           "data_element": "Observation.code",
-          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationPulseOximetry",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationPulseOximetry",
           "tenant_id": "tenantAgnosticRegistryKey",
           "version": 1,
           "filename": "EmptyValueSet.json",
@@ -128,7 +153,7 @@
         {
           "resource_type": "Observation",
           "data_element": "Observation.code",
-          "profile_url" : "http://projectronin.io/fhir/StructureDefinition/ronin-observationRespiratoryRate",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationRespiratoryRate",
           "tenant_id": "tenantAgnosticRegistryKey",
           "version": 1,
           "filename": "EmptyValueSet.json",
@@ -464,15 +489,15 @@
         "title": " ",
         "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a2",
         "version": 1,
-        "status" : "draft",
+        "status": "draft",
         "expansion": {
-          "timestamp" : "2020-01-01 14:01:01",
-          "contains" : [
+          "timestamp": "2020-01-01 14:01:01",
+          "contains": [
             {
-              "system" : "NO",
-              "version" : "NO",
-              "code" : "NO",
-              "display" : "NO"
+              "system": "NO",
+              "version": "NO",
+              "code": "NO",
+              "display": "NO"
             }
           ]
         }
@@ -530,4 +555,4 @@
       "unlimited": true
     }
   }
-  ]
+]

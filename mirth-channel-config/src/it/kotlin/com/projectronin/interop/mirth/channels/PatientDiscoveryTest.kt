@@ -302,6 +302,9 @@ class PatientDiscoveryTest : BaseChannelTest(
                 name of listOf(
                     name {
                         use of "usual" // This is required to generate the Epic response.
+                    },
+                    name {
+                        use of "official"
                     }
                 )
                 gender of "male"

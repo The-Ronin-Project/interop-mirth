@@ -40,6 +40,21 @@ object MockOCIServerClient {
         )
     }
 
+    fun resetRawPublish() {
+        client.clear(
+            request()
+                .withMethod("PUT")
+                .withPath("/n/.*/b/.*/o/raw_data_response.*")
+        )
+        client.`when`(
+            request()
+                .withMethod("PUT")
+                .withPath("/n/.*/b/.*/o/raw_data_response.*")
+        ).respond(
+            HttpResponse.response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON)
+        )
+    }
+
     fun createExpectations(resourceType: String, resourceFhirID: String, tenant: String = testTenant) {
         val objectName = getR4Name(resourceType, resourceFhirID, tenant)
         setPutExpectation(objectName)

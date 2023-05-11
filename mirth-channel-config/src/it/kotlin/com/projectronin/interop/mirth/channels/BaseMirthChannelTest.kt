@@ -57,6 +57,7 @@ abstract class BaseMirthChannelTest(
         drainKafkaEvents(*kafkaQueueResourceTypes.toTypedArray())
         deleteMockEHRResources(*mockEHRResourceTypes.toTypedArray())
         MockOCIServerClient.client.clear("PutObjectExpectation")
+        MockOCIServerClient.resetRawPublish()
     }
 
     @AfterEach

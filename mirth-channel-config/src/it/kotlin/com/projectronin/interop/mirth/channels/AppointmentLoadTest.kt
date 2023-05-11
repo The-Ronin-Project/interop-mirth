@@ -360,6 +360,7 @@ class AppointmentLoadTest : BaseChannelTest(
             )
             start of 2.daysFromNow()
             end of 3.daysFromNow()
+            minutesDuration of 60
         }
         val appointmentId = MockEHRTestData.add(fakeAppointment)
         MockOCIServerClient.createExpectations(appointmentType, appointmentId, testTenant)

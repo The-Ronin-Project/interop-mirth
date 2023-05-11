@@ -55,6 +55,7 @@ abstract class BaseChannelTest(
         deleteAidboxResources(*aidboxResourceTypes.toTypedArray())
         deleteMockEHRResources(*mockEHRResourceTypes.toTypedArray())
         MockOCIServerClient.client.clear("PutObjectExpectation")
+        MockOCIServerClient.resetRawPublish()
         KafkaClient.reset()
         deployAndStartChannel()
     }

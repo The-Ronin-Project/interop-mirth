@@ -84,6 +84,9 @@ class AppointmentByPractitionerLoadTest :
             name of listOf(
                 name {
                     use of "usual" // This is required to generate the Epic response.
+                },
+                name {
+                    use of "official"
                 }
             )
             gender of "male"
@@ -105,6 +108,7 @@ class AppointmentByPractitionerLoadTest :
             )
             start of 2.daysFromNow()
             end of 3.daysFromNow()
+            minutesDuration of 60
         }
         val appointmentID = MockEHRTestData.add(appointment1)
 
@@ -213,6 +217,9 @@ class AppointmentByPractitionerLoadTest :
             name of listOf(
                 name {
                     use of "usual" // This is required to generate the Epic response.
+                },
+                name {
+                    use of "official"
                 }
             )
             gender of "male"
@@ -238,6 +245,7 @@ class AppointmentByPractitionerLoadTest :
             )
             start of 2.daysFromNow()
             end of 3.daysFromNow()
+            minutesDuration of 60
         }
         val appointmentID = MockEHRTestData.add(appointment1)
 

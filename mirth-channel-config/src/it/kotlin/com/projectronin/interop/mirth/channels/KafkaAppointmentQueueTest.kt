@@ -73,6 +73,7 @@ class KafkaAppointmentQueueTest : BaseChannelTest(
             )
             start of startDate
             end of endDate
+            minutesDuration of 60
         }
         val appointment1Id = MockEHRTestData.add(appointment1)
         val aidboxPatient = patient1.copy(
