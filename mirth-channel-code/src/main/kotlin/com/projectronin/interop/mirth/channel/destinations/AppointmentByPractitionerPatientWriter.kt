@@ -9,6 +9,7 @@ import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.channel.util.getMetadata
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import org.springframework.stereotype.Component
@@ -57,7 +58,8 @@ class AppointmentByPractitionerPatientWriter(
             tenantMnemonic = tenantMnemonic,
             resourceList = listOf(transformedPatient),
             resourceType = "Patient",
-            successDataMap = mapOf(MirthKey.PATIENT_FHIR_ID.code to transformedPatient.id!!.value!!)
+            successDataMap = mapOf(MirthKey.PATIENT_FHIR_ID.code to transformedPatient.id!!.value!!),
+            metadata = getMetadata(sourceMap)
         )
     }
 }

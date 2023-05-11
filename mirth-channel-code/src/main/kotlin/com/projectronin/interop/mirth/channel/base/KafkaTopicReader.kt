@@ -1,9 +1,9 @@
 package com.projectronin.interop.mirth.channel.base
 
-import com.projectronin.event.interop.resource.load.v1.InteropResourceLoadV1
-import com.projectronin.event.interop.resource.publish.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
+import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
-import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.DataTrigger
@@ -68,6 +68,7 @@ abstract class KafkaTopicReader(
             )
         }
     }
+
     private fun List<InteropResourceLoadV1>.toLoadMirthMessages(): List<MirthMessage> {
         return this.map {
             MirthMessage(

@@ -6,6 +6,7 @@ import com.projectronin.interop.fhir.r4.resource.DomainResource
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.channel.util.getMetadata
 import com.projectronin.interop.publishers.PublishService
 import kotlin.reflect.KClass
 
@@ -27,7 +28,7 @@ abstract class TenantlessQueueWriter<T : DomainResource<T>>(
         val resource = JacksonManager.objectMapper.readValue(msg, type.java)
         val resourceList = listOf(resource)
         val resourceType = type.simpleName
-        if (!publishService.publishFHIRResources(tenantMnemonic, resourceList)) {
+        if (!publishService.publishFHIRResources(tenantMnemonic, resourceList, getMetadata(sourceMap))) {
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = JacksonUtil.writeJsonValue(resourceList),

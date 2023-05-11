@@ -263,7 +263,7 @@ services:
     volumes:
       - ./vault/secrets.json:/secrets.json
       - ./vault/policy.hcl:/policy.hcl
-    entrypoint: ["/bin/sh","-c"]
+    entrypoint: [ "/bin/sh","-c" ]
     environment:
       VAULT_ADDR: "http://vault:8200"
     command:

@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channel
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.mirth.channel.base.KafkaTopicReader
@@ -16,8 +16,8 @@ class EncounterLoad(
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "EncounterLoad"
     override val channelGroupId = "interop-mirth-encounter_group"
-    override val publishedResourcesSubscriptions = listOf(ResourceType.PATIENT)
-    override val resource = ResourceType.ENCOUNTER
+    override val publishedResourcesSubscriptions = listOf(ResourceType.Patient)
+    override val resource = ResourceType.Encounter
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(EncounterLoad::class.java)

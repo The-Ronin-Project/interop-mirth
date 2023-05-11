@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.Identifier
 import com.projectronin.interop.fhir.r4.resource.Appointment

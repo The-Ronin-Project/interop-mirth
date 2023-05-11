@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channel
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.mirth.channel.base.KafkaTopicReader
@@ -16,8 +16,8 @@ class ObservationLoad(
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "ObservationLoad"
     override val channelGroupId = "interop-mirth-observation_group"
-    override val publishedResourcesSubscriptions = listOf(ResourceType.PATIENT, ResourceType.CONDITION)
-    override val resource = ResourceType.OBSERVATION
+    override val publishedResourcesSubscriptions = listOf(ResourceType.Patient, ResourceType.Condition)
+    override val resource = ResourceType.Observation
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(ObservationLoad::class.java)

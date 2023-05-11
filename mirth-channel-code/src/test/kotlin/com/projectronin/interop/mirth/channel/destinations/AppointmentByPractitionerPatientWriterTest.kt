@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.destinations
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.TransformManager
@@ -88,14 +89,19 @@ class AppointmentByPractitionerPatientWriterTest {
 
         every { transformManager.transformResource(mockPatient, roninPatient, tenant) } returns mockRoninPatient
 
-        every { publishService.publishFHIRResources(VALID_TENANT_ID, listOf(mockRoninPatient)) } returns true
+        val metadata = mockk<Metadata>()
+        every { publishService.publishFHIRResources(VALID_TENANT_ID, listOf(mockRoninPatient), metadata) } returns true
 
         every { JacksonUtil.writeJsonValue(any()) } returns "[]"
         every { JacksonUtil.readJsonObject(any(), Patient::class) } returns mockPatient
         val response = writer.destinationWriter(
             "unused",
             "",
-            mapOf(MirthKey.NEW_PATIENT_JSON.code to "patient", MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID),
+            mapOf(
+                MirthKey.NEW_PATIENT_JSON.code to "patient",
+                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+                MirthKey.EVENT_METADATA.code to metadata
+            ),
             emptyMap()
         )
         assertEquals("Published 1 Patient(s)", response.message)
@@ -116,14 +122,19 @@ class AppointmentByPractitionerPatientWriterTest {
         val mockPatient = mockk<Patient>()
         every { transformManager.transformResource(mockPatient, roninPatient, tenant) } returns mockRoninPatient
 
-        every { publishService.publishFHIRResources(VALID_TENANT_ID, listOf(mockRoninPatient)) } returns false
+        val metadata = mockk<Metadata>()
+        every { publishService.publishFHIRResources(VALID_TENANT_ID, listOf(mockRoninPatient), metadata) } returns false
 
         every { JacksonUtil.writeJsonValue(any()) } returns "[]"
         every { JacksonUtil.readJsonObject(any(), Patient::class) } returns mockPatient
         val response = writer.destinationWriter(
             "unused",
             "",
-            mapOf(MirthKey.NEW_PATIENT_JSON.code to "patient", MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID),
+            mapOf(
+                MirthKey.NEW_PATIENT_JSON.code to "patient",
+                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+                MirthKey.EVENT_METADATA.code to metadata
+            ),
             emptyMap()
         )
         assertEquals("Failed to publish Patient(s)", response.message)
@@ -165,7 +176,8 @@ class AppointmentByPractitionerPatientWriterTest {
         val mockPatient = mockk<Patient>()
         every { transformManager.transformResource(mockPatient, roninPatient, tenant) } returns mockRoninPatient
 
-        every { publishService.publishFHIRResources(VALID_TENANT_ID, listOf(mockRoninPatient)) } returns false
+        val metadata = mockk<Metadata>()
+        every { publishService.publishFHIRResources(VALID_TENANT_ID, listOf(mockRoninPatient), metadata) } returns false
 
         every { JacksonUtil.writeJsonValue(any()) } returns "[]"
         every { JacksonUtil.readJsonObject(any(), Patient::class) } returns mockPatient
@@ -173,7 +185,7 @@ class AppointmentByPractitionerPatientWriterTest {
             writer.destinationWriter(
                 "unused",
                 "",
-                mapOf(MirthKey.NEW_PATIENT_JSON.code to "patient"),
+                mapOf(MirthKey.NEW_PATIENT_JSON.code to "patient", MirthKey.EVENT_METADATA.code to metadata),
                 emptyMap()
             )
         }
@@ -189,7 +201,8 @@ class AppointmentByPractitionerPatientWriterTest {
         val mockPatient = mockk<Patient>()
         every { transformManager.transformResource(mockPatient, roninPatient, tenant) } returns mockRoninPatient
 
-        every { publishService.publishFHIRResources(VALID_TENANT_ID, listOf(mockRoninPatient)) } returns false
+        val metadata = mockk<Metadata>()
+        every { publishService.publishFHIRResources(VALID_TENANT_ID, listOf(mockRoninPatient), metadata) } returns false
 
         every { JacksonUtil.writeJsonValue(any()) } returns "[]"
         every { JacksonUtil.readJsonObject(any(), Patient::class) } returns mockPatient
@@ -197,7 +210,7 @@ class AppointmentByPractitionerPatientWriterTest {
             writer.destinationWriter(
                 "unused",
                 "",
-                mapOf(MirthKey.NEW_PATIENT_JSON.code to "patient"),
+                mapOf(MirthKey.NEW_PATIENT_JSON.code to "patient", MirthKey.EVENT_METADATA.code to metadata),
                 emptyMap()
             )
         }

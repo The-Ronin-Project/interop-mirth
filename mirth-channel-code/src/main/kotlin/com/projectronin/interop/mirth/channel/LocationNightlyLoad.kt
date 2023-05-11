@@ -9,6 +9,7 @@ import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.destinations.LocationWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
+import com.projectronin.interop.mirth.channel.util.generateMetadata
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotFoundException
@@ -44,13 +45,15 @@ class LocationNightlyLoad(
             tenant,
             locationIdsList
         )
+        val metadata = generateMetadata()
         return response.values.chunked(confirmMaxChunkSize(serviceMap)).map { locations ->
             MirthMessage(
                 message = JacksonUtil.writeJsonValue(locations),
                 dataMap = mapOf(
                     MirthKey.RESOURCES_FOUND.code to locations,
                     MirthKey.RESOURCE_TYPE.code to locations.first().resourceType,
-                    MirthKey.RESOURCE_COUNT.code to locations.size
+                    MirthKey.RESOURCE_COUNT.code to locations.size,
+                    MirthKey.EVENT_METADATA.code to metadata
                 )
             )
         }

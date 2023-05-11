@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.datatypes.participant
@@ -262,13 +262,13 @@ class PatientDiscoveryTest : BaseChannelTest(
             TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
         }
         deployAndStartChannel(true)
-        val events = KafkaClient.kafkaLoadService.retrieveLoadEvents(ResourceType.PATIENT)
+        val events = KafkaClient.kafkaLoadService.retrieveLoadEvents(ResourceType.Patient)
         assertEquals(0, events.size)
     }
 
     @Test
     fun `channel kicks off dag`() {
-        val patientLoadTopic = KafkaClient.loadTopic(ResourceType.PATIENT)
+        val patientLoadTopic = KafkaClient.loadTopic(ResourceType.Patient)
 
         val patientChannelId = installChannel(patientLoadChannelName)
         clearMessages(patientChannelId)

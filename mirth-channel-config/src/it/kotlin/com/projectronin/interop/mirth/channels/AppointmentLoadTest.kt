@@ -1,6 +1,7 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.Metadata
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.datatypes.participant
@@ -24,6 +25,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 const val appointmentLoadChannelName = "AppointmentLoad"
 
@@ -276,7 +279,7 @@ class AppointmentLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeAppointmentId),
-            resourceType = ResourceType.APPOINTMENT
+            resourceType = ResourceType.Appointment
         )
         waitForMessage(1)
 
@@ -292,7 +295,7 @@ class AppointmentLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("nothing to see here"),
-            resourceType = ResourceType.APPOINTMENT
+            resourceType = ResourceType.Appointment
         )
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
@@ -309,7 +312,7 @@ class AppointmentLoadTest : BaseChannelTest(
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with dag`(testTenant: String) {
-        val appointmentPublishTopics = KafkaClient.publishTopics(ResourceType.APPOINTMENT)
+        val appointmentPublishTopics = KafkaClient.publishTopics(ResourceType.Appointment)
         val appointmentType = "Appointment"
         val locationType = "Location"
         val types = listOf(
@@ -369,13 +372,16 @@ class AppointmentLoadTest : BaseChannelTest(
             KafkaClient.ensureStability(it.topicName)
         }
         // push event to get picked up
+        val metadata = Metadata(runId = "appointment1", runDateTime = OffsetDateTime.now(ZoneOffset.UTC))
         KafkaClient.pushLoadEvent(
             testTenant,
             DataTrigger.NIGHTLY,
             listOf(appointmentId),
-            ResourceType.APPOINTMENT
+            ResourceType.Appointment,
+            metadata
         )
-        val appointmentPublishTopic = KafkaClient.publishTopics(ResourceType.APPOINTMENT).first { it.topicName.contains("nightly") }
+        val appointmentPublishTopic =
+            KafkaClient.publishTopics(ResourceType.Appointment).first { it.topicName.contains("nightly") }
         KafkaClient.ensureStability(appointmentPublishTopic.topicName)
         waitForMessage(1)
         channelIds.forEach {

@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.destinations
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.ConditionService
 import com.projectronin.interop.ehr.factory.EHRFactory
@@ -93,14 +94,16 @@ class AppointmentByPractitionerConditionWriterTest {
         mockkObject(JacksonUtil)
         every { JacksonUtil.writeJsonValue(any()) } returns "[]"
 
-        every { publishService.publishFHIRResources(VALID_TENANT_ID, mockRoninConditions) } returns true
+        val metadata = mockk<Metadata>()
+        every { publishService.publishFHIRResources(VALID_TENANT_ID, mockRoninConditions, metadata) } returns true
 
         val response = writer.destinationWriter(
             "unused",
             "",
             mapOf(
                 MirthKey.PATIENT_FHIR_ID.code to "blah",
-                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
+                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+                MirthKey.EVENT_METADATA.code to metadata
             ),
             emptyMap()
         )
@@ -139,7 +142,8 @@ class AppointmentByPractitionerConditionWriterTest {
         every { transformManager.transformResource(mockCondition, roninConditions, tenant) } returns mockRoninCondition
         every { vendorFactory.conditionService } returns mockConditionService
 
-        every { publishService.publishFHIRResources(VALID_TENANT_ID, mockRoninConditions) } returns false
+        val metadata = mockk<Metadata>()
+        every { publishService.publishFHIRResources(VALID_TENANT_ID, mockRoninConditions, metadata) } returns false
 
         mockkObject(JacksonUtil)
         every { JacksonUtil.writeJsonValue(any()) } returns "[]"
@@ -148,7 +152,8 @@ class AppointmentByPractitionerConditionWriterTest {
             "",
             mapOf(
                 MirthKey.PATIENT_FHIR_ID.code to "blah",
-                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
+                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+                MirthKey.EVENT_METADATA.code to metadata
             ),
             emptyMap()
         )

@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.identifier
@@ -213,7 +213,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeMedicationRequestId),
-            resourceType = ResourceType.MEDICATION_REQUEST
+            resourceType = ResourceType.MedicationRequest
         )
 
         waitForMessage(1)
@@ -229,7 +229,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.MEDICATION_REQUEST
+            resourceType = ResourceType.MedicationRequest
         )
 
         waitForMessage(1)

@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channel.destinations
 
-import com.projectronin.event.interop.resource.load.v1.InteropResourceLoadV1
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.PatientService
 import com.projectronin.interop.ehr.factory.EHRFactory
@@ -40,6 +40,7 @@ class PatientPublish(
                 val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourceLoadV1::class)
                 PatientLoadRequest(event, vendorFactory.patientService, tenant)
             }
+
             else -> throw IllegalStateException("Received a string which cannot deserialize to a known event")
         }
     }

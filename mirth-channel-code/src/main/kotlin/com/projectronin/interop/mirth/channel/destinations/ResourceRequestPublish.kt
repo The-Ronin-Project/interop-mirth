@@ -1,12 +1,14 @@
 package com.projectronin.interop.mirth.channel.destinations
+
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.event.interop.resource.request.v1.InteropResourceRequestV1
 import com.projectronin.interop.common.jackson.JacksonUtil
-import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.channel.util.generateMetadata
 import com.projectronin.interop.tenant.config.TenantService
 import org.springframework.stereotype.Component
 
@@ -32,7 +34,8 @@ class ResourceRequestPublish(
             tenantId = tenant.mnemonic,
             resourceType = resourceType,
             resourceFHIRIds = listOf(requestEvent.resourceFHIRId),
-            trigger = DataTrigger.AD_HOC
+            trigger = DataTrigger.AD_HOC,
+            metadata = generateMetadata()
         )
 
         return if (result.failures.isNotEmpty()) {

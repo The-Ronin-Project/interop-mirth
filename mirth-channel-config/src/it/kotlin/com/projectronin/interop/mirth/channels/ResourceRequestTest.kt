@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.identifier
@@ -18,15 +18,16 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 const val resourceRequestChannelName = "ResourceRequest"
+
 class ResourceRequestTest : BaseChannelTest(
     resourceRequestChannelName,
     listOf("Patient", "Condition"),
     listOf("Patient", "Condition")
 ) {
     private val resourceRequestTopic = KafkaClient.requestSpringConfig.requestTopic()
-    private val patientLoadTopic = KafkaClient.loadTopic(ResourceType.PATIENT)
-    private val conditionLoadTopic = KafkaClient.loadTopic(ResourceType.CONDITION)
-    private val patientPublishTopics = KafkaClient.publishTopics(ResourceType.PATIENT)
+    private val patientLoadTopic = KafkaClient.loadTopic(ResourceType.Patient)
+    private val conditionLoadTopic = KafkaClient.loadTopic(ResourceType.Condition)
+    private val patientPublishTopics = KafkaClient.publishTopics(ResourceType.Patient)
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -129,13 +130,13 @@ class ResourceRequestTest : BaseChannelTest(
         KafkaClient.kafkaRequestService.pushRequestEvent(
             testTenant,
             listOf(patientFhirId),
-            ResourceType.PATIENT,
+            ResourceType.Patient,
             "testing"
         )
         KafkaClient.kafkaRequestService.pushRequestEvent(
             testTenant,
             listOf(conditionFhirId),
-            ResourceType.CONDITION,
+            ResourceType.Condition,
             "testing"
         )
         waitForMessage(2)

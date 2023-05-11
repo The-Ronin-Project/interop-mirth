@@ -13,6 +13,7 @@ import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.destinations.ObservationWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
+import com.projectronin.interop.mirth.channel.util.generateMetadata
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotFoundException
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
@@ -46,6 +47,8 @@ class ObservationNightlyLoad(
         val tenant = getTenant(tenantMnemonic)
         val vendorFactory = ehrFactory.getVendorFactory(tenant)
 
+        val metadata = generateMetadata()
+
         // Query the tenant EHR system 1 patient at a time. Collect results and send to Mirth
         val mirthMessageList = patientList.flatMap { patientFhirId ->
             val response = vendorFactory.observationService.findObservationsByPatientAndCategory(
@@ -65,7 +68,8 @@ class ObservationNightlyLoad(
                         MirthKey.PATIENT_FHIR_ID.code to patientFhirId,
                         MirthKey.RESOURCES_FOUND.code to obsList,
                         MirthKey.RESOURCE_TYPE.code to obsList.first().resourceType,
-                        MirthKey.RESOURCE_COUNT.code to obsList.count()
+                        MirthKey.RESOURCE_COUNT.code to obsList.count(),
+                        MirthKey.EVENT_METADATA.code to metadata
                     )
                 )
             }

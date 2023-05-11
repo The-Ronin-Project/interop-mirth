@@ -32,7 +32,10 @@ abstract class KafkaQueue<K : DomainResource<K>>(
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
         return queueService.dequeueApiMessages("", resourceType, limit).map {
-            MirthMessage(it.text, mapOf(MirthKey.TENANT_MNEMONIC.code to it.tenant))
+            MirthMessage(
+                it.text,
+                mapOf(MirthKey.TENANT_MNEMONIC.code to it.tenant, MirthKey.EVENT_METADATA.code to it.metadata)
+            )
         }
     }
 
@@ -42,7 +45,8 @@ abstract class KafkaQueue<K : DomainResource<K>>(
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthMessage {
-        val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
+        val tenant = tenantService.getTenantForMnemonic(tenantMnemonic)
+            ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
         val transformed = deserializeAndTransform(msg, tenant)
         return MirthMessage(
             message = JacksonManager.objectMapper.writeValueAsString(transformed),

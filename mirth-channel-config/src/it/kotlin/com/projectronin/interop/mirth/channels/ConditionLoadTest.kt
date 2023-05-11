@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.reference
@@ -261,7 +261,7 @@ class ConditionLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(conditionID),
-            resourceType = ResourceType.CONDITION
+            resourceType = ResourceType.Condition
         )
 
         waitForMessage(1)
@@ -277,7 +277,7 @@ class ConditionLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.CONDITION
+            resourceType = ResourceType.Condition
         )
 
         waitForMessage(1)

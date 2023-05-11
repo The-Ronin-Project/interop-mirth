@@ -1,4 +1,7 @@
 [libraries]
+event-interop-resource-internal = "com.projectronin.contract.event:event-interop-resource-internal:1.0.0"
+event-interop-resource-request = "com.projectronin.contract.event:event-interop-resource-request:1.0.0"
+
 guava = "com.google.guava:guava:31.1-jre"
 
 interop-common = "com.projectronin.interop:interop-common:3.6.0"
@@ -16,21 +19,17 @@ interop-ehr-fhir-ronin = "com.projectronin.interop.ehr:interop-fhir-ronin:9.9.0"
 interop-ehr-liquibase = "com.projectronin.interop.ehr:interop-ehr-liquibase:9.9.0"
 interop-ehr-tenant = "com.projectronin.interop.ehr:interop-tenant:9.9.0"
 
-interop-publishers-aidbox = "com.projectronin.interop.publish:interop-aidbox:7.8.0"
-interop-publishers-datalake = "com.projectronin.interop.publish:interop-datalake:7.8.0"
-interop-publishers-core = "com.projectronin.interop.publish:interop-publishers:7.8.0"
-interop-publishers-kafka = "com.projectronin.interop.publish:interop-kafka:7.8.0"
+interop-publishers-aidbox = "com.projectronin.interop.publish:interop-aidbox:8.0.0"
+interop-publishers-datalake = "com.projectronin.interop.publish:interop-datalake:8.0.0"
+interop-publishers-core = "com.projectronin.interop.publish:interop-publishers:8.0.0"
+interop-publishers-kafka = "com.projectronin.interop.publish:interop-kafka:8.0.0"
 
-interop-queue-api = "com.projectronin.interop.queue:interop-queue:1.6.1"
-interop-queue-db = "com.projectronin.interop.queue:interop-queue-db:1.6.1"
-interop-queue-kafka = "com.projectronin.interop.queue:interop-queue-kafka:1.6.1"
-interop-queue-liquibase = "com.projectronin.interop.queue:interop-queue-liquibase:1.6.1"
+interop-queue-api = "com.projectronin.interop.queue:interop-queue:2.0.0"
+interop-queue-db = "com.projectronin.interop.queue:interop-queue-db:2.0.0"
+interop-queue-kafka = "com.projectronin.interop.queue:interop-queue-kafka:2.0.0"
+interop-queue-liquibase = "com.projectronin.interop.queue:interop-queue-liquibase:2.0.0"
 
 interop-validation-client = "com.projectronin.interop.validation:interop-validation-client:2.0.0"
-interop-kafka-event-resource-publish = "com.projectronin.contract.event:event-interop-resource-publish:1.0.1"
-interop-kafka-event-resource-load = "com.projectronin.contract.event:event-interop-resource-load:1.0.0"
-interop-kafka-event-resource-request = "com.projectronin.contract.event:event-interop-resource-request:1.0.0"
-
 
 jackson-annotations = "com.fasterxml.jackson.core:jackson-annotations:2.15.0"
 jackson-core = "com.fasterxml.jackson.core:jackson-core:2.15.0"
@@ -75,9 +74,8 @@ test-mysql = ["mysql-connector-java", "testcontainers-mysql"]
 jackson = ["jackson-annotations", "jackson-core", "jackson-databind", "jackson-dataformat-xml", "jackson-dataformat-yaml", "jackson-datatype-jsr310", "jackson-module-kotlin"]
 ktor = ["ktor-client-auth", "ktor-client-cio", "ktor-client-content-negotiation", "ktor-client-core", "ktor-client-logging", "ktor-serialization-jackson"]
 interop-kafka-events = [
-    "interop-kafka-event-resource-publish",
-    "interop-kafka-event-resource-load",
-    "interop-kafka-event-resource-request"
+    "event-interop-resource-internal",
+    "event-interop-resource-request"
 ]
 
 

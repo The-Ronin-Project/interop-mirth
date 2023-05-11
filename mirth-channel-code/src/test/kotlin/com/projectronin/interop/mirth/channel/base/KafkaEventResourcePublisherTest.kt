@@ -1,7 +1,8 @@
 package com.projectronin.interop.mirth.channel.base
 
-import com.projectronin.event.interop.resource.load.v1.InteropResourceLoadV1
-import com.projectronin.event.interop.resource.publish.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
+import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.FHIRService
 import com.projectronin.interop.ehr.factory.EHRFactory
@@ -60,26 +61,30 @@ class KafkaEventResourcePublisherTest {
         ): ResourceLoadRequest<Location> {
             val mockRequest = mockk<ResourceLoadRequest<Location>> {
                 every { dataTrigger } returns DataTrigger.NIGHTLY
+                every { metadata } returns mockk()
             }
 
             when (serializedEvent) {
                 "ehr error" -> {
                     every { mockRequest.loadResources() } throws Exception("EHR is gone")
                 }
+
                 "nothing from ehr" -> {
                     every { mockRequest.loadResources() } returns emptyList()
                 }
+
                 "long list" -> {
                     every { mockRequest.loadResources() } returns listOf(
-                        mockk<Location> { every { id ?.value } returns "1" },
-                        mockk<Location> { every { id ?.value } returns "2" },
-                        mockk<Location> { every { id ?.value } returns "3" },
-                        mockk<Location> { every { id ?.value } returns "4" },
-                        mockk<Location> { every { id ?.value } returns "5" },
+                        mockk<Location> { every { id?.value } returns "1" },
+                        mockk<Location> { every { id?.value } returns "2" },
+                        mockk<Location> { every { id?.value } returns "3" },
+                        mockk<Location> { every { id?.value } returns "4" },
+                        mockk<Location> { every { id?.value } returns "5" },
                         mockk<Location> { every { id } returns null },
-                        mockk<Location> { every { id ?.value } returns null }
+                        mockk<Location> { every { id?.value } returns null }
                     )
                 }
+
                 else -> {
                     every { mockRequest.loadResources() } returns listOf(
                         mockk()
@@ -121,7 +126,14 @@ class KafkaEventResourcePublisherTest {
     fun `channel works`() {
         val transformed = mockk<Location> {}
         every { transformManager.transformResource(any(), roninLocation, tenant) } returns transformed
-        every { publishService.publishFHIRResources("tenant", listOf(transformed), DataTrigger.NIGHTLY) } returns true
+        every {
+            publishService.publishFHIRResources(
+                "tenant",
+                listOf(transformed),
+                any(),
+                DataTrigger.NIGHTLY
+            )
+        } returns true
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
         val result = destination.channelDestinationWriter(
             "tenant",
@@ -182,10 +194,35 @@ class KafkaEventResourcePublisherTest {
         val transformed2 = mockk<Location> { every { id?.value } returns null }
         val transformed3 = mockk<Location> { every { id } returns null }
         every { transformManager.transformResource(any(), roninLocation, tenant) } returns null
-        every { transformManager.transformResource(match { it.id?.value == "1" }, roninLocation, tenant) } returns transformed1
-        every { transformManager.transformResource(match { it.id?.value == "2" }, roninLocation, tenant) } returns transformed2
-        every { transformManager.transformResource(match { it.id?.value == "3" }, roninLocation, tenant) } returns transformed3
-        every { publishService.publishFHIRResources("tenant", listOf(transformed1, transformed2, transformed3), DataTrigger.NIGHTLY) } returns true
+        every {
+            transformManager.transformResource(
+                match { it.id?.value == "1" },
+                roninLocation,
+                tenant
+            )
+        } returns transformed1
+        every {
+            transformManager.transformResource(
+                match { it.id?.value == "2" },
+                roninLocation,
+                tenant
+            )
+        } returns transformed2
+        every {
+            transformManager.transformResource(
+                match { it.id?.value == "3" },
+                roninLocation,
+                tenant
+            )
+        } returns transformed3
+        every {
+            publishService.publishFHIRResources(
+                "tenant",
+                listOf(transformed1, transformed2, transformed3),
+                any(),
+                DataTrigger.NIGHTLY
+            )
+        } returns true
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
         val result = destination.channelDestinationWriter(
             "tenant",
@@ -202,7 +239,14 @@ class KafkaEventResourcePublisherTest {
     fun `fails publish`() {
         val transformed = mockk<Location> {}
         every { transformManager.transformResource(any(), roninLocation, tenant) } returns transformed
-        every { publishService.publishFHIRResources("tenant", listOf(transformed), DataTrigger.NIGHTLY) } returns false
+        every {
+            publishService.publishFHIRResources(
+                "tenant",
+                listOf(transformed),
+                any(),
+                DataTrigger.NIGHTLY
+            )
+        } returns false
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
         val result = destination.channelDestinationWriter(
             "tenant",
@@ -247,25 +291,34 @@ class KafkaEventResourcePublisherTest {
 
     @Test
     fun `LoadEventResourceLoadRequest works`() {
-        class TestRequest(sourceEvent: InteropResourceLoadV1) : KafkaEventResourcePublisher.LoadEventResourceLoadRequest<Location>(sourceEvent) {
+        class TestRequest(sourceEvent: InteropResourceLoadV1) :
+            KafkaEventResourcePublisher.LoadEventResourceLoadRequest<Location>(sourceEvent) {
             override val fhirService: FHIRService<Location> = mockk()
             override val tenant = mockk<Tenant>()
         }
 
+        val metadata1 = mockk<Metadata>()
         val event1 = mockk<InteropResourceLoadV1> {
             every { dataTrigger } returns InteropResourceLoadV1.DataTrigger.adhoc
+            every { metadata } returns metadata1
         }
+        val metadata2 = mockk<Metadata>()
         val event2 = mockk<InteropResourceLoadV1> {
             every { dataTrigger } returns InteropResourceLoadV1.DataTrigger.nightly
+            every { metadata } returns metadata2
         }
+        val metadata3 = mockk<Metadata>()
         val event3 = mockk<InteropResourceLoadV1> {
             every { dataTrigger } returns InteropResourceLoadV1.DataTrigger.backfill
+            every { metadata } returns metadata3
         }
         val test1 = TestRequest(event1)
         val test2 = TestRequest(event2)
         assertThrows<IllegalStateException> { TestRequest(event3) }
         assertEquals(DataTrigger.AD_HOC, test1.dataTrigger)
+        assertEquals(metadata1, test1.metadata)
         assertEquals(DataTrigger.NIGHTLY, test2.dataTrigger)
+        assertEquals(metadata2, test2.metadata)
         assertEquals(event1, test1.sourceEvent)
     }
 
@@ -283,9 +336,11 @@ class KafkaEventResourcePublisherTest {
             every { getByID(mockTenant, "1") } returns mockResource
         }
 
+        val mockMetadata = mockk<Metadata>()
         val event = mockk<InteropResourceLoadV1> {
             every { dataTrigger } returns InteropResourceLoadV1.DataTrigger.adhoc
             every { resourceFHIRId } returns "1"
+            every { metadata } returns mockMetadata
         }
         val test = TestRequest(event, mockService, mockTenant)
         val resources = test.loadResources()
@@ -294,7 +349,8 @@ class KafkaEventResourcePublisherTest {
 
     @Test
     fun `PublishEventResourceLoadRequest works`() {
-        class TestRequest(sourceEvent: InteropResourcePublishV1) : KafkaEventResourcePublisher.PublishEventResourceLoadRequest<Location>(sourceEvent) {
+        class TestRequest(sourceEvent: InteropResourcePublishV1) :
+            KafkaEventResourcePublisher.PublishEventResourceLoadRequest<Location>(sourceEvent) {
             override val fhirService: FHIRService<Location> = mockk()
             override val tenant = mockk<Tenant>()
             override fun loadResources(): List<Location> {
@@ -302,20 +358,28 @@ class KafkaEventResourcePublisherTest {
             }
         }
 
+        val metadata1 = mockk<Metadata>()
         val event1 = mockk<InteropResourcePublishV1> {
             every { dataTrigger } returns InteropResourcePublishV1.DataTrigger.adhoc
+            every { metadata } returns metadata1
         }
+        val metadata2 = mockk<Metadata>()
         val event2 = mockk<InteropResourcePublishV1> {
             every { dataTrigger } returns InteropResourcePublishV1.DataTrigger.nightly
+            every { metadata } returns metadata2
         }
+        val metadata3 = mockk<Metadata>()
         val event3 = mockk<InteropResourcePublishV1> {
             every { dataTrigger } returns InteropResourcePublishV1.DataTrigger.backfill
+            every { metadata } returns metadata3
         }
         val test1 = TestRequest(event1)
         val test2 = TestRequest(event2)
         assertThrows<IllegalStateException> { TestRequest(event3) }
         assertEquals(DataTrigger.AD_HOC, test1.dataTrigger)
+        assertEquals(metadata1, test1.metadata)
         assertEquals(DataTrigger.NIGHTLY, test2.dataTrigger)
+        assertEquals(metadata2, test2.metadata)
         assertEquals(event1, test1.sourceEvent)
     }
 }

@@ -1,6 +1,7 @@
 package com.projectronin.interop.mirth.channel.base
 
 import com.fasterxml.jackson.databind.json.JsonMapper
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.datatype.Extension
@@ -54,20 +55,25 @@ class BaseQueueTest {
     @Test
     fun `sourceReader - works`() {
         val queueMessage = "testing!!"
+        val mockMetadata = mockk<Metadata>()
         val mockMessage = mockk<ApiMessage> {
             every { text } returns queueMessage
+            every { metadata } returns mockMetadata
         }
         every { mockQueueService.dequeueApiMessages(tenantId, ResourceType.BUNDLE, 5) } returns listOf(mockMessage)
         val messages = channel.channelSourceReader(tenantId, emptyMap())
         assertEquals(1, messages.size)
         assertEquals(queueMessage, messages.first().message)
+        assertEquals(mockMetadata, messages.first().dataMap[MirthKey.EVENT_METADATA.code])
     }
 
     @Test
     fun `sourceReader - continues reading from queue if response is full`() {
         val queueMessage = "testing!!"
+        val mockMetadata = mockk<Metadata>()
         val mockMessage = mockk<ApiMessage> {
             every { text } returns queueMessage
+            every { metadata } returns mockMetadata
         }
         every { mockQueueService.dequeueApiMessages(tenantId, ResourceType.BUNDLE, 5) } returns listOf(
             mockMessage,
@@ -80,6 +86,7 @@ class BaseQueueTest {
         val messages = channel.channelSourceReader(tenantId, emptyMap())
         assertEquals(5, messages.size)
         assertEquals(queueMessage, messages.first().message)
+        assertEquals(mockMetadata, messages.first().dataMap[MirthKey.EVENT_METADATA.code])
     }
 
     @Test

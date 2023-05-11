@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.participant
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.daysFromNow
@@ -174,7 +174,7 @@ class PractitionerLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakePractitionerId),
-            resourceType = ResourceType.PRACTITIONER
+            resourceType = ResourceType.Practitioner
         )
         waitForMessage(1)
 
@@ -190,7 +190,7 @@ class PractitionerLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.PRACTITIONER
+            resourceType = ResourceType.Practitioner
         )
         waitForMessage(1)
 

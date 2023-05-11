@@ -6,6 +6,7 @@ import com.projectronin.interop.fhir.ronin.resource.RoninAppointment
 import com.projectronin.interop.mirth.channel.base.DestinationService
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.channel.util.getMetadata
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import org.springframework.stereotype.Component
@@ -40,6 +41,6 @@ class AppointmentByPractitionerAppointmentWriter(
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthResponse {
-        return deserializeAndPublishList(tenantMnemonic, msg, Appointment::class)
+        return deserializeAndPublishList(tenantMnemonic, msg, getMetadata(sourceMap), Appointment::class)
     }
 }

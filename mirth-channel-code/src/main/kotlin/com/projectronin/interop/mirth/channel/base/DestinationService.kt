@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.base
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.fhir.ronin.TransformManager
@@ -220,6 +221,7 @@ abstract class DestinationService(
     protected fun <T : Resource<T>> publishTransformed(
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any?>,
+        metadata: Metadata,
         resourceType: String = "Resource"
     ): MirthResponse {
         val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code] as String
@@ -230,7 +232,7 @@ abstract class DestinationService(
                 message = "No transformed $resourceType(s) to publish"
             )
         }
-        return publishResources(tenantMnemonic, resourceList, resourceType)
+        return publishResources(tenantMnemonic, resourceList, metadata, resourceType)
     }
 
     /**
@@ -246,6 +248,7 @@ abstract class DestinationService(
     protected fun <T : Resource<T>> deserializeAndPublishList(
         tenantMnemonic: String,
         msg: String,
+        metadata: Metadata,
         clazz: KClass<T>
     ): MirthResponse {
         val resourceType = clazz.simpleName
@@ -257,7 +260,7 @@ abstract class DestinationService(
                 message = "No transformed $resourceType(s) to publish"
             )
         }
-        return publishResources(tenantMnemonic, resourceList, resourceType)
+        return publishResources(tenantMnemonic, resourceList, metadata, resourceType)
     }
 
     /**
@@ -273,10 +276,11 @@ abstract class DestinationService(
     protected fun <T : Resource<T>> publishResources(
         tenantMnemonic: String,
         resourceList: List<T>,
+        metadata: Metadata,
         resourceType: String? = "Resource",
         successDataMap: Map<String, Any>? = null
     ): MirthResponse {
-        if (!publishService.publishFHIRResources(tenantMnemonic, resourceList)) {
+        if (!publishService.publishFHIRResources(tenantMnemonic, resourceList, metadata)) {
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = JacksonUtil.writeJsonValue(resourceList),

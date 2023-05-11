@@ -1,9 +1,11 @@
 package com.projectronin.interop.mirth.channel.destinations
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.Metadata
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.kafka.model.PushResponse
+import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import io.mockk.every
 import io.mockk.mockk
@@ -28,19 +30,21 @@ class PatientDiscoverWriterTest {
 
     @Test
     fun `channelDestinationWriter  - works`() {
+        val metadata = mockk<Metadata>()
         every {
             kafkaLoadService.pushLoadEvent(
                 "ronin",
                 DataTrigger.NIGHTLY,
                 listOf("123", "456"),
-                ResourceType.PATIENT
+                ResourceType.Patient,
+                metadata
             )
         } returns kafkaPushResponse
 
         val result = writer.channelDestinationWriter(
             "ronin",
             "[\"Patient/123\",\"Patient/456\"]",
-            emptyMap(),
+            mapOf(MirthKey.EVENT_METADATA.code to metadata),
             emptyMap()
         )
         assertEquals(MirthResponseStatus.SENT, result.status)
@@ -48,18 +52,20 @@ class PatientDiscoverWriterTest {
 
     @Test
     fun `channelDestinationWriter  - catches error`() {
+        val metadata = mockk<Metadata>()
         every {
             kafkaLoadService.pushLoadEvent(
                 "ronin",
                 DataTrigger.NIGHTLY,
                 listOf("123", "456"),
-                ResourceType.PATIENT
+                ResourceType.Patient,
+                metadata
             )
         } throws Exception("bad")
         val result = writer.channelDestinationWriter(
             "ronin",
             "[\"Patient/123\",\"Patient/456\"]",
-            emptyMap(),
+            mapOf(MirthKey.EVENT_METADATA.code to metadata),
             emptyMap()
         )
         assertEquals(MirthResponseStatus.ERROR, result.status)
@@ -82,18 +88,20 @@ class PatientDiscoverWriterTest {
     fun `channelDestinationWriter -  handles failures from kafka`() {
         every { kafkaPushResponse.successful } returns emptyList()
         every { kafkaPushResponse.failures } returns listOf(mockk("yes"))
+        val metadata = mockk<Metadata>()
         every {
             kafkaLoadService.pushLoadEvent(
                 "ronin",
                 DataTrigger.NIGHTLY,
                 listOf("123"),
-                ResourceType.PATIENT
+                ResourceType.Patient,
+                metadata
             )
         } returns kafkaPushResponse
         val result = writer.channelDestinationWriter(
             "ronin",
             "[\"Patient/123\"]",
-            emptyMap(),
+            mapOf(MirthKey.EVENT_METADATA.code to metadata),
             emptyMap()
         )
         assertEquals(MirthResponseStatus.ERROR, result.status)

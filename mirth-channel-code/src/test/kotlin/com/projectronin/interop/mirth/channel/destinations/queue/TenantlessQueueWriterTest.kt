@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.destinations.queue
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.enums.MirthKey
@@ -55,12 +56,13 @@ class TenantlessQueueWriterTest {
         val resourceList = listOf(mockRoninDomainResource)
         val channelMap = mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList)
 
-        every { mockPublishService.publishFHIRResources(tenantId, any<List<TestResource>>()) } returns true
+        val metadata = mockk<Metadata>()
+        every { mockPublishService.publishFHIRResources(tenantId, any<List<TestResource>>(), metadata) } returns true
 
         val response = writer.destinationWriter(
             "name",
             mockSerialized,
-            mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId),
+            mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId, MirthKey.EVENT_METADATA.code to metadata),
             channelMap
         )
         assertEquals("Published 1 TestResource(s)", response.message)
@@ -89,12 +91,13 @@ class TenantlessQueueWriterTest {
         val resourceList = listOf(mockRoninDomainResource)
         val channelMap = mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList)
 
-        every { mockPublishService.publishFHIRResources(tenantId, any<List<TestResource>>()) } returns false
+        val metadata = mockk<Metadata>()
+        every { mockPublishService.publishFHIRResources(tenantId, any<List<TestResource>>(), metadata) } returns false
 
         val response = writer.destinationWriter(
             tenantId,
             mockSerialized,
-            mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId),
+            mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId, MirthKey.EVENT_METADATA.code to metadata),
             channelMap
         )
         assertEquals(MirthResponseStatus.ERROR, response.status)

@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.destinations.queue
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.ronin.TransformManager
@@ -51,12 +52,13 @@ class PractitionerQueueWriterTest {
         val resourceList = listOf(mockPractitioner)
         val channelMap = mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList)
 
-        every { mockPublishService.publishFHIRResources(tenantId, any<List<Practitioner>>()) } returns true
+        val metadata = mockk<Metadata>()
+        every { mockPublishService.publishFHIRResources(tenantId, any<List<Practitioner>>(), metadata) } returns true
 
         val response = writer.channelDestinationWriter(
             tenantId,
             mockSerialized,
-            emptyMap(),
+            mapOf(MirthKey.EVENT_METADATA.code to metadata),
             channelMap
         )
         assertEquals("Published 1 Practitioner(s)", response.message)

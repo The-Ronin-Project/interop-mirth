@@ -1,12 +1,12 @@
 package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.jackson.JacksonUtil
-import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.PatientDiscoveryWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
+import com.projectronin.interop.mirth.channel.util.generateMetadata
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
@@ -29,7 +29,6 @@ class PatientDiscovery(
     override val destinations = mapOf("Kafka" to patientDiscoveryWriter)
     private val futureDateRange: Long = 7
     private val pastDateRange: Long = 1
-    lateinit var map: MutableMap<ResourceType, MutableMap<String, Int>>
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(PatientDiscovery::class.java)
@@ -39,6 +38,7 @@ class PatientDiscovery(
         return tenantService.getAllTenants()
             .filter { needsLoad(it) }
             .flatMap { tenant ->
+                val metadata = generateMetadata()
                 try {
                     tenantConfigurationService.getLocationIDsByTenant(tenant.mnemonic)
                         .map { locationId ->
@@ -46,6 +46,7 @@ class PatientDiscovery(
                                 message = locationId,
                                 dataMap = mapOf(
                                     MirthKey.TENANT_MNEMONIC.code to tenant.mnemonic,
+                                    MirthKey.EVENT_METADATA.code to metadata,
                                     "locationFhirID" to locationId
                                 )
                             )
@@ -116,7 +117,7 @@ class PatientDiscovery(
         // These are public mostly to make testing easier
         val windowStartTime: OffsetTime = tenant.batchConfig?.availableStart?.atOffset(tenantTimeZone)
             ?: OffsetTime.MIN.withOffsetSameLocal(tenantTimeZone)
-        val windowEndTime: OffsetTime = tenant.batchConfig ?.availableEnd?.atOffset(tenantTimeZone)
+        val windowEndTime: OffsetTime = tenant.batchConfig?.availableEnd?.atOffset(tenantTimeZone)
             ?: OffsetTime.MAX.withOffsetSameLocal(tenantTimeZone)
         val spansMidnight: Boolean = windowStartTime > windowEndTime
 

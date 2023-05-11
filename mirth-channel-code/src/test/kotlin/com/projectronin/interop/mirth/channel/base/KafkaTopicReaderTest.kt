@@ -1,9 +1,9 @@
 package com.projectronin.interop.mirth.channel.base
 
-import com.projectronin.event.interop.resource.load.v1.InteropResourceLoadV1
-import com.projectronin.event.interop.resource.publish.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
+import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
-import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
@@ -26,16 +26,17 @@ class KafkaTopicReaderTest {
 
     class TestChannel(kafkaPublishService: KafkaPublishService, kafkaLoadService: KafkaLoadService) :
         KafkaTopicReader(kafkaPublishService, kafkaLoadService, mockk()) {
-        override val publishedResourcesSubscriptions = listOf(ResourceType.PATIENT, ResourceType.PRACTITIONER)
-        override val resource = ResourceType.LOCATION
+        override val publishedResourcesSubscriptions = listOf(ResourceType.Patient, ResourceType.Practitioner)
+        override val resource = ResourceType.Location
         override val destinations = emptyMap<String, KafkaEventResourcePublisher<Location>>()
         override val rootName = "test"
         override val channelGroupId = "test"
     }
+
     class LoadOnlyTestChannel(kafkaPublishService: KafkaPublishService, kafkaLoadService: KafkaLoadService) :
         KafkaTopicReader(kafkaPublishService, kafkaLoadService, mockk()) {
         override val publishedResourcesSubscriptions = emptyList<ResourceType>()
-        override val resource = ResourceType.LOCATION
+        override val resource = ResourceType.Location
         override val destinations = emptyMap<String, KafkaEventResourcePublisher<Location>>()
         override val rootName = "test"
         override val channelGroupId = "test"
@@ -67,7 +68,13 @@ class KafkaTopicReaderTest {
         val mockEvent = mockk<InteropResourcePublishV1> {
             every { tenantId } returns "mockTenant"
         }
-        every { kafkaPublishService.retrievePublishEvents(ResourceType.PATIENT, DataTrigger.NIGHTLY, "test") } returns listOf(
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Patient,
+                DataTrigger.NIGHTLY,
+                "test"
+            )
+        } returns listOf(
             mockEvent
         )
         every { JacksonUtil.writeJsonValue(mockEvent) } returns "mockEvent"
@@ -84,10 +91,10 @@ class KafkaTopicReaderTest {
             every { tenantId } returns "mockTenant"
         }
         every {
-            kafkaPublishService.retrievePublishEvents(ResourceType.PATIENT, DataTrigger.NIGHTLY, "test")
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
         } returns emptyList()
         every {
-            kafkaPublishService.retrievePublishEvents(ResourceType.PRACTITIONER, DataTrigger.NIGHTLY, "test")
+            kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.NIGHTLY, "test")
         } returns listOf(mockEvent)
         every { JacksonUtil.writeJsonValue(mockEvent) } returns "mockEvent"
         val messages = channel.channelSourceReader(emptyMap())
@@ -103,13 +110,13 @@ class KafkaTopicReaderTest {
             every { tenantId } returns "mockTenant"
         }
         every {
-            kafkaPublishService.retrievePublishEvents(ResourceType.PATIENT, DataTrigger.NIGHTLY, "test")
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
         } returns emptyList()
         every {
-            kafkaPublishService.retrievePublishEvents(ResourceType.PRACTITIONER, DataTrigger.NIGHTLY, "test")
+            kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.NIGHTLY, "test")
         } returns emptyList()
         every {
-            kafkaLoadService.retrieveLoadEvents(ResourceType.LOCATION, "test")
+            kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test")
         } returns listOf(mockEvent)
         every { JacksonUtil.writeJsonValue(mockEvent) } returns "mockEvent"
         val messages = channel.channelSourceReader(emptyMap())
@@ -125,16 +132,16 @@ class KafkaTopicReaderTest {
             every { tenantId } returns "mockTenant"
         }
         every {
-            kafkaPublishService.retrievePublishEvents(ResourceType.PATIENT, DataTrigger.NIGHTLY, "test")
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
         } returns emptyList()
         every {
-            kafkaPublishService.retrievePublishEvents(ResourceType.PRACTITIONER, DataTrigger.NIGHTLY, "test")
+            kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.NIGHTLY, "test")
         } returns emptyList()
         every {
-            kafkaLoadService.retrieveLoadEvents(ResourceType.LOCATION, "test")
+            kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test")
         } returns emptyList()
         every {
-            kafkaPublishService.retrievePublishEvents(ResourceType.PATIENT, DataTrigger.AD_HOC, "test")
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.AD_HOC, "test")
         } returns listOf(mockEvent)
 
         every { JacksonUtil.writeJsonValue(mockEvent) } returns "mockEvent"
@@ -148,23 +155,23 @@ class KafkaTopicReaderTest {
     @Test
     fun `channel returns nothing if no events`() {
         every {
-            kafkaPublishService.retrievePublishEvents(ResourceType.PATIENT, DataTrigger.NIGHTLY, "test")
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
         } returns emptyList()
 
         every {
-            kafkaPublishService.retrievePublishEvents(ResourceType.PRACTITIONER, DataTrigger.NIGHTLY, "test")
+            kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.NIGHTLY, "test")
         } returns emptyList()
 
         every {
-            kafkaLoadService.retrieveLoadEvents(ResourceType.LOCATION, "test")
+            kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test")
         } returns emptyList()
 
         every {
-            kafkaPublishService.retrievePublishEvents(ResourceType.PATIENT, DataTrigger.AD_HOC, "test")
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.AD_HOC, "test")
         } returns emptyList()
 
         every {
-            kafkaPublishService.retrievePublishEvents(ResourceType.PRACTITIONER, DataTrigger.AD_HOC, "test")
+            kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.AD_HOC, "test")
         } returns emptyList()
 
         val messages = channel.channelSourceReader(emptyMap())
@@ -177,7 +184,7 @@ class KafkaTopicReaderTest {
         val mockEvent = mockk<InteropResourceLoadV1> {
             every { tenantId } returns "mockTenant"
         }
-        every { kafkaLoadService.retrieveLoadEvents(ResourceType.LOCATION, "test") } returns listOf(mockEvent)
+        every { kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test") } returns listOf(mockEvent)
         every { JacksonUtil.writeJsonValue(mockEvent) } returns "mockEvent"
         val messages = loadChannel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)

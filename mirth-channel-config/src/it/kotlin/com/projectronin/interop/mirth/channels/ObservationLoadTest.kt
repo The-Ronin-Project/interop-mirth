@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
@@ -40,7 +40,8 @@ class ObservationLoadTest : BaseChannelTest(
 ) {
     val patientType = "Patient"
     val observationType = "Observation"
-    private val nowDate = DynamicValues.dateTime(DateTime(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))))
+    private val nowDate =
+        DynamicValues.dateTime(DateTime(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))))
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -324,7 +325,7 @@ class ObservationLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(observationID),
-            resourceType = ResourceType.OBSERVATION
+            resourceType = ResourceType.Observation
         )
 
         waitForMessage(1)
@@ -341,7 +342,7 @@ class ObservationLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.OBSERVATION
+            resourceType = ResourceType.Observation
         )
 
         waitForMessage(1)

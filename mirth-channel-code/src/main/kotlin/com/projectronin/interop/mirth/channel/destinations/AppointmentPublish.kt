@@ -1,7 +1,7 @@
 package com.projectronin.interop.mirth.channel.destinations
 
-import com.projectronin.event.interop.resource.load.v1.InteropResourceLoadV1
-import com.projectronin.event.interop.resource.publish.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
+import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.AppointmentService
 import com.projectronin.interop.ehr.factory.EHRFactory

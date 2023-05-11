@@ -1,6 +1,8 @@
 package com.projectronin.interop.mirth.channel.destinations
 
-import com.projectronin.event.interop.resource.load.v1.InteropResourceLoadV1
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
+import com.projectronin.event.interop.internal.v1.Metadata
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Patient
@@ -46,11 +48,13 @@ class PatientPublishTest {
 
     @Test
     fun `channel works`() {
+        val metadata = mockk<Metadata>()
         val event = InteropResourceLoadV1(
             "tenant",
             "id",
-            "patient",
-            InteropResourceLoadV1.DataTrigger.adhoc
+            ResourceType.Patient,
+            InteropResourceLoadV1.DataTrigger.adhoc,
+            metadata
         )
         val mockPatient = mockk<Patient>()
         every { JacksonUtil.readJsonObject("boo", InteropResourceLoadV1::class) } returns event

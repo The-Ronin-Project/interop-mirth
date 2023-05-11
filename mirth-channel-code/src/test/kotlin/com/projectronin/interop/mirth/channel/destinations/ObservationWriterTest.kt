@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.destinations
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.datatype.CodeableConcept
 import com.projectronin.interop.fhir.r4.datatype.Coding
@@ -59,10 +60,11 @@ class ObservationWriterTest {
     @Test
     fun `destinationWriter - empty list of transformed resources returns error message`() {
         val channelMap = mapOf(MirthKey.RESOURCES_TRANSFORMED.code to emptyList<Location>())
+        val mockMetadata = mockk<Metadata>()
         val response = writer.channelDestinationWriter(
             "ronin",
             "msg",
-            mapOf(MirthKey.TENANT_MNEMONIC.code to "ronin"),
+            mapOf(MirthKey.TENANT_MNEMONIC.code to "ronin", MirthKey.EVENT_METADATA.code to mockMetadata),
             channelMap
         )
         assertEquals("No transformed Observation(s) to publish", response.message)
@@ -71,10 +73,11 @@ class ObservationWriterTest {
 
     @Test
     fun `destinationWriter - missing list of transformed resources returns error message`() {
+        val mockMetadata = mockk<Metadata>()
         val response = writer.channelDestinationWriter(
             "ronin",
             "msg",
-            mapOf(MirthKey.TENANT_MNEMONIC.code to "ronin"),
+            mapOf(MirthKey.TENANT_MNEMONIC.code to "ronin", MirthKey.EVENT_METADATA.code to mockMetadata),
             emptyMap()
         )
         assertEquals("No transformed Observation(s) to publish", response.message)
@@ -97,14 +100,15 @@ class ObservationWriterTest {
         val channelMap =
             mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList)
 
-        every { publishService.publishFHIRResources(VALID_TENANT_ID, resourceList) } returns true
+        val metadata = mockk<Metadata>()
+        every { publishService.publishFHIRResources(VALID_TENANT_ID, resourceList, metadata) } returns true
 
         mockkObject(JacksonUtil)
         every { JacksonUtil.writeJsonValue(any()) } returns "[roninObservation, roninObservation]"
         val response = writer.destinationWriter(
             "unused",
             "",
-            mapOf(MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID),
+            mapOf(MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID, MirthKey.EVENT_METADATA.code to metadata),
             channelMap
         )
         assertEquals("Published 2 Observation(s)", response.message)
@@ -132,12 +136,13 @@ class ObservationWriterTest {
         val channelMap =
             mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList)
 
-        every { publishService.publishFHIRResources("ronin", resourceList) } returns false
+        val metadata = mockk<Metadata>()
+        every { publishService.publishFHIRResources("ronin", resourceList, metadata) } returns false
 
         val response = writer.channelDestinationWriter(
             "ronin",
             mockSerialized,
-            mapOf(MirthKey.TENANT_MNEMONIC.code to "ronin"),
+            mapOf(MirthKey.TENANT_MNEMONIC.code to "ronin", MirthKey.EVENT_METADATA.code to metadata),
             channelMap
         )
         assertEquals(MirthResponseStatus.ERROR, response.status)

@@ -5,6 +5,7 @@ import com.projectronin.interop.fhir.r4.resource.DomainResource
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.base.DestinationService
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.channel.util.getMetadata
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import kotlin.reflect.KClass
@@ -26,6 +27,6 @@ abstract class QueueWriter<T : DomainResource<T>>(
         channelMap: Map<String, Any>
     ): MirthResponse {
         val resource = JacksonManager.objectMapper.readValue(msg, type.java)
-        return publishResources(tenantMnemonic, listOf(resource), resource::class.simpleName)
+        return publishResources(tenantMnemonic, listOf(resource), getMetadata(sourceMap), resource::class.simpleName)
     }
 }

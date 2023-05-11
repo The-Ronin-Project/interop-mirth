@@ -1,7 +1,7 @@
 package com.projectronin.interop.mirth.channel.destinations
 
-import com.projectronin.event.interop.resource.load.v1.InteropResourceLoadV1
-import com.projectronin.event.interop.resource.publish.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
+import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.LocationService
 import com.projectronin.interop.ehr.factory.EHRFactory
@@ -42,6 +42,7 @@ class LocationPublish(
                 val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourcePublishV1::class)
                 FhirIdSourceLocationLoadRequest(event, vendorFactory.locationService, tenant)
             }
+
             InteropResourceLoadV1::class.simpleName!! -> {
                 val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourceLoadV1::class)
                 LocationLoadRequest(event, vendorFactory.locationService, tenant)
@@ -73,6 +74,7 @@ class LocationPublish(
             return locations.values.toList()
         }
     }
+
     private class LocationLoadRequest(
         sourceEvent: InteropResourceLoadV1,
         override val fhirService: LocationService,

@@ -1,6 +1,7 @@
 package com.projectronin.interop.mirth.channels.client
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.Metadata
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
@@ -26,6 +27,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
 import org.apache.kafka.common.ConsumerGroupState
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.util.UUID
 
 object KafkaClient {
     private val mutex = Mutex()
@@ -83,25 +87,26 @@ object KafkaClient {
                             state != ConsumerGroupState.EMPTY && state != ConsumerGroupState.STABLE
                         }
                         if (unstableGroups.isEmpty()) {
-                            logger.debug { "Topic created and consumers are all stable" }
+                            logger.info { "Topic created and consumers are all stable" }
                             break
                         } else {
                             // someone is unstable, are they subscribed to the topic we care about?
                             val unstableIds = unstableGroups.map { it.groupId() }
-                            val unstableAssignedTopics = adminClient.describeConsumerGroups(unstableIds).all().get().entries.map {
-                                it.value.members().map { member ->
-                                    member.assignment().topicPartitions().map { topicPartition ->
-                                        topicPartition.topic()
-                                    }
-                                }.flatten()
-                            }.flatten().distinct()
+                            val unstableAssignedTopics =
+                                adminClient.describeConsumerGroups(unstableIds).all().get().entries.map {
+                                    it.value.members().map { member ->
+                                        member.assignment().topicPartitions().map { topicPartition ->
+                                            topicPartition.topic()
+                                        }
+                                    }.flatten()
+                                }.flatten().distinct()
                             if (!unstableAssignedTopics.contains(topic)) {
                                 break
                             }
-                            logger.debug { "Topic created and all relevant consumers are stable" }
+                            logger.info { "Topic created and all relevant consumers are stable" }
                         }
                     } else {
-                        logger.debug { "Topic not yet found" }
+                        logger.info { "Topic not yet found" }
                     }
                     count += 1
                     if (count > 6000) throw IllegalStateException("Waited for 10 minutes for Kafka Rebalance")
@@ -113,20 +118,43 @@ object KafkaClient {
     }
 
     fun publishTopics(resourceType: ResourceType): List<KafkaTopic> =
-        publishSpringConfig.publishTopics().filter { it.resourceType.equals(resourceType.name.replace("_", ""), ignoreCase = true) }
+        publishSpringConfig.publishTopics().filter { it.resourceType == resourceType }
 
     fun loadTopic(resourceType: ResourceType): KafkaTopic =
-        loadSpringConfig.loadTopics().first { it.resourceType.equals(resourceType.name.replace("_", ""), ignoreCase = true) }
+        loadSpringConfig.loadTopics().first { it.resourceType == resourceType }
 
-    fun pushLoadEvent(tenantId: String, trigger: DataTrigger, resourceFHIRIds: List<String>, resourceType: ResourceType) {
+    fun pushLoadEvent(
+        tenantId: String,
+        trigger: DataTrigger,
+        resourceFHIRIds: List<String>,
+        resourceType: ResourceType,
+        metadata: Metadata = Metadata(
+            runId = UUID.randomUUID().toString(),
+            runDateTime = OffsetDateTime.now(ZoneOffset.UTC)
+        )
+    ) {
         val topic = loadTopic(resourceType)
         ensureStability(topic.topicName)
-        kafkaLoadService.pushLoadEvent(tenantId = tenantId, trigger = trigger, resourceFHIRIds = resourceFHIRIds, resourceType = resourceType)
+        kafkaLoadService.pushLoadEvent(
+            tenantId = tenantId,
+            trigger = trigger,
+            resourceFHIRIds = resourceFHIRIds,
+            resourceType = resourceType,
+            metadata = metadata
+        )
     }
 
-    fun pushPublishEvent(tenantId: String, trigger: DataTrigger, resources: List<Resource<*>>) {
+    fun pushPublishEvent(
+        tenantId: String,
+        trigger: DataTrigger,
+        resources: List<Resource<*>>,
+        metadata: Metadata = Metadata(
+            runId = UUID.randomUUID().toString(),
+            runDateTime = OffsetDateTime.now(ZoneOffset.UTC)
+        )
+    ) {
         val topics = publishSpringConfig.publishTopics().filter {
-            it.resourceType.equals(resources.first().resourceType.replace("_", ""), ignoreCase = true)
+            it.resourceType.name == resources.first().resourceType
         }
 
         val relevantTopic = when (trigger) {
@@ -134,6 +162,11 @@ object KafkaClient {
             DataTrigger.AD_HOC -> topics.first { it.topicName.contains("adhoc") }
         }
         ensureStability(relevantTopic.topicName)
-        kafkaPublishService.publishResources(tenantId = tenantId, trigger = trigger, resources = resources)
+        kafkaPublishService.publishResources(
+            tenantId = tenantId,
+            trigger = trigger,
+            resources = resources,
+            metadata = metadata
+        )
     }
 }

@@ -50,7 +50,10 @@ abstract class BaseQueue<K : DomainResource<K>>(
         }
 
         return queueMessages.map {
-            MirthMessage(it.text)
+            MirthMessage(
+                it.text,
+                mapOf(MirthKey.EVENT_METADATA.code to it.metadata)
+            )
         }
     }
 

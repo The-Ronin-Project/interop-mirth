@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.period
@@ -179,7 +179,7 @@ class EncounterLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(encounterId),
-            resourceType = ResourceType.ENCOUNTER
+            resourceType = ResourceType.Encounter
         )
 
         waitForMessage(1)
@@ -195,7 +195,7 @@ class EncounterLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.ENCOUNTER
+            resourceType = ResourceType.Encounter
         )
 
         waitForMessage(1)

@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.destinations
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Appointment
@@ -117,7 +118,9 @@ class AppointmentByPractitionerAppointmentWriterTest {
             every { id } returns Id("12345")
         }
 
-        every { publishService.publishFHIRResources(VALID_TENANT_ID, any()) } returns true
+        val metadata = mockk<Metadata>()
+
+        every { publishService.publishFHIRResources(VALID_TENANT_ID, any(), metadata) } returns true
 
         mockkObject(JacksonUtil)
         every { JacksonUtil.readJsonList("appointmentString", Appointment::class) } returns listOf(mockR4Appointment)
@@ -126,7 +129,7 @@ class AppointmentByPractitionerAppointmentWriterTest {
         val response = writer.destinationWriter(
             "unused",
             "appointmentString",
-            mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID),
+            mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID, "kafkaEventMetadata" to metadata),
             emptyMap()
         )
         assertEquals("Published 1 Appointment(s)", response.message)
@@ -136,7 +139,8 @@ class AppointmentByPractitionerAppointmentWriterTest {
 
     @Test
     fun `destinationWriter - nothing transformed to publish`() {
-        every { publishService.publishFHIRResources(VALID_TENANT_ID, any()) } returns false
+        val metadata = mockk<Metadata>()
+        every { publishService.publishFHIRResources(VALID_TENANT_ID, any(), metadata) } returns false
 
         mockkObject(JacksonUtil)
         every { JacksonUtil.readJsonList("appointmentString", Appointment::class) } returns listOf()
@@ -145,7 +149,7 @@ class AppointmentByPractitionerAppointmentWriterTest {
         val response = writer.destinationWriter(
             "unused",
             "appointmentString",
-            mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID),
+            mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID, "kafkaEventMetadata" to metadata),
             emptyMap()
         )
         assertEquals("No transformed Appointment(s) to publish", response.message)

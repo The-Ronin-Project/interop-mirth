@@ -1,12 +1,13 @@
 package com.projectronin.interop.mirth.channel.destinations
 
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
-import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.channel.util.getMetadata
 import org.springframework.stereotype.Component
 
 @Component
@@ -32,7 +33,8 @@ class PatientDiscoveryWriter(val kafkaLoadService: KafkaLoadService) : Tenantles
                 tenantMnemonic,
                 DataTrigger.NIGHTLY,
                 references.map { it.substringAfter("/") },
-                ResourceType.PATIENT
+                ResourceType.Patient,
+                getMetadata(sourceMap)
             )
             val status = when (result.failures.isEmpty()) {
                 true -> MirthResponseStatus.SENT

@@ -1,8 +1,8 @@
 package com.projectronin.interop.mirth.channel.destinations
 
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.event.interop.resource.request.v1.InteropResourceRequestV1
 import com.projectronin.interop.common.jackson.JacksonUtil
-import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
@@ -52,16 +52,17 @@ class ResourceRequestPublishTest {
     @Test
     fun `channel works`() {
         val mockEvent = mockk<InteropResourceRequestV1> {
-            every { resourceType } returns ResourceType.PATIENT.toString()
+            every { resourceType } returns "Patient"
             every { resourceFHIRId } returns "anything"
         }
         every { JacksonUtil.readJsonObject("event", InteropResourceRequestV1::class) } returns mockEvent
         every {
             kafkaLoadService.pushLoadEvent(
                 tenantId = "tenny",
-                resourceType = ResourceType.PATIENT,
+                resourceType = ResourceType.Patient,
                 resourceFHIRIds = listOf("anything"),
-                trigger = DataTrigger.AD_HOC
+                trigger = DataTrigger.AD_HOC,
+                metadata = any()
             )
         } returns mockk {
             every { failures } returns emptyList()
@@ -76,7 +77,7 @@ class ResourceRequestPublishTest {
     @Test
     fun `channel handles errors`() {
         val mockEvent = mockk<InteropResourceRequestV1> {
-            every { resourceType } returns ResourceType.PATIENT.toString()
+            every { resourceType } returns "Patient"
             every { resourceFHIRId } returns "anything"
         }
         every { JacksonUtil.readJsonObject("event", InteropResourceRequestV1::class) } returns mockEvent
@@ -84,9 +85,10 @@ class ResourceRequestPublishTest {
         every {
             kafkaLoadService.pushLoadEvent(
                 tenantId = "tenny",
-                resourceType = ResourceType.PATIENT,
+                resourceType = ResourceType.Patient,
                 resourceFHIRIds = listOf("anything"),
-                trigger = DataTrigger.AD_HOC
+                trigger = DataTrigger.AD_HOC,
+                metadata = any()
             )
         } returns mockk {
             every { failures } returns listOf(mockk {})

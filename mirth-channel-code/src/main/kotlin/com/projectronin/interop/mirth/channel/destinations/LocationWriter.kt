@@ -3,6 +3,7 @@ package com.projectronin.interop.mirth.channel.destinations
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.base.DestinationService
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.channel.util.getMetadata
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import org.springframework.stereotype.Component
@@ -15,13 +16,12 @@ class LocationWriter(
 ) :
     DestinationService(tenantService, transformManager, publishService) {
 
-    @Suppress("UNCHECKED_CAST")
     override fun channelDestinationWriter(
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthResponse {
-        return publishTransformed(sourceMap, channelMap, "Location")
+        return publishTransformed(sourceMap, channelMap, getMetadata(sourceMap), "Location")
     }
 }

@@ -1,7 +1,9 @@
 package com.projectronin.interop.mirth.channel.destinations
 
-import com.projectronin.event.interop.resource.load.v1.InteropResourceLoadV1
-import com.projectronin.event.interop.resource.publish.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
+import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.Metadata
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.CodeSystem
@@ -53,11 +55,13 @@ class ObservationPublishTest {
 
     @Test
     fun `works for load events`() {
+        val metadata = mockk<Metadata>()
         val event = InteropResourceLoadV1(
             "tenant",
             "id",
-            "observation",
-            InteropResourceLoadV1.DataTrigger.adhoc
+            ResourceType.Observation,
+            InteropResourceLoadV1.DataTrigger.adhoc,
+            metadata
         )
         val mockObservation = mockk<Observation>()
         every { JacksonUtil.readJsonObject("boo", InteropResourceLoadV1::class) } returns event
@@ -76,11 +80,13 @@ class ObservationPublishTest {
 
     @Test
     fun `works for publish patient events`() {
+        val metadata = mockk<Metadata>()
         val event = InteropResourcePublishV1(
             "tenant",
-            "Patient",
+            ResourceType.Patient,
             InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}"
+            "{}",
+            metadata
         )
         val mockPatient = mockk<Patient> {
             every { identifier } returns listOf(
@@ -109,11 +115,13 @@ class ObservationPublishTest {
 
     @Test
     fun `works for publish condition events`() {
+        val metadata = mockk<Metadata>()
         val event = InteropResourcePublishV1(
             "tenant",
-            "Condition",
+            ResourceType.Condition,
             InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}"
+            "{}",
+            metadata
         )
         val mockCondition = mockk<Condition> {
             every { stage } returns listOf(
@@ -150,11 +158,13 @@ class ObservationPublishTest {
 
     @Test
     fun `fails on unknown publish request`() {
+        val metadata = mockk<Metadata>()
         val event = InteropResourcePublishV1(
             "tenant",
-            "Fake",
+            ResourceType.MedicationRequest,
             InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}"
+            "{}",
+            metadata
         )
         every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
 

@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.participant
 import com.projectronin.interop.fhir.generators.datatypes.reference
@@ -205,7 +205,7 @@ class LocationLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(locationFhirId1),
-            resourceType = ResourceType.LOCATION
+            resourceType = ResourceType.Location
         )
 
         waitForMessage(1)
@@ -221,7 +221,7 @@ class LocationLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("nothing to see here"),
-            resourceType = ResourceType.LOCATION
+            resourceType = ResourceType.Location
         )
 
         waitForMessage(1)

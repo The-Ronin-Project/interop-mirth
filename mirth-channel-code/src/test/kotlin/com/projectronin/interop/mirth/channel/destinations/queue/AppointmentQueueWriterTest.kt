@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.destinations.queue
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.ronin.TransformManager
@@ -52,12 +53,13 @@ class AppointmentQueueWriterTest {
         val resourceList = listOf(mockAppointment)
         val channelMap = mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList)
 
-        every { mockPublishService.publishFHIRResources(tenantId, any<List<Appointment>>()) } returns true
+        val metadata = mockk<Metadata>()
+        every { mockPublishService.publishFHIRResources(tenantId, any<List<Appointment>>(), metadata) } returns true
 
         val response = writer.channelDestinationWriter(
             tenantId,
             mockSerialized,
-            emptyMap(),
+            mapOf(MirthKey.EVENT_METADATA.code to metadata),
             channelMap
         )
         assertEquals("Published 1 Appointment(s)", response.message)

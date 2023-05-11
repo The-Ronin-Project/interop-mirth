@@ -1,6 +1,7 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.event.interop.internal.v1.Metadata
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.identifier
@@ -23,6 +24,8 @@ import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 const val patientLoadChannelName = "PatientLoad"
 
@@ -66,7 +69,7 @@ class PatientLoadTest : BaseChannelTest(
             testTenant,
             DataTrigger.NIGHTLY,
             listOf(patient1Id),
-            ResourceType.PATIENT
+            ResourceType.Patient
         )
         waitForMessage(1)
 
@@ -136,7 +139,7 @@ class PatientLoadTest : BaseChannelTest(
             testTenant,
             DataTrigger.NIGHTLY,
             listOf(patient1Id, patient2Id),
-            ResourceType.PATIENT
+            ResourceType.Patient
         )
 
         waitForMessage(2)
@@ -148,7 +151,7 @@ class PatientLoadTest : BaseChannelTest(
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with dag`(testTenant: String) {
-        val patientPublishTopics = KafkaClient.publishTopics(ResourceType.PATIENT)
+        val patientPublishTopics = KafkaClient.publishTopics(ResourceType.Patient)
 
         val conditionType = "Condition"
         val patientType = "Patient"
@@ -286,14 +289,17 @@ class PatientLoadTest : BaseChannelTest(
             KafkaClient.ensureStability(it.topicName)
         }
         // push event to get picked up
+        val metadata = Metadata(runId = "patient1", runDateTime = OffsetDateTime.now(ZoneOffset.UTC))
         KafkaClient.pushLoadEvent(
             testTenant,
             DataTrigger.NIGHTLY,
             listOf(patientFhirId),
-            ResourceType.PATIENT
+            ResourceType.Patient,
+            metadata
         )
         waitForMessage(1)
-        val patientPublishTopic = KafkaClient.publishTopics(ResourceType.PATIENT).first { it.topicName.contains("nightly") }
+        val patientPublishTopic =
+            KafkaClient.publishTopics(ResourceType.Patient).first { it.topicName.contains("nightly") }
         KafkaClient.ensureStability(patientPublishTopic.topicName)
         channelIds.forEach {
             waitForMessage(1, channelID = it)

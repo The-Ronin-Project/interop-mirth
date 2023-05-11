@@ -1,7 +1,8 @@
 package com.projectronin.interop.mirth.channel.base
 
-import com.projectronin.event.interop.resource.load.v1.InteropResourceLoadV1
-import com.projectronin.event.interop.resource.publish.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
+import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.FHIRService
 import com.projectronin.interop.ehr.factory.EHRFactory
@@ -82,6 +83,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         if (!publishService.publishFHIRResources(
                 tenantMnemonic,
                 transformedResources,
+                resourceLoadRequest.metadata,
                 resourceLoadRequest.dataTrigger
             )
         ) {
@@ -127,6 +129,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         abstract val dataTrigger: DataTrigger
         abstract val fhirService: FHIRService<T>
         abstract val tenant: Tenant
+        abstract val metadata: Metadata
         abstract fun loadResources(): List<T>
     }
 
@@ -143,6 +146,9 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 throw IllegalStateException("Received a data trigger which cannot be transformed to a known value")
             }
         }
+
+        final override val metadata: Metadata = sourceEvent.metadata
+
         override fun loadResources(): List<T> {
             return listOf(fhirService.getByID(tenant, sourceEvent.resourceFHIRId))
         }
@@ -161,5 +167,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 throw IllegalStateException("Received a data trigger which cannot be transformed to a known value")
             }
         }
+
+        final override val metadata: Metadata = sourceEvent.metadata
     }
 }

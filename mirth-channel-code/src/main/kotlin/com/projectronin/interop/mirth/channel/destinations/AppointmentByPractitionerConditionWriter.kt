@@ -11,6 +11,7 @@ import com.projectronin.interop.mirth.channel.base.DestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.channel.util.getMetadata
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import org.springframework.stereotype.Component
@@ -68,6 +69,6 @@ class AppointmentByPractitionerConditionWriter(
                 message = "Failed to transform Conditions for Patient"
             )
         }
-        return publishResources(tenantMnemonic, transformedConditions, "Condition")
+        return publishResources(tenantMnemonic, transformedConditions, getMetadata(sourceMap), "Condition")
     }
 }

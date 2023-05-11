@@ -1,6 +1,7 @@
 package com.projectronin.interop.mirth.channel.base
 
 import com.fasterxml.jackson.databind.json.JsonMapper
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.ronin.TransformManager
@@ -45,23 +46,28 @@ class KafkaQueueTest {
     @Test
     fun `sourceReader - works`() {
         val queueMessage = "testing!!"
+        val mockMetadata = mockk<Metadata>()
         val mockMessage = mockk<ApiMessage> {
             every { text } returns queueMessage
             every { tenant } returns tenantId
+            every { metadata } returns mockMetadata
         }
         every { mockQueueService.dequeueApiMessages("", ResourceType.BUNDLE, 5) } returns listOf(mockMessage)
 
         val messages = channel.sourceReader("name", mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId))
         assertEquals(1, messages.size)
         assertEquals(queueMessage, messages.first().message)
+        assertEquals(mockMetadata, messages.first().dataMap[MirthKey.EVENT_METADATA.code])
     }
 
     @Test
     fun `sourceReader - continues reading from queue if response is full`() {
         val queueMessage = "testing!!"
+        val mockMetadata = mockk<Metadata>()
         val mockMessage = mockk<ApiMessage> {
             every { tenant } returns tenantId
             every { text } returns queueMessage
+            every { metadata } returns mockMetadata
         }
         every { mockQueueService.dequeueApiMessages("", ResourceType.BUNDLE, 5) } returns listOf(
             mockMessage,
@@ -74,6 +80,7 @@ class KafkaQueueTest {
         val messages = channel.sourceReader("name", mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId))
         assertEquals(5, messages.size)
         assertEquals(queueMessage, messages.first().message)
+        assertEquals(mockMetadata, messages.first().dataMap[MirthKey.EVENT_METADATA.code])
     }
 
     @Test
@@ -89,7 +96,13 @@ class KafkaQueueTest {
         mockkObject(JacksonManager)
         every { JacksonManager.objectMapper.writeValueAsString(mockRoninDomainResource) } returns transformedResource
 
-        val channel = KafkaTestQueue(mockTenantService, mockTransformManager, mockQueueService, mockQueueWriter, mockRoninDomainResource)
+        val channel = KafkaTestQueue(
+            mockTenantService,
+            mockTransformManager,
+            mockQueueService,
+            mockQueueWriter,
+            mockRoninDomainResource
+        )
         val transformedMessage =
             channel.sourceTransformer("name", message, mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId), emptyMap())
         assertEquals(fhirID, transformedMessage.dataMap[MirthKey.FHIR_ID.code])
@@ -112,7 +125,13 @@ class KafkaQueueTest {
         mockkObject(JacksonManager)
         every { JacksonManager.objectMapper.writeValueAsString(mockRoninDomainResource) } returns transformedResource
 
-        val channel = KafkaTestQueue(mockTenantService, mockTransformManager, mockQueueService, mockQueueWriter, mockRoninDomainResource)
+        val channel = KafkaTestQueue(
+            mockTenantService,
+            mockTransformManager,
+            mockQueueService,
+            mockQueueWriter,
+            mockRoninDomainResource
+        )
         val transformedMessage =
             channel.sourceTransformer("name", message, mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId), emptyMap())
         assertEquals(fhirID, transformedMessage.dataMap[MirthKey.FHIR_ID.code])
