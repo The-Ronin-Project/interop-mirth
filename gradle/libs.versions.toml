@@ -61,7 +61,7 @@ okhttp3-mockwebserver = "com.squareup.okhttp3:mockwebserver:4.11.0"
 rider-junit = "com.github.database-rider:rider-junit5:1.37.1"
 
 ronin-test-data-generator = "com.projectronin.test:ronin-test-data-generator:0.0.2"
-ronin-kafka = "com.projectronin:ronin-kafka:0.3.0"
+ronin-kafka = "com.projectronin:ronin-kafka:1.0.0"
 snakeyaml = "org.yaml:snakeyaml:2.0"
 spring-boot-autoconfigure = "org.springframework.boot:spring-boot-autoconfigure:2.7.8"
 spring-vault-core = "org.springframework.vault:spring-vault-core:2.3.2"
