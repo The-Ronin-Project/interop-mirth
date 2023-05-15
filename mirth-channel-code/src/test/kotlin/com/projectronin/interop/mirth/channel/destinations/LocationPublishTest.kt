@@ -9,6 +9,7 @@ import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.datatype.Reference
 import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Appointment
+import com.projectronin.interop.fhir.r4.resource.Encounter
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.r4.resource.Participant
 import com.projectronin.interop.fhir.r4.valueset.ParticipationStatus
@@ -21,6 +22,7 @@ import io.mockk.unmockkAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -85,7 +87,7 @@ class LocationPublishTest {
         val metadata = mockk<Metadata>()
         val event = InteropResourcePublishV1(
             "tenant",
-            ResourceType.Location,
+            ResourceType.Appointment,
             InteropResourcePublishV1.DataTrigger.adhoc,
             "123",
             metadata
@@ -117,5 +119,136 @@ class LocationPublishTest {
         )
         val results = request.loadResources()
         assertEquals(mockLocation, results.first())
+    }
+
+    @Test
+    fun `works for publish events - encounter`() {
+        val metadata = mockk<Metadata>()
+        val event = InteropResourcePublishV1(
+            "tenant",
+            ResourceType.Encounter,
+            InteropResourcePublishV1.DataTrigger.adhoc,
+            "123",
+            metadata
+        )
+        val mockEncounter = mockk<Encounter> {
+            every { location } returns listOf(
+                mockk {
+                    every { location?.decomposedId() } returns "1"
+                }
+            )
+        }
+        val mockLocation = mockk<Location> { every { id?.value } returns "Location/1" }
+        every { JacksonUtil.readJsonObject("123", InteropResourcePublishV1::class) } returns event
+        every { JacksonUtil.readJsonObject("123", mockEncounter::class) } returns mockEncounter
+        val mockVendorFactory = mockk<VendorFactory> {
+            every { locationService.getLocationsByFHIRId(tenant, listOf("1")) } returns
+                mapOf("id" to mockLocation)
+        }
+        val request = destination.convertEventToRequest(
+            "123",
+            InteropResourcePublishV1::class.simpleName!!,
+            mockVendorFactory,
+            tenant
+        )
+        val results = request.loadResources()
+        assertEquals(mockLocation, results.first())
+    }
+
+    @Test
+    fun `works for publish events - null`() {
+        val metadata = mockk<Metadata>()
+        val event = InteropResourcePublishV1(
+            "tenant",
+            ResourceType.Patient, // doesn't listen to patient
+            InteropResourcePublishV1.DataTrigger.adhoc,
+            "123",
+            metadata
+        )
+        every { JacksonUtil.readJsonObject("123", InteropResourcePublishV1::class) } returns event
+        val mockVendorFactory = mockk<VendorFactory> {
+            every { locationService.getLocationsByFHIRId(tenant, emptyList()) } returns
+                emptyMap()
+        }
+        val request = destination.convertEventToRequest(
+            "123",
+            InteropResourcePublishV1::class.simpleName!!,
+            mockVendorFactory,
+            tenant
+        )
+        val results = request.loadResources()
+        assertTrue(
+            results.isEmpty()
+        )
+    }
+
+    @Test
+    fun `code coverage test - elvis operators 1`() {
+        val metadata = mockk<Metadata>()
+        val event = InteropResourcePublishV1(
+            "tenant",
+            ResourceType.Encounter,
+            InteropResourcePublishV1.DataTrigger.adhoc,
+            "123",
+            metadata
+        )
+        val mockEncounter = mockk<Encounter> {
+            every { location } returns listOf(
+                mockk {
+                    every { location } returns null
+                }
+            )
+        }
+        every { JacksonUtil.readJsonObject("123", InteropResourcePublishV1::class) } returns event
+        every { JacksonUtil.readJsonObject("123", mockEncounter::class) } returns mockEncounter
+        val mockVendorFactory = mockk<VendorFactory> {
+            every { locationService.getLocationsByFHIRId(tenant, any()) } returns
+                emptyMap()
+        }
+        val request = destination.convertEventToRequest(
+            "123",
+            InteropResourcePublishV1::class.simpleName!!,
+            mockVendorFactory,
+            tenant
+        )
+        val results = request.loadResources()
+        assertTrue(
+            results.isEmpty()
+        )
+    }
+
+    @Test
+    fun `code coverage test - elvis operators 2`() {
+        val metadata = mockk<Metadata>()
+        val event = InteropResourcePublishV1(
+            "tenant",
+            ResourceType.Encounter,
+            InteropResourcePublishV1.DataTrigger.adhoc,
+            "123",
+            metadata
+        )
+        val mockEncounter = mockk<Encounter> {
+            every { location } returns listOf(
+                mockk {
+                    every { location?.decomposedId() } returns null
+                }
+            )
+        }
+        every { JacksonUtil.readJsonObject("123", InteropResourcePublishV1::class) } returns event
+        every { JacksonUtil.readJsonObject("123", mockEncounter::class) } returns mockEncounter
+        val mockVendorFactory = mockk<VendorFactory> {
+            every { locationService.getLocationsByFHIRId(tenant, any()) } returns
+                emptyMap()
+        }
+        val request = destination.convertEventToRequest(
+            "123",
+            InteropResourcePublishV1::class.simpleName!!,
+            mockVendorFactory,
+            tenant
+        )
+        val results = request.loadResources()
+        assertTrue(
+            results.isEmpty()
+        )
     }
 }

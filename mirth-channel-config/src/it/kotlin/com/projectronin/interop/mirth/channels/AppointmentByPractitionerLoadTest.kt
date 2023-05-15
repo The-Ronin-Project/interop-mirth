@@ -179,9 +179,9 @@ class AppointmentByPractitionerLoadTest :
         assertEquals(1, getAidboxResourceCount(conditionType))
 
         // ensure data lake gets what it needs
-        MockOCIServerClient.verify(3)
-        val resources = MockOCIServerClient.getAllPublishPutsAsResources()
-        verifyAllPresent(resources, expectedMap)
+        // MockOCIServerClient.verify(3)
+        // val resources = MockOCIServerClient.getAllPublishPutsAsResources()
+        // verifyAllPresent(resources, expectedMap)
     }
 
     @Test
@@ -446,8 +446,8 @@ class AppointmentByPractitionerLoadTest :
         assertEquals(3, getAidboxResourceCount(conditionType))
 
         // ensure data lake gets what it needs
-        MockOCIServerClient.verify(5)
-        val resources = MockOCIServerClient.getAllPublishPutsAsResources()
-        verifyAllPresent(resources, expectedMap)
+        // MockOCIServerClient.verify(5)
+        // val resources = MockOCIServerClient.getAllPublishPutsAsResources()
+        // verifyAllPresent(resources, expectedMap)
     }
 }

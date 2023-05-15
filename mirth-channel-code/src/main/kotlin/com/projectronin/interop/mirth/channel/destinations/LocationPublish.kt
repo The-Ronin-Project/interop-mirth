@@ -2,11 +2,13 @@ package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.LocationService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Appointment
+import com.projectronin.interop.fhir.r4.resource.Encounter
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninLocation
@@ -60,13 +62,25 @@ class LocationPublish(
         PublishEventResourceLoadRequest<Location>(sourceEvent) {
 
         override fun loadResources(): List<Location> {
-            val locationByAppointment =
-                JacksonUtil.readJsonObject(sourceEvent.resourceJson, Appointment::class).participant
-            val locationIds = locationByAppointment
-                .filter { it.actor?.decomposedType()?.startsWith("Location") == true }
-                .mapNotNull { it.actor?.decomposedId() }
-                .map { it.unlocalize(tenant) }
-                .distinct()
+            val locationIds = when (sourceEvent.resourceType) {
+                ResourceType.Appointment -> {
+                    val locationByAppointment =
+                        JacksonUtil.readJsonObject(sourceEvent.resourceJson, Appointment::class).participant
+                    locationByAppointment
+                        .filter { it.actor?.decomposedType()?.startsWith("Location") == true }
+                        .mapNotNull { it.actor?.decomposedId() }
+                        .map { it.unlocalize(tenant) }
+                        .distinct()
+                }
+                ResourceType.Encounter -> {
+                    val locationByEncounter =
+                        JacksonUtil.readJsonObject(sourceEvent.resourceJson, Encounter::class).location
+                    locationByEncounter.mapNotNull { it.location?.decomposedId()?.unlocalize(tenant) }.distinct()
+                }
+                else -> {
+                    emptyList()
+                }
+            }
             val locations = fhirService.getLocationsByFHIRId(
                 tenant,
                 locationIds

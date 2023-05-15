@@ -45,9 +45,11 @@ dependencies {
     implementation(libs.kotlin.stdlib)
     implementation(libs.mysql.connector.java)
     implementation(libs.jersey.glassfish.client)
-
+    implementation(libs.ronin.test.data.generator)
+    implementation(libs.interop.fhir.generators)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.ktor.client.core)
+    implementation(libs.bundles.ktor)
     implementation(libs.ktorm.core)
     implementation(libs.ktorm.support.mysql)
 
