@@ -7,6 +7,7 @@ import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.date
+import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.medicationRequest
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id

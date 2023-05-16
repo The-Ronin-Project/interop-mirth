@@ -10,6 +10,7 @@ import com.projectronin.interop.fhir.generators.datatypes.period
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.dateTime
 import com.projectronin.interop.fhir.generators.primitives.daysFromNow
+import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.appointment
 import com.projectronin.interop.fhir.generators.resources.condition
 import com.projectronin.interop.fhir.generators.resources.encounter

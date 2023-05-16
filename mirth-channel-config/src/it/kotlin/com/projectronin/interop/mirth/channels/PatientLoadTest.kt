@@ -10,6 +10,7 @@ import com.projectronin.interop.fhir.generators.datatypes.participant
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.date
 import com.projectronin.interop.fhir.generators.primitives.daysFromNow
+import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.appointment
 import com.projectronin.interop.fhir.generators.resources.condition
 import com.projectronin.interop.fhir.generators.resources.observation

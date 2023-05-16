@@ -3,6 +3,7 @@ package com.projectronin.interop.mirth.channels
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
+import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.practitioner
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData

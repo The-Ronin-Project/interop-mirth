@@ -4,6 +4,7 @@ import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.primitives.date
+import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
