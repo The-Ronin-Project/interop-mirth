@@ -36,7 +36,7 @@ jackson-core = "com.fasterxml.jackson.core:jackson-core:2.15.0"
 jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.15.0"
 jackson-dataformat-xml = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.15.1"
 jackson-dataformat-yaml = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.1"
-jackson-datatype-jsr310 = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.0"
+jackson-datatype-jsr310 = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.1"
 jackson-module-kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:2.15.1"
 
 jakarta-ws = "jakarta.ws.rs:jakarta.ws.rs-api:2.1.2"
