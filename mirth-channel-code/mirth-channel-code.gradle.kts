@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.bundles.ktor)
     implementation(libs.ktorm.core)
     implementation(libs.ktorm.support.mysql)
+    implementation(libs.caffeine)
 
     runtimeOnly(libs.interop.ehr.epic) {
         exclude(group = "org.springframework.boot")

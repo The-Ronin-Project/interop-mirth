@@ -23,11 +23,13 @@ import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import java.util.UUID
 
 const val appointmentLoadChannelName = "AppointmentLoad"
 
@@ -100,6 +102,96 @@ class AppointmentLoadTest : BaseChannelTest(
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Appointment"))
+    }
+
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `repeat patients are ignored`(testTenant: String) {
+        tenantInUse = testTenant
+        val startDate = 2.daysFromNow()
+        val endDate = 3.daysFromNow()
+        val fakePatient = patient {
+            birthDate of date {
+                year of 1990
+                month of 1
+                day of 3
+            }
+            identifier of listOf(
+                identifier {
+                    system of "mockPatientInternalSystem"
+                },
+                identifier {
+                    system of "mockEHRMRNSystem"
+                    value of "1000000001"
+                }
+            )
+            name of listOf(
+                name {
+                    use of "usual" // required
+                }
+            )
+            gender of "male"
+        }
+
+        val fakePatientId = MockEHRTestData.add(fakePatient)
+        val fakeAidboxPatientId = "$tenantInUse-$fakePatientId"
+        val fakeAidboxPatient = fakePatient.copy(
+            id = Id(fakeAidboxPatientId),
+            identifier = fakePatient.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(fakePatientId)
+        )
+        AidboxTestData.add(fakeAidboxPatient)
+
+        val fakeAppointment = appointment {
+            status of "pending"
+            participant of listOf(
+                participant {
+                    status of "accepted"
+                    actor of reference("Patient", fakePatientId)
+                }
+            )
+            minutesDuration of 8
+            start of startDate
+            end of endDate
+        }
+        val fakeAppointmentId = MockEHRTestData.add(fakeAppointment)
+        MockOCIServerClient.createExpectations("Appointment", fakeAppointmentId, tenantInUse)
+
+        val metadata = Metadata(
+            runId = "123456",
+            runDateTime = OffsetDateTime.now()
+        )
+        KafkaClient.pushPublishEvent(
+            tenantId = tenantInUse,
+            trigger = DataTrigger.NIGHTLY,
+            resources = listOf(fakeAidboxPatient),
+            metadata = metadata
+        )
+
+        waitForMessage(1)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertAllConnectorsSent(messageList)
+        assertEquals(1, messageList.size)
+        assertEquals(1, getAidboxResourceCount("Appointment"))
+
+        // Now publish the same event.
+        KafkaClient.pushPublishEvent(
+            tenantId = tenantInUse,
+            trigger = DataTrigger.NIGHTLY,
+            resources = listOf(fakeAidboxPatient),
+            metadata = metadata
+        )
+
+        waitForMessage(2)
+        val messageList2 = MirthClient.getChannelMessageIds(testChannelId)
+        assertAllConnectorsSent(messageList2)
+        assertEquals(2, messageList2.size)
+        assertEquals(1, getAidboxResourceCount("Appointment"))
+
+        // The message IDs are actually in reverse order, so grabbing the first
+        val message = MirthClient.getMessageById(testChannelId, messageList2.first())
+        val publishResponse =
+            message.destinationMessages.find { it.connectorName == "Publish Appointments" }!!.response!!
+        assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Patient:$tenantInUse:$fakePatientId</message>"))
     }
 
     @ParameterizedTest
@@ -374,7 +466,7 @@ class AppointmentLoadTest : BaseChannelTest(
             KafkaClient.ensureStability(it.topicName)
         }
         // push event to get picked up
-        val metadata = Metadata(runId = "appointment1", runDateTime = OffsetDateTime.now(ZoneOffset.UTC))
+        val metadata = Metadata(runId = UUID.randomUUID().toString(), runDateTime = OffsetDateTime.now(ZoneOffset.UTC))
         KafkaClient.pushLoadEvent(
             testTenant,
             DataTrigger.NIGHTLY,

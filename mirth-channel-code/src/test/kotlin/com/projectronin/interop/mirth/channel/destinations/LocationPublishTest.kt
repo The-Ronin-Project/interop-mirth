@@ -13,6 +13,7 @@ import com.projectronin.interop.fhir.r4.resource.Encounter
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.r4.resource.Participant
 import com.projectronin.interop.fhir.r4.valueset.ParticipationStatus
+import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher.ResourceRequestKey
 import com.projectronin.interop.mirth.connector.util.asCode
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
@@ -22,7 +23,6 @@ import io.mockk.unmockkAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -59,7 +59,9 @@ class LocationPublishTest {
 
     @Test
     fun `works for load events`() {
-        val metadata = mockk<Metadata>()
+        val metadata = mockk<Metadata> {
+            every { runId } returns "run123"
+        }
         val event = InteropResourceLoadV1(
             "tenant",
             "id",
@@ -78,13 +80,26 @@ class LocationPublishTest {
             mockVendorFactory,
             tenant
         )
-        val results = request.loadResources()
+
+        val requestKeys = listOf(
+            ResourceRequestKey(
+                "run123",
+                ResourceType.Location,
+                tenant,
+                "id"
+            )
+        )
+        assertEquals(requestKeys, request.requestKeys)
+
+        val results = request.loadResources(requestKeys)
         assertEquals(mockLocation, results.first())
     }
 
     @Test
     fun `works for publish events`() {
-        val metadata = mockk<Metadata>()
+        val metadata = mockk<Metadata> {
+            every { runId } returns "run123"
+        }
         val event = InteropResourcePublishV1(
             "tenant",
             ResourceType.Appointment,
@@ -93,6 +108,7 @@ class LocationPublishTest {
             metadata
         )
         val mockApptParticipant = mockk<Appointment> {
+            every { id?.value } returns "tenant-123"
             every { participant } returns listOf(
                 Participant(
                     status = ParticipationStatus.ACCEPTED.asCode(),
@@ -117,13 +133,26 @@ class LocationPublishTest {
             mockVendorFactory,
             tenant
         )
-        val results = request.loadResources()
+
+        val requestKeys = listOf(
+            ResourceRequestKey(
+                "run123",
+                ResourceType.Location,
+                tenant,
+                "1"
+            )
+        )
+        assertEquals(requestKeys, request.requestKeys)
+
+        val results = request.loadResources(requestKeys)
         assertEquals(mockLocation, results.first())
     }
 
     @Test
     fun `works for publish events - encounter`() {
-        val metadata = mockk<Metadata>()
+        val metadata = mockk<Metadata> {
+            every { runId } returns "run123"
+        }
         val event = InteropResourcePublishV1(
             "tenant",
             ResourceType.Encounter,
@@ -151,7 +180,18 @@ class LocationPublishTest {
             mockVendorFactory,
             tenant
         )
-        val results = request.loadResources()
+
+        val requestKeys = listOf(
+            ResourceRequestKey(
+                "run123",
+                ResourceType.Location,
+                tenant,
+                "1"
+            )
+        )
+        assertEquals(requestKeys, request.requestKeys)
+
+        val results = request.loadResources(requestKeys)
         assertEquals(mockLocation, results.first())
     }
 
@@ -170,16 +210,14 @@ class LocationPublishTest {
             every { locationService.getLocationsByFHIRId(tenant, emptyList()) } returns
                 emptyMap()
         }
-        val request = destination.convertEventToRequest(
-            "123",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
-        )
-        val results = request.loadResources()
-        assertTrue(
-            results.isEmpty()
-        )
+        assertThrows<IllegalStateException> {
+            destination.convertEventToRequest(
+                "123",
+                InteropResourcePublishV1::class.simpleName!!,
+                mockVendorFactory,
+                tenant
+            )
+        }
     }
 
     @Test
@@ -211,10 +249,8 @@ class LocationPublishTest {
             mockVendorFactory,
             tenant
         )
-        val results = request.loadResources()
-        assertTrue(
-            results.isEmpty()
-        )
+
+        assertEquals(listOf<ResourceRequestKey>(), request.requestKeys)
     }
 
     @Test
@@ -246,9 +282,6 @@ class LocationPublishTest {
             mockVendorFactory,
             tenant
         )
-        val results = request.loadResources()
-        assertTrue(
-            results.isEmpty()
-        )
+        assertEquals(listOf<ResourceRequestKey>(), request.requestKeys)
     }
 }

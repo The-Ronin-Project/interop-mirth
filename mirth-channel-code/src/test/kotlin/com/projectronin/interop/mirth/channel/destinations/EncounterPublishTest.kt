@@ -10,14 +10,15 @@ import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Encounter
 import com.projectronin.interop.fhir.r4.resource.Patient
+import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
-import junit.framework.TestCase.assertEquals
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -54,11 +55,13 @@ class EncounterPublishTest {
 
     @Test
     fun `works for load events`() {
-        val metadata = mockk<Metadata>()
+        val metadata = mockk<Metadata> {
+            every { runId } returns "run123"
+        }
         val event = InteropResourceLoadV1(
             "tenant",
             "id",
-            ResourceType.Condition,
+            ResourceType.Encounter,
             InteropResourceLoadV1.DataTrigger.adhoc,
             metadata
         )
@@ -73,13 +76,26 @@ class EncounterPublishTest {
             mockVendorFactory,
             tenant
         )
-        val results = request.loadResources()
+
+        val requestKeys = listOf(
+            ResourceRequestKey(
+                "run123",
+                ResourceType.Encounter,
+                tenant,
+                "id"
+            )
+        )
+        assertEquals(requestKeys, request.requestKeys)
+
+        val results = request.loadResources(requestKeys)
         assertEquals(mockEncounter, results.first())
     }
 
     @Test
     fun `works for publish events`() {
-        val metadata = mockk<Metadata>()
+        val metadata = mockk<Metadata> {
+            every { runId } returns "run123"
+        }
         val event = InteropResourcePublishV1(
             "tenant",
             ResourceType.Patient,
@@ -88,6 +104,7 @@ class EncounterPublishTest {
             metadata
         )
         val mockPatient = mockk<Patient> {
+            every { id?.value } returns "tenant-123"
             every { identifier } returns listOf(
                 mockk {
                     every { system } returns CodeSystem.RONIN_FHIR_ID.uri
@@ -108,7 +125,18 @@ class EncounterPublishTest {
             mockVendorFactory,
             tenant
         )
-        val results = request.loadResources()
+
+        val requestKeys = listOf(
+            ResourceRequestKey(
+                "run123",
+                ResourceType.Patient,
+                tenant,
+                "tenant-123"
+            )
+        )
+        assertEquals(requestKeys, request.requestKeys)
+
+        val results = request.loadResources(requestKeys)
         assertEquals(mockEncounter, results.first())
     }
 }

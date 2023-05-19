@@ -3,14 +3,17 @@ package com.projectronin.interop.mirth.channel.base
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.Metadata
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.FHIRService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Location
+import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninLocation
 import com.projectronin.interop.kafka.model.DataTrigger
+import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher.ResourceRequestKey
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.exceptions.MapVariableMissing
@@ -21,12 +24,14 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
+import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.util.UUID
 
 class KafkaEventResourcePublisherTest {
     private lateinit var tenantService: TenantService
@@ -44,7 +49,8 @@ class KafkaEventResourcePublisherTest {
         ehrFactory: EHRFactory,
         transformManager: TransformManager,
         publishService: PublishService,
-        profileTransformer: RoninLocation
+        profileTransformer: RoninLocation,
+        override val cacheAndCompareResults: Boolean = false
     ) : KafkaEventResourcePublisher<Location>(
         tenantService,
         ehrFactory,
@@ -52,42 +58,79 @@ class KafkaEventResourcePublisherTest {
         publishService,
         profileTransformer
     ) {
+        var returnedMetadata: Metadata? = null
+        var returnedRequestKeys: List<ResourceRequestKey>? = null
 
         override fun convertEventToRequest(
             serializedEvent: String,
             eventClassName: String,
             vendorFactory: VendorFactory,
-            tenant: Tenant
+            testTenant: Tenant
         ): ResourceLoadRequest<Location> {
             val mockRequest = mockk<ResourceLoadRequest<Location>> {
                 every { dataTrigger } returns DataTrigger.NIGHTLY
-                every { metadata } returns mockk()
+                every { tenant } returns testTenant
+                every { metadata } returns (returnedMetadata ?: mockk())
+                every { requestKeys } returns (
+                    returnedRequestKeys ?: listOf(
+                        ResourceRequestKey(
+                            UUID.randomUUID().toString(),
+                            ResourceType.Location,
+                            testTenant,
+                            "123"
+                        )
+                    )
+                    )
             }
 
             when (serializedEvent) {
                 "ehr error" -> {
-                    every { mockRequest.loadResources() } throws Exception("EHR is gone")
+                    every { mockRequest.loadResources(any()) } throws Exception("EHR is gone")
                 }
 
                 "nothing from ehr" -> {
-                    every { mockRequest.loadResources() } returns emptyList()
+                    every { mockRequest.loadResources(any()) } returns emptyList()
                 }
 
                 "long list" -> {
-                    every { mockRequest.loadResources() } returns listOf(
-                        mockk<Location> { every { id?.value } returns "1" },
-                        mockk<Location> { every { id?.value } returns "2" },
-                        mockk<Location> { every { id?.value } returns "3" },
-                        mockk<Location> { every { id?.value } returns "4" },
-                        mockk<Location> { every { id?.value } returns "5" },
-                        mockk<Location> { every { id } returns null },
-                        mockk<Location> { every { id?.value } returns null }
+                    every { mockRequest.loadResources(any()) } returns listOf(
+                        mockk {
+                            every { resourceType } returns "Location"
+                            every { id?.value } returns "1"
+                        },
+                        mockk {
+                            every { resourceType } returns "Location"
+                            every { id?.value } returns "2"
+                        },
+                        mockk {
+                            every { resourceType } returns "Location"
+                            every { id?.value } returns "3"
+                        },
+                        mockk {
+                            every { resourceType } returns "Location"
+                            every { id?.value } returns "4"
+                        },
+                        mockk {
+                            every { resourceType } returns "Location"
+                            every { id?.value } returns "5"
+                        },
+                        mockk {
+                            every { resourceType } returns "Location"
+                            every { id } returns null
+                        },
+                        mockk {
+                            every { resourceType } returns "Location"
+                            every { id?.value } returns null
+                        }
                     )
                 }
 
                 else -> {
-                    every { mockRequest.loadResources() } returns listOf(
-                        mockk()
+                    every { mockRequest.loadResources(any()) } returns listOf(
+                        mockk {
+                            every { resourceType } returns "Location"
+                            every { id?.value } returns "1234"
+                        }
                     )
                 }
             }
@@ -97,7 +140,9 @@ class KafkaEventResourcePublisherTest {
 
     @BeforeEach
     fun setup() {
-        tenant = mockk()
+        tenant = mockk {
+            every { mnemonic } returns "tenant"
+        }
         vendorFactory = mockk()
         tenantService = mockk {
             every { getTenantForMnemonic("tenant") } returns tenant
@@ -143,7 +188,7 @@ class KafkaEventResourcePublisherTest {
         )
         assertEquals(MirthResponseStatus.SENT, result.status)
         assertEquals("we made it", result.detailedMessage)
-        assertEquals("Published 1 resource(s)", result.message)
+        assertEquals("Published 1 resource(s).", result.message)
     }
 
     @Test
@@ -168,7 +213,7 @@ class KafkaEventResourcePublisherTest {
             emptyMap()
         )
         assertEquals(MirthResponseStatus.SENT, result.status)
-        assertEquals("No resources retrieved from EHR", result.detailedMessage)
+        assertEquals("No new resources retrieved from EHR.", result.detailedMessage)
         assertEquals("No resources", result.message)
     }
 
@@ -232,7 +277,7 @@ class KafkaEventResourcePublisherTest {
         )
         assertEquals(MirthResponseStatus.SENT, result.status)
         assertEquals("we made it", result.detailedMessage)
-        assertEquals("Published 3 resource(s)", result.message)
+        assertEquals("Published 3 resource(s).", result.message)
     }
 
     @Test
@@ -292,25 +337,36 @@ class KafkaEventResourcePublisherTest {
     @Test
     fun `LoadEventResourceLoadRequest works`() {
         class TestRequest(sourceEvent: InteropResourceLoadV1) :
-            KafkaEventResourcePublisher.LoadEventResourceLoadRequest<Location>(sourceEvent) {
+            KafkaEventResourcePublisher.LoadEventResourceLoadRequest<Location>(sourceEvent, tenant) {
             override val fhirService: FHIRService<Location> = mockk()
-            override val tenant = mockk<Tenant>()
         }
 
-        val metadata1 = mockk<Metadata>()
+        val metadata1 = mockk<Metadata> {
+            every { runId } returns "run123"
+        }
         val event1 = mockk<InteropResourceLoadV1> {
             every { dataTrigger } returns InteropResourceLoadV1.DataTrigger.adhoc
             every { metadata } returns metadata1
+            every { resourceType } returns ResourceType.Location
+            every { resourceFHIRId } returns "Location1"
         }
-        val metadata2 = mockk<Metadata>()
+        val metadata2 = mockk<Metadata> {
+            every { runId } returns "run124"
+        }
         val event2 = mockk<InteropResourceLoadV1> {
             every { dataTrigger } returns InteropResourceLoadV1.DataTrigger.nightly
             every { metadata } returns metadata2
+            every { resourceType } returns ResourceType.Location
+            every { resourceFHIRId } returns "Location2"
         }
-        val metadata3 = mockk<Metadata>()
+        val metadata3 = mockk<Metadata> {
+            every { runId } returns "run125"
+        }
         val event3 = mockk<InteropResourceLoadV1> {
             every { dataTrigger } returns InteropResourceLoadV1.DataTrigger.backfill
             every { metadata } returns metadata3
+            every { resourceType } returns ResourceType.Location
+            every { resourceFHIRId } returns "Location3"
         }
         val test1 = TestRequest(event1)
         val test2 = TestRequest(event2)
@@ -327,33 +383,57 @@ class KafkaEventResourcePublisherTest {
         class TestRequest(
             sourceEvent: InteropResourceLoadV1,
             override val fhirService: FHIRService<Location>,
-            override val tenant: Tenant
-        ) : KafkaEventResourcePublisher.LoadEventResourceLoadRequest<Location>(sourceEvent)
+            tenant: Tenant
+        ) : KafkaEventResourcePublisher.LoadEventResourceLoadRequest<Location>(sourceEvent, tenant)
 
-        val mockTenant = mockk<Tenant>()
+        val mockTenant = mockk<Tenant> {
+            every { mnemonic } returns "tenant"
+        }
         val mockResource = mockk<Location>()
         val mockService = mockk<FHIRService<Location>> {
             every { getByID(mockTenant, "1") } returns mockResource
         }
 
-        val mockMetadata = mockk<Metadata>()
+        val mockMetadata = mockk<Metadata> {
+            every { runId } returns "run123"
+        }
         val event = mockk<InteropResourceLoadV1> {
             every { dataTrigger } returns InteropResourceLoadV1.DataTrigger.adhoc
+            every { resourceType } returns ResourceType.Location
             every { resourceFHIRId } returns "1"
             every { metadata } returns mockMetadata
         }
         val test = TestRequest(event, mockService, mockTenant)
-        val resources = test.loadResources()
+        val resources = test.loadResources(
+            listOf(
+                KafkaEventResourcePublisher.ResourceRequestKey(
+                    "run123",
+                    ResourceType.Location,
+                    tenant,
+                    "1"
+                )
+            )
+        )
         assertEquals(mockResource, resources.first())
     }
 
     @Test
     fun `PublishEventResourceLoadRequest works`() {
         class TestRequest(sourceEvent: InteropResourcePublishV1) :
-            KafkaEventResourcePublisher.PublishEventResourceLoadRequest<Location>(sourceEvent) {
+            KafkaEventResourcePublisher.PublishEventResourceLoadRequest<Location, Patient>(
+                sourceEvent
+            ) {
             override val fhirService: FHIRService<Location> = mockk()
-            override val tenant = mockk<Tenant>()
-            override fun loadResources(): List<Location> {
+            override val tenant = mockk<Tenant> {
+                every { mnemonic } returns "tenant"
+            }
+            override val requestKeys: List<ResourceRequestKey> =
+                listOf(
+                    ResourceRequestKey("1", ResourceType.Location, tenant, "1")
+                )
+            override val sourceResource: Patient = mockk()
+
+            override fun loadResources(requestKeys: List<ResourceRequestKey>): List<Location> {
                 throw NotImplementedError("")
             }
         }
@@ -362,16 +442,22 @@ class KafkaEventResourcePublisherTest {
         val event1 = mockk<InteropResourcePublishV1> {
             every { dataTrigger } returns InteropResourcePublishV1.DataTrigger.adhoc
             every { metadata } returns metadata1
+            every { resourceType } returns ResourceType.Location
+            every { resourceJson } returns """{"resourceType":"Patient","id":"Patient1"}"""
         }
         val metadata2 = mockk<Metadata>()
         val event2 = mockk<InteropResourcePublishV1> {
             every { dataTrigger } returns InteropResourcePublishV1.DataTrigger.nightly
             every { metadata } returns metadata2
+            every { resourceType } returns ResourceType.Location
+            every { resourceJson } returns """{"resourceType":"Patient","id":"Patient2"}"""
         }
         val metadata3 = mockk<Metadata>()
         val event3 = mockk<InteropResourcePublishV1> {
             every { dataTrigger } returns InteropResourcePublishV1.DataTrigger.backfill
             every { metadata } returns metadata3
+            every { resourceType } returns ResourceType.Location
+            every { resourceJson } returns """{"resourceType":"Patient","id":"Patient3"}"""
         }
         val test1 = TestRequest(event1)
         val test2 = TestRequest(event2)
@@ -381,5 +467,191 @@ class KafkaEventResourcePublisherTest {
         assertEquals(DataTrigger.NIGHTLY, test2.dataTrigger)
         assertEquals(metadata2, test2.metadata)
         assertEquals(event1, test1.sourceEvent)
+    }
+
+    @Test
+    fun `publisher ignores repeat requests`() {
+        destination.returnedMetadata = mockk {
+            every { runId } returns "run1"
+        }
+        destination.returnedRequestKeys = listOf(ResourceRequestKey("run1", ResourceType.Patient, tenant, "10"))
+
+        val transformed = mockk<Location> {}
+        every { transformManager.transformResource(any(), roninLocation, tenant) } returns transformed
+        every {
+            publishService.publishFHIRResources(
+                "tenant",
+                listOf(transformed),
+                any(),
+                DataTrigger.NIGHTLY
+            )
+        } returns true
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+
+        val result1 = destination.channelDestinationWriter(
+            "tenant",
+            "fake event",
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result1.status)
+        assertEquals("we made it", result1.detailedMessage)
+        assertEquals("Published 1 resource(s).", result1.message)
+
+        val result2 = destination.channelDestinationWriter(
+            "tenant",
+            "fake event",
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result2.status)
+        assertEquals(
+            "All requested resources have already been processed this run: run1:Patient:tenant:10",
+            result2.detailedMessage
+        )
+        assertEquals("Already processed", result2.message)
+
+        verify(exactly = 1) { transformManager.transformResource(any(), roninLocation, tenant) }
+        verify(exactly = 1) { publishService.publishFHIRResources(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `publisher ignores already seen responses`() {
+        val destination =
+            TestLocationPublish(tenantService, ehrFactory, transformManager, publishService, roninLocation, true)
+        destination.returnedMetadata = mockk {
+            every { runId } returns "run1"
+        }
+        destination.returnedRequestKeys = listOf(ResourceRequestKey("run1", ResourceType.Patient, tenant, "10"))
+
+        val transformed = mockk<Location> {
+            every { resourceType } returns "Location"
+            every { id?.value } returns "tenant-12345"
+        }
+        every { transformManager.transformResource(any(), roninLocation, tenant) } returns transformed
+        every {
+            publishService.publishFHIRResources(
+                "tenant",
+                listOf(transformed),
+                any(),
+                DataTrigger.NIGHTLY
+            )
+        } returns true
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+
+        val result1 = destination.channelDestinationWriter(
+            "tenant",
+            "fake event",
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result1.status)
+        assertEquals("we made it", result1.detailedMessage)
+        assertEquals("Published 1 resource(s).", result1.message)
+
+        // Change the key, but we're still going to encounter the cached result.
+        destination.returnedRequestKeys = listOf(ResourceRequestKey("run1", ResourceType.Patient, tenant, "20"))
+        val result2 = destination.channelDestinationWriter(
+            "tenant",
+            "fake event",
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result2.status)
+        assertEquals(
+            "No new resources retrieved from EHR. 1 resource(s) were already processed this run.",
+            result2.detailedMessage
+        )
+        assertEquals("No resources", result2.message)
+
+        verify(exactly = 1) { transformManager.transformResource(any(), roninLocation, tenant) }
+        verify(exactly = 1) { publishService.publishFHIRResources(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `publisher ignores requests for already seen responses`() {
+        val destination =
+            TestLocationPublish(tenantService, ehrFactory, transformManager, publishService, roninLocation, true)
+        destination.returnedMetadata = mockk {
+            every { runId } returns "run1"
+        }
+        destination.returnedRequestKeys = listOf(ResourceRequestKey("run1", ResourceType.Patient, tenant, "10"))
+
+        val transformed = mockk<Location> {
+            every { resourceType } returns "Location"
+            every { id?.value } returns "tenant-12345"
+        }
+        every { transformManager.transformResource(any(), roninLocation, tenant) } returns transformed
+        every {
+            publishService.publishFHIRResources(
+                "tenant",
+                listOf(transformed),
+                any(),
+                DataTrigger.NIGHTLY
+            )
+        } returns true
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+
+        val result1 = destination.channelDestinationWriter(
+            "tenant",
+            "fake event",
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result1.status)
+        assertEquals("we made it", result1.detailedMessage)
+        assertEquals("Published 1 resource(s).", result1.message)
+
+        destination.returnedRequestKeys = listOf(ResourceRequestKey("run1", ResourceType.Location, tenant, "1234"))
+        val result2 = destination.channelDestinationWriter(
+            "tenant",
+            "fake event",
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result2.status)
+        assertEquals(
+            "All requested resources have already been processed this run: run1:Location:tenant:1234",
+            result2.detailedMessage
+        )
+        assertEquals("Already processed", result2.message)
+
+        verify(exactly = 1) { transformManager.transformResource(any(), roninLocation, tenant) }
+        verify(exactly = 1) { publishService.publishFHIRResources(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `publisher handles inputs that match output`() {
+        val destination =
+            TestLocationPublish(tenantService, ehrFactory, transformManager, publishService, roninLocation, true)
+        destination.returnedMetadata = mockk {
+            every { runId } returns "run1"
+        }
+        destination.returnedRequestKeys = listOf(ResourceRequestKey("run1", ResourceType.Location, tenant, "1234"))
+
+        val transformed = mockk<Location> {
+            every { resourceType } returns "Location"
+            every { id?.value } returns "tenant-12345"
+        }
+        every { transformManager.transformResource(any(), roninLocation, tenant) } returns transformed
+        every {
+            publishService.publishFHIRResources(
+                "tenant",
+                listOf(transformed),
+                any(),
+                DataTrigger.NIGHTLY
+            )
+        } returns true
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+
+        val result1 = destination.channelDestinationWriter(
+            "tenant",
+            "fake event",
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result1.status)
+        assertEquals("we made it", result1.detailedMessage)
+        assertEquals("Published 1 resource(s).", result1.message)
     }
 }

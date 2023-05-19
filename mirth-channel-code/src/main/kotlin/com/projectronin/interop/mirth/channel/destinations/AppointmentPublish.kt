@@ -2,6 +2,7 @@ package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
+import com.projectronin.interop.aidbox.utils.findFhirID
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.AppointmentService
 import com.projectronin.interop.ehr.factory.EHRFactory
@@ -10,7 +11,6 @@ import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninAppointment
-import com.projectronin.interop.fhir.ronin.util.unlocalize
 import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
@@ -57,15 +57,15 @@ class AppointmentPublish(
     private class PatientSourceAppointmentLoadRequest(
         sourceEvent: InteropResourcePublishV1,
         override val fhirService: AppointmentService,
-        override val tenant: Tenant
-    ) :
-        PublishEventResourceLoadRequest<Appointment>(sourceEvent) {
+        tenant: Tenant
+    ) : IdBasedPublishEventResourceLoadRequest<Appointment, Patient>(sourceEvent, tenant) {
+        override val sourceResource: Patient = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
 
         override fun loadResources(): List<Appointment> {
-            val patientFhirId = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class).id?.value
+            val patientFhirId = sourceResource.identifier.findFhirID()
             return fhirService.findPatientAppointments(
                 tenant,
-                patientFhirId!!.unlocalize(tenant),
+                patientFhirId,
                 startDate = LocalDate.now().minusMonths(1),
                 endDate = LocalDate.now().plusMonths(1)
             )
@@ -75,7 +75,7 @@ class AppointmentPublish(
     private class AppointmentLoadRequest(
         sourceEvent: InteropResourceLoadV1,
         override val fhirService: AppointmentService,
-        override val tenant: Tenant
+        tenant: Tenant
     ) :
-        LoadEventResourceLoadRequest<Appointment>(sourceEvent)
+        LoadEventResourceLoadRequest<Appointment>(sourceEvent, tenant)
 }

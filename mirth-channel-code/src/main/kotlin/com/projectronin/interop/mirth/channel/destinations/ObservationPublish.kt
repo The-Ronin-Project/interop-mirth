@@ -37,6 +37,7 @@ class ObservationPublish(
     publishService,
     profileTransformer
 ) {
+    override val cacheAndCompareResults: Boolean = true
 
     // turn a kafka event into an abstract class we can deal with
     override fun convertEventToRequest(
@@ -71,14 +72,13 @@ class ObservationPublish(
     private class PatientSourceObservationLoadRequest(
         sourceEvent: InteropResourcePublishV1,
         override val fhirService: ObservationService,
-        override val tenant: Tenant
-    ) : PublishEventResourceLoadRequest<Observation>(sourceEvent) {
+        tenant: Tenant
+    ) : IdBasedPublishEventResourceLoadRequest<Observation, Patient>(sourceEvent, tenant) {
+        override val sourceResource: Patient = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
 
         private val categoryValueSet = CodeSystem.OBSERVATION_CATEGORY.uri.value
         override fun loadResources(): List<Observation> {
-            val patientFhirId = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
-                .identifier
-                .findFhirID()
+            val patientFhirId = sourceResource.identifier.findFhirID()
             return fhirService.findObservationsByPatientAndCategory(
                 tenant,
                 listOf(
@@ -96,25 +96,27 @@ class ObservationPublish(
         sourceEvent: InteropResourcePublishV1,
         override val fhirService: ObservationService,
         override val tenant: Tenant
-    ) : PublishEventResourceLoadRequest<Observation>(sourceEvent) {
-        override fun loadResources(): List<Observation> {
-            val condition = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Condition::class)
+    ) : PublishEventResourceLoadRequest<Observation, Condition>(sourceEvent) {
+        override val sourceResource: Condition = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Condition::class)
 
-            return condition.stage.map { stage ->
-                stage.assessment
-                    .filter { reference -> reference.isForType(fhirService.fhirResourceType.simpleName) }
-                    .map { reference ->
-                        // decomposedId should never return null once we've filtered on observation type
-                        val observationFhirId = reference.decomposedId()!!.unlocalize(tenant)
-                        fhirService.getByID(tenant, observationFhirId)
-                    }
-            }.flatten()
+        override val requestKeys: List<ResourceRequestKey> = sourceResource.stage.map { stage ->
+            stage.assessment.filter { reference -> reference.isForType(fhirService.fhirResourceType.simpleName) }
+                .map { reference ->
+                    // decomposedId should never return null once we've filtered on observation type
+                    reference.decomposedId()!!
+                }
+        }.flatten().map {
+            ResourceRequestKey(metadata.runId, ResourceType.Observation, tenant, it)
+        }
+
+        override fun loadResources(requestKeys: List<ResourceRequestKey>): List<Observation> {
+            return requestKeys.map { fhirService.getByID(tenant, it.resourceId.unlocalize(tenant)) }
         }
     }
 
     private class ObservationLoadRequest(
         sourceEvent: InteropResourceLoadV1,
         override val fhirService: ObservationService,
-        override val tenant: Tenant
-    ) : LoadEventResourceLoadRequest<Observation>(sourceEvent)
+        tenant: Tenant
+    ) : LoadEventResourceLoadRequest<Observation>(sourceEvent, tenant)
 }

@@ -6,8 +6,11 @@ import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.fhir.r4.CodeSystem
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Patient
+import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
@@ -53,11 +56,13 @@ class AppointmentPublishTest {
 
     @Test
     fun `works for load events`() {
-        val metadata = mockk<Metadata>()
+        val metadata = mockk<Metadata> {
+            every { runId } returns "run123"
+        }
         val event = InteropResourceLoadV1(
             "tenant",
             "id",
-            ResourceType.Condition,
+            ResourceType.Appointment,
             InteropResourceLoadV1.DataTrigger.adhoc,
             metadata
         )
@@ -72,13 +77,19 @@ class AppointmentPublishTest {
             mockVendorFactory,
             tenant
         )
-        val results = request.loadResources()
+
+        val requestKeys = listOf(ResourceRequestKey("run123", ResourceType.Appointment, tenant, "id"))
+        assertEquals(requestKeys, request.requestKeys)
+
+        val results = request.loadResources(requestKeys)
         assertEquals(mockAppointment, results.first())
     }
 
     @Test
     fun `works for publish events`() {
-        val metadata = mockk<Metadata>()
+        val metadata = mockk<Metadata> {
+            every { runId } returns "run123"
+        }
         val event = InteropResourcePublishV1(
             "tenant",
             ResourceType.Patient,
@@ -87,7 +98,13 @@ class AppointmentPublishTest {
             metadata
         )
         val mockPatient = mockk<Patient> {
-            every { id?.value } returns "123"
+            every { id?.value } returns "tenant-123"
+            every { identifier } returns listOf(
+                mockk {
+                    every { system } returns CodeSystem.RONIN_FHIR_ID.uri
+                    every { value } returns "123".asFHIR()
+                }
+            )
         }
         val mockAppointment = mockk<Appointment> {}
         every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
@@ -108,7 +125,11 @@ class AppointmentPublishTest {
             mockVendorFactory,
             tenant
         )
-        val results = request.loadResources()
+
+        val requestKeys = listOf(ResourceRequestKey("run123", ResourceType.Patient, tenant, "tenant-123"))
+        assertEquals(requestKeys, request.requestKeys)
+
+        val results = request.loadResources(requestKeys)
         assertEquals(mockAppointment, results.first())
     }
 }

@@ -60,16 +60,15 @@ class ConditionPublish(
     private class PatientSourceConditionLoadRequest(
         sourceEvent: InteropResourcePublishV1,
         override val fhirService: ConditionService,
-        override val tenant: Tenant
-    ) : PublishEventResourceLoadRequest<Condition>(sourceEvent) {
+        tenant: Tenant
+    ) : IdBasedPublishEventResourceLoadRequest<Condition, Patient>(sourceEvent, tenant) {
+        override val sourceResource: Patient = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
 
         private val categorySystem = CodeSystem.CONDITION_CATEGORY.uri.value
         private val categoryHealthConcernSystem = CodeSystem.CONDITION_CATEGORY_HEALTH_CONCERN.uri.value
 
         override fun loadResources(): List<Condition> {
-            val patientFhirId = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
-                .identifier
-                .findFhirID()
+            val patientFhirId = sourceResource.identifier.findFhirID()
             return fhirService.findConditionsByCodes(
                 tenant,
                 patientFhirId,
@@ -85,6 +84,6 @@ class ConditionPublish(
     private class ConditionLoadRequest(
         sourceEvent: InteropResourceLoadV1,
         override val fhirService: ConditionService,
-        override val tenant: Tenant
-    ) : LoadEventResourceLoadRequest<Condition>(sourceEvent)
+        tenant: Tenant
+    ) : LoadEventResourceLoadRequest<Condition>(sourceEvent, tenant)
 }

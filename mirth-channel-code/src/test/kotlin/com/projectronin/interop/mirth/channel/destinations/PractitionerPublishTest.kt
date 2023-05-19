@@ -9,6 +9,7 @@ import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Participant
 import com.projectronin.interop.fhir.r4.resource.Practitioner
+import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
@@ -53,11 +54,13 @@ class PractitionerPublishTest {
 
     @Test
     fun `works for load events`() {
-        val metadata = mockk<Metadata>()
+        val metadata = mockk<Metadata> {
+            every { runId } returns "run123"
+        }
         val event = InteropResourceLoadV1(
             "tenant",
             "id",
-            ResourceType.Condition,
+            ResourceType.Practitioner,
             InteropResourceLoadV1.DataTrigger.adhoc,
             metadata
         )
@@ -72,13 +75,26 @@ class PractitionerPublishTest {
             mockVendorFactory,
             tenant
         )
-        val results = request.loadResources()
+
+        val requestKeys = listOf(
+            ResourceRequestKey(
+                "run123",
+                ResourceType.Practitioner,
+                tenant,
+                "id"
+            )
+        )
+        assertEquals(requestKeys, request.requestKeys)
+
+        val results = request.loadResources(requestKeys)
         assertEquals(mockPractitioner, results.first())
     }
 
     @Test
     fun `works for publish events`() {
-        val metadata = mockk<Metadata>()
+        val metadata = mockk<Metadata> {
+            every { runId } returns "run123"
+        }
         val event = InteropResourcePublishV1(
             "tenant",
             ResourceType.Appointment,
@@ -111,7 +127,18 @@ class PractitionerPublishTest {
             mockVendorFactory,
             tenant
         )
-        val results = request.loadResources()
+
+        val requestKeys = listOf(
+            ResourceRequestKey(
+                "run123",
+                ResourceType.Practitioner,
+                tenant,
+                "tenant-456"
+            )
+        )
+        assertEquals(requestKeys, request.requestKeys)
+
+        val results = request.loadResources(requestKeys)
         assertEquals(mockPractitioner, results.first())
     }
 }

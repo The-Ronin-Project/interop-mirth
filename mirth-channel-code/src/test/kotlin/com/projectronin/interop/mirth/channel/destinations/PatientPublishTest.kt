@@ -6,6 +6,7 @@ import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Patient
+import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
@@ -24,7 +25,9 @@ class PatientPublishTest {
 
     @BeforeEach
     fun setup() {
-        tenant = mockk {}
+        tenant = mockk {
+            every { mnemonic } returns "tenant"
+        }
         destination = PatientPublish(mockk(), mockk(), mockk(), mockk(), mockk())
         mockkObject(JacksonUtil)
     }
@@ -48,7 +51,9 @@ class PatientPublishTest {
 
     @Test
     fun `channel works`() {
-        val metadata = mockk<Metadata>()
+        val metadata = mockk<Metadata> {
+            every { runId } returns "run123"
+        }
         val event = InteropResourceLoadV1(
             "tenant",
             "id",
@@ -67,7 +72,18 @@ class PatientPublishTest {
             mockVendorFactory,
             tenant
         )
-        val results = request.loadResources()
+
+        val requestKeys = listOf(
+            KafkaEventResourcePublisher.ResourceRequestKey(
+                "run123",
+                ResourceType.Patient,
+                tenant,
+                "id"
+            )
+        )
+        assertEquals(requestKeys, request.requestKeys)
+
+        val results = request.loadResources(requestKeys)
         assertEquals(mockPatient, results.first())
     }
 }

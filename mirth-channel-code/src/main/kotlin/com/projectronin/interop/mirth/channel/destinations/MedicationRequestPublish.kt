@@ -55,13 +55,12 @@ class MedicationRequestPublish(
     private class PatientSourceMedicationRequestLoad(
         sourceEvent: InteropResourcePublishV1,
         override val fhirService: MedicationRequestService,
-        override val tenant: Tenant
-    ) : PublishEventResourceLoadRequest<MedicationRequest>(sourceEvent) {
+        tenant: Tenant
+    ) : IdBasedPublishEventResourceLoadRequest<MedicationRequest, Patient>(sourceEvent, tenant) {
+        override val sourceResource: Patient = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
 
         override fun loadResources(): List<MedicationRequest> {
-            val patientFhirId = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
-                .identifier
-                .findFhirID()
+            val patientFhirId = sourceResource.identifier.findFhirID()
             return fhirService.getMedicationRequestByPatient(
                 tenant,
                 patientFhirId
@@ -72,7 +71,7 @@ class MedicationRequestPublish(
     private class MedicationRequestLoadRequest(
         sourceEvent: InteropResourceLoadV1,
         override val fhirService: MedicationRequestService,
-        override val tenant: Tenant
+        tenant: Tenant
     ) :
-        LoadEventResourceLoadRequest<MedicationRequest>(sourceEvent)
+        LoadEventResourceLoadRequest<MedicationRequest>(sourceEvent, tenant)
 }

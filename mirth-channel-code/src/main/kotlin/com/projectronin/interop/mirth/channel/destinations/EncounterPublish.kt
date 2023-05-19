@@ -58,13 +58,12 @@ class EncounterPublish(
     private class PatientSourceEncounterLoadRequest(
         sourceEvent: InteropResourcePublishV1,
         override val fhirService: EncounterService,
-        override val tenant: Tenant
-    ) : PublishEventResourceLoadRequest<Encounter>(sourceEvent) {
+        tenant: Tenant
+    ) : IdBasedPublishEventResourceLoadRequest<Encounter, Patient>(sourceEvent, tenant) {
+        override val sourceResource: Patient = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
 
         override fun loadResources(): List<Encounter> {
-            val patientFhirId = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
-                .identifier
-                .findFhirID()
+            val patientFhirId = sourceResource.identifier.findFhirID()
             return fhirService.findPatientEncounters(
                 tenant,
                 patientFhirId,
@@ -77,6 +76,6 @@ class EncounterPublish(
     private class EncounterLoadRequest(
         sourceEvent: InteropResourceLoadV1,
         override val fhirService: EncounterService,
-        override val tenant: Tenant
-    ) : LoadEventResourceLoadRequest<Encounter>(sourceEvent)
+        tenant: Tenant
+    ) : LoadEventResourceLoadRequest<Encounter>(sourceEvent, tenant)
 }

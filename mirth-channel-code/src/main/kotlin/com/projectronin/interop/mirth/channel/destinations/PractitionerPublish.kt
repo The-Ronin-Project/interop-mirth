@@ -2,6 +2,7 @@ package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.PractitionerService
 import com.projectronin.interop.ehr.factory.EHRFactory
@@ -31,6 +32,7 @@ class PractitionerPublish(
     publishService,
     profileTransformer
 ) {
+    override val cacheAndCompareResults: Boolean = true
 
     // turn a kafka event into an abstract class we can deal with
     override fun convertEventToRequest(
@@ -59,18 +61,21 @@ class PractitionerPublish(
         override val fhirService: PractitionerService,
         override val tenant: Tenant
     ) :
-        PublishEventResourceLoadRequest<Practitioner>(sourceEvent) {
+        PublishEventResourceLoadRequest<Practitioner, Appointment>(sourceEvent) {
+        override val sourceResource: Appointment =
+            JacksonUtil.readJsonObject(sourceEvent.resourceJson, Appointment::class)
 
-        override fun loadResources(): List<Practitioner> {
-            val appointment = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Appointment::class)
-            val practitionerFhirUDPIds = appointment.participant
-                .filter { it.actor?.decomposedType()?.startsWith("Practitioner") == true }
-                .mapNotNull { it.actor?.decomposedId() }
-                .map { it.unlocalize(tenant) }
-                .distinct()
+        override val requestKeys: List<ResourceRequestKey> = sourceResource.participant
+            .asSequence()
+            .filter { it.actor?.decomposedType()?.startsWith("Practitioner") == true }
+            .mapNotNull { it.actor?.decomposedId() }
+            .distinct().map { ResourceRequestKey(metadata.runId, ResourceType.Practitioner, tenant, it) }
+            .toList()
 
-            return practitionerFhirUDPIds.map {
-                val fhirID = it.unlocalize(tenant)
+        override fun loadResources(requestKeys: List<ResourceRequestKey>): List<Practitioner> {
+            val practitionerFhirIds = requestKeys.map { it.resourceId.unlocalize(tenant) }
+
+            return practitionerFhirIds.map { fhirID ->
                 fhirService.getPractitioner(tenant, fhirID)
             }
         }
@@ -79,6 +84,6 @@ class PractitionerPublish(
     private class PractitionerLoadRequest(
         sourceEvent: InteropResourceLoadV1,
         override val fhirService: PractitionerService,
-        override val tenant: Tenant
-    ) : LoadEventResourceLoadRequest<Practitioner>(sourceEvent)
+        tenant: Tenant
+    ) : LoadEventResourceLoadRequest<Practitioner>(sourceEvent, tenant)
 }

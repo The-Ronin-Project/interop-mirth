@@ -48,6 +48,6 @@ class PatientPublish(
     private class PatientLoadRequest(
         sourceEvent: InteropResourceLoadV1,
         override val fhirService: PatientService,
-        override val tenant: Tenant
-    ) : LoadEventResourceLoadRequest<Patient>(sourceEvent)
+        tenant: Tenant
+    ) : LoadEventResourceLoadRequest<Patient>(sourceEvent, tenant)
 }

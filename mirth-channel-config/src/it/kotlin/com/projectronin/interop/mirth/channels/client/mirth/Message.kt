@@ -26,7 +26,7 @@ data class ConnectorMessages(val entry: List<ConnectorMessageWrapper>)
 
 data class ConnectorMessageWrapper(val connectorMessage: ConnectorMessage)
 
-data class ConnectorMessage(val connectorName: String, val status: String)
+data class ConnectorMessage(val connectorName: String, val status: String, val response: Response?)
 
 class ConnectorMessagesDeserializer : StdDeserializer<ConnectorMessages>(ConnectorMessages::class.java) {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ConnectorMessages {
@@ -39,3 +39,5 @@ class ConnectorMessagesDeserializer : StdDeserializer<ConnectorMessages>(Connect
         }
     }
 }
+
+data class Response(val content: String)
