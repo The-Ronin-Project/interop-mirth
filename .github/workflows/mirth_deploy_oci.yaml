@@ -9,11 +9,12 @@ on:
         required: true
       env:
         type: choice
-        description: 'environment targetted for deployment'
+        description: 'environment targeted for deployment'
         required: true
         options:
           - dev
           - stage
+          - prod
       dry-run:
         type: boolean
         description: 'if enabled, dry-run tests the workflow without side effects'
