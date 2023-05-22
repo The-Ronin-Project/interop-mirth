@@ -60,7 +60,16 @@
       <script>return sourceReader()</script>
     </properties>
     <transformer version="3.11.0">
-      <elements/>
+      <elements>
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.11.0">
+          <name>Source Transform</name>
+          <sequenceNumber>0</sequenceNumber>
+          <enabled>true</enabled>
+          <script>sourceTransform()</script>
+        </com.mirth.connect.plugins.javascriptstep.JavaScriptStep>
+      </elements>
+      <inboundTemplate encoding="base64"></inboundTemplate>
+      <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>HL7V2</inboundDataType>
       <outboundDataType>HL7V2</outboundDataType>
       <inboundProperties class="com.mirth.connect.plugins.datatypes.hl7v2.HL7v2DataTypeProperties" version="3.11.0">
@@ -440,7 +449,7 @@
     <metadata>
       <enabled>false</enabled>
       <lastModified>
-        <time>1663610316346</time>
+        <time>1684779227934</time>
         <timezone>America/Los_Angeles</timezone>
       </lastModified>
       <pruningSettings>
