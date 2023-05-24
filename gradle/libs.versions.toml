@@ -33,9 +33,9 @@ interop-queue-liquibase = "com.projectronin.interop.queue:interop-queue-liquibas
 
 interop-validation-client = "com.projectronin.interop.validation:interop-validation-client:2.0.0"
 
-jackson-annotations = "com.fasterxml.jackson.core:jackson-annotations:2.15.0"
-jackson-core = "com.fasterxml.jackson.core:jackson-core:2.15.0"
-jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.15.0"
+jackson-annotations = "com.fasterxml.jackson.core:jackson-annotations:2.15.1"
+jackson-core = "com.fasterxml.jackson.core:jackson-core:2.15.1"
+jackson-databind = "com.fasterxml.jackson.core:jackson-databind:2.15.1"
 jackson-dataformat-xml = "com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.15.1"
 jackson-dataformat-yaml = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.1"
 jackson-datatype-jsr310 = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.1"
