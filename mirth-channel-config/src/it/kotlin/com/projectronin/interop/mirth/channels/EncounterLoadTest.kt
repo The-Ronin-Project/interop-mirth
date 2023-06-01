@@ -61,7 +61,16 @@ class EncounterLoadTest : BaseChannelTest(
             }
             status of "planned"
             `class` of coding { display of "test" }
-            type of listOf(codeableConcept { text of "type" })
+            type of listOf(
+                codeableConcept {
+                    text of "type"
+                    coding of listOf(
+                        coding {
+                            display of "display"
+                        }
+                    )
+                }
+            )
         }
 
         val encounterId = MockEHRTestData.add(encounter)
@@ -109,7 +118,16 @@ class EncounterLoadTest : BaseChannelTest(
             }
             status of "planned"
             `class` of coding { display of "test" }
-            type of listOf(codeableConcept { text of "type" })
+            type of listOf(
+                codeableConcept {
+                    text of "type"
+                    coding of listOf(
+                        coding {
+                            display of "display"
+                        }
+                    )
+                }
+            )
         }
 
         val encounter2 = encounter {
@@ -123,7 +141,16 @@ class EncounterLoadTest : BaseChannelTest(
             }
             status of "planned"
             `class` of coding { display of "test" }
-            type of listOf(codeableConcept { text of "type" })
+            type of listOf(
+                codeableConcept {
+                    text of "type"
+                    coding of listOf(
+                        coding {
+                            display of "display"
+                        }
+                    )
+                }
+            )
         }
         val encounter1ID = MockEHRTestData.add(encounter1)
         val encounter2ID = MockEHRTestData.add(encounter1)
@@ -172,7 +199,16 @@ class EncounterLoadTest : BaseChannelTest(
             }
             status of "planned"
             `class` of coding { display of "test" }
-            type of listOf(codeableConcept { text of "type" })
+            type of listOf(
+                codeableConcept {
+                    text of "type"
+                    coding of listOf(
+                        coding {
+                            display of "display"
+                        }
+                    )
+                }
+            )
         }
         val encounterId = MockEHRTestData.add(encounter1)
         MockOCIServerClient.createExpectations("Encounter", encounterId, testTenant)
