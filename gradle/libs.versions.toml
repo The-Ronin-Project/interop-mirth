@@ -6,10 +6,10 @@ event-interop-resource-request = "com.projectronin.contract.event:event-interop-
 
 guava = "com.google.guava:guava:31.1-jre"
 
-interop-common = "com.projectronin.interop:interop-common:3.8.0"
-interop-commonHttp = "com.projectronin.interop:interop-common-http:3.8.0"
-interop-commonJackson = "com.projectronin.interop:interop-common-jackson:3.8.0"
-interop-commonTestDb = "com.projectronin.interop:interop-common-test-db:3.8.0"
+interop-common = "com.projectronin.interop:interop-common:3.9.1"
+interop-commonHttp = "com.projectronin.interop:interop-common-http:3.9.1"
+interop-commonJackson = "com.projectronin.interop:interop-common-jackson:3.9.1"
+interop-commonTestDb = "com.projectronin.interop:interop-common-test-db:3.9.1"
 
 interop-fhir = "com.projectronin.interop.fhir:interop-fhir:8.2.0"
 interop-fhir-generators = "com.projectronin.interop.fhir:interop-fhir-generators:8.2.0"
