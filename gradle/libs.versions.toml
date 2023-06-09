@@ -67,7 +67,7 @@ ronin-kafka = "com.projectronin:ronin-kafka:1.0.0"
 snakeyaml = "org.yaml:snakeyaml:2.0"
 spring-boot-autoconfigure = "org.springframework.boot:spring-boot-autoconfigure:2.7.8"
 spring-vault-core = "org.springframework.vault:spring-vault-core:2.3.2"
-testcontainers-mysql = "org.testcontainers:mysql:1.18.2"
+testcontainers-mysql = "org.testcontainers:mysql:1.18.3"
 woodstox-core = "com.fasterxml.woodstox:woodstox-core:6.5.1"
 xerces = "xerces:xercesImpl:2.12.2"
 
