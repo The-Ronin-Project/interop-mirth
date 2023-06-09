@@ -6,7 +6,7 @@ import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.PatientDiscoveryWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.channel.util.generateMetadata
+import com.projectronin.interop.mirth.channel.util.generateSerializedMetadata
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
@@ -38,7 +38,6 @@ class PatientDiscovery(
         return tenantService.getAllTenants()
             .filter { needsLoad(it) }
             .flatMap { tenant ->
-                val metadata = generateMetadata()
                 try {
                     tenantConfigurationService.getLocationIDsByTenant(tenant.mnemonic)
                         .map { locationId ->
@@ -46,7 +45,7 @@ class PatientDiscovery(
                                 message = locationId,
                                 dataMap = mapOf(
                                     MirthKey.TENANT_MNEMONIC.code to tenant.mnemonic,
-                                    MirthKey.EVENT_METADATA.code to metadata,
+                                    MirthKey.EVENT_METADATA.code to generateSerializedMetadata(),
                                     "locationFhirID" to locationId
                                 )
                             )

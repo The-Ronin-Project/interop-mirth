@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channel.destinations
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.ConditionService
 import com.projectronin.interop.ehr.factory.EHRFactory
@@ -10,6 +9,8 @@ import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
+import com.projectronin.interop.mirth.channel.util.generateMetadata
+import com.projectronin.interop.mirth.channel.util.serialize
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -94,7 +95,7 @@ class AppointmentByPractitionerConditionWriterTest {
         mockkObject(JacksonUtil)
         every { JacksonUtil.writeJsonValue(any()) } returns "[]"
 
-        val metadata = mockk<Metadata>()
+        val metadata = generateMetadata()
         every { publishService.publishFHIRResources(VALID_TENANT_ID, mockRoninConditions, metadata) } returns true
 
         val response = writer.destinationWriter(
@@ -103,7 +104,7 @@ class AppointmentByPractitionerConditionWriterTest {
             mapOf(
                 MirthKey.PATIENT_FHIR_ID.code to "blah",
                 MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
-                MirthKey.EVENT_METADATA.code to metadata
+                MirthKey.EVENT_METADATA.code to serialize(metadata)
             ),
             emptyMap()
         )
@@ -142,7 +143,7 @@ class AppointmentByPractitionerConditionWriterTest {
         every { transformManager.transformResource(mockCondition, roninConditions, tenant) } returns mockRoninCondition
         every { vendorFactory.conditionService } returns mockConditionService
 
-        val metadata = mockk<Metadata>()
+        val metadata = generateMetadata()
         every { publishService.publishFHIRResources(VALID_TENANT_ID, mockRoninConditions, metadata) } returns false
 
         mockkObject(JacksonUtil)
@@ -153,7 +154,7 @@ class AppointmentByPractitionerConditionWriterTest {
             mapOf(
                 MirthKey.PATIENT_FHIR_ID.code to "blah",
                 MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
-                MirthKey.EVENT_METADATA.code to metadata
+                MirthKey.EVENT_METADATA.code to serialize(metadata)
             ),
             emptyMap()
         )

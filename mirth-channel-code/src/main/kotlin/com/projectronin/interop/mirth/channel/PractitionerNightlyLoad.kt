@@ -15,7 +15,7 @@ import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.destinations.PractitionerNightlyLoadWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.channel.util.generateMetadata
+import com.projectronin.interop.mirth.channel.util.generateSerializedMetadata
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ConfigurationMissingException
@@ -65,8 +65,6 @@ class PractitionerNightlyLoad(
             response.practitionerRoles
         )
 
-        val metadata = generateMetadata()
-
         val messageList = responseLists.flatMap { resourceList ->
             resourceList.chunked(confirmMaxChunkSize(serviceMap)).map {
                 val resourceType = it.first().resourceType
@@ -75,7 +73,7 @@ class PractitionerNightlyLoad(
                     dataMap = mapOf(
                         "${MirthKey.RESOURCES_FOUND.code}.$resourceType" to it,
                         MirthKey.RESOURCE_COUNT.code to it.count(),
-                        MirthKey.EVENT_METADATA.code to metadata
+                        MirthKey.EVENT_METADATA.code to generateSerializedMetadata()
                     )
                 )
             }

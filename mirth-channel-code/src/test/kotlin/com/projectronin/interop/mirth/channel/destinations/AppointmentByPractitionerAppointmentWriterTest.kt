@@ -1,12 +1,13 @@
 package com.projectronin.interop.mirth.channel.destinations
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninAppointment
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
+import com.projectronin.interop.mirth.channel.util.generateMetadata
+import com.projectronin.interop.mirth.channel.util.serialize
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
@@ -118,7 +119,7 @@ class AppointmentByPractitionerAppointmentWriterTest {
             every { id } returns Id("12345")
         }
 
-        val metadata = mockk<Metadata>()
+        val metadata = generateMetadata()
 
         every { publishService.publishFHIRResources(VALID_TENANT_ID, any(), metadata) } returns true
 
@@ -129,7 +130,7 @@ class AppointmentByPractitionerAppointmentWriterTest {
         val response = writer.destinationWriter(
             "unused",
             "appointmentString",
-            mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID, "kafkaEventMetadata" to metadata),
+            mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID, "kafkaEventMetadata" to serialize(metadata)),
             emptyMap()
         )
         assertEquals("Published 1 Appointment(s)", response.message)
@@ -139,7 +140,7 @@ class AppointmentByPractitionerAppointmentWriterTest {
 
     @Test
     fun `destinationWriter - nothing transformed to publish`() {
-        val metadata = mockk<Metadata>()
+        val metadata = generateMetadata()
         every { publishService.publishFHIRResources(VALID_TENANT_ID, any(), metadata) } returns false
 
         mockkObject(JacksonUtil)
@@ -149,7 +150,7 @@ class AppointmentByPractitionerAppointmentWriterTest {
         val response = writer.destinationWriter(
             "unused",
             "appointmentString",
-            mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID, "kafkaEventMetadata" to metadata),
+            mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID, "kafkaEventMetadata" to serialize(metadata)),
             emptyMap()
         )
         assertEquals("No transformed Appointment(s) to publish", response.message)
