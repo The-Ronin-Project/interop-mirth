@@ -7,6 +7,7 @@ import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.destinations.queue.QueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
+import com.projectronin.interop.mirth.channel.util.serialize
 import com.projectronin.interop.queue.QueueService
 import com.projectronin.interop.queue.model.ApiMessage
 import com.projectronin.interop.tenant.config.TenantService
@@ -52,7 +53,7 @@ abstract class BaseQueue<K : DomainResource<K>>(
         return queueMessages.map {
             MirthMessage(
                 it.text,
-                mapOf(MirthKey.EVENT_METADATA.code to it.metadata)
+                mapOf(MirthKey.EVENT_METADATA.code to serialize(it.metadata))
             )
         }
     }

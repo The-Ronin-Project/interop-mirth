@@ -6,6 +6,7 @@ import com.projectronin.interop.fhir.r4.resource.DomainResource
 import com.projectronin.interop.mirth.channel.destinations.queue.TenantlessQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
+import com.projectronin.interop.mirth.channel.util.serialize
 import com.projectronin.interop.queue.kafka.KafkaQueueService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -34,7 +35,10 @@ abstract class KafkaQueue<K : DomainResource<K>>(
         return queueService.dequeueApiMessages("", resourceType, limit).map {
             MirthMessage(
                 it.text,
-                mapOf(MirthKey.TENANT_MNEMONIC.code to it.tenant, MirthKey.EVENT_METADATA.code to it.metadata)
+                mapOf(
+                    MirthKey.TENANT_MNEMONIC.code to it.tenant,
+                    MirthKey.EVENT_METADATA.code to serialize(it.metadata)
+                )
             )
         }
     }

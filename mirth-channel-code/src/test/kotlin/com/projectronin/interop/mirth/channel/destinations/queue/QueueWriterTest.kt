@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channel.destinations.queue
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.datatype.Extension
 import com.projectronin.interop.fhir.r4.datatype.Meta
@@ -13,6 +12,8 @@ import com.projectronin.interop.fhir.r4.resource.DomainResource
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
+import com.projectronin.interop.mirth.channel.util.generateMetadata
+import com.projectronin.interop.mirth.channel.util.serialize
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import io.mockk.every
@@ -60,13 +61,13 @@ class QueueWriterTest {
         val resourceList = listOf(mockRoninDomainResource)
         val channelMap = mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList)
 
-        val metadata = mockk<Metadata>()
+        val metadata = generateMetadata()
         every { mockPublishService.publishFHIRResources(tenantId, any<List<TestResource>>(), metadata) } returns true
 
         val response = writer.channelDestinationWriter(
             tenantId,
             mockSerialized,
-            mapOf(MirthKey.EVENT_METADATA.code to metadata),
+            mapOf(MirthKey.EVENT_METADATA.code to serialize(metadata)),
             channelMap
         )
         assertEquals("Published 1 TestResource(s)", response.message)
@@ -89,13 +90,13 @@ class QueueWriterTest {
         val resourceList = listOf(mockRoninDomainResource)
         val channelMap = mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList)
 
-        val metadata = mockk<Metadata>()
+        val metadata = generateMetadata()
         every { mockPublishService.publishFHIRResources(tenantId, any<List<TestResource>>(), metadata) } returns false
 
         val response = writer.channelDestinationWriter(
             tenantId,
             mockSerialized,
-            mapOf(MirthKey.EVENT_METADATA.code to metadata),
+            mapOf(MirthKey.EVENT_METADATA.code to serialize(metadata)),
             channelMap
         )
         assertEquals(MirthResponseStatus.ERROR, response.status)

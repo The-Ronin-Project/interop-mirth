@@ -1,12 +1,13 @@
 package com.projectronin.interop.mirth.channel.base
 
 import com.fasterxml.jackson.databind.json.JsonMapper
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.destinations.queue.TenantlessQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
+import com.projectronin.interop.mirth.channel.util.deserialize
+import com.projectronin.interop.mirth.channel.util.generateMetadata
 import com.projectronin.interop.queue.kafka.KafkaQueueService
 import com.projectronin.interop.queue.model.ApiMessage
 import com.projectronin.interop.tenant.config.TenantService
@@ -46,28 +47,28 @@ class KafkaQueueTest {
     @Test
     fun `sourceReader - works`() {
         val queueMessage = "testing!!"
-        val mockMetadata = mockk<Metadata>()
+        val metaData = generateMetadata()
         val mockMessage = mockk<ApiMessage> {
             every { text } returns queueMessage
             every { tenant } returns tenantId
-            every { metadata } returns mockMetadata
+            every { metadata } returns metaData
         }
         every { mockQueueService.dequeueApiMessages("", ResourceType.BUNDLE, 5) } returns listOf(mockMessage)
 
         val messages = channel.sourceReader("name", mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId))
         assertEquals(1, messages.size)
         assertEquals(queueMessage, messages.first().message)
-        assertEquals(mockMetadata, messages.first().dataMap[MirthKey.EVENT_METADATA.code])
+        assertEquals(metaData, deserialize(messages.first().dataMap[MirthKey.EVENT_METADATA.code] as String))
     }
 
     @Test
     fun `sourceReader - continues reading from queue if response is full`() {
         val queueMessage = "testing!!"
-        val mockMetadata = mockk<Metadata>()
+        val metaData = generateMetadata()
         val mockMessage = mockk<ApiMessage> {
             every { tenant } returns tenantId
             every { text } returns queueMessage
-            every { metadata } returns mockMetadata
+            every { metadata } returns metaData
         }
         every { mockQueueService.dequeueApiMessages("", ResourceType.BUNDLE, 5) } returns listOf(
             mockMessage,
@@ -80,7 +81,7 @@ class KafkaQueueTest {
         val messages = channel.sourceReader("name", mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId))
         assertEquals(5, messages.size)
         assertEquals(queueMessage, messages.first().message)
-        assertEquals(mockMetadata, messages.first().dataMap[MirthKey.EVENT_METADATA.code])
+        assertEquals(metaData, deserialize(messages.first().dataMap[MirthKey.EVENT_METADATA.code] as String))
     }
 
     @Test

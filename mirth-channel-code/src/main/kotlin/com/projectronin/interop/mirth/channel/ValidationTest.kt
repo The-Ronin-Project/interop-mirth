@@ -27,7 +27,7 @@ import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.ValidationTestDestination
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.channel.util.generateMetadata
+import com.projectronin.interop.mirth.channel.util.generateSerializedMetadata
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
 import io.ktor.client.HttpClient
@@ -60,7 +60,6 @@ class ValidationTest(
             .map { tenantMnemonic -> // set in Mirth Settings > Configuration Map
                 val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: return emptyList()
                 val mockEHR = MockEHRUtil(httpClient, tenant.vendor.serviceEndpoint)
-                val metadata = generateMetadata()
                 val patientID =
                     mockEHR.addResource(
                         patient {
@@ -226,13 +225,14 @@ class ValidationTest(
                     message = locationID,
                     dataMap = mapOf(
                         MirthKey.FHIR_ID_LIST.code to resources,
-                        MirthKey.EVENT_METADATA.code to metadata,
+                        MirthKey.EVENT_METADATA.code to generateSerializedMetadata(),
                         MirthKey.TENANT_MNEMONIC.code to tenantMnemonic,
                         "MockEHRURL" to tenant.vendor.serviceEndpoint
                     )
                 )
             }
     }
+
     class MockEHRUtil(val httpClient: HttpClient, URL: String) {
 
         val logger = KotlinLogging.logger { }

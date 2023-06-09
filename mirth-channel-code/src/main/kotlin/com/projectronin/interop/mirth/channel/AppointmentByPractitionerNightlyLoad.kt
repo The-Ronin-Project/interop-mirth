@@ -9,7 +9,7 @@ import com.projectronin.interop.mirth.channel.destinations.AppointmentByPractiti
 import com.projectronin.interop.mirth.channel.destinations.AppointmentByPractitionerPatientWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.channel.util.generateMetadata
+import com.projectronin.interop.mirth.channel.util.generateSerializedMetadata
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotFoundException
@@ -69,8 +69,6 @@ class AppointmentByPractitionerNightlyLoad(
             endDate
         )
 
-        val metadata = generateMetadata()
-
         try {
             val perPatientAppointments = fullAppointments.appointments.groupBy { appointment ->
                 appointment.participant.single {
@@ -83,7 +81,7 @@ class AppointmentByPractitionerNightlyLoad(
                 patientList.value.chunked(confirmMaxChunkSize(serviceMap)).map { appointments ->
                     val sourceMap = mutableMapOf(
                         MirthKey.PATIENT_FHIR_ID.code to patientList.key,
-                        MirthKey.EVENT_METADATA.code to metadata
+                        MirthKey.EVENT_METADATA.code to generateSerializedMetadata()
                     )
                     patient?.let { sourceMap.put(MirthKey.NEW_PATIENT_JSON.code, JacksonUtil.writeJsonValue(it)) }
                     MirthMessage(
