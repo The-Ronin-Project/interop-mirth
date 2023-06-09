@@ -11,8 +11,8 @@ interop-commonHttp = "com.projectronin.interop:interop-common-http:3.9.1"
 interop-commonJackson = "com.projectronin.interop:interop-common-jackson:3.9.1"
 interop-commonTestDb = "com.projectronin.interop:interop-common-test-db:3.9.1"
 
-interop-fhir = "com.projectronin.interop.fhir:interop-fhir:8.2.0"
-interop-fhir-generators = "com.projectronin.interop.fhir:interop-fhir-generators:8.2.0"
+interop-fhir = "com.projectronin.interop.fhir:interop-fhir:8.2.1"
+interop-fhir-generators = "com.projectronin.interop.fhir:interop-fhir-generators:8.2.1"
 
 interop-ehr-api = "com.projectronin.interop.ehr:interop-ehr:9.11.0"
 interop-ehr-cerner = "com.projectronin.interop.ehr:interop-ehr-cerner:9.11.0"
