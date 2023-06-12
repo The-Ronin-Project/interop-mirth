@@ -93,6 +93,7 @@ class ValidationTest(
                 val appointmentID = mockEHR.addResource(
                     appointment {
                         status of "booked"
+                        minutesDuration of 1440
                         start of 2.daysFromNow()
                         end of 3.daysFromNow()
                         participant of listOf(
