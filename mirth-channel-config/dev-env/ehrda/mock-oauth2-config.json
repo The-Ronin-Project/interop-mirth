@@ -1,0 +1,38 @@
+{
+  "interactiveLogin": false,
+  "httpServer": "NettyWrapper",
+  "tokenCallbacks": [
+    {
+      "issuerId": "ehr",
+      "tokenExpiry": 120,
+      "requestMappings": [
+        {
+          "requestParam": "client_id",
+          "match": "*",
+          "claims": {
+            "sub": "clientId@clients",
+            "aud": "https://ehr.dev.projectronin.io",
+            "iss": "http://mock-oauth2:8080/ehr",
+            "scope": "write:resources search:resources delete:resources"
+          }
+        }
+      ]
+    },
+    {
+      "issuerId": "validation",
+      "tokenExpiry": 120,
+      "requestMappings": [
+        {
+          "requestParam": "client_id",
+          "match": "*",
+          "claims": {
+            "sub": "clientId@clients",
+            "aud": "https://interop-validation.dev.projectronin.io",
+            "iss": "http://mock-oauth2:8080/validation",
+            "scope": "create:resources read:resources update:resources"
+          }
+        }
+      ]
+    }
+  ]
+}

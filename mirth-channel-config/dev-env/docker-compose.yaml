@@ -10,6 +10,7 @@ services:
       - envs/mirth.env
     environment:
       - AO_SANDBOX_KEY
+      - JAVA_OPTS=-Xmx4g
     ports: # Mirth and Mirth Admin UI
       - 8080:8080/tcp
       - 8443:8443/tcp
@@ -43,6 +44,27 @@ services:
       test: [ "CMD", "curl", "-k", "-X", "GET", "https://mc:8443/api/server/resources", "-H", "\"X-Requested-With: OpenAPI\"", "-u", "admin:admin" ]
       timeout: 5s
       retries: 10
+
+  ehr-data-authority:
+    restart: on-failure
+    image: docker-proxy.devops.projectronin.io/ehr-data-authority:latest
+    ports:
+      - "8083:8080"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://ehrdauser:ThePassword@mockehrmysql:3306/dataauthority-db"
+      AUTH0_AUDIENCE: "https://ehr.dev.projectronin.io"
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://mock-oauth2:8080/ehr"
+    env_file:
+      - envs/mirth.env
+    depends_on:
+      devbox:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      mockehrmysql:
+        condition: service_healthy
+      mock-oauth2:
+        condition: service_started
 
   mirth-db:
     image: postgres
@@ -280,6 +302,27 @@ services:
       vault:
         condition: service_healthy
 
+  validation-server:
+    restart: on-failure
+    image: docker-proxy.devops.projectronin.io/interop-validation:latest
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://validationuser:ThePassword@mockehrmysql:3306/validation-db
+      - AUTH0_AUDIENCE=https://interop-validation.dev.projectronin.io
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://mock-oauth2:8080/validation
+    ports:
+      - "8084:8080"
+    depends_on:
+      mock-oauth2:
+        condition: service_started
+
+  mock-oauth2:
+    image: ghcr.io/navikt/mock-oauth2-server:0.5.4
+    ports:
+      - "8085:8080"
+    volumes:
+      - ./ehrda:/host
+    environment:
+      - JSON_CONFIG_PATH=/host/mock-oauth2-config.json
 
 secrets:
   mcserver_vmoptions:

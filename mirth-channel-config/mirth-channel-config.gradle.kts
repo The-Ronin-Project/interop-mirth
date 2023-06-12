@@ -24,7 +24,6 @@ mirth {
 }
 
 dependencies {
-    itImplementation(libs.interop.publishers.aidbox)
     itImplementation(libs.interop.common)
     itImplementation(libs.interop.commonJackson)
 
@@ -39,9 +38,10 @@ dependencies {
     itImplementation(libs.mockserver.client.java)
     itImplementation(libs.interop.fhir.generators)
     itImplementation(libs.interop.queue.kafka)
-    itImplementation(libs.interop.publishers.kafka)
     itImplementation(libs.bundles.interop.kafka.events)
     itImplementation(libs.ronin.test.data.generator)
     itImplementation(libs.ronin.kafka)
+    itImplementation(libs.interop.kafka)
+    itImplementation(libs.interop.publishers.aidbox)
     itImplementation("io.github.microutils:kotlin-logging:3.0.5")
 }

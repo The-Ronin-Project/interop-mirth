@@ -26,8 +26,9 @@ dependencies {
     implementation(libs.interop.fhir)
     implementation(libs.interop.publishers.core)
     implementation(libs.interop.publishers.aidbox)
-    implementation(libs.interop.publishers.datalake)
-    implementation(libs.interop.publishers.kafka)
+    implementation(libs.interop.datalake)
+    implementation(libs.interop.kafka)
+
     implementation(libs.interop.queue.api)
     implementation(libs.interop.queue.db)
     implementation(libs.interop.queue.kafka)

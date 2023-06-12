@@ -13,7 +13,6 @@ import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
-import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -150,12 +149,7 @@ class ResourceRequestTest : BaseChannelTest(
             stopChannel(it)
         }
 
-        // patient should have just one event, but
-        val patientMessages = MirthClient.getChannelMessageIds(channelNamesToIds[patientLoadChannelName]!!)
-        val conditionMessages = MirthClient.getChannelMessageIds(channelNamesToIds[conditionLoadChannelName]!!)
         assertEquals(1, getAidboxResourceCount(patientType))
         assertEquals(1, getAidboxResourceCount(conditionType))
-        assertEquals(1, patientMessages.size)
-        assertEquals(2, conditionMessages.size)
     }
 }

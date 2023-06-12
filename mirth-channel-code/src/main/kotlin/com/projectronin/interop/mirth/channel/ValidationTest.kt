@@ -94,6 +94,7 @@ class ValidationTest(
                 val appointmentID = mockEHR.addResource(
                     appointment {
                         status of "booked"
+                        minutesDuration of 1440
                         start of 2.daysFromNow()
                         end of 3.daysFromNow()
                         participant of listOf(
@@ -116,7 +117,16 @@ class ValidationTest(
                 val nowish = LocalDate.now().minusDays(1)
                 val laterish = nowish.plusDays(1)
                 val encounter1 = encounter {
-                    type of listOf(codeableConcept { text of "type" })
+                    type of listOf(
+                        codeableConcept {
+                            text of "type"
+                            coding of listOf(
+                                coding {
+                                    display of "display"
+                                }
+                            )
+                        }
+                    )
                     period of period {
                         start of dateTime {
                             year of nowish.year

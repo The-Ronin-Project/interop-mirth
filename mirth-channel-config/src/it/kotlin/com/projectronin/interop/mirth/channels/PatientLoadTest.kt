@@ -13,8 +13,10 @@ import com.projectronin.interop.fhir.generators.primitives.daysFromNow
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.appointment
 import com.projectronin.interop.fhir.generators.resources.condition
+import com.projectronin.interop.fhir.generators.resources.location
 import com.projectronin.interop.fhir.generators.resources.observation
 import com.projectronin.interop.fhir.generators.resources.patient
+import com.projectronin.interop.fhir.generators.resources.practitioner
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
@@ -252,13 +254,36 @@ class PatientLoadTest : BaseChannelTest(
 
         val conditionFhirId = MockEHRTestData.add(condition)
         MockOCIServerClient.createExpectations(conditionType, conditionFhirId, testTenant)
-
+        val fakePractitioner = practitioner {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRProviderSystem"
+                }
+            )
+        }
+        val fakeLocation = location {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRDepartmentInternalSystem"
+                }
+            )
+        }
+        val fakeLocationID = MockEHRTestData.add(fakeLocation)
+        val fakePractitionerId = MockEHRTestData.add(fakePractitioner)
         val appointment = appointment {
             status of "pending"
             participant of listOf(
                 participant {
                     status of "accepted"
                     actor of reference("Patient", patientFhirId)
+                },
+                participant {
+                    status of "accepted"
+                    actor of reference("Practitioner", fakePractitionerId)
+                },
+                participant {
+                    status of "accepted"
+                    actor of reference("Location", fakeLocationID)
                 }
             )
             minutesDuration of 8
