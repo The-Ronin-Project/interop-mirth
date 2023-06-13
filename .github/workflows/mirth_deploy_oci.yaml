@@ -19,7 +19,7 @@ on:
         type: boolean
         description: 'if enabled, dry-run tests the workflow without side effects'
         required: true
-        default: true
+        default: false
        
 
 jobs:
