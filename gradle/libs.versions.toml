@@ -25,7 +25,7 @@ interop-ehr-tenant = "com.projectronin.interop.ehr:interop-tenant:10.0.0"
 
 interop-publishers-core = "com.projectronin.interop.publish:interop-publishers:9.0.0"
 # aidbox just used for testing, should be removed eventually
-interop-publishers-aidbox = "com.projectronin.interop.publish:interop-aidbox:8.0.0"
+interop-publishers-aidbox = "com.projectronin.interop.publish:interop-aidbox:8.1.0"
 interop-queue-api = "com.projectronin.interop.queue:interop-queue:2.0.0"
 interop-queue-db = "com.projectronin.interop.queue:interop-queue-db:2.0.0"
 interop-queue-kafka = "com.projectronin.interop.queue:interop-queue-kafka:2.0.0"
