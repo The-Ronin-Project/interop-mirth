@@ -43,7 +43,7 @@ jackson-module-kotlin = "com.fasterxml.jackson.module:jackson-module-kotlin:2.15
 
 jakarta-ws = "jakarta.ws.rs:jakarta.ws.rs-api:2.1.2"
 jersey-glassfish-client = "org.glassfish.jersey.core:jersey-client:2.35"
-kafka-clients = "org.apache.kafka:kafka-clients:3.4.1"
+kafka-clients = "org.apache.kafka:kafka-clients:3.5.0"
 kotlin-stdlib = "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
 junit-pioneer = "org.junit-pioneer:junit-pioneer:2.0.1"
 
