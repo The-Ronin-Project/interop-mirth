@@ -206,6 +206,23 @@ class PatientDiscoveryTest {
     }
 
     @Test
+    fun `AvailableWindow can correctly determine when UTC is a different day`() {
+        val tenant = mockk<Tenant> {
+            every { timezone } returns ZoneId.of("America/Los_Angeles")
+            every { batchConfig } returns mockk {
+                every { availableStart } returns LocalTime.of(21, 0)
+                every { availableEnd } returns LocalTime.of(23, 0)
+            }
+        }
+        val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
+        val availableWindow = PatientDiscovery.AvailableWindow(tenant)
+        val utcZone = ZoneId.of("Etc/UTC").rules.getOffset(Instant.now())
+        val currentTime = OffsetDateTime.of(2023, 4, 9, 21, 30, 0, 0, zone)
+            .withOffsetSameInstant(utcZone)
+        assertTrue(availableWindow.isInWindow(currentTime))
+    }
+
+    @Test
     fun `AvailableWindow can correctly determine if something ran when spans midnight`() {
         val spansMidnightTenant = mockk<Tenant> {
             every { timezone } returns ZoneId.of("America/Los_Angeles")

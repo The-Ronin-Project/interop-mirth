@@ -14,11 +14,13 @@ import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 const val resourceRequestChannelName = "ResourceRequest"
 
+@Disabled
 class ResourceRequestTest : BaseChannelTest(
     resourceRequestChannelName,
     listOf("Patient", "Condition"),

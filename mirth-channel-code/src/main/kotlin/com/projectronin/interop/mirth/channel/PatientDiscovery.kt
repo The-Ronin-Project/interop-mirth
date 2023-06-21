@@ -122,8 +122,9 @@ class PatientDiscovery(
 
         // Is right now in the current window?
         fun isInWindow(now: OffsetDateTime): Boolean {
-            val currentWindow = getCurrentWindow(now)
-            return now in currentWindow.first..currentWindow.second
+            val nowInTenantTimeZone = now.withOffsetSameInstant(tenantTimeZone)
+            val currentWindow = getCurrentWindow(nowInTenantTimeZone)
+            return nowInTenantTimeZone in currentWindow.first..currentWindow.second
         }
 
         // given a OffsetDateTime, calculate the current window
