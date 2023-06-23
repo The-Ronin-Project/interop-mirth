@@ -1,11 +1,9 @@
 package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.hl7.MessageType
-import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.queue.QueueService
 import com.projectronin.interop.queue.model.HL7Message
-import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
@@ -26,11 +24,7 @@ class MDMQueueOutTest {
     fun setup() {
         mockTenantConfigurationService = mockk()
         mockQueueService = mockk()
-        val tenantService = mockk<TenantService> {
-            every { getTenantForMnemonic("tenant") } returns mockTenant
-        }
-        val transformManager = mockk<TransformManager>()
-        channel = MDMQueueOut(tenantService, transformManager, mockQueueService, mockTenantConfigurationService)
+        channel = MDMQueueOut(mockQueueService, mockTenantConfigurationService)
     }
 
     @Test

@@ -3,6 +3,14 @@ package com.projectronin.interop.mirth.channel.base
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.resource.ResourceType
+import com.projectronin.interop.fhir.r4.datatype.Extension
+import com.projectronin.interop.fhir.r4.datatype.Meta
+import com.projectronin.interop.fhir.r4.datatype.Narrative
+import com.projectronin.interop.fhir.r4.datatype.primitive.Code
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
+import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
+import com.projectronin.interop.fhir.r4.resource.ContainedResource
+import com.projectronin.interop.fhir.r4.resource.DomainResource
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.destinations.queue.TenantlessQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
@@ -167,3 +175,15 @@ class KafkaTestQueueBad(
     override val limit: Int = 5
     override fun deserializeAndTransform(string: String, tenant: Tenant): TestResource = mockRoninDomainResource
 }
+
+class TestResource(
+    override val contained: List<ContainedResource> = listOf(),
+    override val extension: List<Extension> = listOf(),
+    override val modifierExtension: List<Extension> = listOf(),
+    override val text: Narrative?,
+    override val id: Id?,
+    override val implicitRules: Uri?,
+    override val language: Code?,
+    override var meta: Meta?,
+    override val resourceType: String = "TestResourceType"
+) : DomainResource<TestResource>

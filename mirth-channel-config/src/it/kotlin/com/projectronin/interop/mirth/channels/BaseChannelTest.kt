@@ -167,7 +167,7 @@ abstract class BaseChannelTest(
         }
     }
 
-    protected fun waitForMessage(minimumCount: Int, timeout: Int = 600, channelID: String = testChannelId) {
+    protected fun waitForMessage(minimumCount: Int, timeout: Int = 180, channelID: String = testChannelId) {
         runBlocking {
             withTimeout(timeout = timeout.seconds) {
                 waitForMessage(minimumCount, channelID)

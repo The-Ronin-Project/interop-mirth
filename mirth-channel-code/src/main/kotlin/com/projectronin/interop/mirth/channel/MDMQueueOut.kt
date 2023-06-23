@@ -1,22 +1,18 @@
 package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.hl7.MessageType
-import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.base.DestinationService
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.queue.QueueService
-import com.projectronin.interop.tenant.config.TenantService
 import org.springframework.stereotype.Component
 
 @Component
 class MDMQueueOut(
-    tenantService: TenantService,
-    transformManager: TransformManager,
     private val queueService: QueueService,
     private val tenantConfigurationService: TenantConfigurationService
-) : ChannelService(tenantService, transformManager) {
+) : ChannelService() {
     companion object : ChannelFactory<MDMQueueOut>()
 
     override val rootName = "MDMQueueOut"

@@ -1,11 +1,10 @@
 package com.projectronin.interop.mirth.channel.base
 
-import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.TenantMissingException
+import mu.KotlinLogging
 
 /**
  * Abstract Mirth channel service class.
@@ -30,8 +29,9 @@ import com.projectronin.interop.tenant.config.exception.TenantMissingException
  * The [ChannelService] MUST define a unique key to each of its [DestinationService] subclasses in this map:
  * - destinations
  */
-abstract class ChannelService(tenantService: TenantService, transformManager: TransformManager) :
-    BaseService(tenantService, transformManager) {
+abstract class ChannelService {
+    protected val logger = KotlinLogging.logger(this::class.java.name)
+
     /**
      * rootName is the tenant agnostic channel name as archived in source control.
      * Example: "PractitionerLoad".

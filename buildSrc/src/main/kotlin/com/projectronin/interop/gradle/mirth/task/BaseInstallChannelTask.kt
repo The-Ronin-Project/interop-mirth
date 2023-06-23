@@ -41,7 +41,6 @@ abstract class BaseInstallChannelTask : BaseMirthTask() {
         val channelFile = channelDirectory.file("$channelName.xml").asFile
 
         installBaseChannel(channelName, channelFile)
-        installTenantChannel(channelExtension.tenantConfig.defaultMnemonic, channelName, channelFile)
     }
 
     /**
@@ -61,39 +60,6 @@ abstract class BaseInstallChannelTask : BaseMirthTask() {
 
         client.disableChannel(channelId)
     }
-
-    /**
-     * Installs a tenant-based [channelName] channel as defined in [channelFile]. This channel will have its name and ID
-     * updated to indicate it is tenant-based, and the channel will be enabled after installation.
-     */
-    private fun installTenantChannel(tenant: String, channelName: String, channelFile: File) {
-        val originalChannelId = getChannelId(channelFile)
-        val newChannelId = "$tenant-${originalChannelId.substring(0, originalChannelId.length - tenant.length - 1)}"
-        val newChannelName = getTenantChannelName(tenant, channelName)
-
-        val channelXml = channelFile.readLines().joinToString("\n")
-
-        // There are "better" ways to do this, but they all involve complex transformations utilizing the DOM API
-        // and generating the subsequent strings, when, it's a fairly trivial amount of data we're updating.
-        // Additionally, we could build POJOs for the Channels, but after inspecting a few examples, the models
-        // get incredibly complex for our basic needs here.
-        val idUpdatedXML = channelXml.replace("<id>$originalChannelId</id>", "<id>$newChannelId</id>")
-        val nameUpdatedXML = idUpdatedXML.replace("<name>$channelName</name>", "<name>$newChannelName</name>")
-
-        val status = client.putChannel(newChannelId, nameUpdatedXML)
-        if (status.isSuccess()) {
-            logger.lifecycle("Successfully installed $newChannelName")
-        } else {
-            throw RuntimeException("Unsuccessful status code $status returned while installing $newChannelName")
-        }
-
-        client.enableChannel(newChannelId)
-    }
-
-    /**
-     * Gets the channel name based off the [tenant] and original [channelName].
-     */
-    private fun getTenantChannelName(tenant: String, channelName: String) = "$tenant-$channelName"
 
     /**
      * Determines the channel ID for the [channelFile].

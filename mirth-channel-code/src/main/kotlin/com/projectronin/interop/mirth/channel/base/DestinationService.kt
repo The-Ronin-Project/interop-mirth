@@ -1,17 +1,10 @@
 package com.projectronin.interop.mirth.channel.base
 
-import com.projectronin.event.interop.internal.v1.Metadata
-import com.projectronin.interop.common.jackson.JacksonUtil
-import com.projectronin.interop.fhir.r4.resource.Resource
-import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.mirth.channel.enums.MirthKey
-import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.model.MirthResponse
-import com.projectronin.interop.publishers.PublishService
-import com.projectronin.interop.tenant.config.TenantService
-import kotlin.reflect.KClass
+import mu.KotlinLogging
 
 /**
  * Abstract Mirth destination service class.
@@ -35,12 +28,9 @@ import kotlin.reflect.KClass
  *
  * For the correct order of execution of all required and optional Mirth channel stages, see [BaseService].
  */
-abstract class DestinationService(
-    tenantService: TenantService,
-    transformManager: TransformManager,
-    private val publishService: PublishService
-) :
-    BaseService(tenantService, transformManager) {
+abstract class DestinationService {
+    protected val logger = KotlinLogging.logger(this::class.java.name)
+
     /**
      * Mirth channels call destinationFilter() from the Destination Filter script,
      * if there is a Filter on this Destination.
@@ -207,91 +197,4 @@ abstract class DestinationService(
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthResponse
-
-    /**
-     * Gets the list of resources to publish from the channelMap[MirthKey.RESOURCES_TRANSFORMED] entry.
-     * To construct success or failure messages, derives the resourceType, such as "Observation", from clazz.
-     * Publishes the list using publishResources(resourceList, resourceType).
-     * @param sourceMap the Mirth sourceMap from the channelDestinationWriter()
-     * @param channelMap the Mirth channelMap from the channelDestinationWriter()
-     * @param resourceType label for the resource type, such as "Observation"; default if not supplied is "Resource".
-     * @return [MirthResponse] status ERROR if nothing to publish, or return from publishResource()
-     */
-    @Suppress("UNCHECKED_CAST")
-    protected fun <T : Resource<T>> publishTransformed(
-        sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any?>,
-        metadata: Metadata,
-        resourceType: String = "Resource"
-    ): MirthResponse {
-        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code] as String
-        val resourceList = channelMap[MirthKey.RESOURCES_TRANSFORMED.code]?.let { it as List<T> }
-        if (resourceList.isNullOrEmpty()) {
-            return MirthResponse(
-                status = MirthResponseStatus.ERROR,
-                message = "No transformed $resourceType(s) to publish"
-            )
-        }
-        return publishResources(tenantMnemonic, resourceList, metadata, resourceType)
-    }
-
-    /**
-     * Gets the list of resources to publish by deserializing the string from the channel msg parameter.
-     * To construct success or failure messages, derives the resourceType, such as "Observation", from clazz.
-     * Publishes the list using publishResources(resourceList, resourceType).
-     * @param tenantMnemonic the tenant for which the resources are being published
-     * @param msg the Mirth channel msg from the channelDestinationWriter()
-     * @param clazz the specific resource class, if only one type of resource is in the list.
-     * @return [MirthResponse] status ERROR if nothing to publish, or return from publishResource()
-     */
-    @Suppress("UNCHECKED_CAST")
-    protected fun <T : Resource<T>> deserializeAndPublishList(
-        tenantMnemonic: String,
-        msg: String,
-        metadata: Metadata,
-        clazz: KClass<T>
-    ): MirthResponse {
-        val resourceType = clazz.simpleName
-        val resourceList = JacksonUtil.readJsonList(msg, clazz)
-        if (resourceList.isEmpty()) {
-            return MirthResponse(
-                status = MirthResponseStatus.ERROR,
-                detailedMessage = msg,
-                message = "No transformed $resourceType(s) to publish"
-            )
-        }
-        return publishResources(tenantMnemonic, resourceList, metadata, resourceType)
-    }
-
-    /**
-     * Publishes resources to the Ronin clinical data store for the channel destination.
-     * Constructs success and failure messages using the resourceType label, like:
-     * "Published 5 Observation(s)" or a generic default: "Published 5 Resource(s)".
-     * @param tenantMnemonic the tenant for which the resources are being published
-     * @param resourceList the resources to be published
-     * @param resourceType label for the resource type, such as "Observation"; default if not supplied is "Resource".
-     * @param successDataMap information to put in the [MirthResponse] dataMap in case of success.
-     * @return [MirthResponse] status SENT (with successDataMap) or ERROR.
-     */
-    protected fun <T : Resource<T>> publishResources(
-        tenantMnemonic: String,
-        resourceList: List<T>,
-        metadata: Metadata,
-        resourceType: String? = "Resource",
-        successDataMap: Map<String, Any>? = null
-    ): MirthResponse {
-        if (!publishService.publishFHIRResources(tenantMnemonic, resourceList, metadata)) {
-            return MirthResponse(
-                status = MirthResponseStatus.ERROR,
-                detailedMessage = JacksonUtil.writeJsonValue(resourceList),
-                message = "Failed to publish $resourceType(s)"
-            )
-        }
-        return MirthResponse(
-            status = MirthResponseStatus.SENT,
-            detailedMessage = JacksonUtil.writeJsonValue(resourceList),
-            message = "Published ${resourceList.size} $resourceType(s)",
-            dataMap = successDataMap ?: emptyMap()
-        )
-    }
 }

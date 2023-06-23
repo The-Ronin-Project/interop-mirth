@@ -52,7 +52,7 @@
   {
     "httpRequest": {
       "method": "GET",
-      "path": "/n/namespace/b/infx-bucket/o/DataNormalizationRegistry%2Fv2%2Fregistry.json"
+      "path": "/n/namespace/b/infx-bucket/o/DataNormalizationRegistry%2Fv3%2Fregistry.json"
     },
     "httpResponse": {
       "statusCode": 200,
@@ -85,6 +85,28 @@
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceAppointmentStatus",
           "registry_uuid": "1",
           "concept_map_name": "AppointmentStatusRonin"
+        },
+        {
+          "resource_type": "Observation",
+          "data_element": "Observation.code",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationBloodPressure",
+          "tenant_id": null,
+          "version": 1,
+          "filename": "EmptyValueSet.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
+          "registry_uuid": "5",
+          "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
+        },
+        {
+          "resource_type": "Observation",
+          "data_element": "Observation.code",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationBodyHeight",
+          "tenant_id": null,
+          "version": 1,
+          "filename": "EmptyValueSet.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-bodyHeight",
+          "registry_uuid": "2",
+          "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         },
         {
           "resource_type": "Observation",
@@ -122,23 +144,12 @@
         {
           "resource_type": "Observation",
           "data_element": "Observation.code",
-          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationBloodPressure",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationBodyWeight",
           "tenant_id": null,
           "version": 1,
-          "filename": "EmptyValueSet.json",
-          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
-          "registry_uuid": "5",
-          "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
-        },
-        {
-          "resource_type": "Observation",
-          "data_element": "Observation.code",
-          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-observationRespiratoryRate",
-          "tenant_id": null,
-          "version": 1,
-          "filename": "EmptyValueSet.json",
-          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
-          "registry_uuid": "6",
+          "filename": "BodyWeightValueSet.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-bodyWeight",
+          "registry_uuid": "2",
           "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         },
         {
@@ -171,7 +182,7 @@
           "version": 1,
           "filename": "EmptyValueSet.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
-          "registry_uuid": "9",
+          "registry_uuid": "6",
           "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         },
         {
@@ -303,6 +314,30 @@
           "value_set_uuid": "835662e6-5379-4801-ba27-01b4481e33ff",
           "version": 1,
           "filename": "EmptyValueSet.json"
+        },
+        {
+          "registry_uuid": "20",
+          "resource_type": "Observation",
+          "data_element": "Observation.code",
+          "tenant_id": "epicmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521c",
+          "version": 1,
+          "filename": "BodyWeightConceptMap.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceObservationCode",
+          "concept_map_name": "ObservationCodeRonin"
+        },
+        {
+          "registry_uuid": "21",
+          "resource_type": "Observation",
+          "data_element": "Observation.code",
+          "tenant_id": "cernmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521c",
+          "version": 1,
+          "filename": "BodyWeightConceptMap.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceObservationCode",
+          "concept_map_name": "ObservationCodeRonin"
         }
       ]
     },
@@ -517,6 +552,108 @@
       }
     },
     "id": "GetRoninObservationEmptyValueSets",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/BodyWeightValueSet.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ValueSet",
+        "title": " ",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a2",
+        "version": 1,
+        "status": "draft",
+        "expansion": {
+          "timestamp": "2020-01-01 14:01:01",
+          "contains": [
+            {
+              "system": "http://loinc.org",
+              "version": "2023",
+              "code": "29463-7",
+              "display": "Body Weight"
+            }
+          ]
+        }
+      }
+    },
+    "id": "GetRoninBodyWeightValueSets",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/BodyWeightConceptMap.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ConceptMap",
+        "title": "Ronin Body Weights",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a2",
+        "name": "ObservationCodeRonin",
+        "url": "http://projectronin.io/fhir/StructureDefinition/ConceptMap/4ffae118-778f-4df9-bd73-aece934b521c",
+        "purpose": "FHIR Interops Concept Map",
+        "publisher": "Project Ronin",
+        "experimental": false,
+        "date": "2022-12-02",
+        "version": 1,
+        "group": [
+          {
+            "source": "http://projectronin.io/fhir/CodeSystem/epicmock/ObservationCode",
+            "sourceVersion": "1.0",
+            "target": "http://loinc.org",
+            "targetVersion": "2023",
+            "element": [
+              {
+                "code": "{[{29463-7, null, http://loinc.org, false}], Body Weight}",
+                "display": "Body Weight",
+                "target": [
+                  {
+                    "code": "29463-7",
+                    "display": "Body Weight",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://projectronin.io/fhir/ronin.common-fhir-model.uscore-r4/StructureDefinition/Extension/ronin-ConceptMapSchema",
+            "valueString": "1.0.0"
+          }
+        ]
+      }
+    },
+    "id": "GetRoninObservationCode",
     "priority": 0,
     "timeToLive": {
       "unlimited": true

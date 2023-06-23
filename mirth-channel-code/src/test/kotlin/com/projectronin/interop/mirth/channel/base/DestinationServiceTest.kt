@@ -49,7 +49,7 @@ class DestinationServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : DestinationService(mockk(), mockk(), mockk()) {
+        val service = object : DestinationService() {
             override fun channelDestinationFilter(
                 tenantMnemonic: String,
                 msg: String,
@@ -112,7 +112,7 @@ class DestinationServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : DestinationService(mockk(), mockk(), mockk()) {
+        val service = object : DestinationService() {
             override fun channelDestinationTransformer(
                 tenantMnemonic: String,
                 msg: String,
@@ -176,7 +176,7 @@ class DestinationServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : DestinationService(mockk(), mockk(), mockk()) {
+        val service = object : DestinationService() {
             override fun channelDestinationWriter(
                 tenantMnemonic: String,
                 msg: String,
@@ -207,7 +207,7 @@ class DestinationServiceTest {
     }
 }
 
-class TestDestinationService() : DestinationService(mockk(), mockk(), mockk()) {
+class TestDestinationService : DestinationService() {
     override fun channelDestinationWriter(
         tenantMnemonic: String,
         msg: String,

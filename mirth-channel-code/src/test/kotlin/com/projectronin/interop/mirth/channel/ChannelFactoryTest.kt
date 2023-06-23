@@ -50,12 +50,11 @@ class TestSpringConfig {
     fun transformManager() = mockk<TransformManager>()
 
     @Bean
-    fun testChannelService(tenantService: TenantService, transformManager: TransformManager) =
-        TestChannelService(tenantService, transformManager)
+    fun testChannelService() = TestChannelService()
 }
 
-class TestChannelService(tenantService: TenantService, transformManager: TransformManager) :
-    ChannelService(tenantService, transformManager) {
+class TestChannelService :
+    ChannelService() {
     companion object : ChannelFactory<TestChannelService>()
 
     override val rootName: String = "test"

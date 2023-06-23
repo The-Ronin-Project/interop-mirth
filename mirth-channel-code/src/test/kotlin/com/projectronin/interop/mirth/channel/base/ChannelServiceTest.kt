@@ -103,7 +103,7 @@ class ChannelServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : ChannelService(mockk(), mockk()) {
+        val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
             override val destinations: Map<String, DestinationService> = emptyMap()
 
@@ -188,7 +188,7 @@ class ChannelServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : ChannelService(mockk(), mockk()) {
+        val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
             override val destinations: Map<String, DestinationService> = emptyMap()
 
@@ -276,7 +276,7 @@ class ChannelServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : ChannelService(mockk(), mockk()) {
+        val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
             override val destinations: Map<String, DestinationService> = emptyMap()
 
@@ -364,7 +364,7 @@ class ChannelServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : ChannelService(mockk(), mockk()) {
+        val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
             override val destinations: Map<String, DestinationService> = emptyMap()
 
@@ -453,7 +453,7 @@ class ChannelServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : ChannelService(mockk(), mockk()) {
+        val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
             override val destinations: Map<String, DestinationService> = emptyMap()
 
@@ -545,7 +545,7 @@ class ChannelServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : ChannelService(mockk(), mockk()) {
+        val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
             override val destinations: Map<String, DestinationService> = emptyMap()
 
@@ -648,7 +648,7 @@ class ChannelServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : ChannelService(mockk(), mockk()) {
+        val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
             override val destinations: Map<String, DestinationService> = emptyMap()
 
@@ -700,7 +700,7 @@ class ChannelServiceTest {
     }
 }
 
-class TestChannelService : ChannelService(mockk(), mockk()) {
+class TestChannelService : ChannelService() {
     override val rootName = CHANNEL_ROOT_NAME
     override val destinations = mapOf("testKey" to TestDestinationService())
     override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
@@ -708,7 +708,7 @@ class TestChannelService : ChannelService(mockk(), mockk()) {
     }
 }
 
-class TestChannelServiceBadName : ChannelService(mockk(), mockk()) {
+class TestChannelServiceBadName : ChannelService() {
     override val rootName = "PatientByQuestionnaireResponseLoad"
     override val destinations = mapOf("testKeyBadName" to TestDestinationService())
     override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {

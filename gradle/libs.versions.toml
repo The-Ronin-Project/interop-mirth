@@ -3,7 +3,7 @@ caffeine = "com.github.ben-manes.caffeine:caffeine:3.1.6"
 
 event-interop-resource-internal = "com.projectronin.contract.event:event-interop-resource-internal:1.0.0"
 event-interop-resource-request = "com.projectronin.contract.event:event-interop-resource-request:1.0.0"
-ehrda-models = "com.projectronin.ehr:ehr-data-authority-models:1.0.1"
+
 interop-datalake = "com.projectronin.interop.publish:interop-datalake:8.1.2"
 interop-kafka = "com.projectronin.interop.publish:interop-kafka:8.1.1"
 guava = "com.google.guava:guava:31.1-jre"
@@ -13,15 +13,15 @@ interop-commonHttp = "com.projectronin.interop:interop-common-http:3.9.1"
 interop-commonJackson = "com.projectronin.interop:interop-common-jackson:3.9.1"
 interop-commonTestDb = "com.projectronin.interop:interop-common-test-db:3.9.1"
 
-interop-fhir = "com.projectronin.interop.fhir:interop-fhir:8.2.1"
-interop-fhir-generators = "com.projectronin.interop.fhir:interop-fhir-generators:8.2.1"
+interop-fhir = "com.projectronin.interop.fhir:interop-fhir:8.4.0"
+interop-fhir-generators = "com.projectronin.interop.fhir:interop-fhir-generators:8.4.0"
 
-interop-ehr-api = "com.projectronin.interop.ehr:interop-ehr:10.0.0"
-interop-ehr-cerner = "com.projectronin.interop.ehr:interop-ehr-cerner:10.0.0"
-interop-ehr-epic = "com.projectronin.interop.ehr:interop-ehr-epic:10.0.0"
-interop-ehr-fhir-ronin = "com.projectronin.interop.ehr:interop-fhir-ronin:10.0.0"
-interop-ehr-liquibase = "com.projectronin.interop.ehr:interop-ehr-liquibase:10.0.0"
-interop-ehr-tenant = "com.projectronin.interop.ehr:interop-tenant:10.0.0"
+interop-ehr-api = "com.projectronin.interop.ehr:interop-ehr:10.2.3"
+interop-ehr-cerner = "com.projectronin.interop.ehr:interop-ehr-cerner:10.2.3"
+interop-ehr-epic = "com.projectronin.interop.ehr:interop-ehr-epic:10.2.3"
+interop-ehr-fhir-ronin = "com.projectronin.interop.ehr:interop-fhir-ronin:10.2.3"
+interop-ehr-liquibase = "com.projectronin.interop.ehr:interop-ehr-liquibase:10.2.3"
+interop-ehr-tenant = "com.projectronin.interop.ehr:interop-tenant:10.2.3"
 
 interop-publishers-core = "com.projectronin.interop.publish:interop-publishers:9.0.0"
 # aidbox just used for testing, should be removed eventually
