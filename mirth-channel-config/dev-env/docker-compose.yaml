@@ -6,7 +6,7 @@ services:
     # image: docker-proxy.devops.projectronin.io/ronin/base/mirth-base:3.11.0
     build: './mirth'
     container_name: mirth-connect
-    mem_limit: 2G
+    mem_limit: 3G
     env_file:
       - envs/mirth.env
     environment:
