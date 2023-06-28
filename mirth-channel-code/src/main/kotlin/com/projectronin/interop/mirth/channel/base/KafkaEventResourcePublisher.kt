@@ -115,25 +115,44 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
             }
         }
 
-        if (!publishService.publishFHIRResources(
+        // publish says it returns a boolean, but actually throws an error if there was a problem
+        val publishResult = runCatching {
+            publishService.publishFHIRResources(
                 tenantMnemonic,
                 transformedResources,
                 resourceLoadRequest.metadata,
                 resourceLoadRequest.dataTrigger
             )
-        ) {
+        }.fold(
+            onSuccess = { it },
+            onFailure = { false }
+        )
+        if (!publishResult) {
+            // in the event of a failure to publish we want to invalidate the keys in we put in during loadResources
+            // some of these keys might have been processed, but we don't have access to know which keys failed and which
+            // succeeded here
+            val keys = transformedResources.map {
+                ResourceRequestKey(
+                    resourceLoadRequest.metadata.runId,
+                    ResourceType.valueOf(it.resourceType),
+                    resourceLoadRequest.tenant,
+                    it.id!!.value!!.unlocalize(tenant)
+                )
+            }
+            logger.debug { "Invalidating ${keys.size} keys" }
+            processedResourcesCache.invalidateAll(keys)
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = transformedResources.truncateList(),
                 message = "Failed to publish ${transformedResources.size} resource(s)"
             )
+        } else {
+            return MirthResponse(
+                status = MirthResponseStatus.SENT,
+                detailedMessage = transformedResources.truncateList(),
+                message = "Published ${transformedResources.size} resource(s).$cachedMessage"
+            )
         }
-
-        return MirthResponse(
-            status = MirthResponseStatus.SENT,
-            detailedMessage = transformedResources.truncateList(),
-            message = "Published ${transformedResources.size} resource(s).$cachedMessage"
-        )
     }
 
     /**

@@ -8,6 +8,7 @@ import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.FHIRService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.TransformManager
@@ -282,7 +283,13 @@ class KafkaEventResourcePublisherTest {
 
     @Test
     fun `fails publish`() {
-        val transformed = mockk<Location> {}
+        destination.returnedMetadata = mockk {
+            every { runId } returns "run1"
+        }
+        val transformed = mockk<Location> {
+            every { resourceType } returns "Location"
+            every { id } returns Id("tenant-10")
+        }
         every { transformManager.transformResource(any(), roninLocation, tenant) } returns transformed
         every {
             publishService.publishFHIRResources(
@@ -406,7 +413,7 @@ class KafkaEventResourcePublisherTest {
         val test = TestRequest(event, mockService, mockTenant)
         val resources = test.loadResources(
             listOf(
-                KafkaEventResourcePublisher.ResourceRequestKey(
+                ResourceRequestKey(
                     "run123",
                     ResourceType.Location,
                     tenant,
@@ -653,5 +660,51 @@ class KafkaEventResourcePublisherTest {
         assertEquals(MirthResponseStatus.SENT, result1.status)
         assertEquals("we made it", result1.detailedMessage)
         assertEquals("Published 1 resource(s).", result1.message)
+    }
+
+    @Test
+    fun `publisher works for repeat requests if first fails`() {
+        destination.returnedMetadata = mockk {
+            every { runId } returns "run1"
+        }
+        destination.returnedRequestKeys = listOf(ResourceRequestKey("run1", ResourceType.Location, tenant, "10"))
+
+        val transformed = mockk<Location> {
+            every { resourceType } returns "Location"
+            every { id } returns Id("tenant-10")
+        }
+        every { transformManager.transformResource(any(), roninLocation, tenant) } returns transformed
+        every {
+            publishService.publishFHIRResources(
+                "tenant",
+                listOf(transformed),
+                any(),
+                DataTrigger.NIGHTLY
+            )
+        } returns false andThen true
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+
+        val result1 = destination.channelDestinationWriter(
+            "tenant",
+            "fake event",
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.ERROR, result1.status)
+        assertEquals("we made it", result1.detailedMessage)
+        assertEquals("Failed to publish 1 resource(s)", result1.message)
+
+        val result2 = destination.channelDestinationWriter(
+            "tenant",
+            "fake event",
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result2.status)
+        assertEquals("we made it", result2.detailedMessage)
+        assertEquals("Published 1 resource(s).", result2.message)
+
+        verify(exactly = 2) { transformManager.transformResource(any(), roninLocation, tenant) }
+        verify(exactly = 2) { publishService.publishFHIRResources(any(), any(), any(), any()) }
     }
 }
