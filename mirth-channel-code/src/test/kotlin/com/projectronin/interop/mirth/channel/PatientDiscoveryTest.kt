@@ -316,7 +316,7 @@ class PatientDiscoveryTest {
         val utcZone = ZoneId.of("Etc/UTC").rules.getOffset(Instant.now())
         val clientTimeZone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
         val spansMidnightAvailableWindow = PatientDiscovery.AvailableWindow(spansMidnightTenant)
-        // this in utc, but starting from  Los Angeles time to match client for easy reading, then adjuysting to utc
+        // this in utc, but starting from  Los Angeles time to match client for easy reading, then adjusting to utc
         val earlyMorningRunToday =
             OffsetDateTime.of(2023, 4, 8, 1, 30, 0, 0, clientTimeZone)
                 .withOffsetSameInstant(utcZone)
@@ -341,9 +341,28 @@ class PatientDiscoveryTest {
         assertTrue(spansMidnightAvailableWindow.ranTodayAlready(eightAmToday, earlyMorningRunToday))
         assertTrue(spansMidnightAvailableWindow.ranTodayAlready(sixPmToday, earlyMorningRunToday))
         assertTrue(spansMidnightAvailableWindow.ranTodayAlready(elevenPmToday, earlyMorningRunToday))
-        assertFalse(spansMidnightAvailableWindow.ranTodayAlready(threeAmTomorrow, earlyMorningRunToday))
+        // This is still "today" from the view of LA
+        assertTrue(spansMidnightAvailableWindow.ranTodayAlready(threeAmTomorrow, earlyMorningRunToday))
         assertFalse(spansMidnightAvailableWindow.ranTodayAlready(eightAmTomorrow, earlyMorningRunToday))
         assertFalse(spansMidnightAvailableWindow.ranTodayAlready(elevenPmTomorrow, earlyMorningRunToday))
+    }
+
+    @Test
+    fun `AvailableWindow can correctly determine when last run time is in UTC on a different day`() {
+        val tenant = mockk<Tenant> {
+            every { timezone } returns ZoneId.of("America/Los_Angeles")
+            every { batchConfig } returns mockk {
+                every { availableStart } returns LocalTime.of(21, 0)
+                every { availableEnd } returns LocalTime.of(23, 0)
+            }
+        }
+        val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
+        val availableWindow = PatientDiscovery.AvailableWindow(tenant)
+        val utcZone = ZoneId.of("Etc/UTC").rules.getOffset(Instant.now())
+        val currentTime = OffsetDateTime.of(2023, 4, 9, 21, 30, 0, 0, zone)
+            .withOffsetSameInstant(utcZone)
+        val lastRunTime = OffsetDateTime.of(2023, 4, 9, 21, 0, 0, 0, zone).withOffsetSameInstant(utcZone)
+        assertTrue(availableWindow.ranTodayAlready(currentTime, lastRunTime))
     }
 
     @Test

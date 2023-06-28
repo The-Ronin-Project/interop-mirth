@@ -152,14 +152,16 @@ class PatientDiscovery(
         }
 
         fun ranTodayAlready(now: OffsetDateTime, lastRunTime: OffsetDateTime?): Boolean {
-            return if (lastRunTime == null) {
+            val nowInTenantTimeZone = now.withOffsetSameInstant(tenantTimeZone)
+            val lastRunTimeInTenantTimeZone = lastRunTime?.withOffsetSameInstant(tenantTimeZone)
+            return if (lastRunTimeInTenantTimeZone == null) {
                 false
                 // somehow the last time we ran is in the future, so we've already run
-            } else if (now <= lastRunTime) {
+            } else if (nowInTenantTimeZone <= lastRunTimeInTenantTimeZone) {
                 return true
             } else {
-                val currentWindow = getCurrentWindow(now)
-                return lastRunTime in currentWindow.first..currentWindow.second
+                val currentWindow = getCurrentWindow(nowInTenantTimeZone)
+                return lastRunTimeInTenantTimeZone in currentWindow.first..currentWindow.second
             }
         }
 
