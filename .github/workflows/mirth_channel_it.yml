@@ -47,15 +47,26 @@ jobs:
           SEKI_AUTH_CLIENT_SECRET: ${{ secrets.SEKI_AUTH_CLIENT_SECRET }}
           AO_SANDBOX_KEY: ${{ secrets.AO_SANDBOX_KEY }}
 
+      - name: Docker Stats (pre-run)
+        run: docker stats --no-stream
+
       - name: Run tests
         run: ./gradlew :mirth-channel-config:it --info --stacktrace
+
+      - name: Docker Stats (post-run)
+        if: success() || failure()
+        run: docker stats --no-stream
+
+      - name: Docker Logs
+        if: success() || failure()
+        run: docker logs mirth-connect
 
       - name: Archive integration test output
         if: success() || failure()
         uses: actions/upload-artifact@v3
         with:
           name: test-results
-          path: /runner/_work/interop-mirth/interop-mirth/mirth-channel-config/build/reports/tests 
+          path: /runner/_work/interop-mirth/interop-mirth/mirth-channel-config/build/reports/tests
 
       - name: Upload report to DataDog
         if: always() && !cancelled()

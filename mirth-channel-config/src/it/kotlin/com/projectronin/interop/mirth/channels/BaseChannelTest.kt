@@ -64,7 +64,7 @@ abstract class BaseChannelTest(
     fun tearDown() {
         MockEHRTestData.purge()
         AidboxTestData.purge()
-        stopChannel()
+        undeployChannel()
         KafkaClient.reset()
     }
 
@@ -127,6 +127,10 @@ abstract class BaseChannelTest(
 
     protected fun stopChannel(channelToStop: String = testChannelId) {
         MirthClient.stopChannel(channelToStop)
+    }
+
+    protected fun undeployChannel(channelToStop: String = testChannelId) {
+        MirthClient.undeployChannel(channelToStop)
     }
 
     protected fun getChannelMessageIds(): List<Int> {

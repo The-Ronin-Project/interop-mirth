@@ -85,6 +85,7 @@ object MirthClient {
     private const val CHANNELS_DEPLOY_FORMAT = "$CHANNELS_FORMAT/_deploy"
     private const val CHANNELS_START_FORMAT = "$CHANNELS_FORMAT/_start"
     private const val CHANNELS_STOP_FORMAT = "$CHANNELS_FORMAT/_stop"
+    private const val CHANNELS_UNDEPLOY_FORMAT = "$CHANNELS_FORMAT/_undeploy"
     private const val CHANNELS_MESSAGES_FORMAT = "$CHANNELS_FORMAT/messages"
     private const val CHANNELS_MESSAGE_FORMAT = "$CHANNELS_MESSAGES_FORMAT/%d"
     private const val CHANNELS_MESSAGES_COUNT_FORMAT = "$CHANNELS_MESSAGES_FORMAT/count"
@@ -197,5 +198,14 @@ object MirthClient {
 
     fun clearAllStatistics() = runBlocking {
         httpClient.post(CLEAR_STATISTICS_URL)
+    }
+
+    fun undeployChannel(channelId: String) = runBlocking {
+        val stopUrl = CHANNELS_UNDEPLOY_FORMAT.format(channelId)
+        httpClient.post(stopUrl) {
+            url {
+                parameters.append("returnErrors", "true")
+            }
+        }
     }
 }

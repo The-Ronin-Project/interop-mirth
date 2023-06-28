@@ -9,8 +9,7 @@ services:
     env_file:
       - envs/mirth.env
     environment:
-      - AO_SANDBOX_KEY
-      - JAVA_OPTS=-Xmx4g
+      VMOPTIONS: "-Xmx2G"
     ports: # Mirth and Mirth Admin UI
       - 8080:8080/tcp
       - 8443:8443/tcp
