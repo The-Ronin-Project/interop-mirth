@@ -12,7 +12,12 @@ class TenantConfigurationService(
     private val tenantServerDAO: TenantServerDAO
 ) {
     fun getLocationIDsByTenant(tenantMnemonic: String): List<String> {
-        return getConfiguration(tenantMnemonic).locationIds.splitToSequence(",").toList()
+        val locationIds = getConfiguration(tenantMnemonic).locationIds
+        return if (locationIds.isEmpty()) {
+            emptyList()
+        } else {
+            locationIds.splitToSequence(",").toList()
+        }
     }
 
     fun getConfiguration(tenantMnemonic: String): MirthTenantConfigDO {

@@ -32,6 +32,15 @@ class TenantConfigurationServiceTest {
     }
 
     @Test
+    fun `can empty list for empty string`() {
+        every { mirthTenantConfigDAO.getByTenantMnemonic("mdaoc") } returns mockk {
+            every { locationIds } returns ""
+        }
+        val locations = service.getLocationIDsByTenant("mdaoc")
+        assertEquals(0, locations.size)
+    }
+
+    @Test
     fun `throws error when non-existent`() {
         every { mirthTenantConfigDAO.getByTenantMnemonic("fake") } returns null
         assertThrows<IllegalArgumentException> {
