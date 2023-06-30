@@ -11,7 +11,7 @@ class LocationLoadTest {
 
     @BeforeEach
     fun setup() {
-        channel = LocationLoad(mockk(), mockk(), mockk())
+        channel = LocationLoad(mockk(), mockk(), mockk(), mockk())
     }
 
     @Test

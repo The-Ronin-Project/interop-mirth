@@ -10,7 +10,7 @@ class ResourceGroupLoadTest {
 
     @BeforeEach
     fun setup() {
-        channel = RequestGroupLoad(mockk(), mockk(), mockk())
+        channel = RequestGroupLoad(mockk(), mockk(), mockk(), mockk())
     }
 
     @Test

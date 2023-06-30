@@ -11,7 +11,7 @@ class EncounterLoadTest {
 
     @BeforeEach
     fun setup() {
-        channel = EncounterLoad(mockk(), mockk(), mockk())
+        channel = EncounterLoad(mockk(), mockk(), mockk(), mockk())
     }
 
     @Test

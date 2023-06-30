@@ -8,4 +8,4 @@ The overridable function names correspond to the different steps in Mirth and yo
 for your use case.
 
 After you've finished writing a new Kotlin class for a Mirth channel, you'll also want to make sure the corresponding
-Mirth artifiacts are created in [mirth-channel-config](../mirth-channel-config).
+Mirth artifacts are created in [mirth-channel-config](../mirth-channel-config).

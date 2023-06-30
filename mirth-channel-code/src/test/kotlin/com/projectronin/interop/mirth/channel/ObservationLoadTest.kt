@@ -11,7 +11,7 @@ class ObservationLoadTest {
 
     @BeforeEach
     fun setup() {
-        channel = ObservationLoad(mockk(), mockk(), mockk())
+        channel = ObservationLoad(mockk(), mockk(), mockk(), mockk())
     }
 
     @Test

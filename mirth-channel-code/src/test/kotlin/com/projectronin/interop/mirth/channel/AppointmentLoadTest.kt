@@ -11,7 +11,7 @@ class AppointmentLoadTest {
 
     @BeforeEach
     fun setup() {
-        channel = AppointmentLoad(mockk(), mockk(), mockk())
+        channel = AppointmentLoad(mockk(), mockk(), mockk(), mockk())
     }
 
     @Test

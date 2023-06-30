@@ -11,7 +11,7 @@ class ConditionLoadTest {
 
     @BeforeEach
     fun setup() {
-        channel = ConditionLoad(mockk(), mockk(), mockk())
+        channel = ConditionLoad(mockk(), mockk(), mockk(), mockk())
     }
 
     @Test

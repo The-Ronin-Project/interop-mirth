@@ -10,7 +10,7 @@ class PractitionerLoadTest {
 
     @BeforeEach
     fun setup() {
-        channel = PractitionerLoad(mockk(), mockk(), mockk())
+        channel = PractitionerLoad(mockk(), mockk(), mockk(), mockk())
     }
 
     @Test

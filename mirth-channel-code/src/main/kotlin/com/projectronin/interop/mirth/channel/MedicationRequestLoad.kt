@@ -5,6 +5,7 @@ import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.mirth.channel.base.KafkaTopicReader
 import com.projectronin.interop.mirth.channel.destinations.MedicationRequestPublish
+import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.mirth.spring.SpringUtil
 import org.springframework.stereotype.Component
 
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Component
 class MedicationRequestLoad(
     kafkaPublishService: KafkaPublishService,
     kafkaLoadService: KafkaLoadService,
+    override val tenantConfigService: TenantConfigurationService,
     defaultPublisher: MedicationRequestPublish
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "MedicationRequestLoad"

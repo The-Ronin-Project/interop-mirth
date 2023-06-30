@@ -9,6 +9,9 @@ import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
+import com.projectronin.interop.mirth.channel.util.filterBlockedLoadEvents
+import com.projectronin.interop.mirth.channel.util.filterBlockedPublishedEvents
+import com.projectronin.interop.mirth.service.TenantConfigurationService
 
 abstract class KafkaTopicReader(
     private val kafkaPublishService: KafkaPublishService,
@@ -18,21 +21,25 @@ abstract class KafkaTopicReader(
     abstract val publishedResourcesSubscriptions: List<ResourceType>
     abstract val resource: ResourceType
     abstract val channelGroupId: String
+    abstract val tenantConfigService: TenantConfigurationService
 
     override val destinations: Map<String, KafkaEventResourcePublisher<*>> = mapOf("publish" to defaultPublisher)
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
-        val nightlyPublishedEvents = retrievePublishedEvents(DataTrigger.NIGHTLY)
+        // wrapping retrievePublishedEvents with function to filter out blocked resources
+        val nightlyPublishedEvents = filterBlockedPublishedEvents(retrievePublishedEvents(DataTrigger.NIGHTLY), tenantConfigService)
         if (nightlyPublishedEvents.isNotEmpty()) {
             return nightlyPublishedEvents.toPublishMirthMessages()
         }
 
-        val loadEvents = kafkaLoadService.retrieveLoadEvents(resourceType = resource, groupId = channelGroupId)
+        // wrapping retrieveLoadEvents with function to filter out blocked resources
+        val loadEvents = filterBlockedLoadEvents(kafkaLoadService.retrieveLoadEvents(resourceType = resource, groupId = channelGroupId), tenantConfigService)
         if (loadEvents.isNotEmpty()) {
             return loadEvents.toLoadMirthMessages()
         }
 
-        val adHocPublishEvents = retrievePublishedEvents(DataTrigger.AD_HOC)
+        // wrapping retrievePublishedEvents with function to filter out blocked resources
+        val adHocPublishEvents = filterBlockedPublishedEvents(retrievePublishedEvents(DataTrigger.AD_HOC), tenantConfigService)
         if (adHocPublishEvents.isNotEmpty()) {
             return adHocPublishEvents.toPublishMirthMessages()
         }

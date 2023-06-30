@@ -10,7 +10,7 @@ class PatientLoadTest {
 
     @BeforeEach
     fun setup() {
-        channel = PatientLoad(mockk(), mockk(), mockk())
+        channel = PatientLoad(mockk(), mockk(), mockk(), mockk())
     }
 
     @Test

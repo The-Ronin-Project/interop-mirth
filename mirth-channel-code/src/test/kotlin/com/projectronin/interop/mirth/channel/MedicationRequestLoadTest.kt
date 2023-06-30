@@ -11,7 +11,7 @@ class MedicationRequestLoadTest {
 
     @BeforeEach
     fun setup() {
-        channel = MedicationRequestLoad(mockk(), mockk(), mockk())
+        channel = MedicationRequestLoad(mockk(), mockk(), mockk(), mockk())
     }
 
     @Test
