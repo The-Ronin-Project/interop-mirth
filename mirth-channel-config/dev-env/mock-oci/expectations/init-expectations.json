@@ -631,7 +631,7 @@
             "targetVersion": "2023",
             "element": [
               {
-                "code": "{[{29463-7, null, http://loinc.org, false}], Body Weight}",
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"29463-7\", \"display\": null, \"system\": \"http://loinc.org\"}]}}",
                 "display": "Body Weight",
                 "target": [
                   {

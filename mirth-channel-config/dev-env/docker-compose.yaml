@@ -327,7 +327,3 @@ services:
       - ./ehrda:/host
     environment:
       - JSON_CONFIG_PATH=/host/mock-oauth2-config.json
-
-secrets:
-  mcserver_vmoptions:
-    file: ./jvm-options/mcservice-java9+.vmoptions
