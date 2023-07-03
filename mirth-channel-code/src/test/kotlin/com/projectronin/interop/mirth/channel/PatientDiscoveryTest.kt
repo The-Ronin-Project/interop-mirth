@@ -69,7 +69,7 @@ class PatientDiscoveryTest {
 
         tenantService = mockk {
             every { getTenantForMnemonic("ronin") } returns tenant
-            every { getAllTenants() } returns listOf(tenant, tenant2)
+            every { getMonitoredTenants() } returns listOf(tenant, tenant2)
         }
         val ehrFactory = mockk<EHRFactory> {
             every { getVendorFactory(tenant) } returns vendorFactory

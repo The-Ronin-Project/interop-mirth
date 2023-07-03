@@ -35,7 +35,7 @@ class PatientDiscovery(
     }
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
-        return tenantService.getAllTenants()
+        return tenantService.getMonitoredTenants()
             .filter { needsLoad(it) }
             .flatMap { tenant ->
                 try {
