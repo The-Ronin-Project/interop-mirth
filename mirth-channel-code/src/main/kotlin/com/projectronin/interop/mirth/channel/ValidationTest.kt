@@ -12,12 +12,15 @@ import com.projectronin.interop.fhir.generators.primitives.dateTime
 import com.projectronin.interop.fhir.generators.primitives.daysFromNow
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.appointment
+import com.projectronin.interop.fhir.generators.resources.carePlan
+import com.projectronin.interop.fhir.generators.resources.carePlanActivity
 import com.projectronin.interop.fhir.generators.resources.condition
 import com.projectronin.interop.fhir.generators.resources.encounter
 import com.projectronin.interop.fhir.generators.resources.location
 import com.projectronin.interop.fhir.generators.resources.observation
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.generators.resources.practitioner
+import com.projectronin.interop.fhir.generators.resources.requestGroup
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
 import com.projectronin.interop.fhir.r4.resource.EncounterLocation
@@ -148,6 +151,39 @@ class ValidationTest(
                     encounter1
                 )
 
+                val requestGroupID = mockEHR.addResource(
+                    requestGroup {
+                        status of Code("active")
+                        intent of Code("plan")
+                        subject of reference("Patient", patientID)
+                    }
+                )
+
+                val carePlanID = mockEHR.addResource( // careplans can be tied to specific conditions, observations or itself
+                    carePlan {
+                        status of Code("active")
+                        intent of Code("plan")
+                        subject of reference("Patient", patientID)
+                        category of listOf(
+                            codeableConcept {
+                                coding of listOf(
+                                    coding {
+                                        code of Code("736378000")
+                                    },
+                                    coding {
+                                        code of Code("assess-plan")
+                                    }
+                                )
+                            }
+                        )
+                        activity of listOf(
+                            carePlanActivity {
+                                reference of reference("RequestGroup", requestGroupID)
+                            }
+                        )
+                    }
+                )
+
                 val observation1ID = mockEHR.addResource(
                     observation {
                         subject of reference("Patient", patientID)
@@ -228,7 +264,9 @@ class ValidationTest(
                     "Encounter/$encounterID",
                     "Practitioner/$practitionerID",
                     "Observation/$observation1ID",
-                    "Condition/$conditionID"
+                    "Condition/$conditionID",
+                    "CarePlan/$carePlanID",
+                    "RequestGroup/$requestGroupID"
                 )
 
                 MirthMessage(

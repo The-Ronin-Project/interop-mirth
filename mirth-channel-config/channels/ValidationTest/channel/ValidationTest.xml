@@ -114,7 +114,7 @@ Uses a set list of locations to find patients with upcoming appointments and tri
           <queueBufferSize>1000</queueBufferSize>
           <reattachAttachments>true</reattachAttachments>
         </destinationConnectorProperties>
-        <channelId>epicmock-83ead971-6f47-4ff9-bc59-e6a</channelId>
+        <channelId>83ead971-6f47-4ff9-bc59-e6a5b595522b</channelId>
         <channelTemplate>${message.encodedData}</channelTemplate>
         <mapVariables>
           <string>tenantMnemonic</string>
@@ -285,8 +285,8 @@ return;</undeployScript>
     <metadata>
       <enabled>true</enabled>
       <lastModified>
-        <time>1683917715745</time>
-        <timezone>America/Chicago</timezone>
+        <time>1688574186943</time>
+        <timezone>America/Denver</timezone>
       </lastModified>
       <pruningSettings>
         <pruneMetaDataDays>60</pruneMetaDataDays>
