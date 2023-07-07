@@ -3,43 +3,11 @@ on:
   schedule:
     - cron: "0 0 * * 0,3"
   workflow_dispatch:
-    inputs:
-      maxPRs:
-        description: 'The maximum number of PRs to create during execution'
-        required: true
-        default: '10'
 
 jobs:
-  build:
-    runs-on: self-hosted
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - name: Set up JDK 17
-        uses: actions/setup-java@v2
-        with:
-          java-version: 17
-          distribution: 'zulu'
-
-      - name: Generate a one-time token
-        id: generate_token
-        uses: tibdex/github-app-token@v1
-        with:
-          app_id: ${{ secrets.RONIN_ORG_APP_ID }}
-          private_key: ${{ secrets.ORG_LEVEL_TOKEN }}
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Run Releases Hub
-        run: ./gradlew upgradeDependencies
-        env:
-          gitHubRepository: ${{ github.REPOSITORY }}
-          gitHubWriteToken: ${{ steps.generate_token.outputs.token }}
-          gitUserEmail: "41898282+github-actions[bot]@users.noreply.github.com"
-          gitUserName: "github-actions[bot]"
-          pullRequestsMax: ${{ github.event.inputs.maxPRs || '10' }}
-          pullRequestLabels: "dependencies"
-          pullRequestAssignee: "arssycro"
-          baseBranch: "main"
-
+  version-catalog-update:
+    name: Update Version Catalog
+    uses: projectronin/github/.github/workflows/version_catalog_update.yaml@version_catalog_update/v1
+    with:
+      assignees: "arssycro"
+    secrets: inherit

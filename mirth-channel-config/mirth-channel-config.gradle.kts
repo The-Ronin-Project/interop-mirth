@@ -1,7 +1,6 @@
 plugins {
-    id("com.projectronin.interop.gradle.base")
+    alias(libs.plugins.interop.integration)
     id("com.projectronin.interop.gradle.mirth")
-    id("com.projectronin.interop.gradle.integration")
 }
 
 mirth {
@@ -36,12 +35,12 @@ dependencies {
 
     itImplementation(project(":mirth-channel-code"))
     itImplementation(libs.mockserver.client.java)
-    itImplementation(libs.interop.fhir.generators)
+    itImplementation(libs.interop.fhirGenerators)
     itImplementation(libs.interop.queue.kafka)
     itImplementation(libs.bundles.interop.kafka.events)
     itImplementation(libs.ronin.test.data.generator)
     itImplementation(libs.ronin.kafka)
     itImplementation(libs.interop.kafka)
-    itImplementation(libs.interop.publishers.aidbox)
+    itImplementation(libs.interop.aidbox)
     itImplementation("io.github.microutils:kotlin-logging:3.0.5")
 }

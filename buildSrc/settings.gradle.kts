@@ -1,9 +1,12 @@
-pluginManagement {
-    val interopGradleVersion = "3.0.0"
-    plugins {
-        id("com.projectronin.interop.gradle.base") version interopGradleVersion
+dependencyResolutionManagement {
+    versionCatalogs {
+        create("libs") {
+            from(files("../gradle/libs.versions.toml"))
+        }
     }
+}
 
+pluginManagement {
     repositories {
         maven {
             url = uri("https://repo.devops.projectronin.io/repository/maven-snapshots/")

@@ -1,12 +1,11 @@
 plugins {
-    id("com.projectronin.interop.gradle.version")
-    id("com.projectronin.interop.gradle.publish")
-    id("com.projectronin.interop.gradle.junit")
-    id("com.projectronin.interop.gradle.integration")
-    id("com.projectronin.interop.gradle.spring")
+    alias(libs.plugins.interop.spring)
+    alias(libs.plugins.interop.junit)
+    alias(libs.plugins.interop.integration)
+    alias(libs.plugins.interop.publish)
     // Plugin exposing shadowJar task for creating fat JAR
-    id("com.github.johnrengelman.shadow")
-    id("org.owasp.dependencycheck")
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.dependencycheck)
 }
 
 dependencies {
@@ -24,8 +23,8 @@ dependencies {
     implementation(libs.interop.commonJackson)
     implementation(libs.interop.ehr.api)
     implementation(libs.interop.fhir)
-    implementation(libs.interop.publishers.core)
-    implementation(libs.interop.publishers.aidbox)
+    implementation(libs.interop.publishers)
+    implementation(libs.interop.aidbox)
     implementation(libs.interop.datalake)
     implementation(libs.interop.kafka)
 
@@ -47,7 +46,7 @@ dependencies {
     implementation(libs.mysql.connector.java)
     implementation(libs.jersey.glassfish.client)
     implementation(libs.ronin.test.data.generator)
-    implementation(libs.interop.fhir.generators)
+    implementation(libs.interop.fhirGenerators)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.ktor.client.core)
     implementation(libs.bundles.ktor)

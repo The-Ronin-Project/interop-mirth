@@ -1,6 +1,6 @@
 package com.projectronin.interop.gradle.mirth.task
 
-import com.projectronin.interop.aidbox.PublishService
+import com.projectronin.interop.aidbox.AidboxPublishService
 import com.projectronin.interop.aidbox.auth.AidboxAuthenticationBroker
 import com.projectronin.interop.aidbox.auth.AidboxAuthenticationService
 import com.projectronin.interop.aidbox.auth.AidboxCredentials
@@ -23,7 +23,7 @@ open class InstallAidboxResources : BaseMirthTask() {
         val authService = AidboxAuthenticationService(HttpSpringConfig().getHttpClient(), restUrl, aidboxCredentials)
         val authBroker = AidboxAuthenticationBroker(authService)
         val aidboxClient = AidboxClient(HttpSpringConfig().getHttpClient(), restUrl, authBroker)
-        val aidboxPublishService = PublishService(aidboxClient)
+        val aidboxPublishService = AidboxPublishService(aidboxClient)
         getAidboxResources().forEach { publishResource(aidboxPublishService, it) }
     }
 
@@ -42,7 +42,7 @@ open class InstallAidboxResources : BaseMirthTask() {
         return aidboxDirectories.flatMap { it.listFiles().toList() }.filter { it.extension == "json" }
     }
 
-    private fun publishResource(aidboxPublishService: PublishService, file: File) {
+    private fun publishResource(aidboxPublishService: AidboxPublishService, file: File) {
         val rawBundle = file.readLines().joinToString("\n")
         val bundle = JacksonManager.objectMapper.readValue(rawBundle, Bundle::class.java)
         val resources = bundle.entry.map { it.resource!! }

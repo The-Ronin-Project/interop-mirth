@@ -7,16 +7,6 @@ for (project in rootProject.children) {
 }
 
 pluginManagement {
-    plugins {
-        id("com.projectronin.interop.gradle.integration") version "3.0.0"
-        id("com.projectronin.interop.gradle.junit") version "3.0.0"
-        id("com.projectronin.interop.gradle.publish") version "3.0.0"
-        id("com.projectronin.interop.gradle.spring") version "3.0.0"
-        id("com.projectronin.interop.gradle.version") version "3.0.0"
-        id("com.github.johnrengelman.shadow") version "8.1.1"
-        id("org.owasp.dependencycheck") version "8.3.1"
-    }
-
     repositories {
         maven {
             url = uri("https://repo.devops.projectronin.io/repository/maven-snapshots/")
