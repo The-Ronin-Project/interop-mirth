@@ -17,6 +17,7 @@ import com.projectronin.interop.fhir.generators.resources.carePlanActivity
 import com.projectronin.interop.fhir.generators.resources.condition
 import com.projectronin.interop.fhir.generators.resources.encounter
 import com.projectronin.interop.fhir.generators.resources.location
+import com.projectronin.interop.fhir.generators.resources.medicationRequest
 import com.projectronin.interop.fhir.generators.resources.observation
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.generators.resources.practitioner
@@ -159,30 +160,31 @@ class ValidationTest(
                     }
                 )
 
-                val carePlanID = mockEHR.addResource( // careplans can be tied to specific conditions, observations or itself
-                    carePlan {
-                        status of Code("active")
-                        intent of Code("plan")
-                        subject of reference("Patient", patientID)
-                        category of listOf(
-                            codeableConcept {
-                                coding of listOf(
-                                    coding {
-                                        code of Code("736378000")
-                                    },
-                                    coding {
-                                        code of Code("assess-plan")
-                                    }
-                                )
-                            }
-                        )
-                        activity of listOf(
-                            carePlanActivity {
-                                reference of reference("RequestGroup", requestGroupID)
-                            }
-                        )
-                    }
-                )
+                val carePlanID =
+                    mockEHR.addResource( // careplans can be tied to specific conditions, observations or itself
+                        carePlan {
+                            status of Code("active")
+                            intent of Code("plan")
+                            subject of reference("Patient", patientID)
+                            category of listOf(
+                                codeableConcept {
+                                    coding of listOf(
+                                        coding {
+                                            code of Code("736378000")
+                                        },
+                                        coding {
+                                            code of Code("assess-plan")
+                                        }
+                                    )
+                                }
+                            )
+                            activity of listOf(
+                                carePlanActivity {
+                                    reference of reference("RequestGroup", requestGroupID)
+                                }
+                            )
+                        }
+                    )
 
                 val observation1ID = mockEHR.addResource(
                     observation {
@@ -257,6 +259,15 @@ class ValidationTest(
                     }
                 )
 
+                val medicationRequestID = mockEHR.addResource(
+                    medicationRequest {
+                        subject of reference("Patient", patientID)
+                        medication of DynamicValues.reference(reference("Medication", "1234"))
+                        requester of reference("Practitioner", practitionerID)
+                    }
+
+                )
+
                 val resources = listOf(
                     "Location/$locationID",
                     "Patient/$patientID",
@@ -266,7 +277,8 @@ class ValidationTest(
                     "Observation/$observation1ID",
                     "Condition/$conditionID",
                     "CarePlan/$carePlanID",
-                    "RequestGroup/$requestGroupID"
+                    "RequestGroup/$requestGroupID",
+                    "MedicationRequest/$medicationRequestID"
                 )
 
                 MirthMessage(

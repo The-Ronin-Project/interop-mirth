@@ -1,8 +1,7 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.event.interop.internal.v1.ResourceType
-import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
-import com.projectronin.interop.fhir.generators.datatypes.coding
+import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.datatypes.reference
@@ -74,16 +73,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
             requester of reference("Practitioner", "ffff")
             intent of "order"
             status of "active"
-            medicationCodeableConcept of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "medicationSystem"
-                        code of "somethingHere"
-                        display of "something Here Too"
-                    }
-                )
-                text of "text"
-            }
+            medication of DynamicValues.reference(reference("Medication", "1234"))
         }
         val medicationRequestId = MockEHRTestData.add(medicationRequest)
         MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId)
@@ -125,16 +115,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
             requester of reference("Practitioner", "ffff")
             intent of "order"
             status of "active"
-            medicationCodeableConcept of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "medicationSystem"
-                        code of "somethingHere"
-                        display of "something Here Too"
-                    }
-                )
-                text of "text"
-            }
+            medication of DynamicValues.reference(reference("Medication", "1234"))
         }
 
         val fakeMedicationRequest2 = medicationRequest {
@@ -142,16 +123,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
             requester of reference("Practitioner", "ffff")
             intent of "order"
             status of "active"
-            medicationCodeableConcept of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "medicationSystem"
-                        code of "somethingHere"
-                        display of "something Here Too"
-                    }
-                )
-                text of "text"
-            }
+            medication of DynamicValues.reference(reference("Medication", "1234"))
         }
 
         val medRequest1ID = MockEHRTestData.add(fakeMedicationRequest1)
@@ -196,16 +168,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
             requester of reference("Practitioner", "ffff")
             intent of "order"
             status of "active"
-            medicationCodeableConcept of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "medicationSystem"
-                        code of "somethingHere"
-                        display of "something Here Too"
-                    }
-                )
-                text of "text"
-            }
+            medication of DynamicValues.reference(reference("Medication", "1234"))
         }
         val fakeMedicationRequestId = MockEHRTestData.add(fakeMedicationRequest1)
         MockOCIServerClient.createExpectations("MedicationRequest", fakeMedicationRequestId, testTenant)
