@@ -27,6 +27,7 @@ import io.mockk.just
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -108,6 +109,7 @@ class PatientDiscoveryTest {
         assertEquals("456", list[1].message)
         assertEquals("ronin", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
         assertEquals("ronin", list[1].dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertNotNull(list[1].dataMap[MirthKey.EVENT_RUN_ID.code])
     }
 
     @Test

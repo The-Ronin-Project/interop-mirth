@@ -13,7 +13,7 @@ import com.projectronin.interop.fhir.r4.resource.Encounter
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.r4.resource.Participant
 import com.projectronin.interop.fhir.r4.valueset.ParticipationStatus
-import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher.ResourceRequestKey
+import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
 import com.projectronin.interop.mirth.connector.util.asCode
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every

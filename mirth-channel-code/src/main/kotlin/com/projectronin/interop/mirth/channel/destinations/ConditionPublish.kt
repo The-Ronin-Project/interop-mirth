@@ -14,12 +14,14 @@ import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.ConditionCategoryCodes
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
-import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher
+import com.projectronin.interop.mirth.channel.base.kafka.IdBasedPublishEventResourceLoadRequest
+import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
+import com.projectronin.interop.mirth.channel.base.kafka.LoadEventResourceLoadRequest
+import com.projectronin.interop.mirth.channel.base.kafka.ResourceLoadRequest
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
-
 @Component
 class ConditionPublish(
     ehrFactory: EHRFactory,

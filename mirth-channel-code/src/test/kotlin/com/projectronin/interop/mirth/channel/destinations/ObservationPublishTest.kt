@@ -11,7 +11,7 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.resource.Patient
-import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher.ResourceRequestKey
+import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk

@@ -9,7 +9,7 @@ import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Participant
 import com.projectronin.interop.fhir.r4.resource.Practitioner
-import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher.ResourceRequestKey
+import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk

@@ -6,7 +6,7 @@ import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Patient
-import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher
+import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
@@ -74,7 +74,7 @@ class PatientPublishTest {
         )
 
         val requestKeys = listOf(
-            KafkaEventResourcePublisher.ResourceRequestKey(
+            ResourceRequestKey(
                 "run123",
                 ResourceType.Patient,
                 tenant,

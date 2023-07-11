@@ -1,4 +1,4 @@
-package com.projectronin.interop.mirth.channel.base
+package com.projectronin.interop.mirth.channel.base.kafka
 
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
@@ -7,6 +7,7 @@ import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.DataTrigger
+import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.util.filterBlockedLoadEvents
@@ -70,7 +71,8 @@ abstract class KafkaTopicReader(
                 JacksonUtil.writeJsonValue(it),
                 mapOf(
                     MirthKey.TENANT_MNEMONIC.code to it.tenantId,
-                    MirthKey.KAFKA_EVENT.code to it::class.simpleName!!
+                    MirthKey.KAFKA_EVENT.code to it::class.simpleName!!,
+                    MirthKey.EVENT_RUN_ID.code to it.metadata.runId
                 )
             )
         }
@@ -82,7 +84,8 @@ abstract class KafkaTopicReader(
                 JacksonUtil.writeJsonValue(it),
                 mapOf(
                     MirthKey.TENANT_MNEMONIC.code to it.tenantId,
-                    MirthKey.KAFKA_EVENT.code to it::class.simpleName!!
+                    MirthKey.KAFKA_EVENT.code to it::class.simpleName!!,
+                    MirthKey.EVENT_RUN_ID.code to it.metadata.runId
                 )
             )
         }

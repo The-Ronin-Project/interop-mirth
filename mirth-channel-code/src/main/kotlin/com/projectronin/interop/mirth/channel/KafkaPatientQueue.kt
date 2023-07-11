@@ -5,7 +5,7 @@ import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninPatient
-import com.projectronin.interop.mirth.channel.base.KafkaQueue
+import com.projectronin.interop.mirth.channel.base.kafka.KafkaQueue
 import com.projectronin.interop.mirth.channel.destinations.queue.PatientTenantlessQueueWriter
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.queue.kafka.KafkaQueueService

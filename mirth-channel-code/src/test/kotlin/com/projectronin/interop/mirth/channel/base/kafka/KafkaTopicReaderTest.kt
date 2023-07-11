@@ -1,7 +1,8 @@
-package com.projectronin.interop.mirth.channel.base
+package com.projectronin.interop.mirth.channel.base.kafka
 
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.Location
@@ -26,6 +27,7 @@ class KafkaTopicReaderTest {
     private lateinit var kafkaPublishService: KafkaPublishService
     private lateinit var tenantConfigService: TenantConfigurationService
     private lateinit var channel: TestChannel
+    private lateinit var mockMetadata: Metadata
 
     class TestChannel(
         kafkaPublishService: KafkaPublishService,
@@ -57,6 +59,10 @@ class KafkaTopicReaderTest {
         kafkaPublishService = mockk()
         tenantConfigService = mockk()
         channel = TestChannel(kafkaPublishService, kafkaLoadService, tenantConfigService)
+        mockMetadata = mockk<Metadata> {
+            every { runId } returns ">9000"
+        }
+
         mockkObject(JacksonUtil)
     }
 
@@ -78,6 +84,7 @@ class KafkaTopicReaderTest {
         val mockEvent = mockk<InteropResourcePublishV1> {
             every { tenantId } returns "mockTenant"
             every { resourceType } returns ResourceType.Location
+            every { metadata } returns mockMetadata
         }
         val configDO = mockk<MirthTenantConfigDO> {
             every { blockedResources } returns "" // should this be the actual resource name
@@ -100,6 +107,7 @@ class KafkaTopicReaderTest {
         assertEquals(1, messages.size)
         val message = messages.first()
         assertEquals("mockTenant", message.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals(">9000", message.dataMap[MirthKey.EVENT_RUN_ID.code])
         assertEquals("mockEvent", message.message)
     }
 
@@ -108,18 +116,22 @@ class KafkaTopicReaderTest {
         val mockEvent1 = mockk<InteropResourcePublishV1> {
             every { tenantId } returns "mockTenant"
             every { resourceType } returns ResourceType.Location
+            every { metadata } returns mockMetadata
         }
         val mockEvent2 = mockk<InteropResourcePublishV1> {
             every { tenantId } returns "mockTenant"
             every { resourceType } returns ResourceType.Appointment
+            every { metadata } returns mockMetadata
         }
         val mockEvent3 = mockk<InteropResourcePublishV1> {
             every { tenantId } returns "mockTenant"
             every { resourceType } returns ResourceType.Location
+            every { metadata } returns mockMetadata
         }
         val mockEvent4 = mockk<InteropResourcePublishV1> {
             every { tenantId } returns "mockTenant4"
             every { resourceType } returns ResourceType.Appointment
+            every { metadata } returns mockMetadata
         }
         val configDO = mockk<MirthTenantConfigDO> {
             every { blockedResources } returns "Location,Appointment" // should this be the actual resource name
@@ -231,6 +243,7 @@ class KafkaTopicReaderTest {
         val mockEvent = mockk<InteropResourcePublishV1> {
             every { tenantId } returns "mockTenant"
             every { resourceType } returns ResourceType.Location
+            every { metadata } returns mockMetadata
         }
         every {
             kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
@@ -258,6 +271,7 @@ class KafkaTopicReaderTest {
         val mockEvent = mockk<InteropResourceLoadV1> {
             every { tenantId } returns "mockTenant"
             every { resourceType } returns ResourceType.Location
+            every { metadata } returns mockMetadata
         }
         every {
             kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
@@ -288,6 +302,7 @@ class KafkaTopicReaderTest {
         val mockEvent = mockk<InteropResourcePublishV1> {
             every { tenantId } returns "mockTenant"
             every { resourceType } returns ResourceType.Location
+            every { metadata } returns mockMetadata
         }
         val configDO = mockk<MirthTenantConfigDO> {
             every { blockedResources } returns "" // should this be the actual resource name
@@ -349,6 +364,7 @@ class KafkaTopicReaderTest {
         val mockEvent = mockk<InteropResourceLoadV1> {
             every { tenantId } returns "mockTenant"
             every { resourceType } returns ResourceType.Location
+            every { metadata } returns mockMetadata
         }
         val configDO = mockk<MirthTenantConfigDO> {
             every { blockedResources } returns "" // should this be the actual resource name

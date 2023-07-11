@@ -21,11 +21,6 @@ enum class MirthKey(val code: String) {
     RESOURCES_TRANSFORMED("resourcesTransformed"),
 
     /**
-     * Key for a Mirth data map: The value is a collection of resources returned by a get or search.
-     */
-    RESOURCES_FOUND("resourcesFound"),
-
-    /**
      * Key for a Mirth data map: The value is a FHIR resource type
      */
     RESOURCE_TYPE("resourceType"),
@@ -46,24 +41,9 @@ enum class MirthKey(val code: String) {
     FHIR_ID("fhirID"),
 
     /**
-     * Key for a Mirth data map: The value is the Patient FHIR ID associated with the resource.
-     */
-    PATIENT_FHIR_ID("patientFhirID"),
-
-    /**
-     * A full serialized patient object we need to create in the Ronin clinical data store
-     */
-    NEW_PATIENT_JSON("patientToCreateJson"),
-
-    /**
      * Count of individual failures encountered while operating on a list of resources.
      */
     FAILURE_COUNT("failureCount"),
-
-    /**
-     * Trigger type for an event, i.e. DataTrigger.NIGHTLY
-     */
-    DATA_TRIGGER("dataTrigger"),
 
     /**
      * Kafka Event type e.g InteropPublish
@@ -73,5 +53,15 @@ enum class MirthKey(val code: String) {
     /**
      * An event's Metadata.
      */
-    EVENT_METADATA("kafkaEventMetadata")
+    EVENT_METADATA("kafkaEventMetadata"),
+
+    /**
+     * An event's source reference.
+     */
+    EVENT_METADATA_SOURCE("kafkaEventSource"),
+
+    /**
+     * An event's source reference.
+     */
+    EVENT_RUN_ID("kafkaEventRunId")
 }

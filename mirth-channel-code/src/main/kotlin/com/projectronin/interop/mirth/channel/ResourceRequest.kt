@@ -28,7 +28,9 @@ class ResourceRequest(
             MirthMessage(
                 JacksonUtil.writeJsonValue(it),
                 mapOf(
-                    MirthKey.TENANT_MNEMONIC.code to it.tenantId
+                    MirthKey.TENANT_MNEMONIC.code to it.tenantId,
+                    MirthKey.FHIR_ID.code to it.resourceFHIRId,
+                    MirthKey.RESOURCE_TYPE.code to it.resourceType
                 )
             )
         }

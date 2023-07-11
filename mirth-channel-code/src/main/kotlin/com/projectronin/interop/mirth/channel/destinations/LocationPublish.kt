@@ -12,7 +12,11 @@ import com.projectronin.interop.fhir.r4.resource.Encounter
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninLocation
-import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher
+import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
+import com.projectronin.interop.mirth.channel.base.kafka.LoadEventResourceLoadRequest
+import com.projectronin.interop.mirth.channel.base.kafka.PublishEventResourceLoadRequest
+import com.projectronin.interop.mirth.channel.base.kafka.ResourceLoadRequest
+import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
 import com.projectronin.interop.mirth.channel.util.unlocalize
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
@@ -77,7 +81,14 @@ class LocationPublish(
             sourceResource.participant.asSequence()
                 .filter { it.actor?.decomposedType()?.startsWith("Location") == true }
                 .mapNotNull { it.actor?.decomposedId()?.unlocalize(tenant) }
-                .distinct().map { ResourceRequestKey(metadata.runId, ResourceType.Location, tenant, it) }.toList()
+                .distinct().map {
+                    ResourceRequestKey(
+                        metadata.runId,
+                        ResourceType.Location,
+                        tenant,
+                        it
+                    )
+                }.toList()
 
         override fun loadResources(requestKeys: List<ResourceRequestKey>): List<Location> {
             val locationIds = requestKeys.map { it.resourceId }

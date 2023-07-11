@@ -1,4 +1,4 @@
-package com.projectronin.interop.mirth.channel.base
+package com.projectronin.interop.mirth.channel.base.kafka
 
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.projectronin.interop.common.jackson.JacksonManager

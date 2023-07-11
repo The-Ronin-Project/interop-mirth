@@ -11,7 +11,11 @@ import com.projectronin.interop.fhir.r4.resource.CarePlan
 import com.projectronin.interop.fhir.r4.resource.RequestGroup
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninRequestGroup
-import com.projectronin.interop.mirth.channel.base.KafkaEventResourcePublisher
+import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
+import com.projectronin.interop.mirth.channel.base.kafka.LoadEventResourceLoadRequest
+import com.projectronin.interop.mirth.channel.base.kafka.PublishEventResourceLoadRequest
+import com.projectronin.interop.mirth.channel.base.kafka.ResourceLoadRequest
+import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
 import com.projectronin.interop.mirth.channel.util.unlocalize
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
@@ -69,7 +73,14 @@ class RequestGroupPublish(
             .asSequence()
             .filter { it.reference?.decomposedType()?.startsWith("RequestGroup") == true }
             .mapNotNull { it.reference?.decomposedId() }
-            .distinct().map { ResourceRequestKey(metadata.runId, ResourceType.RequestGroup, tenant, it) }
+            .distinct().map {
+                ResourceRequestKey(
+                    metadata.runId,
+                    ResourceType.RequestGroup,
+                    tenant,
+                    it
+                )
+            }
             .toList()
 
         override fun loadResources(requestKeys: List<ResourceRequestKey>): List<RequestGroup> {

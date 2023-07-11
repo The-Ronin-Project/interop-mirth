@@ -1,8 +1,9 @@
-package com.projectronin.interop.mirth.channel.base
+package com.projectronin.interop.mirth.channel.base.kafka
 
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.DomainResource
+import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.queue.TenantlessQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage

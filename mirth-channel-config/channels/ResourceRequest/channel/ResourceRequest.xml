@@ -176,13 +176,28 @@ return;</undeployScript>
     <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
     <initialState>STARTED</initialState>
     <storeAttachments>false</storeAttachments>
-    <metaDataColumns>
-      <metaDataColumn>
-        <name>TENANT</name>
-        <type>STRING</type>
-        <mappingName>tenantMnemonic</mappingName>
-      </metaDataColumn>
-    </metaDataColumns>
+      <metaDataColumns>
+          <metaDataColumn>
+              <name>TENANT</name>
+              <type>STRING</type>
+              <mappingName>tenantMnemonic</mappingName>
+          </metaDataColumn>
+          <metaDataColumn>
+              <name>ID</name>
+              <type>STRING</type>
+              <mappingName>fhirID</mappingName>
+          </metaDataColumn>
+          <metaDataColumn>
+              <name>RESOURCE_TYPE</name>
+              <type>STRING</type>
+              <mappingName>resourceType</mappingName>
+          </metaDataColumn>
+          <metaDataColumn>
+              <name>SOURCE</name>
+              <type>STRING</type>
+              <mappingName>kafkaEventSource</mappingName>
+          </metaDataColumn>
+      </metaDataColumns>
     <attachmentProperties version="3.11.0">
       <type>None</type>
       <properties/>

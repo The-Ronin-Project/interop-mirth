@@ -1,18 +1,14 @@
-package com.projectronin.interop.mirth.channel.base
+package com.projectronin.interop.mirth.channel.base.kafka
 
 import com.github.benmanes.caffeine.cache.Caffeine
-import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
-import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonUtil
-import com.projectronin.interop.ehr.FHIRService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.base.BaseProfile
-import com.projectronin.interop.kafka.model.DataTrigger
+import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.exceptions.MapVariableMissing
@@ -50,6 +46,11 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         val vendorFactory = ehrFactory.getVendorFactory(tenant)
         val eventClassName = sourceMap[MirthKey.KAFKA_EVENT.code] ?: throw MapVariableMissing("Missing Event Name")
         val resourceLoadRequest = convertEventToRequest(msg, eventClassName as String, vendorFactory, tenant)
+        // if the resource request had an upstream resource,
+        // grab that, so we can place it in the data map for easier viewing in mirth
+        val newMap = resourceLoadRequest.getSourceReference()
+            ?.let { mapOf(MirthKey.EVENT_METADATA_SOURCE.code to "${it.resourceType}/${it.id}") }
+            ?: emptyMap()
 
         val allRequestKeys = resourceLoadRequest.requestKeys
         val requestKeysToProcess = filterRequestKeys(allRequestKeys)
@@ -62,7 +63,8 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                     ", "
                 )
                 }",
-                message = "Already processed"
+                message = "Already processed",
+                dataMap = newMap
             )
         }
 
@@ -78,7 +80,8 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                     return MirthResponse(
                         status = MirthResponseStatus.ERROR,
                         detailedMessage = it.message,
-                        message = "Failed EHR Call"
+                        message = "Failed EHR Call",
+                        dataMap = newMap
                     )
                 }
             )
@@ -91,7 +94,8 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
             return MirthResponse(
                 status = MirthResponseStatus.SENT,
                 detailedMessage = "No new resources retrieved from EHR.$cachedMessage",
-                message = "No resources"
+                message = "No resources",
+                dataMap = newMap
             )
         }
 
@@ -102,7 +106,8 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = resources.truncateList(),
-                message = "Failed to transform ${resources.size} resource(s)"
+                message = "Failed to transform ${resources.size} resource(s)",
+                dataMap = newMap + mapOf(MirthKey.FAILURE_COUNT.code to resources.size)
             )
         }
         // if some of our uncachedResources failed to transform, we should alert, but publish the ones that worked
@@ -120,7 +125,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
             publishService.publishFHIRResources(
                 tenantMnemonic,
                 transformedResources,
-                resourceLoadRequest.metadata,
+                resourceLoadRequest.getUpdatedMetadata(),
                 resourceLoadRequest.dataTrigger
             )
         }.fold(
@@ -144,13 +149,17 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = transformedResources.truncateList(),
-                message = "Failed to publish ${transformedResources.size} resource(s)"
+                message = "Failed to publish ${transformedResources.size} resource(s)",
+                dataMap = newMap + mapOf(MirthKey.FAILURE_COUNT.code to resources.size)
             )
         } else {
             return MirthResponse(
                 status = MirthResponseStatus.SENT,
                 detailedMessage = transformedResources.truncateList(),
-                message = "Published ${transformedResources.size} resource(s).$cachedMessage"
+                message = "Published ${transformedResources.size} resource(s).$cachedMessage",
+                dataMap = newMap +
+                    mapOf(MirthKey.FAILURE_COUNT.code to (resources.size - transformedResources.size)) +
+                    mapOf(MirthKey.RESOURCE_COUNT.code to transformedResources.size)
             )
         }
     }
@@ -230,111 +239,4 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         vendorFactory: VendorFactory,
         tenant: Tenant
     ): ResourceLoadRequest<T>
-
-    data class ResourceRequestKey(
-        val runId: String,
-        val resourceType: ResourceType,
-        val tenant: Tenant,
-        val resourceId: String
-    ) {
-        // This is to ensure we have a consistent ID to base indexing off of.
-        private val unlocalizedResourceId = resourceId.unlocalize(tenant)
-
-        override fun toString(): String = "$runId:$resourceType:${tenant.mnemonic}:$unlocalizedResourceId"
-    }
-
-    /**
-     * Since most load channels are subscribed to different topics, this is a wrapper class so the main loop of the channel
-     * doesn't have to worry about how to handle different events and instead can always just call [loadResources]
-     */
-    abstract class ResourceLoadRequest<T : Resource<T>> {
-        abstract val sourceEvent: Any
-        abstract val dataTrigger: DataTrigger
-        abstract val fhirService: FHIRService<T>
-        abstract val tenant: Tenant
-        abstract val metadata: Metadata
-        abstract val requestKeys: List<ResourceRequestKey>
-
-        abstract fun loadResources(requestKeys: List<ResourceRequestKey>): List<T>
-    }
-
-    /**
-     * Wrapper for [InteropResourceLoadV1] events, so the implementer can focus on writing the [loadResources]
-     */
-    abstract class LoadEventResourceLoadRequest<T : Resource<T>>(
-        final override val sourceEvent: InteropResourceLoadV1,
-        final override val tenant: Tenant
-    ) :
-        ResourceLoadRequest<T>() {
-        final override val dataTrigger: DataTrigger = when (sourceEvent.dataTrigger) {
-            InteropResourceLoadV1.DataTrigger.adhoc -> DataTrigger.AD_HOC
-            InteropResourceLoadV1.DataTrigger.nightly -> DataTrigger.NIGHTLY
-            else -> {
-                // backfill
-                throw IllegalStateException("Received a data trigger which cannot be transformed to a known value")
-            }
-        }
-
-        final override val metadata: Metadata = sourceEvent.metadata
-        final override val requestKeys: List<ResourceRequestKey> =
-            listOf(ResourceRequestKey(metadata.runId, sourceEvent.resourceType, tenant, sourceEvent.resourceFHIRId))
-
-        override fun loadResources(requestKeys: List<ResourceRequestKey>): List<T> {
-            // Since a load can only request a single resource, the request key does not actually matter here
-            return listOf(fhirService.getByID(tenant, sourceEvent.resourceFHIRId.unlocalize(tenant)))
-        }
-    }
-
-    /**
-     * Wrapper for [InteropResourcePublishV1] events, so the implementer can focus on writing the [loadResources].
-     * If you are only loading by the FHIR resource's ID, use [IdBasedPublishEventResourceLoadRequest].
-     *
-     * [T] is the resource that should be returned by this load. [S] is the resource that is used as the
-     * source event for the load request.
-     *
-     * For instance, if an Appointment is being used to load Locations, [T] would be [com.projectronin.interop.fhir.r4.resource.Location]
-     * and [S] would be [com.projectronin.interop.fhir.r4.resource.Appointment]
-     */
-    abstract class PublishEventResourceLoadRequest<T : Resource<T>, S : Resource<S>>(
-        final override val sourceEvent: InteropResourcePublishV1
-    ) :
-        ResourceLoadRequest<T>() {
-        final override val dataTrigger: DataTrigger = when (sourceEvent.dataTrigger) {
-            InteropResourcePublishV1.DataTrigger.adhoc -> DataTrigger.AD_HOC
-            InteropResourcePublishV1.DataTrigger.nightly -> DataTrigger.NIGHTLY
-            else -> {
-                // backfill
-                throw IllegalStateException("Received a data trigger which cannot be transformed to a known value")
-            }
-        }
-
-        final override val metadata: Metadata = sourceEvent.metadata
-
-        abstract val sourceResource: S
-    }
-
-    /**
-     * Wrapper for [InteropResourcePublishV1] events that always use the FHIR resource's ID to load resources.
-     *
-     * [T] is the resource that should be returned by this load. [S] is the resource that is used as the
-     * source event for the load request.
-     *
-     * For instance, if an Appointment is being used to load Locations, [T] would be [com.projectronin.interop.fhir.r4.resource.Location]
-     * and [S] would be [com.projectronin.interop.fhir.r4.resource.Appointment]
-     */
-    abstract class IdBasedPublishEventResourceLoadRequest<T : Resource<T>, S : Resource<S>>(
-        sourceEvent: InteropResourcePublishV1,
-        final override val tenant: Tenant
-    ) : PublishEventResourceLoadRequest<T, S>(sourceEvent) {
-        private val resourceType: ResourceType = sourceEvent.resourceType
-
-        // The default case assumes we are using the published resource ID as our key
-        override val requestKeys: List<ResourceRequestKey> by lazy {
-            listOf(ResourceRequestKey(metadata.runId, resourceType, tenant, sourceResource.id!!.value!!))
-        }
-
-        abstract fun loadResources(): List<T>
-
-        override fun loadResources(requestKeys: List<ResourceRequestKey>): List<T> = loadResources()
-    }
 }
