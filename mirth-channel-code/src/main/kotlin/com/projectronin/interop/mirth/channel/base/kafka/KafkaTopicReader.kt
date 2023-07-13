@@ -28,19 +28,19 @@ abstract class KafkaTopicReader(
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
         // wrapping retrievePublishedEvents with function to filter out blocked resources
-        val nightlyPublishedEvents = filterBlockedPublishedEvents(retrievePublishedEvents(DataTrigger.NIGHTLY), tenantConfigService)
+        val nightlyPublishedEvents = filterBlockedPublishedEvents(resource, retrievePublishedEvents(DataTrigger.NIGHTLY), tenantConfigService)
         if (nightlyPublishedEvents.isNotEmpty()) {
             return nightlyPublishedEvents.toPublishMirthMessages()
         }
 
         // wrapping retrieveLoadEvents with function to filter out blocked resources
-        val loadEvents = filterBlockedLoadEvents(kafkaLoadService.retrieveLoadEvents(resourceType = resource, groupId = channelGroupId), tenantConfigService)
+        val loadEvents = filterBlockedLoadEvents(resource, kafkaLoadService.retrieveLoadEvents(resourceType = resource, groupId = channelGroupId), tenantConfigService)
         if (loadEvents.isNotEmpty()) {
             return loadEvents.toLoadMirthMessages()
         }
 
         // wrapping retrievePublishedEvents with function to filter out blocked resources
-        val adHocPublishEvents = filterBlockedPublishedEvents(retrievePublishedEvents(DataTrigger.AD_HOC), tenantConfigService)
+        val adHocPublishEvents = filterBlockedPublishedEvents(resource, retrievePublishedEvents(DataTrigger.AD_HOC), tenantConfigService)
         if (adHocPublishEvents.isNotEmpty()) {
             return adHocPublishEvents.toPublishMirthMessages()
         }
