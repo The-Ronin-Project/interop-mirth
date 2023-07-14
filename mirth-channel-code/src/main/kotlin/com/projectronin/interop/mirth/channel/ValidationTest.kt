@@ -16,7 +16,9 @@ import com.projectronin.interop.fhir.generators.resources.carePlan
 import com.projectronin.interop.fhir.generators.resources.carePlanActivity
 import com.projectronin.interop.fhir.generators.resources.condition
 import com.projectronin.interop.fhir.generators.resources.encounter
+import com.projectronin.interop.fhir.generators.resources.ingredient
 import com.projectronin.interop.fhir.generators.resources.location
+import com.projectronin.interop.fhir.generators.resources.medication
 import com.projectronin.interop.fhir.generators.resources.medicationRequest
 import com.projectronin.interop.fhir.generators.resources.observation
 import com.projectronin.interop.fhir.generators.resources.patient
@@ -259,13 +261,43 @@ class ValidationTest(
                     }
                 )
 
+                val ingredientMedicationId = mockEHR.addResource(
+                    medication {
+                        code of codeableConcept {
+                            coding of listOf(
+                                coding {
+                                    system of "ok"
+                                    code of "yeah"
+                                }
+                            )
+                        }
+                    }
+                )
+
+                val medicationID = mockEHR.addResource(
+                    medication {
+                        code of codeableConcept {
+                            coding of listOf(
+                                coding {
+                                    system of "ok"
+                                    code of "yeah"
+                                }
+                            )
+                        }
+                        ingredient of listOf(
+                            ingredient {
+                                item of DynamicValues.reference(reference("Medication", ingredientMedicationId))
+                            }
+                        )
+                    }
+                )
+
                 val medicationRequestID = mockEHR.addResource(
                     medicationRequest {
                         subject of reference("Patient", patientID)
-                        medication of DynamicValues.reference(reference("Medication", "1234"))
+                        medication of DynamicValues.reference(reference("Medication", medicationID))
                         requester of reference("Practitioner", practitionerID)
                     }
-
                 )
 
                 val resources = listOf(
@@ -278,7 +310,9 @@ class ValidationTest(
                     "Condition/$conditionID",
                     "CarePlan/$carePlanID",
                     "RequestGroup/$requestGroupID",
-                    "MedicationRequest/$medicationRequestID"
+                    "MedicationRequest/$medicationRequestID",
+                    "Medication/$medicationID",
+                    "Medication/$ingredientMedicationId"
                 )
 
                 MirthMessage(

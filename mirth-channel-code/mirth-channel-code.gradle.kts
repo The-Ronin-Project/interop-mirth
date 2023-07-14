@@ -15,6 +15,7 @@ dependencies {
         resolutionStrategy {
             force(libs.kafka.clients)
             force(libs.woodstox.core)
+            force(libs.kotlin.stdlib)
         }
     }
 
