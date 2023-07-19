@@ -65,7 +65,12 @@ class ValidationTest(
         return serviceMap["validationTestTenants"].toString().split(",")
             .map { tenantMnemonic -> // set in Mirth Settings > Configuration Map
                 val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: return emptyList()
-                val mockEHR = MockEHRUtil(httpClient, tenant.vendor.serviceEndpoint)
+                val ignoreTypeList = serviceMap["$tenantMnemonic-validationIgnoreTypes"].toString().split(",")
+                val mockEHR = MockEHRUtil(
+                    httpClient,
+                    tenant.vendor.serviceEndpoint,
+                    ignoreTypeList
+                )
                 val patientID =
                     mockEHR.addResource(
                         patient {
@@ -313,7 +318,7 @@ class ValidationTest(
                     "MedicationRequest/$medicationRequestID",
                     "Medication/$medicationID",
                     "Medication/$ingredientMedicationId"
-                )
+                ).filterNot { it.split("/").first() in ignoreTypeList }
 
                 MirthMessage(
                     message = locationID,
@@ -327,7 +332,7 @@ class ValidationTest(
             }
     }
 
-    class MockEHRUtil(val httpClient: HttpClient, URL: String) {
+    class MockEHRUtil(val httpClient: HttpClient, URL: String, val ignoreTypeList: List<String> = emptyList()) {
 
         val logger = KotlinLogging.logger { }
 
@@ -340,16 +345,22 @@ class ValidationTest(
         }
         val RESOURCES_FORMAT = "$FHIR_URL/%s"
 
-        inline fun <reified T : Resource<T>> addResource(resource: Resource<T>): String = runBlocking {
-            val resourceUrl = RESOURCES_FORMAT.format(resource.resourceType)
-            val response = httpClient.post(resourceUrl) {
-                contentType(ContentType.Application.Json)
-                accept(ContentType.Application.Json)
-                setBody(resource)
+        inline fun <reified T : Resource<T>> addResource(resource: Resource<T>): String {
+            return if (resource.resourceType in ignoreTypeList) {
+                "IGNORED"
+            } else {
+                runBlocking {
+                    val resourceUrl = RESOURCES_FORMAT.format(resource.resourceType)
+                    val response = httpClient.post(resourceUrl) {
+                        contentType(ContentType.Application.Json)
+                        accept(ContentType.Application.Json)
+                        setBody(resource)
+                    }
+                    val location = response.headers["Content-Location"]
+                    logger.warn { "$location" }
+                    location!!.removePrefix("$resourceUrl/")
+                }
             }
-            val location = response.headers["Content-Location"]
-            logger.warn { "$location" }
-            location!!.removePrefix("$resourceUrl/")
         }
 
         fun deleteResource(resourceReference: String) = runBlocking {
