@@ -24,6 +24,7 @@ mirth {
 
 dependencies {
     itImplementation(libs.interop.common)
+    itImplementation(libs.interop.commonHttp)
     itImplementation(libs.interop.commonJackson)
 
     itImplementation(libs.interop.fhir)

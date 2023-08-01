@@ -46,6 +46,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         val vendorFactory = ehrFactory.getVendorFactory(tenant)
         val eventClassName = sourceMap[MirthKey.KAFKA_EVENT.code] ?: throw MapVariableMissing("Missing Event Name")
         val resourceLoadRequest = convertEventToRequest(msg, eventClassName as String, vendorFactory, tenant)
+
         // if the resource request had an upstream resource,
         // grab that, so we can place it in the data map for easier viewing in mirth
         val newMap = resourceLoadRequest.getSourceReference()
@@ -85,7 +86,14 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                     )
                 }
             )
-
+        if (resourceLoadRequest.skipAllPublishing) {
+            return MirthResponse(
+                status = MirthResponseStatus.SENT,
+                detailedMessage = resources.truncateList(),
+                message = "This message is meant only for internal processing.",
+                dataMap = newMap
+            )
+        }
         val cachedResourcesCount = allRequestKeys.size - requestKeysToProcess.size + previouslyCachedCount
         val cachedMessage =
             if (cachedResourcesCount > 0) " $cachedResourcesCount resource(s) were already processed this run." else ""
@@ -120,13 +128,15 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
             }
         }
 
+        val postTransformedResources = postTransform(tenant, transformedResources, vendorFactory)
+
         // publish says it returns a boolean, but actually throws an error if there was a problem
         val publishResult = runCatching {
             publishService.publishFHIRResources(
                 tenantMnemonic,
-                transformedResources,
+                postTransformedResources,
                 resourceLoadRequest.getUpdatedMetadata(),
-                resourceLoadRequest.dataTrigger
+                if (resourceLoadRequest.skipKafkaPublishing) null else resourceLoadRequest.dataTrigger
             )
         }.fold(
             onSuccess = { it },
@@ -136,7 +146,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
             // in the event of a failure to publish we want to invalidate the keys in we put in during loadResources
             // some of these keys might have been processed, but we don't have access to know which keys failed and which
             // succeeded here
-            val keys = transformedResources.map {
+            val keys = postTransformedResources.map {
                 ResourceRequestKey(
                     resourceLoadRequest.metadata.runId,
                     ResourceType.valueOf(it.resourceType),
@@ -148,18 +158,18 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
             processedResourcesCache.invalidateAll(keys)
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
-                detailedMessage = transformedResources.truncateList(),
-                message = "Failed to publish ${transformedResources.size} resource(s)",
+                detailedMessage = postTransformedResources.truncateList(),
+                message = "Failed to publish ${postTransformedResources.size} resource(s)",
                 dataMap = newMap + mapOf(MirthKey.FAILURE_COUNT.code to resources.size)
             )
         } else {
             return MirthResponse(
                 status = MirthResponseStatus.SENT,
-                detailedMessage = transformedResources.truncateList(),
-                message = "Published ${transformedResources.size} resource(s).$cachedMessage",
+                detailedMessage = postTransformedResources.truncateList(),
+                message = "Published ${postTransformedResources.size} resource(s).$cachedMessage",
                 dataMap = newMap +
-                    mapOf(MirthKey.FAILURE_COUNT.code to (resources.size - transformedResources.size)) +
-                    mapOf(MirthKey.RESOURCE_COUNT.code to transformedResources.size)
+                    mapOf(MirthKey.FAILURE_COUNT.code to (resources.size - postTransformedResources.size)) +
+                    mapOf(MirthKey.RESOURCE_COUNT.code to postTransformedResources.size)
             )
         }
     }
@@ -239,4 +249,10 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         vendorFactory: VendorFactory,
         tenant: Tenant
     ): ResourceLoadRequest<T>
+
+    /**
+     * Allows post-processing of transformed resources before publishing
+     */
+    open fun postTransform(tenant: Tenant, transformedList: List<T>, vendorFactory: VendorFactory): List<T> =
+        transformedList
 }

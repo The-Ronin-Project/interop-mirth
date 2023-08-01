@@ -290,6 +290,18 @@
           "filename": "EmptyValueSet.json"
         },
         {
+          "registry_uuid": "17b",
+          "resource_type": "DocumentReference",
+          "data_element": "DocumentReference.type",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece694b521b",
+          "tenant_id": "epicmock",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceDocumentReferenceType",
+          "registry_entry_type": "concept_map",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-documentReference",
+          "version": 2,
+          "filename": "RoninDocumentReferenceType.json"
+        },
+        {
           "registry_uuid": "18",
           "resource_type": "Medication",
           "data_element": "Medication.code",
@@ -654,6 +666,68 @@
       }
     },
     "id": "GetRoninObservationCode",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/RoninDocumentReferenceType.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ConceptMap",
+        "title": "Ronin DocRef",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a3",
+        "name": "ObservationCodeRonin",
+        "url": "http://projectronin.io/fhir/StructureDefinition/ConceptMap/4ffae118-778f-4df9-bd73-aece694b521c",
+        "purpose": "FHIR Interops Concept Map",
+        "publisher": "Project Ronin",
+        "experimental": false,
+        "date": "2022-12-02",
+        "version": 1,
+        "group": [
+          {
+            "source": "http://projectronin.io/fhir/CodeSystem/epicmock/DocumentReferenceType",
+            "sourceVersion": "1.0",
+            "target": "http://loinc.org",
+            "targetVersion": "2023",
+            "element": [
+              {
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"34806-0\", \"display\": null, \"system\": \"http://loinc.org\"}]}}",
+                "display": "Oncology note",
+                "target": [
+                  {
+                    "code": "34806-0",
+                    "display": "Oncology note",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://projectronin.io/fhir/ronin.common-fhir-model.uscore-r4/StructureDefinition/Extension/ronin-ConceptMapSchema",
+            "valueString": "1.0.0"
+          }
+        ]
+      }
+    },
+    "id": "GetRoninDocumentReferenceType",
     "priority": 0,
     "timeToLive": {
       "unlimited": true

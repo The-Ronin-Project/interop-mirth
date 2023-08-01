@@ -21,6 +21,8 @@ abstract class ResourceLoadRequest<T : Resource<T>> {
     abstract val tenant: Tenant
     abstract val metadata: Metadata
     abstract val requestKeys: List<ResourceRequestKey>
+    open val skipAllPublishing: Boolean = false // set true if nothing should happen post loadResources()
+    open val skipKafkaPublishing: Boolean = false // set true if no event should be sent to internal Kafka topic
 
     /** Given that metadata should slightly change as the event processes through the channels
      this function lets the [ResourceLoadRequest] handle providing this information to the caller

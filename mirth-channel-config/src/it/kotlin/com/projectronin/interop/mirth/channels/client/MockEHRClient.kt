@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channels.client
 
+import com.projectronin.interop.common.http.FhirJson
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.fhir.r4.resource.Bundle
 import com.projectronin.interop.fhir.r4.resource.Resource
@@ -52,8 +53,8 @@ object MockEHRClient {
     inline fun <reified T : Resource<T>> addResource(resource: Resource<T>): String = runBlocking {
         val resourceUrl = RESOURCES_FORMAT.format(resource.resourceType)
         val response = httpClient.post(resourceUrl) {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
+            contentType(ContentType.Application.FhirJson)
+            accept(ContentType.Application.FhirJson)
             setBody(resource)
         }
         val location = response.headers["Content-Location"]

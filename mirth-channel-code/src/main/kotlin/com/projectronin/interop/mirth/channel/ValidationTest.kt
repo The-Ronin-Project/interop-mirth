@@ -1,6 +1,8 @@
 package com.projectronin.interop.mirth.channel
 
+import com.projectronin.interop.common.http.FhirJson
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
+import com.projectronin.interop.fhir.generators.datatypes.attachment
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.identifier
@@ -9,12 +11,16 @@ import com.projectronin.interop.fhir.generators.datatypes.participant
 import com.projectronin.interop.fhir.generators.datatypes.period
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.dateTime
+import com.projectronin.interop.fhir.generators.primitives.daysAgo
 import com.projectronin.interop.fhir.generators.primitives.daysFromNow
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.appointment
+import com.projectronin.interop.fhir.generators.resources.binary
 import com.projectronin.interop.fhir.generators.resources.carePlan
 import com.projectronin.interop.fhir.generators.resources.carePlanActivity
 import com.projectronin.interop.fhir.generators.resources.condition
+import com.projectronin.interop.fhir.generators.resources.documentReference
+import com.projectronin.interop.fhir.generators.resources.documentReferenceContent
 import com.projectronin.interop.fhir.generators.resources.encounter
 import com.projectronin.interop.fhir.generators.resources.ingredient
 import com.projectronin.interop.fhir.generators.resources.location
@@ -26,6 +32,7 @@ import com.projectronin.interop.fhir.generators.resources.practitioner
 import com.projectronin.interop.fhir.generators.resources.requestGroup
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
+import com.projectronin.interop.fhir.r4.datatype.primitive.Url
 import com.projectronin.interop.fhir.r4.resource.EncounterLocation
 import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
@@ -304,6 +311,38 @@ class ValidationTest(
                         requester of reference("Practitioner", practitionerID)
                     }
                 )
+                val binaryID = mockEHR.addResource(binary { })
+                val documentReferenceID = mockEHR.addResource(
+                    documentReference {
+                        date of 2.daysAgo()
+                        type of codeableConcept {
+                            coding of listOf(
+                                coding {
+                                    system of "http://loinc.org"
+                                    code of "34806-0"
+                                }
+                            )
+                        }
+                        subject of reference("Patient", patientID)
+                        category of listOf(
+                            codeableConcept {
+                                coding of listOf(
+                                    coding {
+                                        system of "http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category"
+                                        code of "clinical-note"
+                                    }
+                                )
+                            }
+                        )
+                        content of listOf(
+                            documentReferenceContent {
+                                attachment of attachment {
+                                    url of Url("Binary/$binaryID")
+                                }
+                            }
+                        )
+                    }
+                )
 
                 val resources = listOf(
                     "Location/$locationID",
@@ -317,7 +356,8 @@ class ValidationTest(
                     "RequestGroup/$requestGroupID",
                     "MedicationRequest/$medicationRequestID",
                     "Medication/$medicationID",
-                    "Medication/$ingredientMedicationId"
+                    "Medication/$ingredientMedicationId",
+                    "DocumentReference/$documentReferenceID"
                 ).filterNot { it.split("/").first() in ignoreTypeList }
 
                 MirthMessage(
@@ -352,8 +392,8 @@ class ValidationTest(
                 runBlocking {
                     val resourceUrl = RESOURCES_FORMAT.format(resource.resourceType)
                     val response = httpClient.post(resourceUrl) {
-                        contentType(ContentType.Application.Json)
-                        accept(ContentType.Application.Json)
+                        contentType(ContentType.Application.FhirJson)
+                        accept(ContentType.Application.FhirJson)
                         setBody(resource)
                     }
                     val location = response.headers["Content-Location"]

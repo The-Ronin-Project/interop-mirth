@@ -66,8 +66,9 @@ class KafkaEventResourcePublisherTest {
             vendorFactory: VendorFactory,
             testTenant: Tenant
         ): ResourceLoadRequest<Location> {
-            val mockRequest = mockk<ResourceLoadRequest<Location>> {
+            val mockRequest = mockk<ResourceLoadRequest<Location>>(relaxed = true) {
                 every { dataTrigger } returns DataTrigger.NIGHTLY
+
                 every { tenant } returns testTenant
                 every { metadata } returns (returnedMetadata ?: mockk())
                 every { getSourceReference() } returns mockk {
