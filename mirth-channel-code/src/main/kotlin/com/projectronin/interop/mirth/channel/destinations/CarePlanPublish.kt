@@ -2,8 +2,6 @@ package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
-import com.projectronin.interop.aidbox.utils.findFhirID
-import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.CarePlanService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
@@ -11,15 +9,17 @@ import com.projectronin.interop.fhir.r4.resource.CarePlan
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninCarePlan
-import com.projectronin.interop.mirth.channel.base.kafka.IdBasedPublishEventResourceLoadRequest
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
-import com.projectronin.interop.mirth.channel.base.kafka.LoadEventResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceLoadRequest
+import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
 import java.time.LocalDate
+
 @Component
 class CarePlanPublish(
     ehrFactory: EHRFactory,
@@ -36,50 +36,48 @@ class CarePlanPublish(
 ) {
     override val cacheAndCompareResults: Boolean = true
 
-    // turn a kafka event into an abstract class we can deal with
-    override fun convertEventToRequest(
-        serializedEvent: String,
-        eventClassName: String,
+    override fun convertPublishEventsToRequest(
+        events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
         tenant: Tenant
-    ): ResourceLoadRequest<CarePlan> {
-        return when (eventClassName) {
-            InteropResourcePublishV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourcePublishV1::class)
-                PatientSourceCarePlanLoadRequest(event, vendorFactory.carePlanService, tenant)
-            }
-
-            InteropResourceLoadV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourceLoadV1::class)
-                CarePlanLoadRequest(event, vendorFactory.carePlanService, tenant)
-            }
-
-            else -> throw IllegalStateException("Received a string which cannot deserialize to a known event")
-        }
+    ): PublishResourceRequest<CarePlan> {
+        return PatientPublishCarePlanRequest(events, vendorFactory.carePlanService, tenant)
     }
 
-    private class PatientSourceCarePlanLoadRequest(
-        sourceEvent: InteropResourcePublishV1,
-        override val fhirService: CarePlanService,
+    override fun convertLoadEventsToRequest(
+        events: List<InteropResourceLoadV1>,
+        vendorFactory: VendorFactory,
         tenant: Tenant
-    ) :
-        IdBasedPublishEventResourceLoadRequest<CarePlan, Patient>(sourceEvent, tenant) {
-        override val sourceResource: Patient = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
-
-        override fun loadResources(): List<CarePlan> {
-            val patientFhirId = sourceResource.identifier.findFhirID()
-            return fhirService.findPatientCarePlans(
-                tenant = tenant,
-                patientFhirId = patientFhirId,
-                startDate = LocalDate.now().minusYears(1),
-                endDate = LocalDate.now().plusYears(1)
-            )
-        }
+    ): LoadResourceRequest<CarePlan> {
+        return LoadCarePlanRequest(events, vendorFactory.carePlanService, tenant)
     }
 
-    private class CarePlanLoadRequest(
-        sourceEvent: InteropResourceLoadV1,
+    internal class PatientPublishCarePlanRequest(
+        publishEvents: List<InteropResourcePublishV1>,
+        override val fhirService: CarePlanService,
+        override val tenant: Tenant
+    ) : PublishResourceRequest<CarePlan>() {
+        override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
+            publishEvents.map { PatientPublishEvent(it, tenant) }
+
+        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<CarePlan>> {
+            return requestFhirIds.associateWith {
+                fhirService.findPatientCarePlans(
+                    tenant,
+                    it,
+                    startDate = LocalDate.now().minusMonths(1),
+                    endDate = LocalDate.now().plusMonths(1)
+                )
+            }
+        }
+
+        private class PatientPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
+            IdBasedPublishResourceEvent<Patient>(publishEvent, tenant, Patient::class)
+    }
+
+    internal class LoadCarePlanRequest(
+        loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: CarePlanService,
         tenant: Tenant
-    ) : LoadEventResourceLoadRequest<CarePlan>(sourceEvent, tenant)
+    ) : LoadResourceRequest<CarePlan>(loadEvents, tenant)
 }

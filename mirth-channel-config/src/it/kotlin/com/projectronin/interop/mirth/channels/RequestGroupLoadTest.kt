@@ -114,13 +114,12 @@ class RequestGroupLoadTest : BaseChannelTest(
         waitForMessage(1)
 
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        messageList.forEach { ids ->
-            val message = MirthClient.getMessageById(testChannelId, ids)
-            message.destinationMessages.forEach {
-                assertEquals("ERROR", it.status)
-            }
-        }
         assertEquals(1, messageList.size)
+
+        val message = MirthClient.getMessageById(testChannelId, messageList.first())
+        assertEquals(1, message.destinationMessages.size)
+        assertEquals("SENT", message.destinationMessages.first().status)
+
         assertEquals(0, getAidboxResourceCount("RequestGroup"))
     }
 }

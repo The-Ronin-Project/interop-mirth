@@ -4,284 +4,242 @@ import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
-import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.common.jackson.JacksonManager
+import com.projectronin.interop.ehr.LocationService
 import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.fhir.r4.datatype.Coding
 import com.projectronin.interop.fhir.r4.datatype.Reference
-import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
+import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Encounter
+import com.projectronin.interop.fhir.r4.resource.EncounterLocation
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.r4.resource.Participant
+import com.projectronin.interop.fhir.r4.valueset.AppointmentStatus
+import com.projectronin.interop.fhir.r4.valueset.EncounterStatus
 import com.projectronin.interop.fhir.r4.valueset.ParticipationStatus
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
-import com.projectronin.interop.mirth.connector.util.asCode
+import com.projectronin.interop.fhir.util.asCode
+import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkObject
-import io.mockk.unmockkAll
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class LocationPublishTest {
-    lateinit var tenant: Tenant
-    lateinit var destination: LocationPublish
-
-    @BeforeEach
-    fun setup() {
-        tenant = mockk {
-            every { mnemonic } returns "tenant"
-        }
-        destination = LocationPublish(mockk(), mockk(), mockk(), mockk(), mockk())
-        mockkObject(JacksonUtil)
+    private val tenantId = "tenant"
+    private val tenant = mockk<Tenant> {
+        every { mnemonic } returns tenantId
     }
-
-    @AfterEach
-    fun unmockk() {
-        unmockkAll()
+    private val locationService = mockk<LocationService>()
+    private val vendorFactory = mockk<VendorFactory> {
+        every { locationService } returns this@LocationPublishTest.locationService
     }
+    private val locationPublish = LocationPublish(mockk(), mockk(), mockk(), mockk(), mockk())
 
-    @Test
-    fun `channel creation works`() {
-        assertNotNull(destination)
-    }
-
-    @Test
-    fun `fails on unknown request`() {
-        assertThrows<IllegalStateException> {
-            destination.convertEventToRequest("nothing", "nothing", mockk(), mockk())
-        }
-    }
-
-    @Test
-    fun `works for load events`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourceLoadV1(
-            "tenant",
-            "id",
-            ResourceType.Location,
-            InteropResourceLoadV1.DataTrigger.adhoc,
-            metadata
-        )
-        val mockLocation = mockk<Location>()
-        every { JacksonUtil.readJsonObject("nothing", InteropResourceLoadV1::class) } returns event
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { locationService.getByID(tenant, "id") } returns mockLocation
-        }
-        val request = destination.convertEventToRequest(
-            "nothing",
-            InteropResourceLoadV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
-        )
-
-        val requestKeys = listOf(
-            ResourceRequestKey(
-                "run123",
-                ResourceType.Location,
-                tenant,
-                "id"
+    private val appointment1 = Appointment(
+        id = Id("$tenantId-1234"),
+        status = AppointmentStatus.BOOKED.asCode(),
+        participant = listOf(
+            Participant(
+                actor = Reference(reference = FHIRString("Location/$tenantId-1234")),
+                status = ParticipationStatus.ACCEPTED.asCode()
+            ),
+            Participant(
+                actor = Reference(reference = FHIRString("Location/$tenantId-5678")),
+                status = ParticipationStatus.ACCEPTED.asCode()
             )
         )
-        assertEquals(requestKeys, request.requestKeys)
+    )
+    private val appointment2 = Appointment(
+        id = Id("$tenantId-5678"),
+        status = AppointmentStatus.BOOKED.asCode(),
+        participant = listOf(
+            Participant(
+                actor = Reference(reference = FHIRString("Location/$tenantId-9012")),
+                status = ParticipationStatus.ACCEPTED.asCode()
+            )
+        )
+    )
+    private val appointment3 = Appointment(
+        id = Id("$tenantId-9012"),
+        status = AppointmentStatus.BOOKED.asCode(),
+        participant = listOf(
+            Participant(
+                actor = Reference(reference = FHIRString("Practitioner/$tenantId-3456")),
+                status = ParticipationStatus.ACCEPTED.asCode()
+            )
+        )
+    )
+    private val encounter1 = Encounter(
+        id = Id("$tenantId-1234"),
+        `class` = Coding(display = FHIRString("class")),
+        status = EncounterStatus.FINISHED.asCode(),
+        location = listOf(
+            EncounterLocation(location = Reference(reference = FHIRString("Location/$tenantId-1234"))),
+            EncounterLocation(location = Reference(reference = FHIRString("Location/$tenantId-5678")))
+        )
+    )
+    private val encounter2 = Encounter(
+        id = Id("$tenantId-1234"),
+        `class` = Coding(display = FHIRString("class")),
+        status = EncounterStatus.FINISHED.asCode(),
+        location = listOf(
+            EncounterLocation(location = Reference(reference = FHIRString("Location/$tenantId-9012")))
+        )
+    )
+    private val encounter3 = Encounter(
+        id = Id("$tenantId-1234"),
+        `class` = Coding(display = FHIRString("class")),
+        status = EncounterStatus.FINISHED.asCode()
+    )
 
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockLocation, results.first())
+    private val metadata = mockk<Metadata>(relaxed = true) {
+        every { runId } returns "run"
     }
 
     @Test
-    fun `works for publish events`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
+    fun `publish events create a AppointmentPublishLocationRequest for appointment publish events`() {
+        val publishEvent = mockk<InteropResourcePublishV1>(relaxed = true) {
+            every { resourceType } returns ResourceType.Appointment
+            every { resourceJson } returns JacksonManager.objectMapper.writeValueAsString(appointment1)
+            every { metadata } returns this@LocationPublishTest.metadata
         }
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.Appointment,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "123",
-            metadata
-        )
-        val mockApptParticipant = mockk<Appointment> {
-            every { id?.value } returns "tenant-123"
-            every { participant } returns listOf(
-                Participant(
-                    status = ParticipationStatus.ACCEPTED.asCode(),
-                    actor = Reference(reference = "Location/1".asFHIR())
-                ),
-                Participant(
-                    status = ParticipationStatus.ACCEPTED.asCode(),
-                    actor = Reference(reference = "Location/1".asFHIR())
-                )
-            )
-        }
-        val mockLocation = mockk<Location> { every { id?.value } returns "Location/1" }
-        every { JacksonUtil.readJsonObject("123", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("123", mockApptParticipant::class) } returns mockApptParticipant
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { locationService.getLocationsByFHIRId(tenant, listOf("1")) } returns
-                mapOf("id" to mockLocation)
-        }
-        val request = destination.convertEventToRequest(
-            "123",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
-        )
-
-        val requestKeys = listOf(
-            ResourceRequestKey(
-                "run123",
-                ResourceType.Location,
-                tenant,
-                "1"
-            )
-        )
-        assertEquals(requestKeys, request.requestKeys)
-
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockLocation, results.first())
+        val request = locationPublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
+        assertInstanceOf(LocationPublish.AppointmentPublishLocationRequest::class.java, request)
     }
 
     @Test
-    fun `works for publish events - encounter`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
+    fun `publish events create a EncounterPublishLocationRequest for encounter publish events`() {
+        val publishEvent = mockk<InteropResourcePublishV1>(relaxed = true) {
+            every { resourceType } returns ResourceType.Encounter
+            every { resourceJson } returns JacksonManager.objectMapper.writeValueAsString(encounter1)
+            every { metadata } returns this@LocationPublishTest.metadata
         }
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.Encounter,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "123",
-            metadata
-        )
-        val mockEncounter = mockk<Encounter> {
-            every { location } returns listOf(
-                mockk {
-                    every { location?.decomposedId() } returns "1"
-                }
-            )
-        }
-        val mockLocation = mockk<Location> { every { id?.value } returns "Location/1" }
-        every { JacksonUtil.readJsonObject("123", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("123", mockEncounter::class) } returns mockEncounter
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { locationService.getLocationsByFHIRId(tenant, listOf("1")) } returns
-                mapOf("id" to mockLocation)
-        }
-        val request = destination.convertEventToRequest(
-            "123",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
-        )
-
-        val requestKeys = listOf(
-            ResourceRequestKey(
-                "run123",
-                ResourceType.Location,
-                tenant,
-                "1"
-            )
-        )
-        assertEquals(requestKeys, request.requestKeys)
-
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockLocation, results.first())
+        val request = locationPublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
+        assertInstanceOf(LocationPublish.EncounterPublishLocationRequest::class.java, request)
     }
 
     @Test
-    fun `works for publish events - null`() {
-        val metadata = mockk<Metadata>()
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.Patient, // doesn't listen to patient
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "123",
-            metadata
-        )
-        every { JacksonUtil.readJsonObject("123", InteropResourcePublishV1::class) } returns event
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { locationService.getLocationsByFHIRId(tenant, emptyList()) } returns
-                emptyMap()
+    fun `publish events throw exception for unsupported publish events`() {
+        val publishEvent = mockk<InteropResourcePublishV1>(relaxed = true) {
+            every { resourceType } returns ResourceType.Practitioner
         }
-        assertThrows<IllegalStateException> {
-            destination.convertEventToRequest(
-                "123",
-                InteropResourcePublishV1::class.simpleName!!,
-                mockVendorFactory,
+        val exception = assertThrows<IllegalStateException> {
+            locationPublish.convertPublishEventsToRequest(
+                listOf(publishEvent),
+                vendorFactory,
                 tenant
             )
         }
+        assertEquals(
+            "Received resource type (Practitioner) that cannot be used to load locations",
+            exception.message
+        )
     }
 
     @Test
-    fun `code coverage test - elvis operators 1`() {
-        val metadata = mockk<Metadata>()
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.Encounter,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "123",
-            metadata
-        )
-        val mockEncounter = mockk<Encounter> {
-            every { location } returns listOf(
-                mockk {
-                    every { location } returns null
-                }
-            )
-        }
-        every { JacksonUtil.readJsonObject("123", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("123", mockEncounter::class) } returns mockEncounter
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { locationService.getLocationsByFHIRId(tenant, any()) } returns
-                emptyMap()
-        }
-        val request = destination.convertEventToRequest(
-            "123",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
-        )
-
-        assertEquals(listOf<ResourceRequestKey>(), request.requestKeys)
+    fun `load events create a LoadLocationRequest`() {
+        val loadEvent = mockk<InteropResourceLoadV1>(relaxed = true)
+        val request = locationPublish.convertLoadEventsToRequest(listOf(loadEvent), vendorFactory, tenant)
+        assertInstanceOf(LocationPublish.LoadLocationRequest::class.java, request)
     }
 
     @Test
-    fun `code coverage test - elvis operators 2`() {
-        val metadata = mockk<Metadata>()
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.Encounter,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "123",
-            metadata
+    fun `AppointmentPublishLocationRequest supports loads resources`() {
+        val location1 = mockk<Location>()
+        val location2 = mockk<Location>()
+        val location3 = mockk<Location>()
+        every {
+            locationService.getByIDs(tenant, listOf("1234", "5678", "9012"))
+        } returns mapOf("1234" to location1, "5678" to location2, "9012" to location3)
+
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Appointment,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(appointment1),
+            metadata = metadata
         )
-        val mockEncounter = mockk<Encounter> {
-            every { location } returns listOf(
-                mockk {
-                    every { location?.decomposedId() } returns null
-                }
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Appointment,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(appointment2),
+            metadata = metadata
+        )
+        val event3 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Appointment,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(appointment3),
+            metadata = metadata
+        )
+        val request =
+            LocationPublish.AppointmentPublishLocationRequest(
+                listOf(event1, event2, event3),
+                locationService,
+                tenant
             )
-        }
-        every { JacksonUtil.readJsonObject("123", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("123", mockEncounter::class) } returns mockEncounter
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { locationService.getLocationsByFHIRId(tenant, any()) } returns
-                emptyMap()
-        }
-        val request = destination.convertEventToRequest(
-            "123",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(3, resourcesByKeys.size)
+
+        val key1 = ResourceRequestKey("run", ResourceType.Location, tenant, "$tenantId-1234")
+        assertEquals(listOf(location1), resourcesByKeys[key1])
+
+        val key2 = ResourceRequestKey("run", ResourceType.Location, tenant, "$tenantId-5678")
+        assertEquals(listOf(location2), resourcesByKeys[key2])
+
+        val key3 = ResourceRequestKey("run", ResourceType.Location, tenant, "$tenantId-9012")
+        assertEquals(listOf(location3), resourcesByKeys[key3])
+    }
+
+    @Test
+    fun `EncounterPublishLocationRequest supports loads resources`() {
+        val location1 = mockk<Location>()
+        val location2 = mockk<Location>()
+        val location3 = mockk<Location>()
+        every {
+            locationService.getByIDs(
+                tenant,
+                listOf("1234", "5678", "9012")
+            )
+        } returns mapOf("1234" to location1, "5678" to location2, "9012" to location3)
+
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Encounter,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(encounter1),
+            metadata = metadata
         )
-        assertEquals(listOf<ResourceRequestKey>(), request.requestKeys)
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Encounter,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(encounter2),
+            metadata = metadata
+        )
+        val event3 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Encounter,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(encounter3),
+            metadata = metadata
+        )
+        val request =
+            LocationPublish.EncounterPublishLocationRequest(
+                listOf(event1, event2, event3),
+                locationService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(3, resourcesByKeys.size)
+
+        val key1 = ResourceRequestKey("run", ResourceType.Location, tenant, "$tenantId-1234")
+        assertEquals(listOf(location1), resourcesByKeys[key1])
+
+        val key2 = ResourceRequestKey("run", ResourceType.Location, tenant, "$tenantId-5678")
+        assertEquals(listOf(location2), resourcesByKeys[key2])
+
+        val key3 = ResourceRequestKey("run", ResourceType.Location, tenant, "$tenantId-9012")
+        assertEquals(listOf(location3), resourcesByKeys[key3])
     }
 }

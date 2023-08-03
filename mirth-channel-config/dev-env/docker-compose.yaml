@@ -285,7 +285,7 @@ services:
       retries: 10
 
   vault-init:
-    image: vault:latest
+    image: hashicorp/vault:latest
     volumes:
       - ./vault/secrets.json:/secrets.json
       - ./vault/policy.hcl:/policy.hcl

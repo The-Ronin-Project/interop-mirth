@@ -5,12 +5,12 @@ dbrider = "1.39.0"
 ehrda = "1.3.1"
 guava = "32.1.1-jre"
 interop-aidbox = "8.1.0"
-interop-common = "3.9.1"
+interop-common = "3.10.0"
 interop-datalake = "8.2.0"
 interop-ehr = "10.6.2"
 interop-event-internal = "1.0.0"
 interop-event-request = "1.0.0"
-interop-fhir = "8.7.2"
+interop-fhir = "8.7.3"
 interop-gradle = "3.2.0"
 interop-kafka = "8.1.2"
 interop-publishers = "9.0.0"
@@ -41,7 +41,7 @@ xerces = "2.12.2"
 
 [libraries]
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
-ehr-data-authority-client = { module= "com.projectronin.ehr:ehr-data-authority-client", version.ref = "ehrda" }
+ehr-data-authority-client = { module = "com.projectronin.ehr:ehr-data-authority-client", version.ref = "ehrda" }
 event-interop-resource-internal = { module = "com.projectronin.contract.event:event-interop-resource-internal", version.ref = "interop-event-internal" }
 event-interop-resource-request = { module = "com.projectronin.contract.event:event-interop-resource-request", version.ref = "interop-event-request" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }

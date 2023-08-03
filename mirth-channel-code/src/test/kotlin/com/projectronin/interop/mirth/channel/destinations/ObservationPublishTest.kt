@@ -4,219 +4,254 @@ import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
-import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.common.jackson.JacksonManager
+import com.projectronin.interop.ehr.ObservationService
 import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.ehr.inputs.FHIRSearchToken
 import com.projectronin.interop.fhir.r4.CodeSystem
-import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
+import com.projectronin.interop.fhir.r4.datatype.Reference
+import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Condition
+import com.projectronin.interop.fhir.r4.resource.ConditionStage
 import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.resource.Patient
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
+import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
+import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkObject
-import io.mockk.unmockkAll
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class ObservationPublishTest {
-    lateinit var tenant: Tenant
-    lateinit var destination: ObservationPublish
-
-    @BeforeEach
-    fun setup() {
-        tenant = mockk {
-            every { mnemonic } returns "tenant"
-        }
-        destination = ObservationPublish(mockk(), mockk(), mockk(), mockk(), mockk())
-        mockkObject(JacksonUtil)
+    private val tenantId = "tenant"
+    private val tenant = mockk<Tenant> {
+        every { mnemonic } returns tenantId
     }
+    private val observationService = mockk<ObservationService>()
+    private val vendorFactory = mockk<VendorFactory> {
+        every { observationService } returns this@ObservationPublishTest.observationService
+    }
+    private val observationPublish = ObservationPublish(mockk(), mockk(), mockk(), mockk(), mockk())
 
-    @AfterEach
-    fun unmockk() {
-        unmockkAll()
+    private val patient1 = Patient(id = Id("$tenantId-1234"))
+    private val patient2 = Patient(id = Id("$tenantId-5678"))
+    private val patient3 = Patient(id = Id("$tenantId-9012"))
+
+    private val condition1 = Condition(
+        id = Id("$tenantId-1234"),
+        stage = listOf(
+            ConditionStage(
+                assessment = listOf(
+                    Reference(reference = FHIRString("Observation/$tenantId-1234")),
+                    Reference(reference = FHIRString("Observation/$tenantId-5678"))
+                )
+            )
+        ),
+        subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+    )
+    private val condition2 = Condition(
+        id = Id("$tenantId-5678"),
+        stage = listOf(
+            ConditionStage(
+                assessment = listOf(
+                    Reference(reference = FHIRString("Observation/$tenantId-9012"))
+                )
+            ),
+            ConditionStage(
+                assessment = listOf(
+                    Reference(reference = FHIRString("Observation/$tenantId-3456"))
+                )
+            )
+        ),
+        subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+    )
+    private val condition3 = Condition(
+        id = Id("$tenantId-5678"),
+        stage = listOf(
+            ConditionStage(
+                assessment = listOf(
+                    Reference(reference = FHIRString("Other/$tenantId-7890"))
+                )
+            )
+        ),
+        subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+    )
+
+    private val metadata = mockk<Metadata>(relaxed = true) {
+        every { runId } returns "run"
     }
 
     @Test
-    fun `channel creation works`() {
-        assertNotNull(destination)
+    fun `publish events create a PatientPublishObservationRequest for patient publish events`() {
+        val publishEvent = mockk<InteropResourcePublishV1>(relaxed = true) {
+            every { resourceType } returns ResourceType.Patient
+        }
+        val request = observationPublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
+        assertInstanceOf(ObservationPublish.PatientPublishObservationRequest::class.java, request)
     }
 
     @Test
-    fun `fails on unknown request`() {
-        assertThrows<IllegalStateException> {
-            destination.convertEventToRequest("boo", "", mockk(), mockk())
+    fun `publish events create a ConditionPublishObservationRequest for condition publish events`() {
+        val publishEvent = mockk<InteropResourcePublishV1>(relaxed = true) {
+            every { resourceType } returns ResourceType.Condition
+            every { resourceJson } returns JacksonManager.objectMapper.writeValueAsString(condition1)
+            every { metadata } returns this@ObservationPublishTest.metadata
         }
+        val request = observationPublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
+        assertInstanceOf(ObservationPublish.ConditionPublishObservationRequest::class.java, request)
     }
 
     @Test
-    fun `works for load events`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
+    fun `publish events throw exception for unsupported publish events`() {
+        val publishEvent = mockk<InteropResourcePublishV1>(relaxed = true) {
+            every { resourceType } returns ResourceType.Practitioner
         }
-        val event = InteropResourceLoadV1(
-            "tenant",
-            "id",
-            ResourceType.Observation,
-            InteropResourceLoadV1.DataTrigger.adhoc,
-            metadata
+        val exception = assertThrows<IllegalStateException> {
+            observationPublish.convertPublishEventsToRequest(
+                listOf(publishEvent),
+                vendorFactory,
+                tenant
+            )
+        }
+        assertEquals(
+            "Received resource type (Practitioner) that cannot be used to load observations",
+            exception.message
         )
-        val mockObservation = mockk<Observation>()
-        every { JacksonUtil.readJsonObject("boo", InteropResourceLoadV1::class) } returns event
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { observationService.getByID(tenant, "id") } returns mockObservation
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourceLoadV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
+    }
+
+    @Test
+    fun `load events create a LoadObservationRequest`() {
+        val loadEvent = mockk<InteropResourceLoadV1>(relaxed = true)
+        val request = observationPublish.convertLoadEventsToRequest(listOf(loadEvent), vendorFactory, tenant)
+        assertInstanceOf(ObservationPublish.LoadObservationRequest::class.java, request)
+    }
+
+    @Test
+    fun `PatientPublishObservationRequest supports loads resources`() {
+        val categories = listOf(
+            FHIRSearchToken(CodeSystem.OBSERVATION_CATEGORY.uri.value, ObservationCategoryCodes.VITAL_SIGNS.code),
+            FHIRSearchToken(CodeSystem.OBSERVATION_CATEGORY.uri.value, ObservationCategoryCodes.LABORATORY.code)
         )
 
-        val requestKeys = listOf(
-            ResourceRequestKey(
-                "run123",
-                ResourceType.Observation,
+        val observation1 = mockk<Observation>()
+        val observation2 = mockk<Observation>()
+        val observation3 = mockk<Observation>()
+        every {
+            observationService.findObservationsByPatientAndCategory(
                 tenant,
-                "id"
+                listOf("1234"),
+                categories
             )
+        } returns listOf(
+            observation1,
+            observation2
         )
-        assertEquals(requestKeys, request.requestKeys)
-
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockObservation, results.first())
-    }
-
-    @Test
-    fun `works for publish patient events`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.Patient,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
-            metadata
-        )
-        val mockPatient = mockk<Patient> {
-            every { id?.value } returns "tenant-123"
-            every { identifier } returns listOf(
-                mockk {
-                    every { system } returns CodeSystem.RONIN_FHIR_ID.uri
-                    every { value } returns "123".asFHIR()
-                }
-            )
-        }
-        val mockObservation = mockk<Observation> {}
-        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("{}", Patient::class) } returns mockPatient
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { observationService.findObservationsByPatientAndCategory(tenant, listOf("123"), any()) } returns
-                listOf(mockObservation)
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
-        )
-
-        val requestKeys = listOf(
-            ResourceRequestKey(
-                "run123",
-                ResourceType.Patient,
+        every {
+            observationService.findObservationsByPatientAndCategory(
                 tenant,
-                "tenant-123"
+                listOf("5678"),
+                categories
             )
-        )
-        assertEquals(requestKeys, request.requestKeys)
-
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockObservation, results.first())
-    }
-
-    @Test
-    fun `works for publish condition events`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.Condition,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
-            metadata
-        )
-        val mockCondition = mockk<Condition> {
-            every { id?.value } returns "tenant-456"
-            every { stage } returns listOf(
-                mockk {
-                    every { assessment } returns listOf(
-                        mockk {
-                            every { isForType("Observation") } returns true
-                            every { decomposedId() } returns "123"
-                        }
-                    )
-                }
-            )
-        }
-        val mockObservation = mockk<Observation>()
-        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("{}", Condition::class) } returns mockCondition
-
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { observationService } returns mockk {
-                every { fhirResourceType } returns Observation::class.java
-                every { getByID(tenant, "123") } returns mockObservation
-            }
-        }
-
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
-        )
-
-        val requestKeys = listOf(
-            ResourceRequestKey(
-                "run123",
-                ResourceType.Observation,
+        } returns listOf(observation3)
+        every {
+            observationService.findObservationsByPatientAndCategory(
                 tenant,
-                "123"
+                listOf("9012"),
+                categories
             )
-        )
-        assertEquals(requestKeys, request.requestKeys)
+        } returns emptyList()
 
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockObservation, results.first())
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Patient,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient1),
+            metadata = metadata
+        )
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Patient,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient2),
+            metadata = metadata
+        )
+        val event3 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Patient,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
+            metadata = metadata
+        )
+        val request =
+            ObservationPublish.PatientPublishObservationRequest(
+                listOf(event1, event2, event3),
+                observationService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(3, resourcesByKeys.size)
+
+        val key1 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-1234")
+        assertEquals(listOf(observation1, observation2), resourcesByKeys[key1])
+
+        val key2 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-5678")
+        assertEquals(listOf(observation3), resourcesByKeys[key2])
+
+        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-9012")
+        assertEquals(emptyList<Observation>(), resourcesByKeys[key3])
     }
 
     @Test
-    fun `fails on unknown publish request`() {
-        val metadata = mockk<Metadata>()
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.MedicationRequest,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
-            metadata
-        )
-        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
-
-        assertThrows<IllegalStateException> {
-            destination.convertEventToRequest(
-                "boo",
-                InteropResourcePublishV1::class.simpleName!!,
-                mockk(),
-                mockk()
+    fun `ConditionPublishObservationRequest supports loads resources`() {
+        val observation1 = mockk<Observation>()
+        val observation2 = mockk<Observation>()
+        val observation3 = mockk<Observation>()
+        val observation4 = mockk<Observation>()
+        every {
+            observationService.getByIDs(
+                tenant,
+                listOf("1234", "5678", "9012", "3456")
             )
-        }
+        } returns mapOf("1234" to observation1, "5678" to observation2, "9012" to observation3, "3456" to observation4)
+
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Condition,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(condition1),
+            metadata = metadata
+        )
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Condition,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(condition2),
+            metadata = metadata
+        )
+        val event3 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Condition,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(condition3),
+            metadata = metadata
+        )
+        val request =
+            ObservationPublish.ConditionPublishObservationRequest(
+                listOf(event1, event2, event3),
+                observationService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(4, resourcesByKeys.size)
+
+        val key1 = ResourceRequestKey("run", ResourceType.Observation, tenant, "$tenantId-1234")
+        assertEquals(listOf(observation1), resourcesByKeys[key1])
+
+        val key2 = ResourceRequestKey("run", ResourceType.Observation, tenant, "$tenantId-5678")
+        assertEquals(listOf(observation2), resourcesByKeys[key2])
+
+        val key3 = ResourceRequestKey("run", ResourceType.Observation, tenant, "$tenantId-9012")
+        assertEquals(listOf(observation3), resourcesByKeys[key3])
+
+        val key4 = ResourceRequestKey("run", ResourceType.Observation, tenant, "$tenantId-3456")
+        assertEquals(listOf(observation4), resourcesByKeys[key4])
     }
 }

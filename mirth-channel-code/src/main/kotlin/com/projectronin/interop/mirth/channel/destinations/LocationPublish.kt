@@ -3,7 +3,6 @@ package com.projectronin.interop.mirth.channel.destinations
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.ResourceType
-import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.LocationService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
@@ -13,11 +12,12 @@ import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninLocation
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
-import com.projectronin.interop.mirth.channel.base.kafka.LoadEventResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.PublishEventResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
-import com.projectronin.interop.mirth.channel.util.unlocalize
+import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.PublishReferenceResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -39,87 +39,81 @@ class LocationPublish(
 ) {
     override val cacheAndCompareResults: Boolean = true
 
-    override fun convertEventToRequest(
-        serializedEvent: String,
-        eventClassName: String,
+    override fun convertPublishEventsToRequest(
+        events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
         tenant: Tenant
-    ): ResourceLoadRequest<Location> {
-        return when (eventClassName) {
-            InteropResourcePublishV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourcePublishV1::class)
-                when (event.resourceType) {
-                    ResourceType.Appointment ->
-                        AppointmentSourceLocationLoadRequest(event, vendorFactory.locationService, tenant)
+    ): PublishResourceRequest<Location> {
+        // Only events for the same resource type are grouped, so just peek at the first one
+        return when (val resourceType = events.first().resourceType) {
+            ResourceType.Appointment -> AppointmentPublishLocationRequest(
+                events,
+                vendorFactory.locationService,
+                tenant
+            )
 
-                    ResourceType.Encounter ->
-                        EncounterSourceLocationLoadRequest(event, vendorFactory.locationService, tenant)
+            ResourceType.Encounter -> EncounterPublishLocationRequest(
+                events,
+                vendorFactory.locationService,
+                tenant
+            )
 
-                    else -> throw IllegalStateException("Received resource type that cannot be used to load locations")
-                }
-            }
-
-            InteropResourceLoadV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourceLoadV1::class)
-                LocationLoadRequest(event, vendorFactory.locationService, tenant)
-            }
-
-            else -> throw IllegalStateException("Received a string which cannot deserialize to a known event")
+            else -> throw IllegalStateException("Received resource type ($resourceType) that cannot be used to load locations")
         }
     }
 
-    private class AppointmentSourceLocationLoadRequest(
-        sourceEvent: InteropResourcePublishV1,
+    override fun convertLoadEventsToRequest(
+        events: List<InteropResourceLoadV1>,
+        vendorFactory: VendorFactory,
+        tenant: Tenant
+    ): LoadResourceRequest<Location> {
+        return LoadLocationRequest(events, vendorFactory.locationService, tenant)
+    }
+
+    internal class AppointmentPublishLocationRequest(
+        publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: LocationService,
         override val tenant: Tenant
-    ) :
-        PublishEventResourceLoadRequest<Location, Appointment>(sourceEvent) {
-        override val sourceResource: Appointment =
-            JacksonUtil.readJsonObject(sourceEvent.resourceJson, Appointment::class)
+    ) : PublishReferenceResourceRequest<Location>() {
+        override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
+            publishEvents.map { AppointmentPublishEvent(it, tenant) }
 
-        override val requestKeys: List<ResourceRequestKey> =
-            sourceResource.participant.asSequence()
-                .filter { it.actor?.decomposedType()?.startsWith("Location") == true }
-                .mapNotNull { it.actor?.decomposedId()?.unlocalize(tenant) }
-                .distinct().map {
-                    ResourceRequestKey(
-                        metadata.runId,
-                        ResourceType.Location,
-                        tenant,
-                        it
-                    )
-                }.toList()
-
-        override fun loadResources(requestKeys: List<ResourceRequestKey>): List<Location> {
-            val locationIds = requestKeys.map { it.resourceId }
-            val locations = fhirService.getLocationsByFHIRId(tenant, locationIds)
-            return locations.values.toList()
+        private class AppointmentPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
+            PublishResourceEvent<Appointment>(publishEvent, Appointment::class) {
+            override val requestKeys: Set<ResourceRequestKey> =
+                sourceResource.participant.asSequence()
+                    .filter { it.actor?.decomposedType()?.startsWith("Location") == true }
+                    .mapNotNull { it.actor?.decomposedId() }
+                    .distinct().map {
+                        ResourceRequestKey(
+                            metadata.runId,
+                            ResourceType.Location,
+                            tenant,
+                            it
+                        )
+                    }.toSet()
         }
     }
 
-    private class EncounterSourceLocationLoadRequest(
-        sourceEvent: InteropResourcePublishV1,
+    internal class EncounterPublishLocationRequest(
+        publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: LocationService,
         override val tenant: Tenant
-    ) :
-        PublishEventResourceLoadRequest<Location, Encounter>(sourceEvent) {
-        override val sourceResource: Encounter = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Encounter::class)
+    ) : PublishReferenceResourceRequest<Location>() {
+        override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
+            publishEvents.map { EncounterPublishEvent(it, tenant) }
 
-        override val requestKeys: List<ResourceRequestKey> =
-            sourceResource.location.mapNotNull { it.location?.decomposedId() }.distinct()
-                .map { ResourceRequestKey(metadata.runId, ResourceType.Location, tenant, it) }
-
-        override fun loadResources(requestKeys: List<ResourceRequestKey>): List<Location> {
-            val locationIds = requestKeys.map { it.resourceId.unlocalize(tenant) }
-            val locations = fhirService.getLocationsByFHIRId(tenant, locationIds)
-            return locations.values.toList()
+        private class EncounterPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
+            PublishResourceEvent<Encounter>(publishEvent, Encounter::class) {
+            override val requestKeys: Set<ResourceRequestKey> =
+                sourceResource.location.mapNotNull { it.location?.decomposedId() }.distinct()
+                    .map { ResourceRequestKey(metadata.runId, ResourceType.Location, tenant, it) }.toSet()
         }
     }
 
-    private class LocationLoadRequest(
-        sourceEvent: InteropResourceLoadV1,
+    internal class LoadLocationRequest(
+        loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: LocationService,
         tenant: Tenant
-    ) :
-        LoadEventResourceLoadRequest<Location>(sourceEvent, tenant)
+    ) : LoadResourceRequest<Location>(loadEvents, tenant)
 }

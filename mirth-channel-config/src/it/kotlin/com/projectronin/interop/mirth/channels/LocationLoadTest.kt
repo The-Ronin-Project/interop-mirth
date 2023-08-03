@@ -145,6 +145,7 @@ class LocationLoadTest : BaseChannelTest(
             metadata = metadata
         )
 
+        // We have the original message, and now our new one.
         waitForMessage(2)
         val messageList2 = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList2)
@@ -249,7 +250,7 @@ class LocationLoadTest : BaseChannelTest(
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
-        assertEquals(2, messageList.size)
+        assertEquals(1, messageList.size)
         assertEquals(2, getAidboxResourceCount("Location"))
     }
 

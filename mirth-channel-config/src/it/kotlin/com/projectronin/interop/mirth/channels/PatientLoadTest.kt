@@ -154,7 +154,7 @@ class PatientLoadTest : BaseChannelTest(
             ResourceType.Patient
         )
 
-        waitForMessage(2)
+        waitForMessage(1)
         val messages = getChannelMessageIds()
         assertAllConnectorsSent(messages)
         assertEquals(2, getAidboxResourceCount("Patient"))

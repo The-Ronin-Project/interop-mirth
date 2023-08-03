@@ -4,139 +4,110 @@ import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
-import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.common.jackson.JacksonManager
+import com.projectronin.interop.ehr.ConditionService
 import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.ehr.inputs.FHIRSearchToken
 import com.projectronin.interop.fhir.r4.CodeSystem
-import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.r4.resource.Patient
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
+import com.projectronin.interop.fhir.r4.valueset.ConditionCategoryCodes
+import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkObject
-import io.mockk.unmockkAll
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 
 class ConditionPublishTest {
-    lateinit var tenant: Tenant
-    lateinit var destination: ConditionPublish
-
-    @BeforeEach
-    fun setup() {
-        tenant = mockk {
-            every { mnemonic } returns "tenant"
-        }
-        destination = ConditionPublish(mockk(), mockk(), mockk(), mockk(), mockk())
-        mockkObject(JacksonUtil)
+    private val tenantId = "tenant"
+    private val tenant = mockk<Tenant> {
+        every { mnemonic } returns tenantId
     }
-
-    @AfterEach
-    fun unmockk() {
-        unmockkAll()
+    private val conditionService = mockk<ConditionService>()
+    private val vendorFactory = mockk<VendorFactory> {
+        every { conditionService } returns this@ConditionPublishTest.conditionService
     }
+    private val conditionPublish = ConditionPublish(mockk(), mockk(), mockk(), mockk(), mockk())
 
-    @Test
-    fun `channel creation works`() {
-        Assertions.assertNotNull(destination)
+    private val patient1 = Patient(id = Id("$tenantId-1234"))
+    private val patient2 = Patient(id = Id("$tenantId-5678"))
+    private val patient3 = Patient(id = Id("$tenantId-9012"))
+    private val metadata = mockk<Metadata>(relaxed = true) {
+        every { runId } returns "run"
     }
 
     @Test
-    fun `fails on unknown request`() {
-        assertThrows<IllegalStateException> {
-            destination.convertEventToRequest("boo", "", mockk(), mockk())
-        }
+    fun `publish events create a PatientPublishConditionRequest`() {
+        val publishEvent = mockk<InteropResourcePublishV1>()
+        val request = conditionPublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
+        assertInstanceOf(ConditionPublish.PatientPublishConditionRequest::class.java, request)
     }
 
     @Test
-    fun `works for load events`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourceLoadV1(
-            "tenant",
-            "id",
-            ResourceType.Condition,
-            InteropResourceLoadV1.DataTrigger.adhoc,
-            metadata
-        )
-        val mockCondition = mockk<Condition>()
-        every { JacksonUtil.readJsonObject("boo", InteropResourceLoadV1::class) } returns event
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { conditionService.getByID(tenant, "id") } returns mockCondition
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourceLoadV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
+    fun `load events create a LoadConditionRequest`() {
+        val loadEvent = mockk<InteropResourceLoadV1>(relaxed = true)
+        val request = conditionPublish.convertLoadEventsToRequest(listOf(loadEvent), vendorFactory, tenant)
+        assertInstanceOf(ConditionPublish.LoadConditionRequest::class.java, request)
+    }
+
+    @Test
+    fun `PatientPublishConditionRequest supports loads resources`() {
+        val categories = listOf(
+            FHIRSearchToken(CodeSystem.CONDITION_CATEGORY.uri.value, ConditionCategoryCodes.PROBLEM_LIST_ITEM.code),
+            FHIRSearchToken(
+                CodeSystem.CONDITION_CATEGORY_HEALTH_CONCERN.uri.value,
+                ConditionCategoryCodes.HEALTH_CONCERN.code
+            ),
+            FHIRSearchToken(CodeSystem.CONDITION_CATEGORY.uri.value, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code)
         )
 
-        val requestKeys = listOf(
-            ResourceRequestKey(
-                "run123",
-                ResourceType.Condition,
-                tenant,
-                "id"
+        val condition1 = mockk<Condition>()
+        val condition2 = mockk<Condition>()
+        val condition3 = mockk<Condition>()
+        every { conditionService.findConditionsByCodes(tenant, "1234", categories) } returns listOf(
+            condition1,
+            condition2
+        )
+        every { conditionService.findConditionsByCodes(tenant, "5678", categories) } returns listOf(condition3)
+        every { conditionService.findConditionsByCodes(tenant, "9012", categories) } returns emptyList()
+
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Patient,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient1),
+            metadata = metadata
+        )
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Patient,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient2),
+            metadata = metadata
+        )
+        val event3 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Patient,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
+            metadata = metadata
+        )
+        val request =
+            ConditionPublish.PatientPublishConditionRequest(
+                listOf(event1, event2, event3),
+                conditionService,
+                tenant
             )
-        )
-        assertEquals(requestKeys, request.requestKeys)
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(3, resourcesByKeys.size)
 
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockCondition, results.first())
-    }
+        val key1 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-1234")
+        assertEquals(listOf(condition1, condition2), resourcesByKeys[key1])
 
-    @Test
-    fun `works for publish events`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.Patient,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
-            metadata
-        )
-        val mockPatient = mockk<Patient> {
-            every { id?.value } returns "tenant-123"
-            every { identifier } returns listOf(
-                mockk {
-                    every { system } returns CodeSystem.RONIN_FHIR_ID.uri
-                    every { value } returns "123".asFHIR()
-                }
-            )
-        }
-        val mockCondition = mockk<Condition> {}
-        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("{}", Patient::class) } returns mockPatient
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { conditionService.findConditionsByCodes(tenant, "123", any(), any()) } returns
-                listOf(mockCondition)
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
-        )
+        val key2 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-5678")
+        assertEquals(listOf(condition3), resourcesByKeys[key2])
 
-        val requestKeys = listOf(
-            ResourceRequestKey(
-                "run123",
-                ResourceType.Patient,
-                tenant,
-                "tenant-123"
-            )
-        )
-        assertEquals(requestKeys, request.requestKeys)
-
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockCondition, results.first())
+        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-9012")
+        assertEquals(emptyList<Condition>(), resourcesByKeys[key3])
     }
 }

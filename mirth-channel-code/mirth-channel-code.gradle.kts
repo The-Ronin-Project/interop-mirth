@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.ronin.test.data.generator)
     implementation(libs.interop.fhirGenerators)
     implementation(libs.jackson.module.kotlin)
+    implementation(libs.bundles.jackson)
     implementation(libs.ktor.client.core)
     implementation(libs.bundles.ktor)
     implementation(libs.ktorm.core)
@@ -101,6 +102,7 @@ tasks.shadowJar {
     relocate("org.glassfish.jersey", "interop.org.glassfish.jersey")
     relocate("org.glassfish.hk2", "interop.org.glassfish.hk2")
     relocate("org.jvnet.hk2", "interop.org.jvnet.hk2")
+    relocate("com.fasterxml.jackson", "interop.com.fasterxml.jackson")
 }
 
 tasks.withType(Test::class) {

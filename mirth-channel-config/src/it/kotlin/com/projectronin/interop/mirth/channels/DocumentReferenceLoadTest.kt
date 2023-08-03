@@ -34,7 +34,7 @@ class DocumentReferenceLoadTest : BaseChannelTest(
     fun `channel works`() {
         tenantInUse = testTenant
 
-        val fakeBinary = binary { data }
+        val fakeBinary = binary { }
         val fakeBinaryID = MockEHRTestData.add(fakeBinary)
         val patient1 = patient {
             birthDate of date {

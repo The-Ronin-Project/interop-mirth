@@ -3,7 +3,6 @@ package com.projectronin.interop.mirth.channel.destinations
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.ResourceType
-import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.RequestGroupService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
@@ -12,11 +11,12 @@ import com.projectronin.interop.fhir.r4.resource.RequestGroup
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninRequestGroup
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
-import com.projectronin.interop.mirth.channel.base.kafka.LoadEventResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.PublishEventResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
-import com.projectronin.interop.mirth.channel.util.unlocalize
+import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.PublishReferenceResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -38,61 +38,51 @@ class RequestGroupPublish(
 ) {
     override val cacheAndCompareResults: Boolean = true
 
-    // turn a kafka event into an abstract class we can deal with
-    override fun convertEventToRequest(
-        serializedEvent: String,
-        eventClassName: String,
+    override fun convertPublishEventsToRequest(
+        events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
         tenant: Tenant
-    ): ResourceLoadRequest<RequestGroup> {
-        return when (eventClassName) {
-            InteropResourcePublishV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourcePublishV1::class)
-                CarePlanSourceRequestGroupLoadRequest(event, vendorFactory.requestGroupService, tenant)
-            }
-
-            InteropResourceLoadV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourceLoadV1::class)
-                RequestGroupLoadRequest(event, vendorFactory.requestGroupService, tenant)
-            }
-
-            else -> throw IllegalStateException("Received a string which cannot deserialize to a known event")
-        }
+    ): PublishResourceRequest<RequestGroup> {
+        return CarePlanPublishRequestGroupRequest(events, vendorFactory.requestGroupService, tenant)
     }
 
-    private class CarePlanSourceRequestGroupLoadRequest(
-        sourceEvent: InteropResourcePublishV1,
+    override fun convertLoadEventsToRequest(
+        events: List<InteropResourceLoadV1>,
+        vendorFactory: VendorFactory,
+        tenant: Tenant
+    ): LoadResourceRequest<RequestGroup> {
+        return LoadRequestGroupRequest(events, vendorFactory.requestGroupService, tenant)
+    }
+
+    internal class CarePlanPublishRequestGroupRequest(
+        publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: RequestGroupService,
         override val tenant: Tenant
-    ) :
-        PublishEventResourceLoadRequest<RequestGroup, CarePlan>(sourceEvent) {
-        override val sourceResource: CarePlan =
-            JacksonUtil.readJsonObject(sourceEvent.resourceJson, CarePlan::class)
+    ) : PublishReferenceResourceRequest<RequestGroup>() {
+        override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
+            publishEvents.map { CarePlanPublishEvent(it, tenant) }
 
-        override val requestKeys: List<ResourceRequestKey> = sourceResource.activity
-            .asSequence()
-            .filter { it.reference?.decomposedType()?.startsWith("RequestGroup") == true }
-            .mapNotNull { it.reference?.decomposedId() }
-            .distinct().map {
-                ResourceRequestKey(
-                    metadata.runId,
-                    ResourceType.RequestGroup,
-                    tenant,
-                    it
-                )
-            }
-            .toList()
-
-        override fun loadResources(requestKeys: List<ResourceRequestKey>): List<RequestGroup> {
-            val requestGroupIds = requestKeys.map { it.resourceId.unlocalize(tenant) }
-
-            return fhirService.getRequestGroupByFHIRId(tenant, requestGroupIds).map { it.value }
+        private class CarePlanPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
+            PublishResourceEvent<CarePlan>(publishEvent, CarePlan::class) {
+            override val requestKeys: Set<ResourceRequestKey> = sourceResource.activity
+                .asSequence()
+                .filter { it.reference?.decomposedType()?.startsWith("RequestGroup") == true }
+                .mapNotNull { it.reference?.decomposedId() }
+                .distinct().map {
+                    ResourceRequestKey(
+                        metadata.runId,
+                        ResourceType.RequestGroup,
+                        tenant,
+                        it
+                    )
+                }
+                .toSet()
         }
     }
 
-    private class RequestGroupLoadRequest(
-        sourceEvent: InteropResourceLoadV1,
+    internal class LoadRequestGroupRequest(
+        loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: RequestGroupService,
         tenant: Tenant
-    ) : LoadEventResourceLoadRequest<RequestGroup>(sourceEvent, tenant)
+    ) : LoadResourceRequest<RequestGroup>(loadEvents, tenant)
 }

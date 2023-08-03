@@ -4,140 +4,120 @@ import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
-import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.common.jackson.JacksonManager
+import com.projectronin.interop.ehr.RequestGroupService
 import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.fhir.r4.datatype.Reference
+import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.CarePlan
+import com.projectronin.interop.fhir.r4.resource.CarePlanActivity
 import com.projectronin.interop.fhir.r4.resource.RequestGroup
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
+import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkObject
-import io.mockk.unmockkAll
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 
 class RequestGroupPublishTest {
-    lateinit var tenant: Tenant
-    lateinit var destination: RequestGroupPublish
-
-    @BeforeEach
-    fun setup() {
-        tenant = mockk {
-            every { mnemonic } returns "tenant"
-        }
-        destination = RequestGroupPublish(mockk(), mockk(), mockk(), mockk(), mockk())
-        mockkObject(JacksonUtil)
+    private val tenantId = "tenant"
+    private val tenant = mockk<Tenant> {
+        every { mnemonic } returns tenantId
     }
-
-    @AfterEach
-    fun unmockk() {
-        unmockkAll()
+    private val requestGroupService = mockk<RequestGroupService>()
+    private val vendorFactory = mockk<VendorFactory> {
+        every { requestGroupService } returns this@RequestGroupPublishTest.requestGroupService
     }
+    private val requestGroupPublish = RequestGroupPublish(mockk(), mockk(), mockk(), mockk(), mockk())
 
-    @Test
-    fun `channel creation works`() {
-        assertNotNull(destination)
-    }
-
-    @Test
-    fun `fails on unknown request`() {
-        assertThrows<IllegalStateException> {
-            destination.convertEventToRequest("boo", "", mockk(), mockk())
-        }
-    }
-
-    @Test
-    fun `works for load events`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourceLoadV1(
-            "tenant",
-            "id",
-            ResourceType.RequestGroup,
-            InteropResourceLoadV1.DataTrigger.adhoc,
-            metadata
+    private val carePlan1 = CarePlan(
+        id = Id("$tenantId-1234"),
+        activity = listOf(
+            CarePlanActivity(reference = Reference(reference = FHIRString("RequestGroup/$tenantId-1234"))),
+            CarePlanActivity(reference = Reference(reference = FHIRString("RequestGroup/$tenantId-5678")))
         )
-        val mockRequestGroup = mockk<RequestGroup>()
-        every { JacksonUtil.readJsonObject("boo", InteropResourceLoadV1::class) } returns event
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { requestGroupService.getByID(tenant, "id") } returns mockRequestGroup
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourceLoadV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
+    )
+    private val carePlan2 = CarePlan(
+        id = Id("$tenantId-5678"),
+        activity = listOf(
+            CarePlanActivity(reference = Reference(reference = FHIRString("RequestGroup/$tenantId-9012")))
         )
+    )
+    private val carePlan3 = CarePlan(
+        id = Id("$tenantId-9012"),
+        activity = listOf(
+            CarePlanActivity(reference = Reference(reference = FHIRString("OtherActivity/$tenantId-3456")))
+        )
+    )
+    private val metadata = mockk<Metadata>(relaxed = true) {
+        every { runId } returns "run"
+    }
 
-        val requestKeys = listOf(
-            ResourceRequestKey(
-                "run123",
-                ResourceType.RequestGroup,
+    @Test
+    fun `publish events create a CarePlanPublishRequestGroupRequest`() {
+        val publishEvent = mockk<InteropResourcePublishV1> {
+            every { resourceJson } returns JacksonManager.objectMapper.writeValueAsString(carePlan1)
+            every { metadata } returns this@RequestGroupPublishTest.metadata
+        }
+        val request = requestGroupPublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
+        assertInstanceOf(RequestGroupPublish.CarePlanPublishRequestGroupRequest::class.java, request)
+    }
+
+    @Test
+    fun `load events create a LoadRequestGroupRequest`() {
+        val loadEvent = mockk<InteropResourceLoadV1>(relaxed = true)
+        val request = requestGroupPublish.convertLoadEventsToRequest(listOf(loadEvent), vendorFactory, tenant)
+        assertInstanceOf(RequestGroupPublish.LoadRequestGroupRequest::class.java, request)
+    }
+
+    @Test
+    fun `PatientPublishRequestGroupRequest supports loads resources`() {
+        val requestGroup1 = mockk<RequestGroup>()
+        val requestGroup2 = mockk<RequestGroup>()
+        val requestGroup3 = mockk<RequestGroup>()
+        every {
+            requestGroupService.getByIDs(
                 tenant,
-                "id"
+                listOf("1234", "5678", "9012")
             )
-        )
-        assertEquals(requestKeys, request.requestKeys)
+        } returns mapOf("1234" to requestGroup1, "5678" to requestGroup2, "9012" to requestGroup3)
 
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockRequestGroup, results.first())
-    }
-
-    @Test
-    fun `works for publish events`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.CarePlan,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
-            metadata
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.CarePlan,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(carePlan1),
+            metadata = metadata
         )
-        val mockCarePlan = mockk<CarePlan> {
-            every { id?.value } returns "123"
-            every { activity } returns listOf(
-                mockk {
-                    every { reference } returns mockk {
-                        every { decomposedId() } returns "tenant-456"
-                        every { decomposedType() } returns "RequestGroup"
-                    }
-                }
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.CarePlan,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(carePlan2),
+            metadata = metadata
+        )
+        val event3 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.CarePlan,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(carePlan3),
+            metadata = metadata
+        )
+        val request =
+            RequestGroupPublish.CarePlanPublishRequestGroupRequest(
+                listOf(event1, event2, event3),
+                requestGroupService,
+                tenant
             )
-        }
-        val mockRequestGroup = mockk<RequestGroup> {
-        }
-        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("{}", CarePlan::class) } returns mockCarePlan
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { requestGroupService.getRequestGroupByFHIRId(tenant, listOf("456")) } returns
-                mapOf("456" to mockRequestGroup)
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
-        )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(3, resourcesByKeys.size)
 
-        val requestKeys = listOf(
-            ResourceRequestKey(
-                "run123",
-                ResourceType.RequestGroup,
-                tenant,
-                "tenant-456"
-            )
-        )
-        assertEquals(requestKeys, request.requestKeys)
+        val key1 = ResourceRequestKey("run", ResourceType.RequestGroup, tenant, "$tenantId-1234")
+        assertEquals(listOf(requestGroup1), resourcesByKeys[key1])
 
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockRequestGroup, results.first())
+        val key2 = ResourceRequestKey("run", ResourceType.RequestGroup, tenant, "$tenantId-5678")
+        assertEquals(listOf(requestGroup2), resourcesByKeys[key2])
+
+        val key3 = ResourceRequestKey("run", ResourceType.RequestGroup, tenant, "$tenantId-9012")
+        assertEquals(listOf(requestGroup3), resourcesByKeys[key3])
     }
 }

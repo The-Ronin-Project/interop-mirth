@@ -457,11 +457,12 @@ class ObservationLoadTest : BaseChannelTest(
             resources = listOf(roninPatient1, roninPatient2, roninCondition)
         )
 
-        waitForMessage(3, 30)
+        // 2 because we group the Patients and Conditions into individual messages
+        waitForMessage(2, 30)
 
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
-        assertEquals(3, messageList.size)
+        assertEquals(2, messageList.size)
         assertEquals(7, getAidboxResourceCount(observationType))
     }
 

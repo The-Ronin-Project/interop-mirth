@@ -4,132 +4,98 @@ import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
-import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.common.jackson.JacksonManager
+import com.projectronin.interop.ehr.AppointmentService
 import com.projectronin.interop.ehr.factory.VendorFactory
-import com.projectronin.interop.fhir.r4.CodeSystem
-import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Patient
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
+import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkObject
-import io.mockk.unmockkAll
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import java.time.LocalDate
 
 class AppointmentPublishTest {
-    lateinit var tenant: Tenant
-    lateinit var destination: AppointmentPublish
-
-    @BeforeEach
-    fun setup() {
-        tenant = mockk {
-            every { mnemonic } returns "tenant"
-        }
-        destination = AppointmentPublish(mockk(), mockk(), mockk(), mockk(), mockk())
-        mockkObject(JacksonUtil)
+    private val tenantId = "tenant"
+    private val tenant = mockk<Tenant> {
+        every { mnemonic } returns tenantId
     }
-
-    @AfterEach
-    fun unmockk() {
-        unmockkAll()
+    private val appointmentService = mockk<AppointmentService>()
+    private val vendorFactory = mockk<VendorFactory> {
+        every { appointmentService } returns this@AppointmentPublishTest.appointmentService
     }
+    private val appointmentPublish = AppointmentPublish(mockk(), mockk(), mockk(), mockk(), mockk())
 
-    @Test
-    fun `channel creation works`() {
-        assertNotNull(destination)
+    private val patient1 = Patient(id = Id("$tenantId-1234"))
+    private val patient2 = Patient(id = Id("$tenantId-5678"))
+    private val patient3 = Patient(id = Id("$tenantId-9012"))
+    private val metadata = mockk<Metadata>(relaxed = true) {
+        every { runId } returns "run"
     }
 
     @Test
-    fun `fails on unknown request`() {
-        assertThrows<IllegalStateException> {
-            destination.convertEventToRequest("boo", "", mockk(), mockk())
-        }
+    fun `publish events create a PatientPublishAppointmentRequest`() {
+        val publishEvent = mockk<InteropResourcePublishV1>()
+        val request = appointmentPublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
+        assertInstanceOf(AppointmentPublish.PatientPublishAppointmentRequest::class.java, request)
     }
 
     @Test
-    fun `works for load events`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourceLoadV1(
-            "tenant",
-            "id",
-            ResourceType.Appointment,
-            InteropResourceLoadV1.DataTrigger.adhoc,
-            metadata
+    fun `load events create a LoadAppointmentRequest`() {
+        val loadEvent = mockk<InteropResourceLoadV1>(relaxed = true)
+        val request = appointmentPublish.convertLoadEventsToRequest(listOf(loadEvent), vendorFactory, tenant)
+        assertInstanceOf(AppointmentPublish.LoadAppointmentRequest::class.java, request)
+    }
+
+    @Test
+    fun `PatientPublishAppointmentRequest supports loads resources`() {
+        val appointment1 = mockk<Appointment>()
+        val appointment2 = mockk<Appointment>()
+        val appointment3 = mockk<Appointment>()
+        every { appointmentService.findPatientAppointments(tenant, "1234", any(), any()) } returns listOf(
+            appointment1,
+            appointment2
         )
-        val mockAppointment = mockk<Appointment>()
-        every { JacksonUtil.readJsonObject("boo", InteropResourceLoadV1::class) } returns event
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { appointmentService.getByID(tenant, "id") } returns mockAppointment
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourceLoadV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
+        every { appointmentService.findPatientAppointments(tenant, "5678", any(), any()) } returns listOf(appointment3)
+        every { appointmentService.findPatientAppointments(tenant, "9012", any(), any()) } returns emptyList()
+
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Patient,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient1),
+            metadata = metadata
         )
-
-        val requestKeys = listOf(ResourceRequestKey("run123", ResourceType.Appointment, tenant, "id"))
-        assertEquals(requestKeys, request.requestKeys)
-
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockAppointment, results.first())
-    }
-
-    @Test
-    fun `works for publish events`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.Patient,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
-            metadata
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Patient,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient2),
+            metadata = metadata
         )
-        val mockPatient = mockk<Patient> {
-            every { id?.value } returns "tenant-123"
-            every { identifier } returns listOf(
-                mockk {
-                    every { system } returns CodeSystem.RONIN_FHIR_ID.uri
-                    every { value } returns "123".asFHIR()
-                }
+        val event3 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Patient,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
+            metadata = metadata
+        )
+        val request =
+            AppointmentPublish.PatientPublishAppointmentRequest(
+                listOf(event1, event2, event3),
+                appointmentService,
+                tenant
             )
-        }
-        val mockAppointment = mockk<Appointment> {}
-        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("{}", Patient::class) } returns mockPatient
-        val mockVendorFactory = mockk<VendorFactory> {
-            every {
-                appointmentService.findPatientAppointments(
-                    tenant,
-                    "123",
-                    match { it.isAfter(LocalDate.now().minusMonths(1).minusDays(1)) },
-                    match { it.isBefore(LocalDate.now().plusMonths(1).plusDays(1)) }
-                )
-            } returns listOf(mockAppointment)
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
-        )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(3, resourcesByKeys.size)
 
-        val requestKeys = listOf(ResourceRequestKey("run123", ResourceType.Patient, tenant, "tenant-123"))
-        assertEquals(requestKeys, request.requestKeys)
+        val key1 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-1234")
+        assertEquals(listOf(appointment1, appointment2), resourcesByKeys[key1])
 
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockAppointment, results.first())
+        val key2 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-5678")
+        assertEquals(listOf(appointment3), resourcesByKeys[key2])
+
+        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-9012")
+        assertEquals(emptyList<Appointment>(), resourcesByKeys[key3])
     }
 }

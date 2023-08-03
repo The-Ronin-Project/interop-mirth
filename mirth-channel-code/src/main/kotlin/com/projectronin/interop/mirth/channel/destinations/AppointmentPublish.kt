@@ -2,8 +2,6 @@ package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
-import com.projectronin.interop.aidbox.utils.findFhirID
-import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.AppointmentService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
@@ -11,10 +9,11 @@ import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninAppointment
-import com.projectronin.interop.mirth.channel.base.kafka.IdBasedPublishEventResourceLoadRequest
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
-import com.projectronin.interop.mirth.channel.base.kafka.LoadEventResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceLoadRequest
+import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -35,50 +34,48 @@ class AppointmentPublish(
     publishService,
     profileTransformer
 ) {
-
-    override fun convertEventToRequest(
-        serializedEvent: String,
-        eventClassName: String,
+    override fun convertPublishEventsToRequest(
+        events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
         tenant: Tenant
-    ): ResourceLoadRequest<Appointment> {
-        return when (eventClassName) {
-            InteropResourcePublishV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourcePublishV1::class)
-                PatientSourceAppointmentLoadRequest(event, vendorFactory.appointmentService, tenant)
-            }
-
-            InteropResourceLoadV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourceLoadV1::class)
-                AppointmentLoadRequest(event, vendorFactory.appointmentService, tenant)
-            }
-
-            else -> throw IllegalStateException("Received a string which cannot deserialize to a known event")
-        }
+    ): PublishResourceRequest<Appointment> {
+        return PatientPublishAppointmentRequest(events, vendorFactory.appointmentService, tenant)
     }
 
-    private class PatientSourceAppointmentLoadRequest(
-        sourceEvent: InteropResourcePublishV1,
-        override val fhirService: AppointmentService,
+    override fun convertLoadEventsToRequest(
+        events: List<InteropResourceLoadV1>,
+        vendorFactory: VendorFactory,
         tenant: Tenant
-    ) : IdBasedPublishEventResourceLoadRequest<Appointment, Patient>(sourceEvent, tenant) {
-        override val sourceResource: Patient = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
-
-        override fun loadResources(): List<Appointment> {
-            val patientFhirId = sourceResource.identifier.findFhirID()
-            return fhirService.findPatientAppointments(
-                tenant,
-                patientFhirId,
-                startDate = LocalDate.now().minusMonths(1),
-                endDate = LocalDate.now().plusMonths(1)
-            )
-        }
+    ): LoadResourceRequest<Appointment> {
+        return LoadAppointmentRequest(events, vendorFactory.appointmentService, tenant)
     }
 
-    private class AppointmentLoadRequest(
-        sourceEvent: InteropResourceLoadV1,
+    internal class PatientPublishAppointmentRequest(
+        publishEvents: List<InteropResourcePublishV1>,
+        override val fhirService: AppointmentService,
+        override val tenant: Tenant
+    ) : PublishResourceRequest<Appointment>() {
+        override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
+            publishEvents.map { PatientPublishEvent(it, tenant) }
+
+        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Appointment>> {
+            return requestFhirIds.associateWith {
+                fhirService.findPatientAppointments(
+                    tenant,
+                    it,
+                    startDate = LocalDate.now().minusMonths(1),
+                    endDate = LocalDate.now().plusMonths(1)
+                )
+            }
+        }
+
+        private class PatientPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
+            IdBasedPublishResourceEvent<Patient>(publishEvent, tenant, Patient::class)
+    }
+
+    internal class LoadAppointmentRequest(
+        loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: AppointmentService,
         tenant: Tenant
-    ) :
-        LoadEventResourceLoadRequest<Appointment>(sourceEvent, tenant)
+    ) : LoadResourceRequest<Appointment>(loadEvents, tenant)
 }

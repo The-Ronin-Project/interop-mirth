@@ -3,7 +3,6 @@ package com.projectronin.interop.mirth.channel.destinations
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.ResourceType
-import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.PractitionerService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
@@ -12,11 +11,12 @@ import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninPractitioner
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
-import com.projectronin.interop.mirth.channel.base.kafka.LoadEventResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.PublishEventResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
-import com.projectronin.interop.mirth.channel.util.unlocalize
+import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.PublishReferenceResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -38,63 +38,51 @@ class PractitionerPublish(
 ) {
     override val cacheAndCompareResults: Boolean = true
 
-    // turn a kafka event into an abstract class we can deal with
-    override fun convertEventToRequest(
-        serializedEvent: String,
-        eventClassName: String,
+    override fun convertPublishEventsToRequest(
+        events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
         tenant: Tenant
-    ): ResourceLoadRequest<Practitioner> {
-        return when (eventClassName) {
-            InteropResourcePublishV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourcePublishV1::class)
-                AppointmentSourcePractitionerLoadRequest(event, vendorFactory.practitionerService, tenant)
-            }
-
-            InteropResourceLoadV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourceLoadV1::class)
-                PractitionerLoadRequest(event, vendorFactory.practitionerService, tenant)
-            }
-
-            else -> throw IllegalStateException("Received a string which cannot deserialize to a known event")
-        }
+    ): PublishResourceRequest<Practitioner> {
+        return AppointmentPublishPractitionerRequest(events, vendorFactory.practitionerService, tenant)
     }
 
-    private class AppointmentSourcePractitionerLoadRequest(
-        sourceEvent: InteropResourcePublishV1,
+    override fun convertLoadEventsToRequest(
+        events: List<InteropResourceLoadV1>,
+        vendorFactory: VendorFactory,
+        tenant: Tenant
+    ): LoadResourceRequest<Practitioner> {
+        return LoadPractitionerRequest(events, vendorFactory.practitionerService, tenant)
+    }
+
+    internal class AppointmentPublishPractitionerRequest(
+        publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: PractitionerService,
         override val tenant: Tenant
-    ) :
-        PublishEventResourceLoadRequest<Practitioner, Appointment>(sourceEvent) {
-        override val sourceResource: Appointment =
-            JacksonUtil.readJsonObject(sourceEvent.resourceJson, Appointment::class)
+    ) : PublishReferenceResourceRequest<Practitioner>() {
+        override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
+            publishEvents.map { AppointmentPublishEvent(it, tenant) }
 
-        override val requestKeys: List<ResourceRequestKey> = sourceResource.participant
-            .asSequence()
-            .filter { it.actor?.decomposedType()?.startsWith("Practitioner") == true }
-            .mapNotNull { it.actor?.decomposedId() }
-            .distinct().map {
-                ResourceRequestKey(
-                    metadata.runId,
-                    ResourceType.Practitioner,
-                    tenant,
-                    it
-                )
-            }
-            .toList()
-
-        override fun loadResources(requestKeys: List<ResourceRequestKey>): List<Practitioner> {
-            val practitionerFhirIds = requestKeys.map { it.resourceId.unlocalize(tenant) }
-
-            return practitionerFhirIds.map { fhirID ->
-                fhirService.getPractitioner(tenant, fhirID)
-            }
+        private class AppointmentPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
+            PublishResourceEvent<Appointment>(publishEvent, Appointment::class) {
+            override val requestKeys: Set<ResourceRequestKey> = sourceResource.participant
+                .asSequence()
+                .filter { it.actor?.decomposedType()?.startsWith("Practitioner") == true }
+                .mapNotNull { it.actor?.decomposedId() }
+                .distinct().map {
+                    ResourceRequestKey(
+                        metadata.runId,
+                        ResourceType.Practitioner,
+                        tenant,
+                        it
+                    )
+                }
+                .toSet()
         }
     }
 
-    private class PractitionerLoadRequest(
-        sourceEvent: InteropResourceLoadV1,
+    internal class LoadPractitionerRequest(
+        loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: PractitionerService,
         tenant: Tenant
-    ) : LoadEventResourceLoadRequest<Practitioner>(sourceEvent, tenant)
+    ) : LoadResourceRequest<Practitioner>(loadEvents, tenant)
 }

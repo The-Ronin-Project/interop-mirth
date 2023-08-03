@@ -4,325 +4,268 @@ import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
-import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.common.jackson.JacksonManager
+import com.projectronin.interop.ehr.MedicationService
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.datatype.DynamicValue
 import com.projectronin.interop.fhir.r4.datatype.DynamicValueType
 import com.projectronin.interop.fhir.r4.datatype.Reference
-import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
+import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Ingredient
 import com.projectronin.interop.fhir.r4.resource.Medication
 import com.projectronin.interop.fhir.r4.resource.MedicationRequest
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceRequestKey
+import com.projectronin.interop.fhir.r4.valueset.MedicationRequestIntent
+import com.projectronin.interop.fhir.r4.valueset.MedicationRequestStatus
+import com.projectronin.interop.fhir.util.asCode
+import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.mockkObject
-import io.mockk.unmockkAll
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class MedicationPublishTest {
-    lateinit var tenant: Tenant
-    lateinit var destination: MedicationPublish
-
-    @BeforeEach
-    fun setup() {
-        tenant = mockk {
-            every { mnemonic } returns "tenant"
-        }
-        destination = MedicationPublish(mockk(), mockk(), mockk(), mockk(), mockk())
-        mockkObject(JacksonUtil)
+    private val tenantId = "tenant"
+    private val tenant = mockk<Tenant> {
+        every { mnemonic } returns tenantId
     }
-
-    @AfterEach
-    fun unmockk() {
-        unmockkAll()
+    private val medicationService = mockk<MedicationService>()
+    private val vendorFactory = mockk<VendorFactory> {
+        every { medicationService } returns this@MedicationPublishTest.medicationService
     }
+    private val medicationPublish = MedicationPublish(mockk(), mockk(), mockk(), mockk(), mockk())
 
-    @Test
-    fun `channel creation works`() {
-        assertNotNull(destination)
-    }
-
-    @Test
-    fun `fails on unknown request`() {
-        assertThrows<IllegalStateException> {
-            destination.convertEventToRequest("boo", "", mockk(), mockk())
-        }
-    }
-
-    @Test
-    fun `fails on unknown resource type`() {
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.Location,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
-            mockk()
-        )
-
-        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
-        assertThrows<IllegalStateException> {
-            destination.convertEventToRequest("boo", InteropResourcePublishV1::class.simpleName!!, mockk(), mockk())
-        }
-    }
-
-    @Test
-    fun `works for load events`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourceLoadV1(
-            "tenant",
-            "id",
-            ResourceType.Medication,
-            InteropResourceLoadV1.DataTrigger.adhoc,
-            metadata
-        )
-        val mockMedication = mockk<Medication>()
-        every { JacksonUtil.readJsonObject("boo", InteropResourceLoadV1::class) } returns event
-        val mockVendorFactory = mockk<VendorFactory> {
-            every { medicationService.getByID(tenant, "id") } returns mockMedication
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourceLoadV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
-        )
-
-        val requestKeys = listOf(ResourceRequestKey("run123", ResourceType.Medication, tenant, "id"))
-        assertEquals(requestKeys, request.requestKeys)
-
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockMedication, results.first())
-    }
-
-    @Test
-    fun `works for publish events - medication request`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.MedicationRequest,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
-            metadata
-        )
-        val mockkMedicationRequest = mockk<MedicationRequest> {
-            every { id?.value } returns "tenant-123"
-            every { medication } returns mockk<DynamicValue<Reference>> {
-                every { type } returns DynamicValueType.REFERENCE
-                every { value } returns Reference(reference = "Medication/tenant-456".asFHIR())
-            }
-        }
-
-        val mockMedication = mockk<Medication> {}
-        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("{}", MedicationRequest::class) } returns mockkMedicationRequest
-        val mockVendorFactory = mockk<VendorFactory> {
-            every {
-                medicationService.getByID(
-                    tenant,
-                    "456"
+    private val medication1 = Medication(
+        id = Id("$tenantId-1234"),
+        ingredient = listOf(
+            Ingredient(
+                item = DynamicValue(
+                    DynamicValueType.REFERENCE,
+                    Reference(reference = FHIRString("Medication/$tenantId-11234"))
                 )
-            } returns mockMedication
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
+            ),
+            Ingredient(
+                item = DynamicValue(
+                    DynamicValueType.REFERENCE,
+                    Reference(reference = FHIRString("Medication/$tenantId-15678"))
+                )
+            )
         )
+    )
+    private val medication2 = Medication(
+        id = Id("$tenantId-5678"),
+        ingredient = listOf(
+            Ingredient(
+                item = DynamicValue(
+                    DynamicValueType.REFERENCE,
+                    Reference(reference = FHIRString("Medication/$tenantId-19012"))
+                )
+            ),
+            Ingredient(
+                item = DynamicValue(
+                    DynamicValueType.REFERENCE,
+                    Reference(reference = FHIRString("SomethingElse/$tenantId-13456"))
+                )
+            )
+        )
+    )
+    private val medication3 = Medication(
+        id = Id("$tenantId-9012"),
+        ingredient = listOf(
+            Ingredient(item = DynamicValue(DynamicValueType.STRING, FHIRString("Medication")))
+        )
+    )
 
-        val requestKeys = listOf(ResourceRequestKey("run123", ResourceType.Medication, tenant, "tenant-456"))
-        assertEquals(requestKeys, request.requestKeys)
+    private val medicationRequest1 = MedicationRequest(
+        id = Id("$tenantId-1234"),
+        medication = DynamicValue(
+            DynamicValueType.REFERENCE,
+            Reference(reference = FHIRString("Medication/$tenantId-1234"))
+        ),
+        intent = MedicationRequestIntent.FILLER_ORDER.asCode(),
+        status = MedicationRequestStatus.ACTIVE.asCode(),
+        subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+    )
+    private val medicationRequest2 = MedicationRequest(
+        id = Id("$tenantId-5678"),
+        medication = DynamicValue(
+            DynamicValueType.REFERENCE,
+            Reference(reference = FHIRString("Medication/$tenantId-5678"))
+        ),
+        intent = MedicationRequestIntent.FILLER_ORDER.asCode(),
+        status = MedicationRequestStatus.ACTIVE.asCode(),
+        subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+    )
+    private val medicationRequest3 = MedicationRequest(
+        id = Id("$tenantId-9012"),
+        medication = DynamicValue(
+            DynamicValueType.REFERENCE,
+            Reference(reference = FHIRString("SomethingElse/$tenantId-9012"))
+        ),
+        intent = MedicationRequestIntent.FILLER_ORDER.asCode(),
+        status = MedicationRequestStatus.ACTIVE.asCode(),
+        subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+    )
+    private val medicationRequest4 = MedicationRequest(
+        id = Id("$tenantId-3456"),
+        medication = DynamicValue(
+            DynamicValueType.STRING,
+            FHIRString("Medication")
+        ),
+        intent = MedicationRequestIntent.FILLER_ORDER.asCode(),
+        status = MedicationRequestStatus.ACTIVE.asCode(),
+        subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+    )
 
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockMedication, results.first())
+    private val metadata = mockk<Metadata>(relaxed = true) {
+        every { runId } returns "run"
     }
 
     @Test
-    fun `works for publish events - medication`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
+    fun `publish events create a MedicationPublishMedicationRequest for medication publish events`() {
+        val publishEvent = mockk<InteropResourcePublishV1>(relaxed = true) {
+            every { resourceType } returns ResourceType.Medication
         }
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.Medication,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
-            metadata
-        )
-        val mockkMedicationSource = mockk<Medication> {
-            every { id?.value } returns "tenant-123"
-            every { ingredient } returns listOf(
-                mockk<Ingredient> {
-                    every { item } returns mockk<DynamicValue<Reference>> {
-                        every { type } returns DynamicValueType.REFERENCE
-                        every { value } returns Reference(reference = "Medication/tenant-456".asFHIR())
-                    }
-                },
-                mockk<Ingredient> {
-                    every { item } returns mockk<DynamicValue<Boolean>> {
-                        every { type } returns DynamicValueType.BOOLEAN
-                    }
-                },
-                mockk<Ingredient> {
-                    every { item } returns mockk<DynamicValue<Reference>> {
-                        every { type } returns DynamicValueType.REFERENCE
-                        every { value } returns Reference(reference = "Location/tenant-456".asFHIR())
-                    }
-                }
+        val request = medicationPublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
+        assertInstanceOf(MedicationPublish.MedicationPublishMedicationRequest::class.java, request)
+    }
+
+    @Test
+    fun `publish events create a MedicationRequestPublishMedicationRequest for medicationRequest publish events`() {
+        val publishEvent = mockk<InteropResourcePublishV1>(relaxed = true) {
+            every { resourceType } returns ResourceType.MedicationRequest
+            every { resourceJson } returns JacksonManager.objectMapper.writeValueAsString(medicationRequest1)
+            every { metadata } returns this@MedicationPublishTest.metadata
+        }
+        val request = medicationPublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
+        assertInstanceOf(MedicationPublish.MedicationRequestPublishMedicationRequest::class.java, request)
+    }
+
+    @Test
+    fun `publish events throw exception for unsupported publish events`() {
+        val publishEvent = mockk<InteropResourcePublishV1>(relaxed = true) {
+            every { resourceType } returns ResourceType.Practitioner
+        }
+        val exception = assertThrows<IllegalStateException> {
+            medicationPublish.convertPublishEventsToRequest(
+                listOf(publishEvent),
+                vendorFactory,
+                tenant
             )
         }
-
-        val mockMedication = mockk<Medication> {}
-        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("{}", Medication::class) } returns mockkMedicationSource
-        val mockVendorFactory = mockk<VendorFactory> {
-            every {
-                medicationService.getByID(
-                    tenant,
-                    "456"
-                )
-            } returns mockMedication
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
+        assertEquals(
+            "Received resource type (Practitioner) that cannot be used to load medications",
+            exception.message
         )
-
-        val requestKeys = listOf(ResourceRequestKey("run123", ResourceType.Medication, tenant, "tenant-456"))
-        assertEquals(requestKeys, request.requestKeys)
-
-        val results = request.loadResources(requestKeys)
-        assertEquals(mockMedication, results.first())
     }
 
     @Test
-    fun `no reference means no keys`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.MedicationRequest,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
-            metadata
-        )
-        val mockkMedicationRequest = mockk<MedicationRequest> {
-            every { id?.value } returns "tenant-123"
-            every { medication } returns mockk<DynamicValue<Reference>> {
-                every { type } returns DynamicValueType.REFERENCE
-                every { value } returns Reference(reference = "NotMedication/tenant-456".asFHIR())
-            }
-        }
-
-        val mockMedication = mockk<Medication> {}
-        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("{}", MedicationRequest::class) } returns mockkMedicationRequest
-        val mockVendorFactory = mockk<VendorFactory> {
-            every {
-                medicationService.getByID(
-                    tenant,
-                    "456"
-                )
-            } returns mockMedication
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
-        )
-
-        assertEquals(emptyList<ResourceRequestKey>(), request.requestKeys)
+    fun `load events create a LoadMedicationRequest`() {
+        val loadEvent = mockk<InteropResourceLoadV1>(relaxed = true)
+        val request = medicationPublish.convertLoadEventsToRequest(listOf(loadEvent), vendorFactory, tenant)
+        assertInstanceOf(MedicationPublish.LoadMedicationRequest::class.java, request)
     }
 
     @Test
-    fun `no reference means no keys- medication`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.Medication,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
-            metadata
+    fun `MedicationPublishMedicationRequest supports loads resources`() {
+        val returnedMedication1 = mockk<Medication>()
+        val returnedMedication2 = mockk<Medication>()
+        val returnedMedication3 = mockk<Medication>()
+        every { medicationService.getByIDs(tenant, listOf("11234", "15678", "19012")) } returns mapOf(
+            "11234" to returnedMedication1,
+            "15678" to returnedMedication2,
+            "19012" to returnedMedication3
         )
-        val mockkMedicationSource = mockk<Medication> {
-            every { id?.value } returns "tenant-123"
-            every { ingredient } returns emptyList()
-        }
 
-        val mockMedication = mockk<Medication> {}
-        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("{}", Medication::class) } returns mockkMedicationSource
-        val mockVendorFactory = mockk<VendorFactory> {
-            every {
-                medicationService.getByID(
-                    tenant,
-                    "456"
-                )
-            } returns mockMedication
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Medication,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medication1),
+            metadata = metadata
         )
-        assertEquals(emptyList<ResourceRequestKey>(), request.requestKeys)
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Medication,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medication2),
+            metadata = metadata
+        )
+        val event3 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Medication,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medication3),
+            metadata = metadata
+        )
+        val request =
+            MedicationPublish.MedicationPublishMedicationRequest(
+                listOf(event1, event2, event3),
+                medicationService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(3, resourcesByKeys.size)
+
+        val key1 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-11234")
+        assertEquals(listOf(returnedMedication1), resourcesByKeys[key1])
+
+        val key2 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-15678")
+        assertEquals(listOf(returnedMedication2), resourcesByKeys[key2])
+
+        val key3 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-19012")
+        assertEquals(listOf(returnedMedication3), resourcesByKeys[key3])
     }
 
     @Test
-    fun `not a reference means no keys`() {
-        val metadata = mockk<Metadata> {
-            every { runId } returns "run123"
-        }
-        val event = InteropResourcePublishV1(
-            "tenant",
-            ResourceType.MedicationRequest,
-            InteropResourcePublishV1.DataTrigger.adhoc,
-            "{}",
-            metadata
-        )
-        val mockkMedicationRequest = mockk<MedicationRequest> {
-            every { id?.value } returns "tenant-123"
-            every { medication } returns mockk<DynamicValue<Reference>> {
-                every { type } returns DynamicValueType.DATE
-            }
-        }
+    fun `MedicationRequestPublishMedicationRequest supports loads resources`() {
+        val medication1 = mockk<Medication>()
+        val medication2 = mockk<Medication>()
+        val medication3 = mockk<Medication>()
+        every {
+            medicationService.getByIDs(
+                tenant,
+                listOf("1234", "5678")
+            )
+        } returns mapOf("1234" to medication1, "5678" to medication2)
 
-        val mockMedication = mockk<Medication> {}
-        every { JacksonUtil.readJsonObject("boo", InteropResourcePublishV1::class) } returns event
-        every { JacksonUtil.readJsonObject("{}", MedicationRequest::class) } returns mockkMedicationRequest
-        val mockVendorFactory = mockk<VendorFactory> {
-            every {
-                medicationService.getByID(
-                    tenant,
-                    "456"
-                )
-            } returns mockMedication
-        }
-        val request = destination.convertEventToRequest(
-            "boo",
-            InteropResourcePublishV1::class.simpleName!!,
-            mockVendorFactory,
-            tenant
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationRequest,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationRequest1),
+            metadata = metadata
         )
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationRequest,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationRequest2),
+            metadata = metadata
+        )
+        val event3 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationRequest,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationRequest3),
+            metadata = metadata
+        )
+        val event4 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationRequest,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationRequest4),
+            metadata = metadata
+        )
+        val request =
+            MedicationPublish.MedicationRequestPublishMedicationRequest(
+                listOf(event1, event2, event3, event4),
+                medicationService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(2, resourcesByKeys.size)
 
-        assertEquals(emptyList<ResourceRequestKey>(), request.requestKeys)
+        val key1 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-1234")
+        assertEquals(listOf(medication1), resourcesByKeys[key1])
+
+        val key2 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-5678")
+        assertEquals(listOf(medication2), resourcesByKeys[key2])
     }
 }

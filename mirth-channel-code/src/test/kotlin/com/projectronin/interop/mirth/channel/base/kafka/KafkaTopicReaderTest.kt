@@ -32,7 +32,8 @@ class KafkaTopicReaderTest {
     class TestChannel(
         kafkaPublishService: KafkaPublishService,
         kafkaLoadService: KafkaLoadService,
-        override val tenantConfigService: TenantConfigurationService
+        override val tenantConfigService: TenantConfigurationService,
+        override val maxEventBatchSize: Int = 20
     ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, mockk()) {
         override val publishedResourcesSubscriptions = listOf(ResourceType.Patient, ResourceType.Practitioner)
         override val resource = ResourceType.Location
@@ -102,12 +103,20 @@ class KafkaTopicReaderTest {
         } returns listOf(
             mockEvent
         )
-        every { JacksonUtil.writeJsonValue(mockEvent) } returns "mockEvent"
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.NIGHTLY,
+                "test"
+            )
+        } returns emptyList()
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)
         val message = messages.first()
         assertEquals("mockTenant", message.dataMap[MirthKey.TENANT_MNEMONIC.code])
         assertEquals(">9000", message.dataMap[MirthKey.EVENT_RUN_ID.code])
+        assertEquals(InteropResourcePublishV1::class.simpleName!!, message.dataMap[MirthKey.KAFKA_EVENT.code])
         assertEquals("mockEvent", message.message)
     }
 
@@ -159,7 +168,14 @@ class KafkaTopicReaderTest {
             mockEvent3,
             mockEvent4
         )
-        every { JacksonUtil.writeJsonValue(mockEvent4) } returns "mockEvent"
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.NIGHTLY,
+                "test"
+            )
+        } returns emptyList()
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent4)) } returns "mockEvent"
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)
         val message = messages.first()
@@ -193,10 +209,29 @@ class KafkaTopicReaderTest {
             mockEvent1,
             mockEvent2
         )
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.NIGHTLY,
+                "test"
+            )
+        } returns emptyList()
         every { kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test") } returns emptyList()
         every { kafkaLoadService.retrieveLoadEvents(ResourceType.Appointment, "test") } returns emptyList()
-        every { kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.AD_HOC, "test") } returns emptyList()
-        every { kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.AD_HOC, "test") } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Patient,
+                DataTrigger.AD_HOC,
+                "test"
+            )
+        } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.AD_HOC,
+                "test"
+            )
+        } returns emptyList()
 
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(0, messages.size)
@@ -231,8 +266,20 @@ class KafkaTopicReaderTest {
         } returns emptyList()
         every { kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test") } returns listOf(mockEvent1)
         every { kafkaLoadService.retrieveLoadEvents(ResourceType.Appointment, "test") } returns emptyList()
-        every { kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.AD_HOC, "test") } returns emptyList()
-        every { kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.AD_HOC, "test") } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Patient,
+                DataTrigger.AD_HOC,
+                "test"
+            )
+        } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.AD_HOC,
+                "test"
+            )
+        } returns emptyList()
 
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(0, messages.size)
@@ -258,11 +305,12 @@ class KafkaTopicReaderTest {
         every {
             tenantConfigService.getConfiguration("mockTenant")
         } returns configDO
-        every { JacksonUtil.writeJsonValue(mockEvent) } returns "mockEvent"
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)
         val message = messages.first()
         assertEquals("mockTenant", message.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals(InteropResourcePublishV1::class.simpleName!!, message.dataMap[MirthKey.KAFKA_EVENT.code])
         assertEquals("mockEvent", message.message)
     }
 
@@ -289,11 +337,12 @@ class KafkaTopicReaderTest {
         every {
             kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test")
         } returns listOf(mockEvent)
-        every { JacksonUtil.writeJsonValue(mockEvent) } returns "mockEvent"
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)
         val message = messages.first()
         assertEquals("mockTenant", message.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals(InteropResourceLoadV1::class.simpleName!!, message.dataMap[MirthKey.KAFKA_EVENT.code])
         assertEquals("mockEvent", message.message)
     }
 
@@ -323,12 +372,20 @@ class KafkaTopicReaderTest {
         every {
             kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.AD_HOC, "test")
         } returns listOf(mockEvent)
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.AD_HOC,
+                "test"
+            )
+        } returns emptyList()
 
-        every { JacksonUtil.writeJsonValue(mockEvent) } returns "mockEvent"
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)
         val message = messages.first()
         assertEquals("mockTenant", message.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals(InteropResourcePublishV1::class.simpleName!!, message.dataMap[MirthKey.KAFKA_EVENT.code])
         assertEquals("mockEvent", message.message)
     }
 
@@ -374,8 +431,313 @@ class KafkaTopicReaderTest {
             tenantConfigService.getConfiguration("mockTenant")
         } returns configDO
         every { kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test") } returns listOf(mockEvent)
-        every { JacksonUtil.writeJsonValue(mockEvent) } returns "mockEvent"
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
         val messages = loadChannel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)
+    }
+
+    @Test
+    fun `publish events are batched into messages by tenant, run id and resource type`() {
+        val configDO = mockk<MirthTenantConfigDO> {
+            every { blockedResources } returns "" // should this be the actual resource name
+            every { locationIds } returns "12345678"
+        }
+        every { tenantConfigService.getConfiguration(any()) } returns configDO
+
+        val metadata1 = mockk<Metadata> {
+            every { runId } returns "run1"
+        }
+        val metadata2 = mockk<Metadata> {
+            every { runId } returns "run2"
+        }
+
+        val patientEventTenant1Run1 = mockk<InteropResourcePublishV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Patient
+            every { metadata } returns metadata1
+        }
+        val patientEvent2Tenant1Run1 = mockk<InteropResourcePublishV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Patient
+            every { metadata } returns metadata1
+        }
+        val patientEventTenant2Run1 = mockk<InteropResourcePublishV1> {
+            every { tenantId } returns "tenant2"
+            every { resourceType } returns ResourceType.Patient
+            every { metadata } returns metadata1
+        }
+        val patientEventTenant1Run2 = mockk<InteropResourcePublishV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Patient
+            every { metadata } returns metadata2
+        }
+        val practitionerEventTenant1Run1 = mockk<InteropResourcePublishV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Practitioner
+            every { metadata } returns metadata1
+        }
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Patient,
+                DataTrigger.NIGHTLY,
+                "test"
+            )
+        } returns listOf(
+            patientEventTenant1Run1,
+            patientEvent2Tenant1Run1,
+            patientEventTenant1Run2,
+            patientEventTenant2Run1
+        )
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.NIGHTLY,
+                "test"
+            )
+        } returns listOf(practitionerEventTenant1Run1)
+
+        every {
+            JacksonUtil.writeJsonValue(
+                listOf(
+                    patientEventTenant1Run1,
+                    patientEvent2Tenant1Run1
+                )
+            )
+        } returns "tenant1-run1-patient"
+        every { JacksonUtil.writeJsonValue(listOf(patientEventTenant2Run1)) } returns "tenant2-run1-patient"
+        every { JacksonUtil.writeJsonValue(listOf(practitionerEventTenant1Run1)) } returns "tenant1-run1-practitioner"
+        every { JacksonUtil.writeJsonValue(listOf(patientEventTenant1Run2)) } returns "tenant1-run2-patient"
+
+        val messages = channel.channelSourceReader(emptyMap())
+        assertEquals(4, messages.size)
+
+        val messagesByResponse = messages.associateBy { it.message }
+
+        val message1 = messagesByResponse["tenant1-run1-patient"]!!
+        assertEquals("tenant1", message1.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals("run1", message1.dataMap[MirthKey.EVENT_RUN_ID.code])
+
+        val message2 = messagesByResponse["tenant2-run1-patient"]!!
+        assertEquals("tenant2", message2.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals("run1", message2.dataMap[MirthKey.EVENT_RUN_ID.code])
+
+        val message3 = messagesByResponse["tenant1-run1-practitioner"]!!
+        assertEquals("tenant1", message3.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals("run1", message3.dataMap[MirthKey.EVENT_RUN_ID.code])
+
+        val message4 = messagesByResponse["tenant1-run2-patient"]!!
+        assertEquals("tenant1", message4.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals("run2", message4.dataMap[MirthKey.EVENT_RUN_ID.code])
+    }
+
+    @Test
+    fun `publish events honor max batch size`() {
+        val configDO = mockk<MirthTenantConfigDO> {
+            every { blockedResources } returns "" // should this be the actual resource name
+            every { locationIds } returns "12345678"
+        }
+        every { tenantConfigService.getConfiguration(any()) } returns configDO
+
+        val metadata1 = mockk<Metadata> {
+            every { runId } returns "run1"
+        }
+
+        val patientEventTenant1Run1 = mockk<InteropResourcePublishV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Patient
+            every { metadata } returns metadata1
+        }
+        val patientEvent2Tenant1Run1 = mockk<InteropResourcePublishV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Patient
+            every { metadata } returns metadata1
+        }
+        val patientEvent3Tenant1Run1 = mockk<InteropResourcePublishV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Patient
+            every { metadata } returns metadata1
+        }
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Patient,
+                DataTrigger.NIGHTLY,
+                "test"
+            )
+        } returns listOf(
+            patientEventTenant1Run1,
+            patientEvent2Tenant1Run1,
+            patientEvent3Tenant1Run1
+        )
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.NIGHTLY,
+                "test"
+            )
+        } returns emptyList()
+
+        every { JacksonUtil.writeJsonValue(any()) } returns "data"
+
+        val channel = TestChannel(kafkaPublishService, kafkaLoadService, tenantConfigService, 2)
+        val messages = channel.channelSourceReader(emptyMap())
+        assertEquals(2, messages.size)
+
+        messages.forEach {
+            assertEquals("tenant1", it.dataMap[MirthKey.TENANT_MNEMONIC.code])
+            assertEquals("run1", it.dataMap[MirthKey.EVENT_RUN_ID.code])
+        }
+    }
+
+    @Test
+    fun `load events are batched into messages by tenant and run id`() {
+        val configDO = mockk<MirthTenantConfigDO> {
+            every { blockedResources } returns "" // should this be the actual resource name
+            every { locationIds } returns "12345678"
+        }
+        every { tenantConfigService.getConfiguration(any()) } returns configDO
+
+        val metadata1 = mockk<Metadata> {
+            every { runId } returns "run1"
+        }
+        val metadata2 = mockk<Metadata> {
+            every { runId } returns "run2"
+        }
+
+        val locationEventTenant1Run1 = mockk<InteropResourceLoadV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Location
+            every { metadata } returns metadata1
+        }
+        val locationEvent2Tenant1Run1 = mockk<InteropResourceLoadV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Location
+            every { metadata } returns metadata1
+        }
+        val locationEventTenant1Run2 = mockk<InteropResourceLoadV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Location
+            every { metadata } returns metadata2
+        }
+        val locationEventTenant2Run1 = mockk<InteropResourceLoadV1> {
+            every { tenantId } returns "tenant2"
+            every { resourceType } returns ResourceType.Location
+            every { metadata } returns metadata1
+        }
+
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Patient,
+                DataTrigger.NIGHTLY,
+                "test",
+                false
+            )
+        } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.NIGHTLY,
+                "test",
+                false
+            )
+        } returns emptyList()
+        every {
+            kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test", false)
+        } returns listOf(
+            locationEventTenant1Run1,
+            locationEvent2Tenant1Run1,
+            locationEventTenant1Run2,
+            locationEventTenant2Run1
+        )
+
+        every {
+            JacksonUtil.writeJsonValue(
+                listOf(
+                    locationEventTenant1Run1,
+                    locationEvent2Tenant1Run1
+                )
+            )
+        } returns "tenant1-run1-location"
+        every { JacksonUtil.writeJsonValue(listOf(locationEventTenant2Run1)) } returns "tenant2-run1-location"
+        every { JacksonUtil.writeJsonValue(listOf(locationEventTenant1Run2)) } returns "tenant1-run2-location"
+
+        val messages = channel.channelSourceReader(emptyMap())
+        assertEquals(3, messages.size)
+
+        val messagesByResponse = messages.associateBy { it.message }
+
+        val message1 = messagesByResponse["tenant1-run1-location"]!!
+        assertEquals("tenant1", message1.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals("run1", message1.dataMap[MirthKey.EVENT_RUN_ID.code])
+
+        val message2 = messagesByResponse["tenant2-run1-location"]!!
+        assertEquals("tenant2", message2.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals("run1", message2.dataMap[MirthKey.EVENT_RUN_ID.code])
+
+        val message3 = messagesByResponse["tenant1-run2-location"]!!
+        assertEquals("tenant1", message3.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals("run2", message3.dataMap[MirthKey.EVENT_RUN_ID.code])
+    }
+
+    @Test
+    fun `load events honor max batch size`() {
+        val configDO = mockk<MirthTenantConfigDO> {
+            every { blockedResources } returns "" // should this be the actual resource name
+            every { locationIds } returns "12345678"
+        }
+        every { tenantConfigService.getConfiguration(any()) } returns configDO
+
+        val metadata1 = mockk<Metadata> {
+            every { runId } returns "run1"
+        }
+        val locationEventTenant1Run1 = mockk<InteropResourceLoadV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Location
+            every { metadata } returns metadata1
+        }
+        val locationEvent2Tenant1Run1 = mockk<InteropResourceLoadV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Location
+            every { metadata } returns metadata1
+        }
+        val locationEvent3Tenant1Run1 = mockk<InteropResourceLoadV1> {
+            every { tenantId } returns "tenant1"
+            every { resourceType } returns ResourceType.Location
+            every { metadata } returns metadata1
+        }
+
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Patient,
+                DataTrigger.NIGHTLY,
+                "test",
+                false
+            )
+        } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.NIGHTLY,
+                "test",
+                false
+            )
+        } returns emptyList()
+        every {
+            kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test", false)
+        } returns listOf(
+            locationEventTenant1Run1,
+            locationEvent2Tenant1Run1,
+            locationEvent3Tenant1Run1
+        )
+
+        every { JacksonUtil.writeJsonValue(any()) } returns "data"
+
+        val channel = TestChannel(kafkaPublishService, kafkaLoadService, tenantConfigService, 2)
+        val messages = channel.channelSourceReader(emptyMap())
+        assertEquals(2, messages.size)
+
+        messages.forEach {
+            assertEquals("tenant1", it.dataMap[MirthKey.TENANT_MNEMONIC.code])
+            assertEquals("run1", it.dataMap[MirthKey.EVENT_RUN_ID.code])
+        }
     }
 }

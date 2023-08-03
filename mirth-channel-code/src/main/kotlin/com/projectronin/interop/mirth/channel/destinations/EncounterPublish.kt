@@ -2,8 +2,6 @@ package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
-import com.projectronin.interop.aidbox.utils.findFhirID
-import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.EncounterService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
@@ -11,10 +9,11 @@ import com.projectronin.interop.fhir.r4.resource.Encounter
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninEncounter
-import com.projectronin.interop.mirth.channel.base.kafka.IdBasedPublishEventResourceLoadRequest
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
-import com.projectronin.interop.mirth.channel.base.kafka.LoadEventResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceLoadRequest
+import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -35,50 +34,48 @@ class EncounterPublish(
     publishService,
     profileTransformer
 ) {
-
-    // turn a kafka event into an abstract class we can deal with
-    override fun convertEventToRequest(
-        serializedEvent: String,
-        eventClassName: String,
+    override fun convertPublishEventsToRequest(
+        events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
         tenant: Tenant
-    ): ResourceLoadRequest<Encounter> {
-        return when (eventClassName) {
-            InteropResourcePublishV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourcePublishV1::class)
-                PatientSourceEncounterLoadRequest(event, vendorFactory.encounterService, tenant)
-            }
-
-            InteropResourceLoadV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourceLoadV1::class)
-                EncounterLoadRequest(event, vendorFactory.encounterService, tenant)
-            }
-
-            else -> throw IllegalStateException("Received a string which cannot deserialize to a known event")
-        }
+    ): PublishResourceRequest<Encounter> {
+        return PatientPublishEncounterRequest(events, vendorFactory.encounterService, tenant)
     }
 
-    private class PatientSourceEncounterLoadRequest(
-        sourceEvent: InteropResourcePublishV1,
-        override val fhirService: EncounterService,
+    override fun convertLoadEventsToRequest(
+        events: List<InteropResourceLoadV1>,
+        vendorFactory: VendorFactory,
         tenant: Tenant
-    ) : IdBasedPublishEventResourceLoadRequest<Encounter, Patient>(sourceEvent, tenant) {
-        override val sourceResource: Patient = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
-
-        override fun loadResources(): List<Encounter> {
-            val patientFhirId = sourceResource.identifier.findFhirID()
-            return fhirService.findPatientEncounters(
-                tenant,
-                patientFhirId,
-                LocalDate.now().minusMonths(1),
-                LocalDate.now().plusMonths(1)
-            )
-        }
+    ): LoadResourceRequest<Encounter> {
+        return LoadEncounterRequest(events, vendorFactory.encounterService, tenant)
     }
 
-    private class EncounterLoadRequest(
-        sourceEvent: InteropResourceLoadV1,
+    internal class PatientPublishEncounterRequest(
+        publishEvents: List<InteropResourcePublishV1>,
+        override val fhirService: EncounterService,
+        override val tenant: Tenant
+    ) : PublishResourceRequest<Encounter>() {
+        override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
+            publishEvents.map { PatientPublishEvent(it, tenant) }
+
+        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Encounter>> {
+            return requestFhirIds.associateWith {
+                fhirService.findPatientEncounters(
+                    tenant,
+                    it,
+                    startDate = LocalDate.now().minusMonths(1),
+                    endDate = LocalDate.now().plusMonths(1)
+                )
+            }
+        }
+
+        private class PatientPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
+            IdBasedPublishResourceEvent<Patient>(publishEvent, tenant, Patient::class)
+    }
+
+    internal class LoadEncounterRequest(
+        loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: EncounterService,
         tenant: Tenant
-    ) : LoadEventResourceLoadRequest<Encounter>(sourceEvent, tenant)
+    ) : LoadResourceRequest<Encounter>(loadEvents, tenant)
 }

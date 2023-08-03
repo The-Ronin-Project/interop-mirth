@@ -308,10 +308,10 @@ class AppointmentLoadTest : BaseChannelTest(
             resources = listOf(fakeAidboxPatient1, fakeAidboxPatient2)
         )
 
-        waitForMessage(2)
+        waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
-        assertEquals(2, messageList.size)
+        assertEquals(1, messageList.size)
         assertEquals(7, getAidboxResourceCount("Appointment"))
 
         assertAllConnectorsSent(messageList)

@@ -2,8 +2,6 @@ package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
-import com.projectronin.interop.aidbox.utils.findFhirID
-import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.ConditionService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
@@ -14,14 +12,16 @@ import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.ConditionCategoryCodes
 import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
-import com.projectronin.interop.mirth.channel.base.kafka.IdBasedPublishEventResourceLoadRequest
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
-import com.projectronin.interop.mirth.channel.base.kafka.LoadEventResourceLoadRequest
-import com.projectronin.interop.mirth.channel.base.kafka.ResourceLoadRequest
+import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
+import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
+import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
+
 @Component
 class ConditionPublish(
     ehrFactory: EHRFactory,
@@ -36,56 +36,53 @@ class ConditionPublish(
     publishService,
     profileTransformer
 ) {
-
-    // turn a kafka event into an abstract class we can deal with
-    override fun convertEventToRequest(
-        serializedEvent: String,
-        eventClassName: String,
+    override fun convertPublishEventsToRequest(
+        events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
         tenant: Tenant
-    ): ResourceLoadRequest<Condition> {
-        return when (eventClassName) {
-            InteropResourcePublishV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourcePublishV1::class)
-                PatientSourceConditionLoadRequest(event, vendorFactory.conditionService, tenant)
-            }
-
-            InteropResourceLoadV1::class.simpleName!! -> {
-                val event = JacksonUtil.readJsonObject(serializedEvent, InteropResourceLoadV1::class)
-                ConditionLoadRequest(event, vendorFactory.conditionService, tenant)
-            }
-
-            else -> throw IllegalStateException("Received a string which cannot deserialize to a known event")
-        }
+    ): PublishResourceRequest<Condition> {
+        return PatientPublishConditionRequest(events, vendorFactory.conditionService, tenant)
     }
 
-    private class PatientSourceConditionLoadRequest(
-        sourceEvent: InteropResourcePublishV1,
-        override val fhirService: ConditionService,
+    override fun convertLoadEventsToRequest(
+        events: List<InteropResourceLoadV1>,
+        vendorFactory: VendorFactory,
         tenant: Tenant
-    ) : IdBasedPublishEventResourceLoadRequest<Condition, Patient>(sourceEvent, tenant) {
-        override val sourceResource: Patient = JacksonUtil.readJsonObject(sourceEvent.resourceJson, Patient::class)
+    ): LoadResourceRequest<Condition> {
+        return LoadConditionRequest(events, vendorFactory.conditionService, tenant)
+    }
+
+    internal class PatientPublishConditionRequest(
+        publishEvents: List<InteropResourcePublishV1>,
+        override val fhirService: ConditionService,
+        override val tenant: Tenant
+    ) : PublishResourceRequest<Condition>() {
+        override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
+            publishEvents.map { PatientPublishEvent(it, tenant) }
 
         private val categorySystem = CodeSystem.CONDITION_CATEGORY.uri.value
         private val categoryHealthConcernSystem = CodeSystem.CONDITION_CATEGORY_HEALTH_CONCERN.uri.value
-
-        override fun loadResources(): List<Condition> {
-            val patientFhirId = sourceResource.identifier.findFhirID()
-            return fhirService.findConditionsByCodes(
-                tenant,
-                patientFhirId,
-                listOf(
-                    FHIRSearchToken(categorySystem, ConditionCategoryCodes.PROBLEM_LIST_ITEM.code),
-                    FHIRSearchToken(categoryHealthConcernSystem, ConditionCategoryCodes.HEALTH_CONCERN.code),
-                    FHIRSearchToken(categorySystem, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code)
+        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Condition>> {
+            return requestFhirIds.associateWith {
+                fhirService.findConditionsByCodes(
+                    tenant,
+                    it,
+                    listOf(
+                        FHIRSearchToken(categorySystem, ConditionCategoryCodes.PROBLEM_LIST_ITEM.code),
+                        FHIRSearchToken(categoryHealthConcernSystem, ConditionCategoryCodes.HEALTH_CONCERN.code),
+                        FHIRSearchToken(categorySystem, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code)
+                    )
                 )
-            )
+            }
         }
+
+        private class PatientPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
+            IdBasedPublishResourceEvent<Patient>(publishEvent, tenant, Patient::class)
     }
 
-    private class ConditionLoadRequest(
-        sourceEvent: InteropResourceLoadV1,
+    internal class LoadConditionRequest(
+        loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: ConditionService,
         tenant: Tenant
-    ) : LoadEventResourceLoadRequest<Condition>(sourceEvent, tenant)
+    ) : LoadResourceRequest<Condition>(loadEvents, tenant)
 }

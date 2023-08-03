@@ -207,10 +207,10 @@ class ConditionLoadTest : BaseChannelTest(
         // larger data sets: make sure MockEHR is OK
         MockEHRTestData.validateAll()
 
-        waitForMessage(2)
+        waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
-        assertEquals(2, messageList.size)
+        assertEquals(1, messageList.size)
         assertEquals(7, getAidboxResourceCount("Condition"))
     }
 
