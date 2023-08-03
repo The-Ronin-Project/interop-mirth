@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.destinations
 
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.event.interop.resource.request.v1.InteropResourceRequestV1
 import com.projectronin.interop.common.jackson.JacksonUtil
@@ -35,7 +36,8 @@ class ResourceRequestPublish(
             resourceType = resourceType,
             resourceFHIRIds = listOf(requestEvent.resourceFHIRId),
             trigger = DataTrigger.AD_HOC,
-            metadata = generateMetadata()
+            metadata = generateMetadata(),
+            flowOptions = requestEvent.flowOptions?.forLoad()
         )
 
         return if (result.failures.isNotEmpty()) {
@@ -52,4 +54,10 @@ class ResourceRequestPublish(
             )
         }
     }
+
+    private fun InteropResourceRequestV1.FlowOptions.forLoad() =
+        InteropResourceLoadV1.FlowOptions(
+            disableDownstreamResources = this.disableDownstreamResources,
+            normalizationRegistryMinimumTime = this.normalizationRegistryMinimumTime
+        )
 }

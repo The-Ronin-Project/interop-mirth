@@ -12,7 +12,10 @@ import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 class ResourceRequestTest {
     private val fhirService = mockk<FHIRService<Location>>()
@@ -223,6 +226,58 @@ class ResourceRequestTest {
         val event = mockk<ResourceEvent<InteropResourcePublishV1>>()
         val request = TestResourceRequest(listOf(event), fhirService, tenant)
         assertFalse(request.skipKafkaPublishing)
+    }
+
+    @Test
+    fun `returns no minimum registry cache time if no events have one`() {
+        val event1 = mockk<ResourceEvent<InteropResourcePublishV1>> {
+            every { minimumRegistryCacheTime } returns null
+        }
+        val event2 = mockk<ResourceEvent<InteropResourcePublishV1>> {
+            every { minimumRegistryCacheTime } returns null
+        }
+        val event3 = mockk<ResourceEvent<InteropResourcePublishV1>> {
+            every { minimumRegistryCacheTime } returns null
+        }
+
+        val request = TestResourceRequest(listOf(event1, event2, event3), fhirService, tenant)
+        assertNull(request.minimumRegistryCacheTime)
+    }
+
+    @Test
+    fun `returns minimum registry cache time if one event has one`() {
+        val offsetDateTime1 = OffsetDateTime.now()
+        val event1 = mockk<ResourceEvent<InteropResourcePublishV1>> {
+            every { minimumRegistryCacheTime } returns offsetDateTime1
+        }
+        val event2 = mockk<ResourceEvent<InteropResourcePublishV1>> {
+            every { minimumRegistryCacheTime } returns null
+        }
+        val event3 = mockk<ResourceEvent<InteropResourcePublishV1>> {
+            every { minimumRegistryCacheTime } returns null
+        }
+
+        val request = TestResourceRequest(listOf(event1, event2, event3), fhirService, tenant)
+        assertEquals(offsetDateTime1, request.minimumRegistryCacheTime)
+    }
+
+    @Test
+    fun `returns latest minimum registry cache time if multiple events have one`() {
+        val offsetDateTime1 = OffsetDateTime.of(2022, 7, 24, 11, 24, 0, 0, ZoneOffset.UTC)
+        val event1 = mockk<ResourceEvent<InteropResourcePublishV1>> {
+            every { minimumRegistryCacheTime } returns offsetDateTime1
+        }
+        val offsetDateTime2 = OffsetDateTime.of(2023, 7, 24, 11, 24, 0, 0, ZoneOffset.UTC)
+        val event2 = mockk<ResourceEvent<InteropResourcePublishV1>> {
+            every { minimumRegistryCacheTime } returns offsetDateTime2
+        }
+        val offsetDateTime3 = OffsetDateTime.of(2020, 7, 24, 11, 24, 0, 0, ZoneOffset.UTC)
+        val event3 = mockk<ResourceEvent<InteropResourcePublishV1>> {
+            every { minimumRegistryCacheTime } returns offsetDateTime3
+        }
+
+        val request = TestResourceRequest(listOf(event1, event2, event3), fhirService, tenant)
+        assertEquals(offsetDateTime2, request.minimumRegistryCacheTime)
     }
 
     class TestResourceRequest(

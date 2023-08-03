@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channels.client
 
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Resource
@@ -131,7 +132,8 @@ object KafkaClient {
         metadata: Metadata = Metadata(
             runId = UUID.randomUUID().toString(),
             runDateTime = OffsetDateTime.now(ZoneOffset.UTC)
-        )
+        ),
+        flowOptions: InteropResourceLoadV1.FlowOptions? = null
     ) {
         val topic = loadTopic(resourceType)
         ensureStability(topic.topicName)
@@ -140,7 +142,8 @@ object KafkaClient {
             trigger = trigger,
             resourceFHIRIds = resourceFHIRIds,
             resourceType = resourceType,
-            metadata = metadata
+            metadata = metadata,
+            flowOptions = flowOptions
         )
     }
 

@@ -16,6 +16,7 @@ dependencies {
             force(libs.kafka.clients)
             force(libs.woodstox.core)
             force(libs.kotlin.stdlib)
+            force(libs.interop.kafka)
         }
     }
     implementation(libs.ehr.data.authority.client)

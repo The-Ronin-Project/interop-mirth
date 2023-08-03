@@ -116,9 +116,15 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
             )
         }
 
+        val minimumRegistryTime = resourceLoadRequest.minimumRegistryCacheTime?.toLocalDateTime()
         val transformedResourcesByKey = resourcesByKey.mapValuesNotNull { (_, resources) ->
             resources.mapNotNull { resource ->
-                transformManager.transformResource(resource, profileTransformer, tenant)
+                transformManager.transformResource(
+                    resource,
+                    profileTransformer,
+                    tenant,
+                    forceCacheReloadTS = minimumRegistryTime
+                )
             }.ifEmpty { null }
         }
         if (transformedResourcesByKey.isEmpty()) {
@@ -148,12 +154,18 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         // publish says it returns a boolean, but actually throws an error if there was a problem
         val publishResultsByEvent =
             resourcesToPublishByEvent.map { (event, resources) ->
+                val dataTrigger = if (event.processDownstreamReferences && !resourceLoadRequest.skipKafkaPublishing) {
+                    resourceLoadRequest.dataTrigger
+                } else {
+                    null
+                }
+
                 runCatching {
                     publishService.publishFHIRResources(
                         tenantMnemonic,
                         resources,
                         event.getUpdatedMetadata(),
-                        if (resourceLoadRequest.skipKafkaPublishing) null else resourceLoadRequest.dataTrigger
+                        dataTrigger
                     )
                 }.fold(
                     onSuccess = { event to it },

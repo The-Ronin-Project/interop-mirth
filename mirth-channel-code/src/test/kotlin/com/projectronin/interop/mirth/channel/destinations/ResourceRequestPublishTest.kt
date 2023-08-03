@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.destinations
 
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.event.interop.resource.request.v1.InteropResourceRequestV1
 import com.projectronin.interop.common.jackson.JacksonUtil
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.OffsetDateTime
 
 class ResourceRequestPublishTest {
     lateinit var destination: ResourceRequestPublish
@@ -54,6 +56,7 @@ class ResourceRequestPublishTest {
         val mockEvent = mockk<InteropResourceRequestV1> {
             every { resourceType } returns "Patient"
             every { resourceFHIRId } returns "anything"
+            every { flowOptions } returns null
         }
         every { JacksonUtil.readJsonObject("event", InteropResourceRequestV1::class) } returns mockEvent
         every {
@@ -75,10 +78,47 @@ class ResourceRequestPublishTest {
     }
 
     @Test
+    fun `channel works with flow options on request`() {
+        val registryMinimum = OffsetDateTime.now()
+        val mockEvent = mockk<InteropResourceRequestV1> {
+            every { resourceType } returns "Patient"
+            every { resourceFHIRId } returns "anything"
+            every { flowOptions } returns InteropResourceRequestV1.FlowOptions(
+                disableDownstreamResources = true,
+                normalizationRegistryMinimumTime = registryMinimum
+            )
+        }
+        every { JacksonUtil.readJsonObject("event", InteropResourceRequestV1::class) } returns mockEvent
+
+        val loadFlowOptions = InteropResourceLoadV1.FlowOptions(
+            disableDownstreamResources = true,
+            normalizationRegistryMinimumTime = registryMinimum
+        )
+        every {
+            kafkaLoadService.pushLoadEvent(
+                tenantId = "tenny",
+                resourceType = ResourceType.Patient,
+                resourceFHIRIds = listOf("anything"),
+                trigger = DataTrigger.AD_HOC,
+                metadata = any(),
+                flowOptions = loadFlowOptions
+            )
+        } returns mockk {
+            every { failures } returns emptyList()
+            every { successful } returns listOf("Success")
+        }
+        val results =
+            destination.channelDestinationWriter("tenny", "event", emptyMap(), emptyMap())
+        assertEquals(MirthResponseStatus.SENT, results.status)
+        assertEquals("Published to Load Topic", results.message)
+    }
+
+    @Test
     fun `channel handles errors`() {
         val mockEvent = mockk<InteropResourceRequestV1> {
             every { resourceType } returns "Patient"
             every { resourceFHIRId } returns "anything"
+            every { flowOptions } returns null
         }
         every { JacksonUtil.readJsonObject("event", InteropResourceRequestV1::class) } returns mockEvent
         every { JacksonUtil.writeJsonValue(any()) } returns "failed"

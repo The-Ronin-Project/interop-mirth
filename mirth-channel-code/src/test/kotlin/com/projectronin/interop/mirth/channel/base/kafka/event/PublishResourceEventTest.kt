@@ -8,6 +8,8 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.time.OffsetDateTime
 
@@ -29,6 +31,16 @@ class PublishResourceEventTest {
     @Test
     fun `returns metadata`() {
         assertEquals(metadata, publishResourceEvent.metadata)
+    }
+
+    @Test
+    fun `processes downstream references`() {
+        assertTrue(publishResourceEvent.processDownstreamReferences)
+    }
+
+    @Test
+    fun `never returns a minimum registry cache time`() {
+        assertNull(publishResourceEvent.minimumRegistryCacheTime)
     }
 
     @Test

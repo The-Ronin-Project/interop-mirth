@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
@@ -24,6 +25,8 @@ import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
@@ -346,6 +349,174 @@ class PatientLoadTest : BaseChannelTest(
 
         types.forEach {
             assertEquals(1, getAidboxResourceCount(it))
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `channel works with dag when downstream processing is disabled`(testTenant: String) {
+        val patientPublishTopics = KafkaClient.publishTopics(ResourceType.Patient)
+
+        val conditionType = "Condition"
+        val patientType = "Patient"
+        val appointmentType = "Appointment"
+        val otherTypes = listOf(
+            conditionType,
+            appointmentType
+        )
+
+        val channels = listOf(
+            conditionLoadChannelName,
+            appointmentLoadChannelName
+        )
+        val channelIds = channels.map {
+            val id = installChannel(it)
+            clearMessages(id)
+            id
+        }
+
+        tenantInUse = testTenant
+        val patient = patient {
+            birthDate of date {
+                year of 1990
+                month of 1
+                day of 3
+            }
+            identifier of listOf(
+                identifier {
+                    system of "mockPatientInternalSystem"
+                },
+                identifier {
+                    system of "mockEHRMRNSystem"
+                    value of "1000000001"
+                }
+            )
+            name of listOf(
+                name {
+                    use of "usual" // This is required to generate the Epic response.
+                },
+                name {
+                    use of "official"
+                }
+            )
+            gender of "male"
+            telecom of emptyList()
+        }
+        val patientFhirId = MockEHRTestData.add(patient)
+        MockOCIServerClient.createExpectations(patientType, patientFhirId, testTenant)
+
+        val condition = condition {
+            clinicalStatus of codeableConcept {
+                coding of listOf(
+                    coding {
+                        system of "http://terminology.hl7.org/CodeSystem/condition-clinical"
+                        code of "active"
+                        display of "Active"
+                    }
+                )
+                text of "Active"
+            }
+            category of listOf(
+                codeableConcept {
+                    coding of listOf(
+                        coding {
+                            system of "http://terminology.hl7.org/CodeSystem/condition-category"
+                            code of "problem-list-item"
+                            display of "Problem list item"
+                        }
+                    )
+                    text of "Problem List Item"
+                }
+            )
+            code of codeableConcept {
+                coding of listOf(
+                    coding {
+                        system of "http://snomed.info/sct"
+                        code of "1023001"
+                        display of "Apnea"
+                    }
+                )
+                text of "Apnea"
+            }
+            subject of reference(patientType, patientFhirId)
+        }
+
+        val conditionFhirId = MockEHRTestData.add(condition)
+        MockOCIServerClient.createExpectations(conditionType, conditionFhirId, testTenant)
+        val fakePractitioner = practitioner {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRProviderSystem"
+                }
+            )
+        }
+        val fakeLocation = location {
+            identifier of listOf(
+                identifier {
+                    system of "mockEHRDepartmentInternalSystem"
+                }
+            )
+        }
+        val fakeLocationID = MockEHRTestData.add(fakeLocation)
+        val fakePractitionerId = MockEHRTestData.add(fakePractitioner)
+        val appointment = appointment {
+            status of "pending"
+            participant of listOf(
+                participant {
+                    status of "accepted"
+                    actor of reference("Patient", patientFhirId)
+                },
+                participant {
+                    status of "accepted"
+                    actor of reference("Practitioner", fakePractitionerId)
+                },
+                participant {
+                    status of "accepted"
+                    actor of reference("Location", fakeLocationID)
+                }
+            )
+            minutesDuration of 8
+            start of 2.daysFromNow()
+            end of 3.daysFromNow()
+        }
+        val appointmentFhirId = MockEHRTestData.add(appointment)
+        MockOCIServerClient.createExpectations(appointmentType, appointmentFhirId, tenantInUse)
+
+        // deploy dag channels
+        channelIds.forEach {
+            deployAndStartChannel(channelToDeploy = it)
+        }
+        patientPublishTopics.forEach {
+            KafkaClient.ensureStability(it.topicName)
+        }
+        // push event to get picked up
+        val metadata = Metadata(runId = "patient1", runDateTime = OffsetDateTime.now(ZoneOffset.UTC))
+        KafkaClient.pushLoadEvent(
+            testTenant,
+            DataTrigger.NIGHTLY,
+            listOf(patientFhirId),
+            ResourceType.Patient,
+            metadata,
+            InteropResourceLoadV1.FlowOptions(
+                disableDownstreamResources = true
+            )
+        )
+        waitForMessage(1)
+        val patientPublishTopic =
+            KafkaClient.publishTopics(ResourceType.Patient).first { it.topicName.contains("nightly") }
+        KafkaClient.ensureStability(patientPublishTopic.topicName)
+
+        // Even though we expect nothing, given 2 seconds before checking other channels haven't responded
+        runBlocking { delay(2000) }
+
+        channelIds.forEach {
+            waitForMessage(0, channelID = it)
+            stopChannel(it)
+        }
+
+        assertEquals(1, getAidboxResourceCount(patientType))
+        otherTypes.forEach {
+            assertEquals(0, getAidboxResourceCount(it))
         }
     }
 }

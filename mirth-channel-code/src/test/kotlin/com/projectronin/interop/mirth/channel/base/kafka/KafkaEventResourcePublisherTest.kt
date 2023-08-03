@@ -44,7 +44,9 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 class KafkaEventResourcePublisherTest {
     private lateinit var tenantService: TenantService
@@ -1034,5 +1036,99 @@ class KafkaEventResourcePublisherTest {
         assertNull(result.dataMap[MirthKey.EVENT_METADATA_SOURCE.code])
         assertEquals(0, result.dataMap[MirthKey.RESOURCE_COUNT.code])
         assertEquals(2, result.dataMap[MirthKey.FAILURE_COUNT.code])
+    }
+
+    @Test
+    fun `supports events that do not process downstream references`() {
+        val event1 = InteropResourceLoadV1(
+            tenantId = tenantId,
+            resourceFHIRId = "$tenantId-1234",
+            resourceType = ResourceType.Location,
+            dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
+            metadata = metadata,
+            flowOptions = InteropResourceLoadV1.FlowOptions(
+                disableDownstreamResources = true
+            )
+        )
+
+        every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
+
+        val transformed = mockk<Location> {}
+        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed
+        every {
+            publishService.publishFHIRResources(
+                tenantId,
+                listOf(transformed),
+                any(),
+                null
+            )
+        } returns true
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+
+        val message = objectMapper.writeValueAsString(listOf(event1))
+        val result = destination.channelDestinationWriter(
+            tenantId,
+            message,
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourceLoadV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result.status)
+        assertEquals("we made it", result.detailedMessage)
+        assertEquals("Published 1 resource(s).", result.message)
+        assertNull(result.dataMap[MirthKey.EVENT_METADATA_SOURCE.code])
+        assertEquals(1, result.dataMap[MirthKey.RESOURCE_COUNT.code])
+        assertEquals(0, result.dataMap[MirthKey.FAILURE_COUNT.code])
+    }
+
+    @Test
+    fun `supports events that provide a minimum registry time`() {
+        val registryOffsetDateTime = OffsetDateTime.of(2023, 7, 24, 11, 14, 0, 0, ZoneOffset.UTC)
+        val registryLocalDateTime = LocalDateTime.of(2023, 7, 24, 11, 14, 0)
+
+        val event1 = InteropResourceLoadV1(
+            tenantId = tenantId,
+            resourceFHIRId = "$tenantId-1234",
+            resourceType = ResourceType.Location,
+            dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
+            metadata = metadata,
+            flowOptions = InteropResourceLoadV1.FlowOptions(
+                normalizationRegistryMinimumTime = registryOffsetDateTime
+            )
+        )
+
+        every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
+
+        val transformed = mockk<Location> {}
+        every {
+            transformManager.transformResource(
+                location1234,
+                roninLocation,
+                tenant,
+                registryLocalDateTime
+            )
+        } returns transformed
+        every {
+            publishService.publishFHIRResources(
+                tenantId,
+                listOf(transformed),
+                any(),
+                DataTrigger.NIGHTLY
+            )
+        } returns true
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+
+        val message = objectMapper.writeValueAsString(listOf(event1))
+        val result = destination.channelDestinationWriter(
+            tenantId,
+            message,
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourceLoadV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result.status)
+        assertEquals("we made it", result.detailedMessage)
+        assertEquals("Published 1 resource(s).", result.message)
+        assertNull(result.dataMap[MirthKey.EVENT_METADATA_SOURCE.code])
+        assertEquals(1, result.dataMap[MirthKey.RESOURCE_COUNT.code])
+        assertEquals(0, result.dataMap[MirthKey.FAILURE_COUNT.code])
     }
 }

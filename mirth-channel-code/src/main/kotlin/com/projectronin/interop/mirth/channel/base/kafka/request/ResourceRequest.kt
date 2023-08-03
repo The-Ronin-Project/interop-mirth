@@ -6,6 +6,7 @@ import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
 import com.projectronin.interop.tenant.config.model.Tenant
+import java.time.OffsetDateTime
 
 /**
  * Base class for all resource requests, where [T] is the type of the resource being requested and [E] is the type of event that triggered the request.
@@ -52,6 +53,11 @@ abstract class ResourceRequest<T : Resource<T>, E> {
      * The List of all source references for this request.
      */
     val sourceReferences: List<Metadata.UpstreamReference> by lazy { sourceEvents.mapNotNull { it.getSourceReference() } }
+
+    val minimumRegistryCacheTime: OffsetDateTime? by lazy {
+        // We want the max here because if 2 different events have differing minimums, the most recent minimum is the true minimum.
+        sourceEvents.mapNotNull { it.minimumRegistryCacheTime }.maxOrNull()
+    }
 
     /**
      * True if the resources should be loaded, but no publishing should occur for this request.

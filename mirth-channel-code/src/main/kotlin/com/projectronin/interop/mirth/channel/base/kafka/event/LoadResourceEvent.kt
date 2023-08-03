@@ -4,6 +4,7 @@ import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
+import java.time.OffsetDateTime
 
 /**
  * Class representing [InteropResourceLoadV1] events.
@@ -13,6 +14,8 @@ class LoadResourceEvent(
     tenant: Tenant
 ) : ResourceEvent<InteropResourceLoadV1> {
     override val metadata: Metadata = sourceEvent.metadata
+    override val processDownstreamReferences: Boolean = !(sourceEvent.flowOptions?.disableDownstreamResources ?: false)
+    override val minimumRegistryCacheTime: OffsetDateTime? = sourceEvent.flowOptions?.normalizationRegistryMinimumTime
 
     override val requestKeys: Set<ResourceRequestKey> =
         setOf(

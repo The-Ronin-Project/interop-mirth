@@ -15,6 +15,8 @@ abstract class PublishResourceEvent<S : Resource<S>>(
     sourceClass: KClass<S>
 ) : ResourceEvent<InteropResourcePublishV1> {
     override val metadata: Metadata by lazy { sourceEvent.metadata }
+    override val processDownstreamReferences = true
+    override val minimumRegistryCacheTime = null
 
     // add the new reference to the end of the list
     final override fun getUpdatedMetadata(): Metadata =
