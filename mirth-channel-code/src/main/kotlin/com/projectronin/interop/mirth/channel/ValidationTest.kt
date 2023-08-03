@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel
 
+import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.http.FhirJson
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.attachment
@@ -36,10 +37,13 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Url
 import com.projectronin.interop.fhir.r4.resource.EncounterLocation
 import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
+import com.projectronin.interop.kafka.KafkaLoadService
+import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.ValidationTestDestination
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
+import com.projectronin.interop.mirth.channel.util.generateMetadata
 import com.projectronin.interop.mirth.channel.util.generateSerializedMetadata
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
@@ -59,7 +63,8 @@ import java.time.LocalDate
 class ValidationTest(
     val httpClient: HttpClient,
     val tenantService: TenantService,
-    validationDestination: ValidationTestDestination
+    validationDestination: ValidationTestDestination,
+    val loadService: KafkaLoadService
 ) : TenantlessSourceService() {
     override val rootName = "ValidationTest"
     override val destinations = mapOf("ValidationTest" to validationDestination)
@@ -99,6 +104,14 @@ class ValidationTest(
                             }
                         )
                     }
+                )
+                // simulate if this had been populated in proxy
+                loadService.pushLoadEvent(
+                    tenantMnemonic,
+                    DataTrigger.AD_HOC,
+                    listOf(locationID),
+                    ResourceType.Location,
+                    generateMetadata()
                 )
                 val practitionerID = mockEHR.addResource(
                     practitioner {
