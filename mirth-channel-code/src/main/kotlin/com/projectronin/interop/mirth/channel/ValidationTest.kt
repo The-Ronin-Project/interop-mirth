@@ -410,7 +410,7 @@ class ValidationTest(
                         setBody(resource)
                     }
                     val location = response.headers["Content-Location"]
-                    logger.warn { "$location" }
+                    logger.debug { "$location" }
                     location!!.removePrefix("$resourceUrl/")
                 }
             }
