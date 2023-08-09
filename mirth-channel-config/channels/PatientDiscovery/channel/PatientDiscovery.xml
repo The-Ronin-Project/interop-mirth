@@ -5,18 +5,18 @@
   <description>Version 1.0.0.
 
 Uses a set list of locations to find patients with upcoming appointments and triggers the nightly load</description>
-  <revision>1</revision>
+  <revision>2</revision>
   <sourceConnector version="3.11.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
     <properties class="com.mirth.connect.connectors.js.JavaScriptReceiverProperties" version="3.11.0">
       <pluginProperties/>
       <pollConnectorProperties version="3.11.0">
-        <pollingType>TIME</pollingType>
+        <pollingType>INTERVAL</pollingType>
         <pollOnStart>true</pollOnStart>
-        <pollingFrequency>5000</pollingFrequency>
-        <pollingHour>2</pollingHour>
-        <pollingMinute>30</pollingMinute>
+        <pollingFrequency>1800000</pollingFrequency>
+        <pollingHour>0</pollingHour>
+        <pollingMinute>0</pollingMinute>
         <cronJobs/>
         <pollConnectorPropertiesAdvanced>
           <weekly>true</weekly>
@@ -194,11 +194,11 @@ return;</undeployScript>
         <type>STRING</type>
         <mappingName>locationFhirID</mappingName>
       </metaDataColumn>
-        <metaDataColumn>
-            <name>RUN</name>
-            <type>STRING</type>
-            <mappingName>kafkaEventRunId</mappingName>
-        </metaDataColumn>
+      <metaDataColumn>
+        <name>RUN</name>
+        <type>STRING</type>
+        <mappingName>kafkaEventRunId</mappingName>
+      </metaDataColumn>
     </metaDataColumns>
     <attachmentProperties version="3.11.0">
       <type>None</type>
@@ -215,8 +215,8 @@ return;</undeployScript>
     <metadata>
       <enabled>false</enabled>
       <lastModified>
-        <time>1674674041925</time>
-        <timezone>America/Los_Angeles</timezone>
+        <time>1691181452811</time>
+        <timezone>America/Chicago</timezone>
       </lastModified>
       <pruningSettings>
         <pruneMetaDataDays>60</pruneMetaDataDays>
