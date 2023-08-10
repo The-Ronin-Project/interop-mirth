@@ -27,6 +27,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mu.KotlinLogging
+import org.apache.kafka.clients.admin.NewTopic
+import org.apache.kafka.clients.admin.RecordsToDelete
 import org.apache.kafka.common.ConsumerGroupState
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -53,7 +55,7 @@ object KafkaClient {
         )
     )
     private val adminWrapper = AdminWrapper(config)
-    private val adminClient = adminWrapper.client
+    val adminClient = adminWrapper.client
     private val client = KafkaClient(config, adminWrapper)
     private val loadSpringConfig = LoadSpringConfig(config)
     val kafkaLoadService = KafkaLoadService(client, loadSpringConfig.loadTopics())
@@ -67,9 +69,13 @@ object KafkaClient {
             mutex.withLock {
                 val consumerGroups = adminClient.listConsumerGroups().all().get()
                 val groupIds = consumerGroups.map { it.groupId() }.toSet()
-                adminClient.deleteConsumerGroups(groupIds)
-                val topics = adminClient.listTopics().names().get()
-                adminClient.deleteTopics(topics)
+                groupIds.map {
+                    runCatching {
+                        val offsets = adminClient.listConsumerGroupOffsets(it).partitionsToOffsetAndMetadata().get()
+                        val recordsToDelete = offsets.mapValues { RecordsToDelete.beforeOffset(it.value.offset()) }
+                        runCatching { adminClient.deleteRecords(recordsToDelete).all().get() }
+                    }
+                }
             }
         }
     }
@@ -115,6 +121,7 @@ object KafkaClient {
                     Thread.sleep(100)
                 }
             }
+            logger.info { "Stability ensured on $topic" }
         }
     }
 
@@ -136,6 +143,9 @@ object KafkaClient {
         flowOptions: InteropResourceLoadV1.FlowOptions? = null
     ) {
         val topic = loadTopic(resourceType)
+        runCatching {
+            adminClient.createTopics(listOf(NewTopic(topic.topicName, 1, 1))).all().get()
+        }
         ensureStability(topic.topicName)
         kafkaLoadService.pushLoadEvent(
             tenantId = tenantId,
@@ -163,6 +173,9 @@ object KafkaClient {
         val relevantTopic = when (trigger) {
             DataTrigger.NIGHTLY -> topics.first { it.topicName.contains("nightly") }
             DataTrigger.AD_HOC -> topics.first { it.topicName.contains("adhoc") }
+        }
+        runCatching {
+            adminClient.createTopics(listOf(NewTopic(relevantTopic.topicName, 1, 1))).all().get()
         }
         ensureStability(relevantTopic.topicName)
         kafkaPublishService.publishResources(

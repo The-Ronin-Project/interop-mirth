@@ -45,11 +45,12 @@ abstract class BaseChannelTest(
     private val mockEHRResourceTypes: List<String> = emptyList()
 ) {
     var tenantInUse = "NOTSET"
-    protected val testChannelId = installChannel()
+    protected val testChannelId = installAndDeployChannel()
 
     @BeforeEach
     fun setup() {
         clearMessages()
+        MirthClient.startChannel(testChannelId)
         MockEHRTestData.purge()
         AidboxTestData.purge()
         deleteAidboxResources(*aidboxResourceTypes.toTypedArray())
@@ -57,14 +58,14 @@ abstract class BaseChannelTest(
         MockOCIServerClient.client.clear("PutObjectExpectation")
         MockOCIServerClient.resetRawPublish()
         KafkaClient.reset()
-        deployAndStartChannel()
+        clearMessages()
     }
 
     @AfterEach
     fun tearDown() {
         MockEHRTestData.purge()
         AidboxTestData.purge()
-        undeployChannel()
+        stopChannel()
         KafkaClient.reset()
     }
 
@@ -102,6 +103,12 @@ abstract class BaseChannelTest(
         MirthClient.enableChannel(channelId)
 
         return channelId
+    }
+
+    protected fun installAndDeployChannel(channelToInstall: String = channelName): String {
+        val id = installChannel()
+        deployAndStartChannel(channelToDeploy = id)
+        return id
     }
 
     /**

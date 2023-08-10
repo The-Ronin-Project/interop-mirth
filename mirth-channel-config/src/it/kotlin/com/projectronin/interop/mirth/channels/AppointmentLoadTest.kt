@@ -22,6 +22,8 @@ import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -418,9 +420,7 @@ class AppointmentLoadTest : BaseChannelTest(
             practitionerLoadChannelName
         )
         val channelIds = channels.map {
-            val id = installChannel(it)
-            clearMessages(id)
-            id
+            installChannel(it)
         }
 
         tenantInUse = testTenant
@@ -461,10 +461,12 @@ class AppointmentLoadTest : BaseChannelTest(
         // deploy dag channels
         channelIds.forEach {
             deployAndStartChannel(channelToDeploy = it)
+            clearMessages(it)
         }
         appointmentPublishTopics.forEach {
             KafkaClient.ensureStability(it.topicName)
         }
+        runBlocking { delay(1000) }
         // push event to get picked up
         val metadata = Metadata(runId = UUID.randomUUID().toString(), runDateTime = OffsetDateTime.now(ZoneOffset.UTC))
         KafkaClient.pushLoadEvent(
@@ -474,9 +476,6 @@ class AppointmentLoadTest : BaseChannelTest(
             ResourceType.Appointment,
             metadata
         )
-        val appointmentPublishTopic =
-            KafkaClient.publishTopics(ResourceType.Appointment).first { it.topicName.contains("nightly") }
-        KafkaClient.ensureStability(appointmentPublishTopic.topicName)
         waitForMessage(1)
         channelIds.forEach {
             waitForMessage(1, channelID = it)

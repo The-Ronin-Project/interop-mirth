@@ -184,9 +184,7 @@ class PatientLoadTest : BaseChannelTest(
             appointmentLoadChannelName // INT-1376 observationLoadChannelName
         )
         val channelIds = channels.map {
-            val id = installChannel(it)
-            clearMessages(id)
-            id
+            installChannel(it)
         }
 
         tenantInUse = testTenant
@@ -325,10 +323,12 @@ class PatientLoadTest : BaseChannelTest(
         // deploy dag channels
         channelIds.forEach {
             deployAndStartChannel(channelToDeploy = it)
+            clearMessages(it)
         }
         patientPublishTopics.forEach {
             KafkaClient.ensureStability(it.topicName)
         }
+        runBlocking { delay(1000) }
         // push event to get picked up
         val metadata = Metadata(runId = "patient1", runDateTime = OffsetDateTime.now(ZoneOffset.UTC))
         KafkaClient.pushLoadEvent(
@@ -370,9 +370,7 @@ class PatientLoadTest : BaseChannelTest(
             appointmentLoadChannelName
         )
         val channelIds = channels.map {
-            val id = installChannel(it)
-            clearMessages(id)
-            id
+            installChannel(it)
         }
 
         tenantInUse = testTenant
@@ -485,12 +483,14 @@ class PatientLoadTest : BaseChannelTest(
         // deploy dag channels
         channelIds.forEach {
             deployAndStartChannel(channelToDeploy = it)
+            clearMessages(it)
         }
         patientPublishTopics.forEach {
             KafkaClient.ensureStability(it.topicName)
         }
         // push event to get picked up
         val metadata = Metadata(runId = "patient1", runDateTime = OffsetDateTime.now(ZoneOffset.UTC))
+        runBlocking { delay(1000) }
         KafkaClient.pushLoadEvent(
             testTenant,
             DataTrigger.NIGHTLY,

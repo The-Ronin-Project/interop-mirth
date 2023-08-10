@@ -22,6 +22,8 @@ import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
@@ -230,9 +232,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
             medicationLoadChannelName
         )
         val channelIds = channels.map {
-            val id = installChannel(it)
-            clearMessages(id)
-            id
+            installChannel(it)
         }
 
         tenantInUse = testTenant
@@ -264,10 +264,12 @@ class MedicationRequestLoadTest : BaseChannelTest(
         // deploy dag channels
         channelIds.forEach {
             deployAndStartChannel(channelToDeploy = it)
+            clearMessages(it)
         }
         medicationRequestPublishTopics.forEach {
             KafkaClient.ensureStability(it.topicName)
         }
+        runBlocking { delay(1000) }
         // push event to get picked up
         val metadata = Metadata(runId = UUID.randomUUID().toString(), runDateTime = OffsetDateTime.now(ZoneOffset.UTC))
         KafkaClient.pushLoadEvent(
