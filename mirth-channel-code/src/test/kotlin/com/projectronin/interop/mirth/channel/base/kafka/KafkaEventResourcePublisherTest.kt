@@ -1131,4 +1131,34 @@ class KafkaEventResourcePublisherTest {
         assertEquals(1, result.dataMap[MirthKey.RESOURCE_COUNT.code])
         assertEquals(0, result.dataMap[MirthKey.FAILURE_COUNT.code])
     }
+
+    @Test
+    fun `publisher catches empty requests`() {
+        val appointment = appointment {
+            id of "1234"
+            participant of emptyList()
+        }
+        val event = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Appointment,
+            resourceJson = objectMapper.writeValueAsString(appointment),
+            dataTrigger = InteropResourcePublishV1.DataTrigger.nightly,
+            metadata = metadata
+        )
+        val message = objectMapper.writeValueAsString(listOf(event))
+        val result = destination.channelDestinationWriter(
+            tenantId,
+            message,
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result.status)
+        assertEquals(
+            "No request keys exist prior to checking the cache",
+            result.detailedMessage
+        )
+        assertEquals("No request keys exist prior to checking the cache", result.message)
+        assertNull(result.dataMap[MirthKey.FAILURE_COUNT.code])
+        assertNull(result.dataMap[MirthKey.RESOURCE_COUNT.code])
+    }
 }

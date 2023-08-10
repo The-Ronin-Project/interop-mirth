@@ -63,6 +63,14 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         }
 
         val allRequestKeys = resourceLoadRequest.requestKeys
+        if (allRequestKeys.isEmpty()) {
+            return MirthResponse(
+                status = MirthResponseStatus.SENT,
+                detailedMessage = "No request keys exist prior to checking the cache",
+                message = "No request keys exist prior to checking the cache",
+                dataMap = newMap
+            )
+        }
         val requestKeysToProcess = filterRequestKeys(allRequestKeys)
         // If there are no request keys, then we've previously done all the work for this request and can return a message indicating such.
         if (requestKeysToProcess.isEmpty()) {
