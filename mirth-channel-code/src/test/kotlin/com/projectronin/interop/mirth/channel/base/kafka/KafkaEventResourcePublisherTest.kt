@@ -442,6 +442,47 @@ class KafkaEventResourcePublisherTest {
     }
 
     @Test
+    fun `publish errors with exception`() {
+        val event1 = InteropResourceLoadV1(
+            tenantId = tenantId,
+            resourceFHIRId = "$tenantId-1234",
+            resourceType = ResourceType.Location,
+            dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
+            metadata = metadata
+        )
+
+        every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
+
+        val transformed = mockk<Location> {
+            every { resourceType } returns "Location"
+            every { id } returns Id("tenant-1234")
+        }
+        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed
+        every {
+            publishService.publishFHIRResources(
+                tenantId,
+                listOf(transformed),
+                any(),
+                DataTrigger.NIGHTLY
+            )
+        } throws InterruptedException()
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+
+        val message = objectMapper.writeValueAsString(listOf(event1))
+        val result = destination.channelDestinationWriter(
+            tenantId,
+            message,
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourceLoadV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.ERROR, result.status)
+        assertEquals("we made it", result.detailedMessage)
+        assertEquals("Successfully published 0, but failed to publish 1 resource(s)", result.message)
+        assertNull(result.dataMap[MirthKey.EVENT_METADATA_SOURCE.code])
+        assertEquals(1, result.dataMap[MirthKey.FAILURE_COUNT.code])
+    }
+
+    @Test
     fun `fails when tenant lookup fails`() {
         every { tenantService.getTenantForMnemonic("nope") } returns null
         assertThrows<IllegalArgumentException> {

@@ -177,7 +177,10 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                     )
                 }.fold(
                     onSuccess = { event to it },
-                    onFailure = { event to false }
+                    onFailure = {
+                        logger.error(it) { "Failed to publish by event" }
+                        event to false
+                    }
                 )
             }
 
