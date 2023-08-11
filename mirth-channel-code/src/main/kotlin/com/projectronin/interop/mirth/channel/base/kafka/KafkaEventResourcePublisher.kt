@@ -183,8 +183,12 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
 
         val successfullyPublishedResources = publishResultsByEvent.filter { it.second }
             .flatMap { resourcesToPublishByEvent[it.first] ?: emptyList() }
-        val failedPublishResources = publishResultsByEvent.filterNot { it.second }
-            .flatMap { resourcesToPublishByEvent[it.first] ?: emptyList() }
+
+        val failedPublishEvents = publishResultsByEvent.filterNot { it.second }
+        val failedPublishResources =
+            failedPublishEvents.flatMap { (event, _) -> resourcesToPublishByEvent[event] ?: emptyList() }
+        val failedPublishKeys =
+            failedPublishEvents.flatMap { (event, _) -> event.requestKeys.union(requestKeysToProcess) }
 
         if (failedPublishResources.isNotEmpty()) {
             // in the event of a failure to publish we want to invalidate the keys we put in during loadResources
@@ -196,7 +200,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                     resourceLoadRequest.tenant,
                     resource.id!!.value!!.unlocalize(tenant)
                 )
-            }
+            } + failedPublishKeys
             logger.debug { "Invalidating ${keys.size} keys" }
             processedResourcesCache.invalidateAll(keys)
             return MirthResponse(
@@ -215,7 +219,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 message = "Published ${successfullyPublishedResources.size} resource(s).$cachedMessage",
                 dataMap = newMap +
                     mapOf(
-                        MirthKey.FAILURE_COUNT.code to (resourcesByKey.size - successfullyPublishedResources.size),
+                        MirthKey.FAILURE_COUNT.code to (resourcesByKey.totalSize() - successfullyPublishedResources.size),
                         MirthKey.RESOURCE_COUNT.code to successfullyPublishedResources.size
                     )
             )

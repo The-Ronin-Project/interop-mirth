@@ -6,6 +6,7 @@ import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonManager.Companion.objectMapper
 import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.ehr.ConditionService
 import com.projectronin.interop.ehr.FHIRService
 import com.projectronin.interop.ehr.LocationService
 import com.projectronin.interop.ehr.factory.EHRFactory
@@ -14,12 +15,17 @@ import com.projectronin.interop.fhir.generators.datatypes.participant
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.appointment
+import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Appointment
+import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.r4.resource.Location
+import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.TransformManager
+import com.projectronin.interop.fhir.ronin.resource.RoninConditions
 import com.projectronin.interop.fhir.ronin.resource.RoninLocation
 import com.projectronin.interop.kafka.model.DataTrigger
+import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
@@ -790,7 +796,7 @@ class KafkaEventResourcePublisherTest {
     }
 
     @Test
-    fun `publisher works for repeat requests if first fails`() {
+    fun `publisher works for repeat load requests if first fails`() {
         val event1 = InteropResourceLoadV1(
             tenantId = tenantId,
             resourceFHIRId = "$tenantId-1234",
@@ -843,6 +849,142 @@ class KafkaEventResourcePublisherTest {
         assertEquals(0, result2.dataMap[MirthKey.FAILURE_COUNT.code])
 
         verify(exactly = 2) { transformManager.transformResource(any(), roninLocation, tenant) }
+        verify(exactly = 2) { publishService.publishFHIRResources(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `publisher works for repeat publish requests if first fails`() {
+        class TestConditionPublish(
+            tenantService: TenantService,
+            ehrFactory: EHRFactory,
+            transformManager: TransformManager,
+            publishService: PublishService,
+            profileTransformer: RoninConditions,
+            override val cacheAndCompareResults: Boolean = false
+        ) : KafkaEventResourcePublisher<Condition>(
+            tenantService,
+            ehrFactory,
+            transformManager,
+            publishService,
+            profileTransformer
+        ) {
+            override fun convertPublishEventsToRequest(
+                events: List<InteropResourcePublishV1>,
+                vendorFactory: VendorFactory,
+                tenant: Tenant
+            ): PublishResourceRequest<Condition> {
+                return object : PublishResourceRequest<Condition>() {
+                    override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> = events.map {
+                        object : IdBasedPublishResourceEvent<Patient>(it, tenant, Patient::class) {}
+                    }
+
+                    override val fhirService: ConditionService = vendorFactory.conditionService
+                    override val tenant: Tenant = tenant
+
+                    override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Condition>> {
+                        return requestFhirIds.associateWith {
+                            fhirService.findConditions(
+                                tenant,
+                                it,
+                                "category-code",
+                                "clinical-status"
+                            )
+                        }
+                    }
+                }
+            }
+
+            override fun convertLoadEventsToRequest(
+                events: List<InteropResourceLoadV1>,
+                vendorFactory: VendorFactory,
+                tenant: Tenant
+            ): LoadResourceRequest<Condition> {
+                TODO()
+            }
+        }
+
+        val roninConditions = mockk<RoninConditions>()
+        val conditionService = mockk<ConditionService>()
+        every { vendorFactory.conditionService } returns conditionService
+
+        val destination =
+            TestConditionPublish(tenantService, ehrFactory, transformManager, publishService, roninConditions)
+
+        val patient = patient {
+            id of "$tenantId-1234"
+        }
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Patient,
+            resourceJson = objectMapper.writeValueAsString(patient),
+            dataTrigger = InteropResourcePublishV1.DataTrigger.nightly,
+            metadata = metadata
+        )
+
+        val condition1 = mockk<Condition> {
+            every { resourceType } returns "Condition"
+            every { id?.value } returns "1"
+        }
+        val condition2 = mockk<Condition> {
+            every { resourceType } returns "Condition"
+            every { id?.value } returns "2"
+        }
+        every {
+            conditionService.findConditions(
+                tenant,
+                "1234",
+                "category-code",
+                "clinical-status"
+            )
+        } returns listOf(condition1, condition2)
+
+        val transformed1 = mockk<Condition> {
+            every { resourceType } returns "Condition"
+            every { id?.value } returns "$tenantId-1"
+        }
+        val transformed2 = mockk<Condition> {
+            every { resourceType } returns "Condition"
+            every { id?.value } returns "$tenantId-2"
+        }
+        every { transformManager.transformResource(condition1, roninConditions, tenant) } returns transformed1
+        every { transformManager.transformResource(condition2, roninConditions, tenant) } returns transformed2
+        every {
+            publishService.publishFHIRResources(
+                tenantId,
+                listOf(transformed1, transformed2),
+                any(),
+                DataTrigger.NIGHTLY
+            )
+        } returns false andThen true
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+
+        val message1 = objectMapper.writeValueAsString(listOf(event1))
+        val result1 = destination.channelDestinationWriter(
+            tenantId,
+            message1,
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.ERROR, result1.status)
+        assertEquals("we made it", result1.detailedMessage)
+        assertEquals("Successfully published 0, but failed to publish 2 resource(s)", result1.message)
+        assertEquals("Patient/$tenantId-1234", result1.dataMap[MirthKey.EVENT_METADATA_SOURCE.code])
+        assertEquals(2, result1.dataMap[MirthKey.FAILURE_COUNT.code])
+
+        val result2 = destination.channelDestinationWriter(
+            tenantId,
+            message1,
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result2.status)
+        assertEquals("we made it", result2.detailedMessage)
+        assertEquals("Published 2 resource(s).", result2.message)
+        assertEquals("Patient/$tenantId-1234", result2.dataMap[MirthKey.EVENT_METADATA_SOURCE.code])
+        assertEquals(2, result2.dataMap[MirthKey.RESOURCE_COUNT.code])
+        assertEquals(0, result2.dataMap[MirthKey.FAILURE_COUNT.code])
+
+        verify(exactly = 4) { transformManager.transformResource(any(), roninConditions, tenant) }
         verify(exactly = 2) { publishService.publishFHIRResources(any(), any(), any(), any()) }
     }
 
