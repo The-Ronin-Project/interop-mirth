@@ -22,6 +22,7 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Url
 import com.projectronin.interop.fhir.r4.resource.DocumentReference
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.DocumentReferenceStatus
+import com.projectronin.interop.fhir.ronin.profile.RoninExtension
 import com.projectronin.interop.fhir.util.asCode
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.DataTrigger
@@ -316,15 +317,15 @@ class DocumentReferencePublishTest {
         val key1 = mockk<ResourceRequestKey>()
         val result = documentReferencePublish.postTransform(tenant, mapOf(key1 to listOf(docReference)), vendorFactory)
 
-        val attachment1 = result[key1]!!.first().content.first().attachment!!
-        assertEquals("Binary/tenant-12345", attachment1.url!!.value)
+        val url1 = result[key1]!!.first().content.first().attachment!!.url
+        assertEquals("Binary/tenant-12345", url1!!.value)
         assertEquals(
             DynamicValue(DynamicValueType.URL, docReference.content.first().attachment!!.url),
-            attachment1.extension.find { it.url?.value == "http://projectronin.io/fhir/StructureDefinition/Extension/originalAttachmentURL" }?.value
+            url1.extension.find { it.url == RoninExtension.TENANT_SOURCE_DOCUMENT_REFERENCE_ATTACHMENT_URL.uri }?.value
         )
         assertEquals(
             DynamicValue(DynamicValueType.URL, Url("datalake/path")),
-            attachment1.extension.find { it.url?.value == "http://projectronin.io/fhir/StructureDefinition/Extension/datalakeAttachmentURL" }?.value
+            url1.extension.find { it.url == RoninExtension.DATALAKE_DOCUMENT_REFERENCE_ATTACHMENT_URL.uri }?.value
         )
     }
 }

@@ -13,11 +13,11 @@ import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.datatype.DynamicValue
 import com.projectronin.interop.fhir.r4.datatype.DynamicValueType
 import com.projectronin.interop.fhir.r4.datatype.Extension
-import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
 import com.projectronin.interop.fhir.r4.datatype.primitive.Url
 import com.projectronin.interop.fhir.r4.resource.DocumentReference
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.TransformManager
+import com.projectronin.interop.fhir.ronin.profile.RoninExtension
 import com.projectronin.interop.fhir.ronin.resource.RoninDocumentReference
 import com.projectronin.interop.fhir.ronin.util.localize
 import com.projectronin.interop.kafka.KafkaPublishService
@@ -174,21 +174,23 @@ class DocumentReferencePublish(
                                     val binaryFHIRID = binaryURL.value!!.split("/").last()
                                     binaryFHIRIDs.add(binaryFHIRID)
                                     attachment.copy(
-                                        url = Url("Binary/${binaryFHIRID.localize(tenant)}"),
-                                        extension = attachment.extension + listOf(
-                                            Extension(
-                                                url = Uri("http://projectronin.io/fhir/StructureDefinition/Extension/originalAttachmentURL"),
-                                                value = DynamicValue(DynamicValueType.URL, binaryURL)
-                                            ),
-                                            Extension(
-                                                url = Uri("http://projectronin.io/fhir/StructureDefinition/Extension/datalakeAttachmentURL"),
-                                                value = DynamicValue(
-                                                    DynamicValueType.URL,
-                                                    Url(
-                                                        datalakeService.getDatalakeFullURL(
-                                                            datalakeService.getBinaryFilepath(
-                                                                tenant.mnemonic,
-                                                                binaryFHIRID.localize(tenant)
+                                        url = Url(
+                                            value = "Binary/${binaryFHIRID.localize(tenant)}",
+                                            extension = binaryURL.extension + listOf(
+                                                Extension(
+                                                    url = RoninExtension.TENANT_SOURCE_DOCUMENT_REFERENCE_ATTACHMENT_URL.uri,
+                                                    value = DynamicValue(DynamicValueType.URL, binaryURL)
+                                                ),
+                                                Extension(
+                                                    url = RoninExtension.DATALAKE_DOCUMENT_REFERENCE_ATTACHMENT_URL.uri,
+                                                    value = DynamicValue(
+                                                        DynamicValueType.URL,
+                                                        Url(
+                                                            datalakeService.getDatalakeFullURL(
+                                                                datalakeService.getBinaryFilepath(
+                                                                    tenant.mnemonic,
+                                                                    binaryFHIRID.localize(tenant)
+                                                                )
                                                             )
                                                         )
                                                     )

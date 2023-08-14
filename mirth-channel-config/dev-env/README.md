@@ -52,3 +52,10 @@ After you build Mirth locally, test data is available from the Mock EHR on port 
   See [here](https://github.com/projectronin/interop-mock-ehr/blob/master/init/README.md)
 * You can view and patch Mock EHR data after building the dev-env, for example to make date values recent.
   See [here](https://github.com/projectronin/interop-mock-ehr/blob/master/init/README.md)
+
+### Test Normalization
+
+A mock OCI normalization registry with concept maps and value sets is 
+in this JSON file:
+
+`mirth-channel-config/dev-env/mock-oci/expectations/init-expectations.json`

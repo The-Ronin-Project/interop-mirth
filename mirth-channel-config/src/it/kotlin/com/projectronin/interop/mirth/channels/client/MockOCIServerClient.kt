@@ -73,6 +73,7 @@ object MockOCIServerClient {
             request().withPath(PUBLISH_PATH).withMethod("PUT")
         ).map { String(it.body.rawBytes) }
 
+    @Deprecated("Purpose unclear and appears unused")
     fun getAllPublishPutsAsResources(): List<Resource<*>> {
         val resourceStrings = getAllPublishPutsBody()
         // gotta be a better way to do this

@@ -328,6 +328,32 @@
           "filename": "EmptyValueSet.json"
         },
         {
+          "registry_uuid": "5c64399b-7f2e-47e8-aada-e7d8ff112c4e",
+          "resource_type": "Observation",
+          "data_element": "Observation.Component.value",
+          "tenant_id": "epicmock",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceObservationComponentValue",
+          "registry_entry_type": "concept_map",
+          "profile_url": null,
+          "concept_map_name": "epicmockstagingobservationcomponentvaluetoronincancerstaging",
+          "concept_map_uuid": "f302878e-5b26-4d92-b1b1-fb2247e075ba",
+          "version": 3,
+          "filename": "EmptyValueSet.json"
+        },
+        {
+          "registry_uuid": "5c64399b-7f2e-47e8-aada-e7d8ff112c4e",
+          "resource_type": "Observation",
+          "data_element": "Observation.Component.value",
+          "tenant_id": "cernmock",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceObservationComponentValue",
+          "registry_entry_type": "concept_map",
+          "profile_url": null,
+          "concept_map_name": "cernmockstagingbservationcomponentvaluetoronincancerstaging",
+          "concept_map_uuid": "f302878e-5b26-4d92-b1b1-fb2247e075ba",
+          "version": 3,
+          "filename": "EmptyValueSet.json"
+        },
+        {
           "registry_uuid": "20",
           "resource_type": "Observation",
           "data_element": "Observation.code",
