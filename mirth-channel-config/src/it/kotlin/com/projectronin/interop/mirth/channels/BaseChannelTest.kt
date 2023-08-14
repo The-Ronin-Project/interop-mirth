@@ -178,6 +178,21 @@ abstract class BaseChannelTest(
         }
     }
 
+    protected fun assertAllConnectorsError(messageList: List<Int>) {
+        val messages = messageList.map {
+            MirthClient.getMessageById(testChannelId, it)
+        }
+        messages.forEach { connectorMessage ->
+            connectorMessage.destinationMessages.forEach {
+                assertEquals(
+                    "ERROR",
+                    it.status,
+                    "status for connector ${it.connectorName} was not ERROR. Actual status: ${it.status}"
+                )
+            }
+        }
+    }
+
     protected fun waitForMessage(minimumCount: Int, timeout: Int = 180, channelID: String = testChannelId) {
         runBlocking {
             withTimeout(timeout = timeout.seconds) {

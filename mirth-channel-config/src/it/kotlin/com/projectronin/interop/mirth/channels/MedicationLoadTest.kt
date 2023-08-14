@@ -9,6 +9,7 @@ import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.ingredient
 import com.projectronin.interop.fhir.generators.resources.medication
 import com.projectronin.interop.fhir.generators.resources.medicationRequest
+import com.projectronin.interop.fhir.generators.resources.medicationStatement
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
@@ -28,7 +29,7 @@ class MedicationLoadTest : BaseChannelTest(
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
-    fun `check if channel works nightly`(testTenant: String) {
+    fun `check if channel works nightly from medication requests`(testTenant: String) {
         tenantInUse = testTenant
 
         val fakeMedication = medication {
@@ -138,6 +139,43 @@ class MedicationLoadTest : BaseChannelTest(
             resourceFHIRIds = listOf(fakeMedicationId),
             resourceType = ResourceType.Medication
         )
+        waitForMessage(2)
+
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertAllConnectorsSent(messageList)
+        assertEquals(2, messageList.size)
+        assertEquals(1, getAidboxResourceCount("Medication"))
+    }
+
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `check if channel works nightly from medication statements`(testTenant: String) {
+        tenantInUse = testTenant
+
+        val fakeMedication = medication {
+            code of codeableConcept {
+                coding of listOf(
+                    coding {
+                        system of "ok"
+                        code of "yeah"
+                    }
+                )
+            }
+        }
+        val fakeMedicationId = MockEHRTestData.add(fakeMedication)
+
+        val fakeMedicationStatement1 = medicationStatement {
+            id of "123"
+            status of "active"
+            medication of DynamicValues.reference(reference("Medication", fakeMedicationId))
+        }
+
+        KafkaClient.pushPublishEvent(
+            tenantId = tenantInUse,
+            trigger = DataTrigger.NIGHTLY,
+            resources = listOf(fakeMedicationStatement1)
+        )
+
         waitForMessage(2)
 
         val messageList = MirthClient.getChannelMessageIds(testChannelId)

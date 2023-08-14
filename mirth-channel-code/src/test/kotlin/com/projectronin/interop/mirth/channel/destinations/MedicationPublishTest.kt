@@ -15,8 +15,10 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Ingredient
 import com.projectronin.interop.fhir.r4.resource.Medication
 import com.projectronin.interop.fhir.r4.resource.MedicationRequest
+import com.projectronin.interop.fhir.r4.resource.MedicationStatement
 import com.projectronin.interop.fhir.r4.valueset.MedicationRequestIntent
 import com.projectronin.interop.fhir.r4.valueset.MedicationRequestStatus
+import com.projectronin.interop.fhir.r4.valueset.MedicationStatementStatus
 import com.projectronin.interop.fhir.util.asCode
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -117,6 +119,43 @@ class MedicationPublishTest {
         ),
         intent = MedicationRequestIntent.FILLER_ORDER.asCode(),
         status = MedicationRequestStatus.ACTIVE.asCode(),
+        subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+    )
+
+    private val medicationStatement1 = MedicationStatement(
+        id = Id("$tenantId-1234"),
+        medication = DynamicValue(
+            DynamicValueType.REFERENCE,
+            Reference(reference = FHIRString("Medication/$tenantId-1234"))
+        ),
+        status = MedicationStatementStatus.ACTIVE.asCode(),
+        subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+    )
+    private val medicationStatement2 = MedicationStatement(
+        id = Id("$tenantId-5678"),
+        medication = DynamicValue(
+            DynamicValueType.REFERENCE,
+            Reference(reference = FHIRString("Medication/$tenantId-5678"))
+        ),
+        status = MedicationStatementStatus.ACTIVE.asCode(),
+        subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+    )
+    private val medicationStatement3 = MedicationStatement(
+        id = Id("$tenantId-9012"),
+        medication = DynamicValue(
+            DynamicValueType.REFERENCE,
+            Reference(reference = FHIRString("SomethingElse/$tenantId-9012"))
+        ),
+        status = MedicationStatementStatus.ACTIVE.asCode(),
+        subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+    )
+    private val medicationStatement4 = MedicationStatement(
+        id = Id("$tenantId-3456"),
+        medication = DynamicValue(
+            DynamicValueType.STRING,
+            FHIRString("Medication")
+        ),
+        status = MedicationStatementStatus.ACTIVE.asCode(),
         subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
     )
 
@@ -221,7 +260,6 @@ class MedicationPublishTest {
     fun `MedicationRequestPublishMedicationRequest supports loads resources`() {
         val medication1 = mockk<Medication>()
         val medication2 = mockk<Medication>()
-        val medication3 = mockk<Medication>()
         every {
             medicationService.getByIDs(
                 tenant,
@@ -266,6 +304,79 @@ class MedicationPublishTest {
         assertEquals(listOf(medication1), resourcesByKeys[key1])
 
         val key2 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-5678")
+        assertEquals(listOf(medication2), resourcesByKeys[key2])
+    }
+
+    @Test
+    fun `publish events create a MedicationStatementPublishMedicationRequest for medicationStatement publish events`() {
+        val publishEvent = mockk<InteropResourcePublishV1>(relaxed = true) {
+            every { resourceType } returns ResourceType.MedicationStatement
+            every { resourceJson } returns JacksonManager.objectMapper.writeValueAsString(medicationStatement1)
+            every { metadata } returns this@MedicationPublishTest.metadata
+        }
+        val request = medicationPublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
+        assertInstanceOf(MedicationPublish.MedicationStatementPublishMedicationRequest::class.java, request)
+    }
+
+    @Test
+    fun `MedicationStatementPublishMedicationRequest supports loads resources`() {
+        val medication1 = mockk<Medication>()
+        val medication2 = mockk<Medication>()
+        every {
+            medicationService.getByIDs(
+                tenant,
+                listOf("1234", "5678")
+            )
+        } returns mapOf("1234" to medication1, "5678" to medication2)
+
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationStatement,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationStatement1),
+            metadata = metadata
+        )
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationStatement,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationStatement2),
+            metadata = metadata
+        )
+        val event3 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationStatement,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationStatement3),
+            metadata = metadata
+        )
+        val event4 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationStatement,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationStatement4),
+            metadata = metadata
+        )
+        val request =
+            MedicationPublish.MedicationStatementPublishMedicationRequest(
+                listOf(event1, event2, event3, event4),
+                medicationService,
+                tenant
+            )
+        val resourcesByKeys =
+            request.loadResources(request.requestKeys.toList())
+        assertEquals(2, resourcesByKeys.size)
+
+        val key1 = ResourceRequestKey(
+            "run",
+            ResourceType.Medication,
+            tenant,
+            "$tenantId-1234"
+        )
+        assertEquals(listOf(medication1), resourcesByKeys[key1])
+
+        val key2 = ResourceRequestKey(
+            "run",
+            ResourceType.Medication,
+            tenant,
+            "$tenantId-5678"
+        )
         assertEquals(listOf(medication2), resourcesByKeys[key2])
     }
 }

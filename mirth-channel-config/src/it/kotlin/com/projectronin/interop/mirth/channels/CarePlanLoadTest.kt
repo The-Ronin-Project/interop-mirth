@@ -364,12 +364,7 @@ class CarePlanLoadTest : BaseChannelTest(
         )
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        messageList.forEach { ids ->
-            val message = MirthClient.getMessageById(testChannelId, ids)
-            message.destinationMessages.forEach {
-                assertEquals("ERROR", it.status)
-            }
-        }
+        assertAllConnectorsError(messageList)
         assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("CarePlan"))
     }

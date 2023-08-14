@@ -11,7 +11,7 @@ import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.date
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.medication
-import com.projectronin.interop.fhir.generators.resources.medicationRequest
+import com.projectronin.interop.fhir.generators.resources.medicationStatement
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.kafka.model.DataTrigger
@@ -32,15 +32,15 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.UUID
 
-const val medicationRequestLoadChannelName = "MedicationRequestLoad"
+const val medicationStatementLoadChannelName = "MedicationStatementLoad"
 
-class MedicationRequestLoadTest : BaseChannelTest(
-    medicationRequestLoadChannelName,
-    listOf("Patient", "MedicationRequest", "Medication"),
-    listOf("Patient", "MedicationRequest", "Medication")
+class MedicationStatementLoadTest : BaseChannelTest(
+    medicationStatementLoadChannelName,
+    listOf("Patient", "MedicationStatement", "Medication"),
+    listOf("Patient", "MedicationStatement", "Medication")
 ) {
     val patientType = "Patient"
-    val medicationRequestType = "MedicationRequest"
+    val medicationStatementType = "MedicationStatement"
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -77,15 +77,13 @@ class MedicationRequestLoadTest : BaseChannelTest(
         )
         AidboxTestData.add(fakeAidboxPatient)
 
-        val medicationRequest = medicationRequest {
+        val medicationStatement = medicationStatement {
             subject of reference(patientType, fakePatientId)
-            requester of reference("Practitioner", "ffff")
-            intent of "order"
             status of "active"
             medication of DynamicValues.reference(reference("Medication", "1234"))
         }
-        val medicationRequestId = MockEHRTestData.add(medicationRequest)
-        MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId)
+        val medicationStatementId = MockEHRTestData.add(medicationStatement)
+        MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId)
         KafkaClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
@@ -96,7 +94,9 @@ class MedicationRequestLoadTest : BaseChannelTest(
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
-        assertEquals(1, getAidboxResourceCount(medicationRequestType))
+        if (!tenantInUse.contains("cern")) {
+            assertEquals(1, getAidboxResourceCount(medicationStatementType))
+        }
     }
 
     @ParameterizedTest
@@ -119,36 +119,32 @@ class MedicationRequestLoadTest : BaseChannelTest(
             identifier = fakePatient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id)
         )
 
-        val fakeMedicationRequest1 = medicationRequest {
+        val fakeMedicationStatement1 = medicationStatement {
             subject of reference(patientType, patient1Id)
-            requester of reference("Practitioner", "ffff")
-            intent of "order"
             status of "active"
             medication of DynamicValues.reference(reference("Medication", "1234"))
         }
 
-        val fakeMedicationRequest2 = medicationRequest {
+        val fakeMedicationStatement2 = medicationStatement {
             subject of reference(patientType, patient2Id)
-            requester of reference("Practitioner", "ffff")
-            intent of "order"
             status of "active"
             medication of DynamicValues.reference(reference("Medication", "1234"))
         }
 
-        val medRequest1ID = MockEHRTestData.add(fakeMedicationRequest1)
-        val medRequest2ID = MockEHRTestData.add(fakeMedicationRequest1)
-        val medRequest3ID = MockEHRTestData.add(fakeMedicationRequest1)
-        val medRequest4ID = MockEHRTestData.add(fakeMedicationRequest1)
-        val medRequest5ID = MockEHRTestData.add(fakeMedicationRequest1)
-        val medRequest6ID = MockEHRTestData.add(fakeMedicationRequest1)
-        val medRequest7ID = MockEHRTestData.add(fakeMedicationRequest2)
-        MockOCIServerClient.createExpectations("MedicationRequest", medRequest1ID, tenantInUse)
-        MockOCIServerClient.createExpectations("MedicationRequest", medRequest2ID, tenantInUse)
-        MockOCIServerClient.createExpectations("MedicationRequest", medRequest3ID, tenantInUse)
-        MockOCIServerClient.createExpectations("MedicationRequest", medRequest4ID, tenantInUse)
-        MockOCIServerClient.createExpectations("MedicationRequest", medRequest5ID, tenantInUse)
-        MockOCIServerClient.createExpectations("MedicationRequest", medRequest6ID, tenantInUse)
-        MockOCIServerClient.createExpectations("MedicationRequest", medRequest7ID, tenantInUse)
+        val medRequest1ID = MockEHRTestData.add(fakeMedicationStatement1)
+        val medRequest2ID = MockEHRTestData.add(fakeMedicationStatement1)
+        val medRequest3ID = MockEHRTestData.add(fakeMedicationStatement1)
+        val medRequest4ID = MockEHRTestData.add(fakeMedicationStatement1)
+        val medRequest5ID = MockEHRTestData.add(fakeMedicationStatement1)
+        val medRequest6ID = MockEHRTestData.add(fakeMedicationStatement1)
+        val medRequest7ID = MockEHRTestData.add(fakeMedicationStatement2)
+        MockOCIServerClient.createExpectations("MedicationStatement", medRequest1ID, tenantInUse)
+        MockOCIServerClient.createExpectations("MedicationStatement", medRequest2ID, tenantInUse)
+        MockOCIServerClient.createExpectations("MedicationStatement", medRequest3ID, tenantInUse)
+        MockOCIServerClient.createExpectations("MedicationStatement", medRequest4ID, tenantInUse)
+        MockOCIServerClient.createExpectations("MedicationStatement", medRequest5ID, tenantInUse)
+        MockOCIServerClient.createExpectations("MedicationStatement", medRequest6ID, tenantInUse)
+        MockOCIServerClient.createExpectations("MedicationStatement", medRequest7ID, tenantInUse)
         MockEHRTestData.validateAll()
 
         KafkaClient.pushPublishEvent(
@@ -161,7 +157,9 @@ class MedicationRequestLoadTest : BaseChannelTest(
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
-        assertEquals(7, getAidboxResourceCount("MedicationRequest"))
+        if (!tenantInUse.contains("cern")) {
+            assertEquals(7, getAidboxResourceCount(medicationStatementType))
+        }
     }
 
     @ParameterizedTest
@@ -172,28 +170,28 @@ class MedicationRequestLoadTest : BaseChannelTest(
         val fakePatient1 = patient {}
         val patient1Id = MockEHRTestData.add(fakePatient1)
 
-        val fakeMedicationRequest1 = medicationRequest {
+        val fakeMedicationStatement1 = medicationStatement {
             subject of reference(patientType, patient1Id)
-            requester of reference("Practitioner", "ffff")
-            intent of "order"
             status of "active"
             medication of DynamicValues.reference(reference("Medication", "1234"))
         }
-        val fakeMedicationRequestId = MockEHRTestData.add(fakeMedicationRequest1)
-        MockOCIServerClient.createExpectations("MedicationRequest", fakeMedicationRequestId, testTenant)
+        val fakeMedicationStatementId = MockEHRTestData.add(fakeMedicationStatement1)
+        MockOCIServerClient.createExpectations("MedicationStatement", fakeMedicationStatementId, testTenant)
 
         KafkaClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
-            resourceFHIRIds = listOf(fakeMedicationRequestId),
-            resourceType = ResourceType.MedicationRequest
+            resourceFHIRIds = listOf(fakeMedicationStatementId),
+            resourceType = ResourceType.MedicationStatement
         )
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
         assertEquals(1, messageList.size)
-        assertEquals(1, getAidboxResourceCount("MedicationRequest"))
+        if (!tenantInUse.contains("cern")) {
+            assertEquals(1, getAidboxResourceCount(medicationStatementType))
+        }
     }
 
     @Test
@@ -202,24 +200,27 @@ class MedicationRequestLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.MedicationRequest
+            resourceType = ResourceType.MedicationStatement
         )
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsError(messageList)
         assertEquals(1, messageList.size)
-        assertEquals(0, getAidboxResourceCount("MedicationRequest"))
+        assertEquals(0, getAidboxResourceCount("MedicationStatement"))
     }
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with dag`(testTenant: String) {
-        val medicationRequestPublishTopics = KafkaClient.publishTopics(ResourceType.MedicationRequest)
-        val medicationRequestType = "MedicationRequest"
+        tenantInUse = testTenant
+        if (tenantInUse.contains("cern")) return
+
+        val medicationStatementPublishTopics = KafkaClient.publishTopics(ResourceType.MedicationStatement)
+        val medicationStatementType = "MedicationStatement"
         val medicationType = "Medication"
         val types = listOf(
-            medicationRequestType,
+            medicationStatementType,
             medicationType
         )
 
@@ -230,7 +231,6 @@ class MedicationRequestLoadTest : BaseChannelTest(
             installChannel(it)
         }
 
-        tenantInUse = testTenant
         val fakeMedication = medication {
             code of codeableConcept {
                 coding of listOf(
@@ -244,24 +244,22 @@ class MedicationRequestLoadTest : BaseChannelTest(
         val fakeMedicationId = MockEHRTestData.add(fakeMedication)
         MockOCIServerClient.createExpectations(medicationType, fakeMedicationId, testTenant)
 
-        val fakeMedicationRequest = medicationRequest {
+        val fakeMedicationStatement = medicationStatement {
             id of "123"
-            requester of reference("Practitioner", "ffff")
-            intent of "order"
             status of "active"
             medication of DynamicValues.reference(reference(medicationType, fakeMedicationId))
             subject of reference(patientType, "asdadsdas")
         }
 
-        val medicationRequestId = MockEHRTestData.add(fakeMedicationRequest)
-        MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId, testTenant)
+        val medicationStatementId = MockEHRTestData.add(fakeMedicationStatement)
+        MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId, testTenant)
 
         // deploy dag channels
         channelIds.forEach {
             deployAndStartChannel(channelToDeploy = it)
             clearMessages(it)
         }
-        medicationRequestPublishTopics.forEach {
+        medicationStatementPublishTopics.forEach {
             KafkaClient.ensureStability(it.topicName)
         }
         runBlocking { delay(1000) }
@@ -270,13 +268,13 @@ class MedicationRequestLoadTest : BaseChannelTest(
         KafkaClient.pushLoadEvent(
             testTenant,
             DataTrigger.NIGHTLY,
-            listOf(medicationRequestId),
-            ResourceType.MedicationRequest,
+            listOf(medicationStatementId),
+            ResourceType.MedicationStatement,
             metadata
         )
-        val medicationRequestPublishTopic =
-            KafkaClient.publishTopics(ResourceType.MedicationRequest).first { it.topicName.contains("nightly") }
-        KafkaClient.ensureStability(medicationRequestPublishTopic.topicName)
+        val medicationStatementPublishTopic =
+            KafkaClient.publishTopics(ResourceType.MedicationStatement).first { it.topicName.contains("nightly") }
+        KafkaClient.ensureStability(medicationStatementPublishTopic.topicName)
         waitForMessage(1)
         channelIds.forEach {
             waitForMessage(2, channelID = it)
