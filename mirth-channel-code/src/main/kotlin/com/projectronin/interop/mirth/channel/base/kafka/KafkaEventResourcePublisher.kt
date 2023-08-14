@@ -252,7 +252,10 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         resourceRequest: ResourceRequest<T, *>,
         requestKeys: List<ResourceRequestKey>
     ): Pair<Map<ResourceRequestKey, List<T>>, Int> {
-        val resourcesByKey = resourceRequest.loadResources(requestKeys)
+        // Load the resources, and remove any cases with empty Lists so we can easily know when values exist or not
+        val resourcesByKey = resourceRequest.loadResources(requestKeys).filterNot { (_, values) ->
+            values.isEmpty()
+        }
 
         // If this publisher has requested that we cache and compare results, we need to determine if we've previously
         // processed the reply or not. If we have, we will filter out the value now. If we have not, we will add it to

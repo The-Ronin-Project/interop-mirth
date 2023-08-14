@@ -132,6 +132,55 @@ class KafkaEventResourcePublisherTest {
         }
     }
 
+    class TestConditionPublish(
+        tenantService: TenantService,
+        ehrFactory: EHRFactory,
+        transformManager: TransformManager,
+        publishService: PublishService,
+        profileTransformer: RoninConditions,
+        override val cacheAndCompareResults: Boolean = false
+    ) : KafkaEventResourcePublisher<Condition>(
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer
+    ) {
+        override fun convertPublishEventsToRequest(
+            events: List<InteropResourcePublishV1>,
+            vendorFactory: VendorFactory,
+            tenant: Tenant
+        ): PublishResourceRequest<Condition> {
+            return object : PublishResourceRequest<Condition>() {
+                override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> = events.map {
+                    object : IdBasedPublishResourceEvent<Patient>(it, tenant, Patient::class) {}
+                }
+
+                override val fhirService: ConditionService = vendorFactory.conditionService
+                override val tenant: Tenant = tenant
+
+                override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Condition>> {
+                    return requestFhirIds.associateWith {
+                        fhirService.findConditions(
+                            tenant,
+                            it,
+                            "category-code",
+                            "clinical-status"
+                        )
+                    }
+                }
+            }
+        }
+
+        override fun convertLoadEventsToRequest(
+            events: List<InteropResourceLoadV1>,
+            vendorFactory: VendorFactory,
+            tenant: Tenant
+        ): LoadResourceRequest<Condition> {
+            TODO()
+        }
+    }
+
     @BeforeEach
     fun setup() {
         tenant = mockk {
@@ -252,6 +301,50 @@ class KafkaEventResourcePublisherTest {
         assertEquals("No new resources retrieved from EHR.", result.detailedMessage)
         assertEquals("No resources", result.message)
         assertNull(result.dataMap[MirthKey.EVENT_METADATA_SOURCE.code])
+        assertNull(result.dataMap[MirthKey.RESOURCE_COUNT.code])
+        assertNull(result.dataMap[MirthKey.FAILURE_COUNT.code])
+    }
+
+    @Test
+    fun `works with nothing from EHR represented as an empty List in the Map`() {
+        val roninConditions = mockk<RoninConditions>()
+        val conditionService = mockk<ConditionService>()
+        every { vendorFactory.conditionService } returns conditionService
+
+        val destination =
+            TestConditionPublish(tenantService, ehrFactory, transformManager, publishService, roninConditions)
+
+        val patient = patient {
+            id of "$tenantId-1234"
+        }
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.Patient,
+            resourceJson = objectMapper.writeValueAsString(patient),
+            dataTrigger = InteropResourcePublishV1.DataTrigger.nightly,
+            metadata = metadata
+        )
+
+        every {
+            conditionService.findConditions(
+                tenant,
+                "1234",
+                "category-code",
+                "clinical-status"
+            )
+        } returns emptyList()
+
+        val message = objectMapper.writeValueAsString(listOf(event1))
+        val result = destination.channelDestinationWriter(
+            tenantId,
+            message,
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result.status)
+        assertEquals("No new resources retrieved from EHR.", result.detailedMessage)
+        assertEquals("No resources", result.message)
+        assertEquals("Patient/tenant-1234", result.dataMap[MirthKey.EVENT_METADATA_SOURCE.code])
         assertNull(result.dataMap[MirthKey.RESOURCE_COUNT.code])
         assertNull(result.dataMap[MirthKey.FAILURE_COUNT.code])
     }
@@ -895,55 +988,6 @@ class KafkaEventResourcePublisherTest {
 
     @Test
     fun `publisher works for repeat publish requests if first fails`() {
-        class TestConditionPublish(
-            tenantService: TenantService,
-            ehrFactory: EHRFactory,
-            transformManager: TransformManager,
-            publishService: PublishService,
-            profileTransformer: RoninConditions,
-            override val cacheAndCompareResults: Boolean = false
-        ) : KafkaEventResourcePublisher<Condition>(
-            tenantService,
-            ehrFactory,
-            transformManager,
-            publishService,
-            profileTransformer
-        ) {
-            override fun convertPublishEventsToRequest(
-                events: List<InteropResourcePublishV1>,
-                vendorFactory: VendorFactory,
-                tenant: Tenant
-            ): PublishResourceRequest<Condition> {
-                return object : PublishResourceRequest<Condition>() {
-                    override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> = events.map {
-                        object : IdBasedPublishResourceEvent<Patient>(it, tenant, Patient::class) {}
-                    }
-
-                    override val fhirService: ConditionService = vendorFactory.conditionService
-                    override val tenant: Tenant = tenant
-
-                    override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Condition>> {
-                        return requestFhirIds.associateWith {
-                            fhirService.findConditions(
-                                tenant,
-                                it,
-                                "category-code",
-                                "clinical-status"
-                            )
-                        }
-                    }
-                }
-            }
-
-            override fun convertLoadEventsToRequest(
-                events: List<InteropResourceLoadV1>,
-                vendorFactory: VendorFactory,
-                tenant: Tenant
-            ): LoadResourceRequest<Condition> {
-                TODO()
-            }
-        }
-
         val roninConditions = mockk<RoninConditions>()
         val conditionService = mockk<ConditionService>()
         every { vendorFactory.conditionService } returns conditionService
