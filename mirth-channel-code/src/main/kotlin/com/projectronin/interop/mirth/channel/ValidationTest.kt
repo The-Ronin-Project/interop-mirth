@@ -27,6 +27,7 @@ import com.projectronin.interop.fhir.generators.resources.ingredient
 import com.projectronin.interop.fhir.generators.resources.location
 import com.projectronin.interop.fhir.generators.resources.medication
 import com.projectronin.interop.fhir.generators.resources.medicationRequest
+import com.projectronin.interop.fhir.generators.resources.medicationStatement
 import com.projectronin.interop.fhir.generators.resources.observation
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.generators.resources.practitioner
@@ -286,7 +287,7 @@ class ValidationTest(
                     }
                 )
 
-                val ingredientMedicationId = mockEHR.addResource(
+                val ingredientMedicationID = mockEHR.addResource(
                     medication {
                         code of codeableConcept {
                             coding of listOf(
@@ -311,7 +312,7 @@ class ValidationTest(
                         }
                         ingredient of listOf(
                             ingredient {
-                                item of DynamicValues.reference(reference("Medication", ingredientMedicationId))
+                                item of DynamicValues.reference(reference("Medication", ingredientMedicationID))
                             }
                         )
                     }
@@ -323,6 +324,28 @@ class ValidationTest(
                         medication of DynamicValues.reference(reference("Medication", medicationID))
                         requester of reference("Practitioner", practitionerID)
                     }
+                )
+
+                val statementMedicationID = mockEHR.addResource(
+                    medication {
+                        code of codeableConcept {
+                            coding of listOf(
+                                coding {
+                                    system of "ok"
+                                    code of "yeah"
+                                }
+                            )
+                        }
+                    }
+                )
+
+                val medicationStatementID = mockEHR.addResource(
+                    medicationStatement {
+                        subject of reference("Patient", patientID)
+                        medication of DynamicValues.reference(reference("Medication", statementMedicationID))
+                        status of "completed"
+                    },
+                    STU3 = true
                 )
                 val binaryID = mockEHR.addResource(binary { })
                 val documentReferenceID = mockEHR.addResource(
@@ -369,7 +392,9 @@ class ValidationTest(
                     "RequestGroup/$requestGroupID",
                     "MedicationRequest/$medicationRequestID",
                     "Medication/$medicationID",
-                    "Medication/$ingredientMedicationId",
+                    "Medication/$ingredientMedicationID",
+                    "Medication/$statementMedicationID",
+                    "MedicationStatement/$medicationStatementID",
                     "DocumentReference/$documentReferenceID"
                 ).filterNot { it.split("/").first() in ignoreTypeList }
 
@@ -398,12 +423,13 @@ class ValidationTest(
         }
         val RESOURCES_FORMAT = "$FHIR_URL/%s"
 
-        inline fun <reified T : Resource<T>> addResource(resource: Resource<T>): String {
+        inline fun <reified T : Resource<T>> addResource(resource: Resource<T>, STU3: Boolean = false): String {
             return if (resource.resourceType in ignoreTypeList) {
                 "IGNORED"
             } else {
                 runBlocking {
-                    val resourceUrl = RESOURCES_FORMAT.format(resource.resourceType)
+                    val resourceUrl =
+                        RESOURCES_FORMAT.format(resource.resourceType).replace("R4", if (STU3) "STU3" else "R4")
                     val response = httpClient.post(resourceUrl) {
                         contentType(ContentType.Application.FhirJson)
                         accept(ContentType.Application.FhirJson)

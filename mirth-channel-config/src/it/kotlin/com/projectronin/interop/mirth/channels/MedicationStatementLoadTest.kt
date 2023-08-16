@@ -1,10 +1,7 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
-import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
-import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.datatypes.reference
@@ -22,15 +19,10 @@ import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
-import java.util.UUID
 
 const val medicationStatementLoadChannelName = "MedicationStatementLoad"
 
@@ -208,80 +200,5 @@ class MedicationStatementLoadTest : BaseChannelTest(
         assertAllConnectorsError(messageList)
         assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("MedicationStatement"))
-    }
-
-    @ParameterizedTest
-    @MethodSource("tenantsToTest")
-    fun `channel works with dag`(testTenant: String) {
-        tenantInUse = testTenant
-        if (tenantInUse.contains("cern")) return
-
-        val medicationStatementPublishTopics = KafkaClient.publishTopics(ResourceType.MedicationStatement)
-        val medicationStatementType = "MedicationStatement"
-        val medicationType = "Medication"
-        val types = listOf(
-            medicationStatementType,
-            medicationType
-        )
-
-        val channels = listOf(
-            medicationLoadChannelName
-        )
-        val channelIds = channels.map {
-            installChannel(it)
-        }
-
-        val fakeMedication = medication {
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "ok"
-                        code of "yeah"
-                    }
-                )
-            }
-        }
-        val fakeMedicationId = MockEHRTestData.add(fakeMedication)
-        MockOCIServerClient.createExpectations(medicationType, fakeMedicationId, testTenant)
-
-        val fakeMedicationStatement = medicationStatement {
-            id of "123"
-            status of "active"
-            medication of DynamicValues.reference(reference(medicationType, fakeMedicationId))
-            subject of reference(patientType, "asdadsdas")
-        }
-
-        val medicationStatementId = MockEHRTestData.add(fakeMedicationStatement)
-        MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId, testTenant)
-
-        // deploy dag channels
-        channelIds.forEach {
-            deployAndStartChannel(channelToDeploy = it)
-            clearMessages(it)
-        }
-        medicationStatementPublishTopics.forEach {
-            KafkaClient.ensureStability(it.topicName)
-        }
-        runBlocking { delay(1000) }
-        // push event to get picked up
-        val metadata = Metadata(runId = UUID.randomUUID().toString(), runDateTime = OffsetDateTime.now(ZoneOffset.UTC))
-        KafkaClient.pushLoadEvent(
-            testTenant,
-            DataTrigger.NIGHTLY,
-            listOf(medicationStatementId),
-            ResourceType.MedicationStatement,
-            metadata
-        )
-        val medicationStatementPublishTopic =
-            KafkaClient.publishTopics(ResourceType.MedicationStatement).first { it.topicName.contains("nightly") }
-        KafkaClient.ensureStability(medicationStatementPublishTopic.topicName)
-        waitForMessage(1)
-        channelIds.forEach {
-            waitForMessage(2, channelID = it)
-            stopChannel(it)
-        }
-        types.forEach {
-            assertEquals(1, getAidboxResourceCount(it))
-        }
     }
 }
