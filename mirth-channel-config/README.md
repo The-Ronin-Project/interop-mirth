@@ -25,8 +25,9 @@ There is some initial setup required to ensure that you can fully build this pro
 The following Gradle tasks are currently exposed and can be
 utilized by this project:
 
-* __mirth__ - Stands up Mirth with the appropriate local environment. This includes all other tasks except __it__. For
-  local dev environments, it can be helpful to delete the previous dev-env container before running `./gradlew mirth`.
+* __mirth__ - Stands up Mirth with the appropriate local environment. 
+  First delete the Docker image `interop-mock-ehr/latest` and Docker container `dev-env`. Then run `./gradlew mirth`.
+  This builds using the most recent code versions and runs all other Gradle tasks except __it__.
 * __copyMirthConnector__ - Installs the Mirth Connector JAR and reloads the resource. This requires a currently running
   Mirth instance.
 * __installAllChannels__ - Installs all channels from the filesystem as currently defined in [channels](channels). This
