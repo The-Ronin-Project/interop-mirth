@@ -51,7 +51,7 @@ jobs:
         run: docker stats --no-stream
 
       - name: Run tests
-        run: ./gradlew :mirth-channel-config:it --info --stacktrace
+        run: ./gradlew :mirth-channel-config:it
 
       - name: Docker Stats (post-run)
         if: success() || failure()
