@@ -38,24 +38,25 @@ class PatientDiscovery(
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
         return tenantService.getMonitoredTenants()
             .filter { needsLoad(it) }
-            .flatMap { tenant ->
+            .mapNotNull { tenant ->
                 try {
-                    tenantConfigurationService.getLocationIDsByTenant(tenant.mnemonic)
-                        .map { locationId ->
-                            val metadata = generateMetadata()
-                            MirthMessage(
-                                message = locationId,
-                                dataMap = mapOf(
-                                    MirthKey.TENANT_MNEMONIC.code to tenant.mnemonic,
-                                    MirthKey.EVENT_METADATA.code to serialize(metadata),
-                                    MirthKey.EVENT_RUN_ID.code to metadata.runId,
-                                    "locationFhirID" to locationId
-                                )
+                    val locations = tenantConfigurationService.getLocationIDsByTenant(tenant.mnemonic)
+                    if (locations.isEmpty()) {
+                        null
+                    } else {
+                        val metadata = generateMetadata()
+                        MirthMessage(
+                            message = JacksonUtil.writeJsonValue(locations),
+                            dataMap = mapOf(
+                                MirthKey.TENANT_MNEMONIC.code to tenant.mnemonic,
+                                MirthKey.EVENT_METADATA.code to serialize(metadata),
+                                MirthKey.EVENT_RUN_ID.code to metadata.runId
                             )
-                        }
+                        )
+                    }
                 } catch (e: Exception) {
                     logger.error(e) { "Failed to find configured locations for ${tenant.mnemonic}" }
-                    emptyList()
+                    null
                 }
             }
     }
@@ -72,10 +73,10 @@ class PatientDiscovery(
         val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: throw Exception("No Tenant Found")
 
         val vendorFactory = ehrFactory.getVendorFactory(tenant)
-
+        val locations = JacksonUtil.readJsonList(msg, String::class)
         val fullAppointments = vendorFactory.appointmentService.findLocationAppointments(
             tenant,
-            listOf(msg),
+            locations,
             startDate,
             endDate
         )

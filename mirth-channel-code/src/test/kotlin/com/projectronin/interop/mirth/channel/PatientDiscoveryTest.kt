@@ -104,12 +104,10 @@ class PatientDiscoveryTest {
     @Test
     fun `sourceReader works`() {
         val list = channel.channelSourceReader(emptyMap())
-        assertEquals(2, list.size)
-        assertEquals("123", list.first().message)
-        assertEquals("456", list[1].message)
+        assertEquals(1, list.size)
+        assertEquals("[\"123\",\"456\"]", list.first().message)
         assertEquals("ronin", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
-        assertEquals("ronin", list[1].dataMap[MirthKey.TENANT_MNEMONIC.code])
-        assertNotNull(list[1].dataMap[MirthKey.EVENT_RUN_ID.code])
+        assertNotNull(list.first().dataMap[MirthKey.EVENT_RUN_ID.code])
     }
 
     @Test
@@ -374,11 +372,10 @@ class PatientDiscoveryTest {
         } throws Exception("oops!")
 
         val list = channel.channelSourceReader(emptyMap())
-        assertEquals(2, list.size)
-        assertEquals("123", list.first().message)
-        assertEquals("456", list[1].message)
+        assertEquals(1, list.size)
+        assertEquals("[\"123\",\"456\"]", list.first().message)
         assertEquals("ronin", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
-        assertEquals("ronin", list[1].dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertNotNull(list.first().dataMap[MirthKey.EVENT_RUN_ID.code])
     }
 
     @Test
@@ -414,7 +411,7 @@ class PatientDiscoveryTest {
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
 
-        val message = channel.channelSourceTransformer("ronin", "123", emptyMap(), emptyMap())
+        val message = channel.channelSourceTransformer("ronin", "[\"123\"]", emptyMap(), emptyMap())
         assertEquals("[\"Patient/patFhirID\"]", message.message)
     }
 

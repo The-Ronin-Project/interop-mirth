@@ -2,6 +2,7 @@ package com.projectronin.interop.mirth.channel
 
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.http.FhirJson
+import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.attachment
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
@@ -399,7 +400,7 @@ class ValidationTest(
                 ).filterNot { it.split("/").first() in ignoreTypeList }
 
                 MirthMessage(
-                    message = locationID,
+                    message = JacksonUtil.writeJsonValue(listOf(locationID)),
                     dataMap = mapOf(
                         MirthKey.FHIR_ID_LIST.code to resources,
                         MirthKey.EVENT_METADATA.code to generateSerializedMetadata(),
