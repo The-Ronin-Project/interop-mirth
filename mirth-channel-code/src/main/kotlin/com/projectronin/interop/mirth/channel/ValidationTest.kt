@@ -80,13 +80,18 @@ class ValidationTest(
             .map { tenantMnemonic -> // set in Mirth Settings > Configuration Map
                 val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: return emptyList()
                 val ignoreTypeList = serviceMap["$tenantMnemonic-validationIgnoreTypes"].toString().split(",")
+                val validationList = mutableListOf<String>()
                 val mockEHR = MockEHRUtil(
                     httpClient,
                     tenant.vendor.serviceEndpoint,
-                    ignoreTypeList
+                    ignoreTypeList,
+                    validationList
                 )
+                val nowish = LocalDate.now().minusDays(1)
+                val laterish = nowish.plusDays(1)
+
                 val patientID =
-                    mockEHR.addResource(
+                    mockEHR.addResourceAndValidate(
                         patient {
                             identifier of listOf(
                                 identifier { system of "mockPatientInternalSystem" },
@@ -98,7 +103,8 @@ class ValidationTest(
                             telecom of emptyList()
                         }
                     )
-                val locationID = mockEHR.addResource(
+
+                val locationID = mockEHR.addResourceAndValidate(
                     location {
                         identifier of listOf(
                             identifier {
@@ -107,6 +113,7 @@ class ValidationTest(
                         )
                     }
                 )
+
                 // simulate if this had been populated in proxy
                 loadService.pushLoadEvent(
                     tenantMnemonic,
@@ -115,40 +122,42 @@ class ValidationTest(
                     ResourceType.Location,
                     generateMetadata()
                 )
-                val practitionerID = mockEHR.addResource(
-                    practitioner {
-                        identifier of listOf(
-                            identifier {
-                                system of "mockEHRProviderSystem"
-                            }
-                        )
-                    }
-                )
-                val appointmentID = mockEHR.addResource(
-                    appointment {
-                        status of "booked"
-                        minutesDuration of 1440
-                        start of 2.daysFromNow()
-                        end of 3.daysFromNow()
-                        participant of listOf(
-                            participant {
-                                status of "accepted"
-                                actor of reference("Location", locationID)
-                            },
-                            participant {
-                                status of "accepted"
-                                actor of reference("Patient", patientID)
-                            },
-                            participant {
-                                status of "accepted"
-                                actor of reference("Practitioner", practitionerID)
-                            }
-                        )
-                    }
-                )
 
-                val nowish = LocalDate.now().minusDays(1)
-                val laterish = nowish.plusDays(1)
+                // Appointment Section
+                if ("Appointment" !in ignoreTypeList) {
+                    val practitionerID = mockEHR.addResourceAndValidate(
+                        practitioner {
+                            identifier of listOf(
+                                identifier {
+                                    system of "mockEHRProviderSystem"
+                                }
+                            )
+                        }
+                    )
+                    mockEHR.addResourceAndValidate(
+                        appointment {
+                            status of "booked"
+                            minutesDuration of 1440
+                            start of 2.daysFromNow()
+                            end of 3.daysFromNow()
+                            participant of listOf(
+                                participant {
+                                    status of "accepted"
+                                    actor of reference("Location", locationID)
+                                },
+                                participant {
+                                    status of "accepted"
+                                    actor of reference("Patient", patientID)
+                                },
+                                participant {
+                                    status of "accepted"
+                                    actor of reference("Practitioner", practitionerID)
+                                }
+                            )
+                        }
+                    )
+                }
+
                 val encounter1 = encounter {
                     type of listOf(
                         codeableConcept {
@@ -177,20 +186,19 @@ class ValidationTest(
                     subject of reference("Patient", patientID)
                     // location is not part of fhir-generators
                 }.copy(location = listOf(EncounterLocation(location = reference("Location", locationID))))
-                val encounterID = mockEHR.addResource(
-                    encounter1
-                )
+                mockEHR.addResourceAndValidate(encounter1)
 
-                val requestGroupID = mockEHR.addResource(
-                    requestGroup {
-                        status of Code("active")
-                        intent of Code("plan")
-                        subject of reference("Patient", patientID)
-                    }
-                )
+                // Care Plan Section
+                if ("CarePlan" !in ignoreTypeList) {
+                    val requestGroupID = mockEHR.addResourceAndValidate(
+                        requestGroup {
+                            status of Code("active")
+                            intent of Code("plan")
+                            subject of reference("Patient", patientID)
+                        }
+                    )
 
-                val carePlanID =
-                    mockEHR.addResource( // careplans can be tied to specific conditions, observations or itself
+                    mockEHR.addResourceAndValidate( // careplans can be tied to specific conditions, observations or itself
                         carePlan {
                             status of Code("active")
                             intent of Code("plan")
@@ -214,11 +222,10 @@ class ValidationTest(
                             )
                         }
                     )
-
-                val observation1ID = mockEHR.addResource(
+                }
+                mockEHR.addResourceAndValidate(
                     observation {
                         subject of reference("Patient", patientID)
-                        encounter of reference("Encounter", encounterID)
                         status of "final"
                         effective of DynamicValues.dateTime(
                             dateTime {
@@ -248,9 +255,8 @@ class ValidationTest(
                         }
                     }
                 )
-                // TODO: observation not found in initial search but found on condition.staging
 
-                val conditionID = mockEHR.addResource( // needs category + stuff
+                mockEHR.addResourceAndValidate( // needs category + stuff
                     condition {
                         clinicalStatus of codeableConcept {
                             coding of listOf(
@@ -288,68 +294,74 @@ class ValidationTest(
                     }
                 )
 
-                val ingredientMedicationID = mockEHR.addResource(
-                    medication {
-                        code of codeableConcept {
-                            coding of listOf(
-                                coding {
-                                    system of "ok"
-                                    code of "yeah"
-                                }
-                            )
-                        }
-                    }
-                )
-
-                val medicationID = mockEHR.addResource(
-                    medication {
-                        code of codeableConcept {
-                            coding of listOf(
-                                coding {
-                                    system of "ok"
-                                    code of "yeah"
-                                }
-                            )
-                        }
-                        ingredient of listOf(
-                            ingredient {
-                                item of DynamicValues.reference(reference("Medication", ingredientMedicationID))
+                // Medication Request Section
+                if ("MedicationRequest" !in ignoreTypeList) {
+                    val ingredientMedicationID = mockEHR.addResourceAndValidate(
+                        medication {
+                            code of codeableConcept {
+                                coding of listOf(
+                                    coding {
+                                        system of "ok"
+                                        code of "yeah"
+                                    }
+                                )
                             }
-                        )
-                    }
-                )
+                        }
+                    )
 
-                val medicationRequestID = mockEHR.addResource(
-                    medicationRequest {
-                        subject of reference("Patient", patientID)
-                        medication of DynamicValues.reference(reference("Medication", medicationID))
-                        requester of reference("Practitioner", practitionerID)
-                    }
-                )
-
-                val statementMedicationID = mockEHR.addResource(
-                    medication {
-                        code of codeableConcept {
-                            coding of listOf(
-                                coding {
-                                    system of "ok"
-                                    code of "yeah"
+                    val medicationID = mockEHR.addResourceAndValidate(
+                        medication {
+                            code of codeableConcept {
+                                coding of listOf(
+                                    coding {
+                                        system of "ok"
+                                        code of "yeah"
+                                    }
+                                )
+                            }
+                            ingredient of listOf(
+                                ingredient {
+                                    item of DynamicValues.reference(reference("Medication", ingredientMedicationID))
                                 }
                             )
                         }
-                    }
-                )
+                    )
 
-                val medicationStatementID = mockEHR.addResource(
-                    medicationStatement {
-                        subject of reference("Patient", patientID)
-                        medication of DynamicValues.reference(reference("Medication", statementMedicationID))
-                        status of "completed"
-                    },
-                    STU3 = true
-                )
-                val binaryID = mockEHR.addResource(binary { })
-                val documentReferenceID = mockEHR.addResource(
+                    mockEHR.addResourceAndValidate(
+                        medicationRequest {
+                            subject of reference("Patient", patientID)
+                            medication of DynamicValues.reference(reference("Medication", medicationID))
+                            requester of reference("Practitioner", "12345")
+                        }
+                    )
+                }
+
+                // Medication Statement Section
+                if ("MedicationStatement" !in ignoreTypeList) {
+                    val statementMedicationID = mockEHR.addResourceAndValidate(
+                        medication {
+                            code of codeableConcept {
+                                coding of listOf(
+                                    coding {
+                                        system of "ok"
+                                        code of "yeah"
+                                    }
+                                )
+                            }
+                        }
+                    )
+
+                    mockEHR.addResourceAndValidate(
+                        medicationStatement {
+                            subject of reference("Patient", patientID)
+                            medication of DynamicValues.reference(reference("Medication", statementMedicationID))
+                            status of "completed"
+                        },
+                        STU3 = true
+                    )
+                }
+                val binaryID = mockEHR.addResourceAndValidate(binary { })
+                mockEHR.addResourceAndValidate(
                     documentReference {
                         date of 2.daysAgo()
                         type of codeableConcept {
@@ -381,28 +393,10 @@ class ValidationTest(
                     }
                 )
 
-                val resources = listOf(
-                    "Location/$locationID",
-                    "Patient/$patientID",
-                    "Appointment/$appointmentID",
-                    "Encounter/$encounterID",
-                    "Practitioner/$practitionerID",
-                    "Observation/$observation1ID",
-                    "Condition/$conditionID",
-                    "CarePlan/$carePlanID",
-                    "RequestGroup/$requestGroupID",
-                    "MedicationRequest/$medicationRequestID",
-                    "Medication/$medicationID",
-                    "Medication/$ingredientMedicationID",
-                    "Medication/$statementMedicationID",
-                    "MedicationStatement/$medicationStatementID",
-                    "DocumentReference/$documentReferenceID"
-                ).filterNot { it.split("/").first() in ignoreTypeList }
-
                 MirthMessage(
                     message = JacksonUtil.writeJsonValue(listOf(locationID)),
                     dataMap = mapOf(
-                        MirthKey.FHIR_ID_LIST.code to resources,
+                        MirthKey.FHIR_ID_LIST.code to validationList,
                         MirthKey.EVENT_METADATA.code to generateSerializedMetadata(),
                         MirthKey.TENANT_MNEMONIC.code to tenantMnemonic,
                         "MockEHRURL" to tenant.vendor.serviceEndpoint
@@ -411,7 +405,12 @@ class ValidationTest(
             }
     }
 
-    class MockEHRUtil(val httpClient: HttpClient, URL: String, val ignoreTypeList: List<String> = emptyList()) {
+    class MockEHRUtil(
+        val httpClient: HttpClient,
+        URL: String,
+        val ignoreTypeList: List<String> = emptyList(),
+        val validationList: MutableList<String> = mutableListOf()
+    ) {
 
         val logger = KotlinLogging.logger { }
 
@@ -424,7 +423,7 @@ class ValidationTest(
         }
         val RESOURCES_FORMAT = "$FHIR_URL/%s"
 
-        inline fun <reified T : Resource<T>> addResource(resource: Resource<T>, STU3: Boolean = false): String {
+        inline fun <reified T : Resource<T>> addResourceAndValidate(resource: Resource<T>, STU3: Boolean = false): String {
             return if (resource.resourceType in ignoreTypeList) {
                 "IGNORED"
             } else {
@@ -438,7 +437,10 @@ class ValidationTest(
                     }
                     val location = response.headers["Content-Location"]
                     logger.debug { "$location" }
-                    location!!.removePrefix("$resourceUrl/")
+
+                    val id = location!!.removePrefix("$resourceUrl/")
+                    validationList.add("${resource.resourceType}/$id")
+                    id
                 }
             }
         }

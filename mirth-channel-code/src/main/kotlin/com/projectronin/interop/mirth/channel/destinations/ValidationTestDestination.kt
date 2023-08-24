@@ -40,12 +40,12 @@ class ValidationTestDestination(
 
         val failed = mutableListOf<String>()
         val success = mutableListOf<String>()
-        val maxRetries = 3
+        val maxRetries = 2
         runBlocking {
             for (retryCount in 1..maxRetries) {
                 delay(20000) // Wait for 20 seconds before retrying
                 val resourcesToCheck =
-                    if (failed.isNotEmpty()) failed.toList() else initialResources // Only check the failed resources, if any
+                    if (failed.isNotEmpty()) failed.toList() else initialResources.filterNot { it.contains("Binary") } // Only check the failed resources, if any
                 failed.clear()
                 resourcesToCheck.forEach { resource ->
                     if (aidbox.doesResourceExist(resource, tenantMnemonic)) {
