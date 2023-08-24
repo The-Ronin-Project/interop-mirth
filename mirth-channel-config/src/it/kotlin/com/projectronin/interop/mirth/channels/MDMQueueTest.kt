@@ -2,7 +2,11 @@ package com.projectronin.interop.mirth.channels
 
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.generators.resources.practitioner
+import com.projectronin.interop.fhir.r4.CodeSystem
+import com.projectronin.interop.fhir.r4.CodeableConcepts
+import com.projectronin.interop.fhir.r4.datatype.Identifier
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
+import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.DocumentReference
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
@@ -41,7 +45,8 @@ class MDMQueueTest : BaseMirthChannelTest(
             id = Id("$testTenant-$practitionerId")
         )
         val aidboxPatient = mockEHRPatient.copy(
-            identifier = mockEHRPatient.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patientId),
+            identifier = mockEHRPatient.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patientId) +
+                Identifier(type = CodeableConcepts.RONIN_MRN, system = CodeSystem.RONIN_MRN.uri, value = "Hl7ME".asFHIR()),
             id = Id("$testTenant-$patientId")
         )
         val aidboxPractitionerId = AidboxTestData.add(aidboxPractitioner)

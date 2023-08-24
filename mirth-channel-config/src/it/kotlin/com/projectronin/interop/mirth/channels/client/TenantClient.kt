@@ -161,5 +161,9 @@ object TenantClient {
         override val vendorType: VendorType = VendorType.CERNER
     }
 
-    data class MirthConfig(val locationIds: List<String>, val lastUpdated: OffsetDateTime? = null)
+    data class MirthConfig(
+        val locationIds: List<String>,
+        val lastUpdated: OffsetDateTime? = null,
+        val blockedResources: List<String>? = null
+    )
 }

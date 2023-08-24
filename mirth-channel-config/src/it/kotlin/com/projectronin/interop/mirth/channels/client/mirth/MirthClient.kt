@@ -190,7 +190,7 @@ object MirthClient {
         val messageUrl = CHANNELS_MESSAGES_COUNT_FORMAT.format(channelId)
         val jsonNode = httpClient.get(messageUrl) {
             url {
-                parameters.appendAll("status", listOf("SENT", "ERROR"))
+                parameters.appendAll("status", listOf("SENT", "ERROR", "FILTERED"))
             }
         }.body<JsonNode>()
         jsonNode.get("long").asInt()

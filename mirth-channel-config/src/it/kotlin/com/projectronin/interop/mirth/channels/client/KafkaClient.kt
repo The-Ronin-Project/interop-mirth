@@ -56,7 +56,7 @@ object KafkaClient {
     )
     private val adminWrapper = AdminWrapper(config)
     val adminClient = adminWrapper.client
-    private val client = KafkaClient(config, adminWrapper)
+    val client = KafkaClient(config, adminWrapper)
     private val loadSpringConfig = LoadSpringConfig(config)
     val kafkaLoadService = KafkaLoadService(client, loadSpringConfig.loadTopics())
     private val publishSpringConfig = PublishSpringConfig(config)

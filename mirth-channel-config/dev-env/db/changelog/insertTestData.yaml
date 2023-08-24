@@ -96,6 +96,9 @@ databaseChangeLog:
               - column:
                   name: department_internal_system
                   value: "mockEHRDepartmentInternalSystem"
+              - column:
+                  name: patient_onboarded_flag_id
+                  value: "mockEHRPatientOnboardedFlag"
         - insert:
             dbms: 'mysql'
             tableName: io_ehr
