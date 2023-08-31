@@ -48,10 +48,23 @@ class ValidationTestDestination(
                     if (failed.isNotEmpty()) failed.toList() else initialResources.filterNot { it.contains("Binary") } // Only check the failed resources, if any
                 failed.clear()
                 resourcesToCheck.forEach { resource ->
-                    if (aidbox.doesResourceExist(resource, tenantMnemonic)) {
-                        success.add(resource)
-                    } else {
-                        failed.add(resource)
+                    when {
+                        resource.contains("PatientOnboardFlag") -> {
+                            val flag = runCatching {
+                                mockEHR.search(
+                                    "Flag",
+                                    mapOf("patient" to resource.split("/").last())
+                                ).entry.first().resource
+                            }.getOrNull()
+                            if (flag != null) {
+                                success.add(resource)
+                                mockEHR.deleteResource("Flag/${flag.id!!.value}")
+                            } else {
+                                failed.add(resource)
+                            }
+                        }
+                        aidbox.doesResourceExist(resource, tenantMnemonic) -> success.add(resource)
+                        else -> failed.add(resource)
                     }
                 }
                 if (failed.isEmpty()) {
@@ -60,13 +73,17 @@ class ValidationTestDestination(
             }
         }
         // delete all from mockEHR
-        initialResources.forEach {
-            mockEHR.deleteResource(it)
+        for (resource in initialResources) {
+            if (resource.contains("PatientOnboardFlag")) continue
+            mockEHR.deleteResource(resource)
         }
+
         // delete loaded resources from Aidbox
-        success.forEach {
-            aidbox.deleteResource(it, tenantMnemonic)
+        for (resource in success) {
+            if (resource.contains("PatientOnboardFlag")) continue
+            aidbox.deleteResource(resource, tenantMnemonic)
         }
+
         return if (failed.isNotEmpty()) {
             MirthResponse(
                 MirthResponseStatus.ERROR,

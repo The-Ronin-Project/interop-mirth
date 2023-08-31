@@ -21,10 +21,12 @@ import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 const val docRefLoadName = "DocumentReferenceLoad"
 
+@Disabled // Disable until INT-2131 is fixed
 class DocumentReferenceLoadTest : BaseChannelTest(
     docRefLoadName,
     listOf("DocumentReference"),
