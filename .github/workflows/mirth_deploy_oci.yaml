@@ -45,7 +45,7 @@ jobs:
         with:
           settings: |-
             [mirth]
-            dev_server = "10.211.33.220"
+            dev_server = "10.211.46.231"
             dev_user = "opc"
             stage_server = "10.212.34.88"
             stage_user = "opc"
