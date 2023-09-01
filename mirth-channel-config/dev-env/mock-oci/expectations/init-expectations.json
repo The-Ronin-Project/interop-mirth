@@ -376,6 +376,30 @@
           "filename": "BodyWeightConceptMap.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceObservationCode",
           "concept_map_name": "ObservationCodeRonin"
+        },
+        {
+          "registry_uuid": "22",
+          "resource_type": "Condition",
+          "data_element": "Condition.code",
+          "tenant_id": "epicmock",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceConditionCode",
+          "registry_entry_type": "concept_map",
+          "concept_map_name": "ConditionCodeRonin",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521c",
+          "version": 1,
+          "filename": "ConditionConceptMap.json"
+        },
+        {
+          "registry_uuid": "23",
+          "resource_type": "Condition",
+          "data_element": "Condition.code",
+          "tenant_id": "cernmock",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceConditionCode",
+          "registry_entry_type": "concept_map",
+          "concept_map_name": "ConditionCodeRonin",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521c",
+          "version": 1,
+          "filename": "ConditionConceptMap.json"
         }
       ]
     },
@@ -550,6 +574,68 @@
       }
     },
     "id": "GetRoninAppointmentStatus",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/ConditionConceptMap.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ConceptMap",
+        "title": "Ronin Condition Concept Map",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef02a2",
+        "name": "ConditionCodeRonin",
+        "url": "http://projectronin.io/fhir/StructureDefinition/ConceptMap/4ffae118-778f-4df9-bd73-aece934b521b",
+        "purpose": "FHIR Interops Concept Map",
+        "publisher": "Project Ronin",
+        "experimental": false,
+        "date": "2022-12-02",
+        "version": 1,
+        "group": [
+          {
+            "source": "http://projectronin.io/fhir/CodeSystem/epicmock/ConditionCode",
+            "sourceVersion": "1.0",
+            "target": "http://hl7.org/fhir/conditioncode",
+            "targetVersion": "4.0.1",
+            "element": [
+              {
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"1023001\", \"display\": \"Apnea\", \"system\": \"http://snomed.info/sct\"}]}}",
+                "display": "Apnea",
+                "target": [
+                  {
+                    "code": "1023001",
+                    "display": "Apnea",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://projectronin.io/fhir/ronin.common-fhir-model.uscore-r4/StructureDefinition/Extension/ronin-ConceptMapSchema",
+            "valueString": "1.0.0"
+          }
+        ]
+      }
+    },
+    "id": "GetRoninConditionCode",
     "priority": 0,
     "timeToLive": {
       "unlimited": true
