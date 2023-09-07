@@ -36,17 +36,11 @@ import com.projectronin.interop.fhir.generators.resources.requestGroup
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
 import com.projectronin.interop.fhir.r4.datatype.primitive.Url
-import com.projectronin.interop.fhir.r4.resource.Bundle
 import com.projectronin.interop.fhir.r4.resource.EncounterLocation
 import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
 import com.projectronin.interop.kafka.KafkaLoadService
-import com.projectronin.interop.kafka.PatientOnboardingStatus
-import com.projectronin.interop.kafka.client.KafkaClient
 import com.projectronin.interop.kafka.model.DataTrigger
-import com.projectronin.interop.kafka.model.ExternalTopic
-import com.projectronin.interop.kafka.model.KafkaAction
-import com.projectronin.interop.kafka.model.KafkaEvent
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.ValidationTestDestination
 import com.projectronin.interop.mirth.channel.enums.MirthKey
@@ -56,11 +50,8 @@ import com.projectronin.interop.mirth.channel.util.generateSerializedMetadata
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.request.accept
 import io.ktor.client.request.delete
-import io.ktor.client.request.get
-import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -69,15 +60,13 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 @Component
 class ValidationTest(
     val httpClient: HttpClient,
     val tenantService: TenantService,
     validationDestination: ValidationTestDestination,
-    val loadService: KafkaLoadService,
-    val kafkaClient: KafkaClient
+    val loadService: KafkaLoadService
 ) : TenantlessSourceService() {
     override val rootName = "ValidationTest"
     override val destinations = mapOf("ValidationTest" to validationDestination)
@@ -114,28 +103,6 @@ class ValidationTest(
                             telecom of emptyList()
                         }
                     )
-                if ("PatientOnboardFlag" !in ignoreTypeList) {
-                    val event = KafkaEvent(
-                        "patient",
-                        "onboarding",
-                        KafkaAction.CREATE,
-                        "",
-                        PatientOnboardingStatus(
-                            patientID,
-                            tenant.mnemonic,
-                            PatientOnboardingStatus.OnboardAction.ONBOARD,
-                            LocalDateTime.now().toString()
-                        )
-                    )
-
-                    val onboardTopic = ExternalTopic(
-                        systemName = "chokuto",
-                        topicName = "oci.us-phoenix-1.chokuto.patient-onboarding-status-publish.v1",
-                        dataSchema = "https://github.com/projectronin/contract-event-prodeng-patient-onboarding-status/blob/main/v1/patient-onboarding-status.schema.json"
-                    )
-                    kafkaClient.publishEvents(onboardTopic, listOf(event))
-                    validationList.add("PatientOnboardFlag/$patientID") // handled in destination
-                }
 
                 val locationID = mockEHR.addResourceAndValidate(
                     location {
@@ -479,17 +446,6 @@ class ValidationTest(
                     id
                 }
             }
-        }
-
-        fun search(resourceType: String, queryParams: Map<String, String>): Bundle = runBlocking {
-            val url = RESOURCES_FORMAT.format(resourceType)
-            httpClient.get(url) {
-                url {
-                    queryParams.map {
-                        parameter(it.key, it.value)
-                    }
-                }
-            }.body()
         }
 
         fun deleteResource(resourceReference: String) = runBlocking {
