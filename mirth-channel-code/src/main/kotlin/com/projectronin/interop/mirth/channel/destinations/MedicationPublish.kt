@@ -11,8 +11,8 @@ import com.projectronin.interop.fhir.r4.datatype.Reference
 import com.projectronin.interop.fhir.r4.resource.Medication
 import com.projectronin.interop.fhir.r4.resource.MedicationRequest
 import com.projectronin.interop.fhir.r4.resource.MedicationStatement
-import com.projectronin.interop.fhir.ronin.TransformManager
 import com.projectronin.interop.fhir.ronin.resource.RoninMedication
+import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
@@ -52,11 +52,13 @@ class MedicationPublish(
                 vendorFactory.medicationService,
                 tenant
             )
+
             ResourceType.MedicationStatement -> MedicationStatementPublishMedicationRequest(
                 events,
                 vendorFactory.medicationService,
                 tenant
             )
+
             ResourceType.Medication -> MedicationPublishMedicationRequest(
                 events,
                 vendorFactory.medicationService,

@@ -1,6 +1,6 @@
 package com.projectronin.interop.mirth.channel
 
-import com.projectronin.interop.fhir.ronin.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.base.DestinationService
 import com.projectronin.interop.mirth.channel.model.MirthMessage

@@ -1,7 +1,7 @@
 package com.projectronin.interop.mirth.channel.destinations.queue
 
 import com.projectronin.interop.common.jackson.JacksonUtil
-import com.projectronin.interop.fhir.ronin.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.mirth.channel.base.kafka.TestResource
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
