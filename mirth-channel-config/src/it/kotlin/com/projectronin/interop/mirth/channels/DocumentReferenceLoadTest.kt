@@ -85,7 +85,7 @@ class DocumentReferenceLoadTest : BaseChannelTest(
             tenantInUse
         )
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(roninPatient)
@@ -99,7 +99,7 @@ class DocumentReferenceLoadTest : BaseChannelTest(
         assertEquals(1, getAidboxResourceCount("DocumentReference"))
 
         // now we test if the change detection stuff works
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(roninPatient)

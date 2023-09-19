@@ -52,7 +52,7 @@ class MedicationLoadTest : BaseChannelTest(
             medication of DynamicValues.reference(reference("Medication", fakeMedicationId))
         }
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeMedicationRequest1)
@@ -100,7 +100,7 @@ class MedicationLoadTest : BaseChannelTest(
         }
         val fakeMedication2ID = MockEHRTestData.add(fakeMedication2)
 
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeMedication2ID),
@@ -133,7 +133,7 @@ class MedicationLoadTest : BaseChannelTest(
         val fakeMedicationId = MockEHRTestData.add(fakeMedication)
         MockOCIServerClient.createExpectations("Medication", fakeMedicationId, testTenant)
 
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeMedicationId),
@@ -170,7 +170,7 @@ class MedicationLoadTest : BaseChannelTest(
             medication of DynamicValues.reference(reference("Medication", fakeMedicationId))
         }
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeMedicationStatement1)

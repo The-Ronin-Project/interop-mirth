@@ -28,7 +28,7 @@ const val patientDiscoverChannelName = "PatientDiscovery"
 
 class PatientDiscoveryTest : BaseChannelTest(
     patientDiscoverChannelName,
-    listOf("Location"),
+    listOf("Location", "Patient", "Appointment"),
     listOf("Patient", "Appointment", "Location")
 ) {
     private val patientType = "Patient"
@@ -263,13 +263,13 @@ class PatientDiscoveryTest : BaseChannelTest(
             TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
         }
         deployAndStartChannel(true)
-        val events = KafkaClient.kafkaLoadService.retrieveLoadEvents(ResourceType.Patient)
+        val events = KafkaClient.testingClient.kafkaLoadService.retrieveLoadEvents(ResourceType.Patient)
         assertEquals(0, events.size)
     }
 
     @Test
     fun `channel kicks off dag`() {
-        val patientLoadTopic = KafkaClient.loadTopic(ResourceType.Patient)
+        val patientLoadTopic = KafkaClient.testingClient.loadTopic(ResourceType.Patient)
 
         val patientChannelId = installChannel(patientLoadChannelName)
         clearMessages(patientChannelId)
@@ -345,7 +345,7 @@ class PatientDiscoveryTest : BaseChannelTest(
 
         deployAndStartChannel()
         deployAndStartChannel(channelToDeploy = patientChannelId)
-        KafkaClient.ensureStability(patientLoadTopic.topicName)
+        KafkaClient.testingClient.ensureStability(patientLoadTopic.topicName)
         waitForMessage(1, channelID = patientChannelId)
         stopChannel(patientChannelId)
 

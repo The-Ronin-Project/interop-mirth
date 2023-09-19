@@ -67,7 +67,7 @@ class LocationLoadTest : BaseChannelTest(
         )
         AidboxTestData.add(fakeAidboxAppt)
         MockOCIServerClient.createExpectations("Location", locationFhirId, tenantInUse)
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxAppt)
@@ -125,7 +125,7 @@ class LocationLoadTest : BaseChannelTest(
             runId = "123456",
             runDateTime = OffsetDateTime.now()
         )
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxAppt),
@@ -138,7 +138,7 @@ class LocationLoadTest : BaseChannelTest(
         assertEquals(1, getAidboxResourceCount("Location"))
 
         // Now publish the same event
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxAppt),
@@ -238,7 +238,7 @@ class LocationLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("Location", location6ID, tenantInUse)
         MockOCIServerClient.createExpectations("Location", location7ID, tenantInUse)
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(aidboxAppt1, aidboxAppt2)
@@ -286,7 +286,7 @@ class LocationLoadTest : BaseChannelTest(
         )
         AidboxTestData.add(aidboxAppt2)
         MockOCIServerClient.createExpectations("Location", locationFhirId1, testTenant)
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(locationFhirId1),
@@ -302,7 +302,7 @@ class LocationLoadTest : BaseChannelTest(
 
     @Test
     fun `non-existent request errors`() {
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("nothing to see here"),

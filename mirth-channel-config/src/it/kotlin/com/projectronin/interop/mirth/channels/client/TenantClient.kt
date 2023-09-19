@@ -140,6 +140,7 @@ object TenantClient {
         val patientInternalSystem: String,
         val encounterCSNSystem: String,
         val patientMRNTypeText: String,
+        val patientOnboardedFlagId: String,
         val hsi: String?,
         override val instanceName: String,
         val departmentInternalSystem: String

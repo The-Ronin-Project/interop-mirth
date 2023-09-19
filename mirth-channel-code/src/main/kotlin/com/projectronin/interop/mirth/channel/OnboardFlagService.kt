@@ -26,7 +26,7 @@ class OnboardFlagService(
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> =
         kafkaPatientOnboardService.retrieveOnboardEvents(
             "interop-mirth-onboard_group"
-        ).filter { it.onboardAction == PatientOnboardingStatus.OnboardAction.ONBOARD }
+        ).filter { it.action == PatientOnboardingStatus.OnboardAction.ONBOARD }
             .map {
                 MirthMessage(
                     JacksonUtil.writeJsonValue(it),

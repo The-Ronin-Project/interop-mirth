@@ -57,7 +57,7 @@ abstract class BaseChannelTest(
         deleteMockEHRResources(*mockEHRResourceTypes.toTypedArray())
         MockOCIServerClient.client.clear("PutObjectExpectation")
         MockOCIServerClient.resetRawPublish()
-        KafkaClient.reset()
+        KafkaClient.testingClient.reset()
         clearMessages()
     }
 
@@ -66,7 +66,7 @@ abstract class BaseChannelTest(
         MockEHRTestData.purge()
         AidboxTestData.purge()
         stopChannel()
-        KafkaClient.reset()
+        KafkaClient.testingClient.reset()
     }
 
     companion object {

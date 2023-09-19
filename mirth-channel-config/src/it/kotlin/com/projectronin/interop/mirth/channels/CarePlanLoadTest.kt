@@ -113,7 +113,7 @@ class CarePlanLoadTest : BaseChannelTest(
         val fakeCarePlanId = MockEHRTestData.add(fakeCarePlan)
         MockOCIServerClient.createExpectations("CarePlan", fakeCarePlanId, tenantInUse)
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient)
@@ -171,7 +171,7 @@ class CarePlanLoadTest : BaseChannelTest(
             runId = "123456",
             runDateTime = OffsetDateTime.now()
         )
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
@@ -185,7 +185,7 @@ class CarePlanLoadTest : BaseChannelTest(
         assertEquals(1, getAidboxResourceCount("CarePlan"))
 
         // Now publish the same event.
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
@@ -285,7 +285,7 @@ class CarePlanLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("CarePlan", appt6, tenantInUse)
         MockOCIServerClient.createExpectations("CarePlan", patientAppt, tenantInUse)
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(fakeAidboxPatient1, fakeAidboxPatient2)
@@ -340,7 +340,7 @@ class CarePlanLoadTest : BaseChannelTest(
         val fakeCarePlanId = MockEHRTestData.add(fakeCarePlan)
         MockOCIServerClient.createExpectations("CarePlan", fakeCarePlanId, testTenant)
 
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeCarePlanId),
@@ -356,7 +356,7 @@ class CarePlanLoadTest : BaseChannelTest(
 
     @Test
     fun `nothing found request results in error`() {
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("nothing to see here"),

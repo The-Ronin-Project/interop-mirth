@@ -12,7 +12,7 @@ interop-event-internal = "1.1.0"
 interop-event-request = "1.1.0"
 interop-fhir = "8.9.1"
 interop-gradle = "3.2.0"
-interop-kafka = "8.4.0"
+interop-kafka = "8.4.1"
 interop-publishers = "9.1.0"
 interop-queue = "2.0.0"
 interop-validation = "3.0.0"
@@ -61,6 +61,7 @@ interop-ehr-tenant = { module = "com.projectronin.interop.ehr:interop-tenant", v
 interop-fhir = { module = "com.projectronin.interop.fhir:interop-fhir", version.ref = "interop-fhir" }
 interop-fhirGenerators = { module = "com.projectronin.interop.fhir:interop-fhir-generators", version.ref = "interop-fhir" }
 interop-kafka = { module = "com.projectronin.interop.publish:interop-kafka", version.ref = "interop-kafka" }
+interop-kafka-testing-client = { module = "com.projectronin.interop.publish:interop-kafka-testing-client", version.ref = "interop-kafka" }
 interop-publishers = { module = "com.projectronin.interop.publish:interop-publishers", version.ref = "interop-publishers" }
 interop-queue-api = { module = "com.projectronin.interop.queue:interop-queue", version.ref = "interop-queue" }
 interop-queue-db = { module = "com.projectronin.interop.queue:interop-queue-db", version.ref = "interop-queue" }

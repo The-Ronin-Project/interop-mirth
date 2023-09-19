@@ -55,7 +55,7 @@ class PatientLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("patient", patient1Id, testTenant)
 
         // push event to get picked up
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             testTenant,
             DataTrigger.NIGHTLY,
             listOf(patient1Id),
@@ -131,7 +131,7 @@ class PatientLoadTest : BaseChannelTest(
 
         // push event to get picked up
         // push event to get picked up
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             testTenant,
             DataTrigger.NIGHTLY,
             listOf(patient1Id, patient2Id),

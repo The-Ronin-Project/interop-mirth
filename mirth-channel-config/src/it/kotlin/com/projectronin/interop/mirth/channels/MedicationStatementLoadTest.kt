@@ -76,7 +76,7 @@ class MedicationStatementLoadTest : BaseChannelTest(
         }
         val medicationStatementId = MockEHRTestData.add(medicationStatement)
         MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId)
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient)
@@ -139,7 +139,7 @@ class MedicationStatementLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("MedicationStatement", medRequest7ID, tenantInUse)
         MockEHRTestData.validateAll()
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(roninPatient1, roninPatient2)
@@ -170,7 +170,7 @@ class MedicationStatementLoadTest : BaseChannelTest(
         val fakeMedicationStatementId = MockEHRTestData.add(fakeMedicationStatement1)
         MockOCIServerClient.createExpectations("MedicationStatement", fakeMedicationStatementId, testTenant)
 
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeMedicationStatementId),
@@ -188,7 +188,7 @@ class MedicationStatementLoadTest : BaseChannelTest(
 
     @Test
     fun `non-existent request errors`() {
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),

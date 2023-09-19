@@ -45,7 +45,7 @@ class RequestGroupLoadTest : BaseChannelTest(
         MockEHRTestData.add(fakeCarePlan)
         MockOCIServerClient.createExpectations("RequestGroup", fakeRequestGroupId, tenantInUse)
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeCarePlan)
@@ -73,7 +73,7 @@ class RequestGroupLoadTest : BaseChannelTest(
         val fakeRequestGroupId = MockEHRTestData.add(fakerRequestGroup)
         MockOCIServerClient.createExpectations("RequestGroup", fakeRequestGroupId, tenantInUse)
 
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeRequestGroupId),
@@ -90,7 +90,7 @@ class RequestGroupLoadTest : BaseChannelTest(
     @Test
     fun `cerner is not supported`() {
         tenantInUse = "cernmock"
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("123"),
@@ -105,7 +105,7 @@ class RequestGroupLoadTest : BaseChannelTest(
 
     @Test
     fun `non-existent request errors`() {
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),

@@ -27,8 +27,8 @@ const val onboardFlagChannelName = "OnboardFlag"
 
 class OnboardFlagTest : BaseChannelTest(
     onboardFlagChannelName,
-    listOf(),
-    listOf("Flag")
+    listOf("Patient"),
+    listOf("Flag", "Patient")
 ) {
 
     private val onboardTopic = ExternalTopic(
@@ -88,7 +88,7 @@ class OnboardFlagTest : BaseChannelTest(
             )
         )
 
-        KafkaClient.client.publishEvents(onboardTopic, listOf(event))
+        KafkaClient.testingClient.client.publishEvents(onboardTopic, listOf(event))
 
         waitForMessage(1)
         val flagBundle = MockEHRClient.getAllResources("Flag")
@@ -151,7 +151,7 @@ class OnboardFlagTest : BaseChannelTest(
             )
         )
 
-        KafkaClient.client.publishEvents(onboardTopic, listOf(event))
+        KafkaClient.testingClient.client.publishEvents(onboardTopic, listOf(event))
 
         waitForMessage(1)
         val message = MirthClient.getChannelMessageIds(testChannelId).first()

@@ -87,7 +87,7 @@ class ObservationLoadTest : BaseChannelTest(
 
         MockOCIServerClient.createExpectations(observationType, obsvId)
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(roninPatient)
@@ -144,7 +144,7 @@ class ObservationLoadTest : BaseChannelTest(
             runId = "123456",
             runDateTime = OffsetDateTime.now()
         )
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(roninPatient),
@@ -158,7 +158,7 @@ class ObservationLoadTest : BaseChannelTest(
         assertEquals(1, getAidboxResourceCount(observationType))
 
         // Now publish the same event
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(roninPatient),
@@ -234,7 +234,7 @@ class ObservationLoadTest : BaseChannelTest(
             }
         )
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(roninCondition)
@@ -307,7 +307,7 @@ class ObservationLoadTest : BaseChannelTest(
             runId = "123456",
             runDateTime = OffsetDateTime.now()
         )
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(roninCondition),
@@ -320,7 +320,7 @@ class ObservationLoadTest : BaseChannelTest(
         assertEquals(1, getAidboxResourceCount(observationType))
 
         // Now publish the same event.
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(roninCondition),
@@ -451,7 +451,7 @@ class ObservationLoadTest : BaseChannelTest(
         // make sure MockEHR is OK
         MockEHRTestData.validateAll()
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(roninPatient1, roninPatient2, roninCondition)
@@ -498,7 +498,7 @@ class ObservationLoadTest : BaseChannelTest(
         }
         val observationID = MockEHRTestData.add(observation)
         MockOCIServerClient.createExpectations(observationType, observationID, testTenant)
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(observationID),
@@ -515,7 +515,7 @@ class ObservationLoadTest : BaseChannelTest(
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `non-existent request errors`() {
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),

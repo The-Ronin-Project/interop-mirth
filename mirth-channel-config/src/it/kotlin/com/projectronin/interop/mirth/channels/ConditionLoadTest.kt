@@ -75,7 +75,7 @@ class ConditionLoadTest : BaseChannelTest(
         }
         val conditionID = MockEHRTestData.add(condition1)
         MockOCIServerClient.createExpectations("Condition", conditionID, tenantInUse)
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(roninPatient)
@@ -198,7 +198,7 @@ class ConditionLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("Condition", conditionPat2ID, tenantInUse)
 
         // mock: patient-publish event
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(roninPatient1, roninPatient2)
@@ -258,7 +258,7 @@ class ConditionLoadTest : BaseChannelTest(
         }
         val conditionID = MockEHRTestData.add(condition1)
         MockOCIServerClient.createExpectations("Condition", conditionID, testTenant)
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(conditionID),
@@ -274,7 +274,7 @@ class ConditionLoadTest : BaseChannelTest(
 
     @Test
     fun `non-existent request errors`() {
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),

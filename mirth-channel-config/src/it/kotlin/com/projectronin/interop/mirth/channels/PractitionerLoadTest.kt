@@ -76,7 +76,7 @@ class PractitionerLoadTest : BaseChannelTest(
         // mock: appointment-publish event
         MockOCIServerClient.createExpectations("Appointment", fakeAppointmentId, tenantInUse)
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxAppointment)
@@ -151,7 +151,7 @@ class PractitionerLoadTest : BaseChannelTest(
             runId = "123456",
             runDateTime = OffsetDateTime.now()
         )
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxAppointment),
@@ -166,7 +166,7 @@ class PractitionerLoadTest : BaseChannelTest(
         assertEquals(1, getAidboxResourceCount("Practitioner"))
 
         // Now publish the same event
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxAppointment),
@@ -247,7 +247,7 @@ class PractitionerLoadTest : BaseChannelTest(
         // larger data sets: make sure MockEHR is OK
         MockEHRTestData.validateAll()
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(aidboxAppointment1, aidboxAppointment2)
@@ -269,7 +269,7 @@ class PractitionerLoadTest : BaseChannelTest(
         val fakePractitionerId = MockEHRTestData.add(fakePractitioner)
         MockOCIServerClient.createExpectations("Practitioner", fakePractitionerId, testTenant)
 
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakePractitionerId),
@@ -285,7 +285,7 @@ class PractitionerLoadTest : BaseChannelTest(
 
     @Test
     fun `non-existent request errors`() {
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),

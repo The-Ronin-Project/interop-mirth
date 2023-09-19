@@ -75,7 +75,7 @@ class EncounterLoadTest : BaseChannelTest(
 
         val encounterId = MockEHRTestData.add(encounter)
         MockOCIServerClient.createExpectations("Encounter", encounterId, tenantInUse)
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(roninPatient)
@@ -168,7 +168,7 @@ class EncounterLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("Encounter", encounterPat2ID, tenantInUse)
         MockEHRTestData.validateAll()
 
-        KafkaClient.pushPublishEvent(
+        KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(roninPatient1, roninPatient2)
@@ -212,7 +212,7 @@ class EncounterLoadTest : BaseChannelTest(
         }
         val encounterId = MockEHRTestData.add(encounter1)
         MockOCIServerClient.createExpectations("Encounter", encounterId, testTenant)
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(encounterId),
@@ -228,7 +228,7 @@ class EncounterLoadTest : BaseChannelTest(
 
     @Test
     fun `non-existent request errors`() {
-        KafkaClient.pushLoadEvent(
+        KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),

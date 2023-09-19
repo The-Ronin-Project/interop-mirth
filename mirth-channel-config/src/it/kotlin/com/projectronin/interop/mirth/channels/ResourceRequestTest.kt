@@ -25,10 +25,10 @@ class ResourceRequestTest : BaseChannelTest(
     listOf("Patient", "Condition"),
     listOf("Patient", "Condition")
 ) {
-    private val resourceRequestTopic = KafkaClient.requestSpringConfig.requestTopic()
-    private val patientLoadTopic = KafkaClient.loadTopic(ResourceType.Patient)
-    private val conditionLoadTopic = KafkaClient.loadTopic(ResourceType.Condition)
-    private val patientPublishTopics = KafkaClient.publishTopics(ResourceType.Patient)
+    private val resourceRequestTopic = KafkaClient.testingClient.requestSpringConfig.requestTopic()
+    private val patientLoadTopic = KafkaClient.testingClient.loadTopic(ResourceType.Patient)
+    private val conditionLoadTopic = KafkaClient.testingClient.loadTopic(ResourceType.Condition)
+    private val patientPublishTopics = KafkaClient.testingClient.publishTopics(ResourceType.Patient)
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -120,24 +120,24 @@ class ResourceRequestTest : BaseChannelTest(
         channelNamesToIds.values.forEach {
             deployAndStartChannel(channelToDeploy = it)
         }
-        KafkaClient.ensureStability(resourceRequestTopic.topicName)
+        KafkaClient.testingClient.ensureStability(resourceRequestTopic.topicName)
         // patient channel
-        KafkaClient.ensureStability(patientLoadTopic.topicName)
+        KafkaClient.testingClient.ensureStability(patientLoadTopic.topicName)
 
         // condition channel
         patientPublishTopics.forEach {
-            KafkaClient.ensureStability(it.topicName)
+            KafkaClient.testingClient.ensureStability(it.topicName)
         }
-        KafkaClient.ensureStability(conditionLoadTopic.topicName)
+        KafkaClient.testingClient.ensureStability(conditionLoadTopic.topicName)
 
         // push event to get picked up
-        KafkaClient.kafkaRequestService.pushRequestEvent(
+        KafkaClient.testingClient.kafkaRequestService.pushRequestEvent(
             testTenant,
             listOf(patientFhirId),
             ResourceType.Patient,
             "testing"
         )
-        KafkaClient.kafkaRequestService.pushRequestEvent(
+        KafkaClient.testingClient.kafkaRequestService.pushRequestEvent(
             testTenant,
             listOf(conditionFhirId),
             ResourceType.Condition,
@@ -244,18 +244,18 @@ class ResourceRequestTest : BaseChannelTest(
         channelNamesToIds.values.forEach {
             deployAndStartChannel(channelToDeploy = it)
         }
-        KafkaClient.ensureStability(resourceRequestTopic.topicName)
+        KafkaClient.testingClient.ensureStability(resourceRequestTopic.topicName)
         // patient channel
-        KafkaClient.ensureStability(patientLoadTopic.topicName)
+        KafkaClient.testingClient.ensureStability(patientLoadTopic.topicName)
 
         // condition channel
         patientPublishTopics.forEach {
-            KafkaClient.ensureStability(it.topicName)
+            KafkaClient.testingClient.ensureStability(it.topicName)
         }
-        KafkaClient.ensureStability(conditionLoadTopic.topicName)
+        KafkaClient.testingClient.ensureStability(conditionLoadTopic.topicName)
 
         // push event to get picked up
-        KafkaClient.kafkaRequestService.pushRequestEvent(
+        KafkaClient.testingClient.kafkaRequestService.pushRequestEvent(
             testTenant,
             listOf(patientFhirId),
             ResourceType.Patient,
@@ -269,7 +269,7 @@ class ResourceRequestTest : BaseChannelTest(
         waitForMessage(0, channelID = channelNamesToIds[conditionLoadChannelName]!!)
 
         // Do this after the initial just to have given the patient time to have caused the condition, though we do not expect it to.
-        KafkaClient.kafkaRequestService.pushRequestEvent(
+        KafkaClient.testingClient.kafkaRequestService.pushRequestEvent(
             testTenant,
             listOf(conditionFhirId),
             ResourceType.Condition,

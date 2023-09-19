@@ -138,9 +138,9 @@ abstract class BaseMirthChannelTest(
 
     protected fun drainKafkaEvents(vararg resourceTypes: ResourceType) {
         resourceTypes.forEach {
-            KafkaClient.kafkaLoadService.retrieveLoadEvents(it)
-            KafkaClient.kafkaPublishService.retrievePublishEvents(it, DataTrigger.AD_HOC)
-            KafkaClient.kafkaPublishService.retrievePublishEvents(it, DataTrigger.NIGHTLY)
+            KafkaClient.testingClient.kafkaLoadService.retrieveLoadEvents(it)
+            KafkaClient.testingClient.kafkaPublishService.retrievePublishEvents(it, DataTrigger.AD_HOC)
+            KafkaClient.testingClient.kafkaPublishService.retrievePublishEvents(it, DataTrigger.NIGHTLY)
         }
     }
 
