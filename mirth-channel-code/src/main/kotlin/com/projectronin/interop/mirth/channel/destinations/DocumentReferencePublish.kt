@@ -13,6 +13,7 @@ import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.datatype.DynamicValue
 import com.projectronin.interop.fhir.r4.datatype.DynamicValueType
 import com.projectronin.interop.fhir.r4.datatype.Extension
+import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.datatype.primitive.Url
 import com.projectronin.interop.fhir.r4.resource.DocumentReference
 import com.projectronin.interop.fhir.r4.resource.Patient
@@ -109,11 +110,15 @@ class DocumentReferencePublish(
                 } else {
                     val event = eventsByRequestKey[key]!!
 
+                    val documentsWithLocalizedIds = documents.map {
+                        it.copy(id = Id(it.id!!.value!!.localize(tenant)))
+                    }
+
                     // push each DocumentReference individually so the destination can multi-thread Binary reads
                     kafkaService.publishResources(
                         tenant.mnemonic,
                         dataTrigger,
-                        documents,
+                        documentsWithLocalizedIds,
                         event.getUpdatedMetadata()
                     )
                     key to documents

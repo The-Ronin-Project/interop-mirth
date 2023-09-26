@@ -190,9 +190,18 @@ class DocumentReferencePublishTest {
 
     @Test
     fun `PatientPublishDocumentReferenceRequest handles documents found`() {
-        val docRef1 = mockk<DocumentReference>()
-        val docRef2 = mockk<DocumentReference>()
-        val docRef3 = mockk<DocumentReference>()
+        val docRef1 = DocumentReference(
+            id = Id("docRef1"),
+            status = DocumentReferenceStatus.CURRENT.asCode()
+        )
+        val docRef2 = DocumentReference(
+            id = Id("docRef2"),
+            status = DocumentReferenceStatus.CURRENT.asCode()
+        )
+        val docRef3 = DocumentReference(
+            id = Id("docRef3"),
+            status = DocumentReferenceStatus.CURRENT.asCode()
+        )
 
         every {
             documentReferenceService.findPatientDocuments(
@@ -242,15 +251,34 @@ class DocumentReferencePublishTest {
         assertEquals(listOf(docRef1, docRef2), resourcesByKey[key1])
         assertEquals(listOf(docRef3), resourcesByKey[key2])
 
+        val tenantDocRef1 = DocumentReference(
+            id = Id("$tenantId-docRef1"),
+            status = DocumentReferenceStatus.CURRENT.asCode()
+        )
+        val tenantDocRef2 = DocumentReference(
+            id = Id("$tenantId-docRef2"),
+            status = DocumentReferenceStatus.CURRENT.asCode()
+        )
+        val tenantDocRef3 = DocumentReference(
+            id = Id("$tenantId-docRef3"),
+            status = DocumentReferenceStatus.CURRENT.asCode()
+        )
         verify(exactly = 1) {
             kafkaService.publishResources(
                 tenantId,
                 DataTrigger.NIGHTLY,
-                listOf(docRef1, docRef2),
+                listOf(tenantDocRef1, tenantDocRef2),
                 any()
             )
         }
-        verify(exactly = 1) { kafkaService.publishResources(tenantId, DataTrigger.NIGHTLY, listOf(docRef3), any()) }
+        verify(exactly = 1) {
+            kafkaService.publishResources(
+                tenantId,
+                DataTrigger.NIGHTLY,
+                listOf(tenantDocRef3),
+                any()
+            )
+        }
     }
 
     @Test
