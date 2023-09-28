@@ -104,6 +104,9 @@ tasks.shadowJar {
     relocate("org.glassfish.hk2", "interop.org.glassfish.hk2")
     relocate("org.jvnet.hk2", "interop.org.jvnet.hk2")
     relocate("com.fasterxml.jackson", "interop.com.fasterxml.jackson")
+    relocate("io.github.classgraph", "interop.io.github.classgraph")
+    // Classgraph apparently uses this as well?
+    relocate("nonapi.io.github.classgraph", "interop.nonapi.io.github.classgraph")
 }
 
 tasks.withType(Test::class) {
