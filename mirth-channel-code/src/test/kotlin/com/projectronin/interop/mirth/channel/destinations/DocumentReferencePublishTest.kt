@@ -73,7 +73,8 @@ class DocumentReferencePublishTest {
             mockk(),
             mockk(),
             ehrdaClient,
-            datalakePublishService
+            datalakePublishService,
+            "https://ehr.local.projectronin.io/"
         )
 
     private val patient1 = Patient(
@@ -346,7 +347,7 @@ class DocumentReferencePublishTest {
         val result = documentReferencePublish.postTransform(tenant, mapOf(key1 to listOf(docReference)), vendorFactory)
 
         val url1 = result[key1]!!.first().content.first().attachment!!.url
-        assertEquals("Binary/tenant-12345", url1!!.value)
+        assertEquals("https://ehr.local.projectronin.io/tenants/$tenantId/resources/Binary/tenant-12345", url1!!.value)
         assertEquals(
             DynamicValue(DynamicValueType.URL, docReference.content.first().attachment!!.url),
             url1.extension.find { it.url == RoninExtension.TENANT_SOURCE_DOCUMENT_REFERENCE_ATTACHMENT_URL.uri }?.value

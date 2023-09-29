@@ -32,6 +32,7 @@ import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import kotlinx.coroutines.runBlocking
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 
@@ -44,7 +45,9 @@ class DocumentReferencePublish(
     profileTransformer: RoninDocumentReference,
     private val kafkaService: KafkaPublishService,
     private val ehrDataAuthorityClient: EHRDataAuthorityClient,
-    private val datalakeService: DatalakePublishService
+    private val datalakeService: DatalakePublishService,
+    @Value("\${ehrda.url}")
+    ehrDataAuthorityBaseUrl: String
 ) : KafkaEventResourcePublisher<DocumentReference>(
     tenantService,
     ehrFactory,
@@ -52,6 +55,7 @@ class DocumentReferencePublish(
     publishService,
     profileTransformer
 ) {
+    private val ehrdaBinaryUrlFormat = "${ehrDataAuthorityBaseUrl.removeSuffix("/")}/tenants/%s/resources/Binary/%s"
 
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
@@ -161,6 +165,12 @@ class DocumentReferencePublish(
         tenant: Tenant
     ) : LoadResourceRequest<DocumentReference>(loadEvents, tenant)
 
+    /**
+     * Creates the EHRDA Binary URL from the unlocalized [binaryFhirId]
+     */
+    private fun ehrdaBinaryUrl(binaryFhirId: String, tenant: Tenant): String =
+        ehrdaBinaryUrlFormat.format(tenant.mnemonic, binaryFhirId.localize(tenant))
+
     override fun postTransform(
         tenant: Tenant,
         transformedResourcesByKey: Map<ResourceRequestKey, List<DocumentReference>>,
@@ -180,7 +190,7 @@ class DocumentReferencePublish(
                                     binaryFHIRIDs.add(binaryFHIRID)
                                     attachment.copy(
                                         url = Url(
-                                            value = "Binary/${binaryFHIRID.localize(tenant)}",
+                                            value = ehrdaBinaryUrl(binaryFHIRID, tenant),
                                             extension = binaryURL.extension + listOf(
                                                 Extension(
                                                     url = RoninExtension.TENANT_SOURCE_DOCUMENT_REFERENCE_ATTACHMENT_URL.uri,
