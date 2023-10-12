@@ -16,11 +16,16 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
+import io.mockk.unmockkObject
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 class KafkaTopicReaderTest {
     private lateinit var kafkaLoadService: KafkaLoadService
@@ -52,6 +57,20 @@ class KafkaTopicReaderTest {
         override val destinations = emptyMap<String, KafkaEventResourcePublisher<Location>>()
         override val rootName = "test"
         override val channelGroupId = "test"
+    }
+
+    class DateSpecificTestChannel(
+        kafkaPublishService: KafkaPublishService,
+        kafkaLoadService: KafkaLoadService,
+        override val tenantConfigService: TenantConfigurationService,
+        override val maxEventBatchSize: Int = 1
+    ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, mockk()) {
+        override val publishedResourcesSubscriptions = listOf(ResourceType.Patient)
+        override val resource = ResourceType.Location
+        override val destinations = emptyMap<String, KafkaEventResourcePublisher<Location>>()
+        override val rootName = "test"
+        override val channelGroupId = "test"
+        override val maxBackfillDays = 5
     }
 
     @BeforeEach
@@ -232,6 +251,20 @@ class KafkaTopicReaderTest {
                 "test"
             )
         } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Patient,
+                DataTrigger.BACKFILL,
+                "test"
+            )
+        } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.BACKFILL,
+                "test"
+            )
+        } returns emptyList()
 
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(0, messages.size)
@@ -277,6 +310,21 @@ class KafkaTopicReaderTest {
             kafkaPublishService.retrievePublishEvents(
                 ResourceType.Practitioner,
                 DataTrigger.AD_HOC,
+                "test"
+            )
+        } returns emptyList()
+
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Patient,
+                DataTrigger.BACKFILL,
+                "test"
+            )
+        } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.BACKFILL,
                 "test"
             )
         } returns emptyList()
@@ -352,6 +400,7 @@ class KafkaTopicReaderTest {
             every { tenantId } returns "mockTenant"
             every { resourceType } returns ResourceType.Location
             every { metadata } returns mockMetadata
+            every { dataTrigger } returns InteropResourcePublishV1.DataTrigger.adhoc
         }
         val configDO = mockk<MirthTenantConfigDO> {
             every { blockedResources } returns "" // should this be the actual resource name
@@ -390,6 +439,51 @@ class KafkaTopicReaderTest {
     }
 
     @Test
+    fun `channel checks for backfill events with ad-hoc`() {
+        val mockEvent = mockk<InteropResourcePublishV1> {
+            every { tenantId } returns "mockTenant"
+            every { resourceType } returns ResourceType.Location
+            every { metadata } returns mockMetadata
+            every { dataTrigger } returns InteropResourcePublishV1.DataTrigger.backfill
+        }
+        val configDO = mockk<MirthTenantConfigDO> {
+            every { blockedResources } returns "" // should this be the actual resource name
+            every { locationIds } returns "12345678"
+        }
+        every {
+            tenantConfigService.getConfiguration("mockTenant")
+        } returns configDO
+        every {
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
+        } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.NIGHTLY, "test")
+        } returns emptyList()
+        every {
+            kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test")
+        } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.AD_HOC, "test")
+        } returns emptyList()
+
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.AD_HOC,
+                "test"
+            )
+        } returns listOf(mockEvent)
+
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
+        val messages = channel.channelSourceReader(emptyMap())
+        assertEquals(1, messages.size)
+        val message = messages.first()
+        assertEquals("mockTenant", message.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals(InteropResourcePublishV1::class.simpleName!!, message.dataMap[MirthKey.KAFKA_EVENT.code])
+        assertEquals("mockEvent", message.message)
+    }
+
+    @Test
     fun `channel returns nothing if no events`() {
         every {
             kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
@@ -409,6 +503,14 @@ class KafkaTopicReaderTest {
 
         every {
             kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.AD_HOC, "test")
+        } returns emptyList()
+
+        every {
+            kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.BACKFILL, "test")
+        } returns emptyList()
+
+        every {
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.BACKFILL, "test")
         } returns emptyList()
 
         val messages = channel.channelSourceReader(emptyMap())
@@ -434,6 +536,64 @@ class KafkaTopicReaderTest {
         every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
         val messages = loadChannel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)
+    }
+
+    @Test
+    fun `backfill events are split out for date range`() {
+        val splittingChannel = DateSpecificTestChannel(kafkaPublishService, kafkaLoadService, tenantConfigService)
+        val startDate = OffsetDateTime.of(
+            LocalDate.of(2023, 9, 1),
+            LocalTime.of(12, 0, 0),
+            ZoneOffset.UTC
+        )
+        val endDate = OffsetDateTime.of(
+            LocalDate.of(2023, 9, 7),
+            LocalTime.of(12, 0, 0),
+            ZoneOffset.UTC
+        )
+        // can't be mockk because we're gonna copy it
+        val actualEvent = InteropResourcePublishV1(
+            tenantId = "mockTenant",
+            resourceJson = "{}",
+            resourceType = ResourceType.Location,
+            dataTrigger = InteropResourcePublishV1.DataTrigger.backfill,
+            metadata = Metadata(
+                runId = "1234",
+                runDateTime = OffsetDateTime.now(),
+                backfillRequst = Metadata.BackfillRequst(
+                    backfillID = "123",
+                    backfillStartDate = startDate,
+                    backfillEndDate = endDate
+                )
+            )
+        )
+        // we're checking the actual events produced, and we're not using a mock,
+        // so we can let the actual serialization logic run
+        unmockkObject(JacksonUtil)
+        val configDO = mockk<MirthTenantConfigDO> {
+            every { blockedResources } returns "" // should this be the actual resource name
+            every { locationIds } returns "12345678"
+        }
+        every {
+            tenantConfigService.getConfiguration("mockTenant")
+        } returns configDO
+        every { kafkaLoadService.retrieveLoadEvents(any(), any()) } returns emptyList()
+        every { kafkaPublishService.retrievePublishEvents(any(), match { it == DataTrigger.NIGHTLY }, any()) } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.AD_HOC, "test")
+        } returns listOf(actualEvent)
+
+        val messages = splittingChannel.channelSourceReader(emptyMap())
+        assertEquals(2, messages.size)
+        val events = messages.map { JacksonUtil.readJsonList(it.message, InteropResourcePublishV1::class) }.flatten()
+        assertEquals("123", events[0].metadata.backfillRequst?.backfillID)
+        assertEquals("123", events[1].metadata.backfillRequst?.backfillID)
+        assertEquals(startDate, events[0].metadata.backfillRequst?.backfillStartDate)
+        assertEquals(startDate.plusDays(5), events[1].metadata.backfillRequst?.backfillStartDate)
+        assertEquals(startDate.plusDays(5), events[0].metadata.backfillRequst?.backfillEndDate)
+        assertEquals(endDate, events[1].metadata.backfillRequst?.backfillEndDate)
+        assertEquals("mockTenant", events[0].tenantId)
+        assertEquals("mockTenant", events[1].tenantId)
     }
 
     @Test
