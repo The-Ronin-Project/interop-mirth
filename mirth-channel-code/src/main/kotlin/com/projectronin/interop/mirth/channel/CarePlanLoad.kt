@@ -18,7 +18,10 @@ class CarePlanLoad(
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "CarePlanLoad"
     override val channelGroupId = "interop-mirth-care_plan_group"
-    override val publishedResourcesSubscriptions = listOf(ResourceType.Patient)
+    override val publishedResourcesSubscriptions = listOf(
+        ResourceType.Patient,
+        ResourceType.CarePlan
+    )
     override val resource = ResourceType.CarePlan
 
     companion object {

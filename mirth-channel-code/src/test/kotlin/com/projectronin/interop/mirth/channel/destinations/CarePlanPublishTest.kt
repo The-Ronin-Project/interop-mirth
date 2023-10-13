@@ -7,7 +7,13 @@ import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.ehr.CarePlanService
 import com.projectronin.interop.ehr.factory.VendorFactory
+import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
+import com.projectronin.interop.fhir.generators.datatypes.extension
+import com.projectronin.interop.fhir.generators.datatypes.reference
+import com.projectronin.interop.fhir.generators.resources.carePlan
+import com.projectronin.interop.fhir.generators.resources.carePlanActivity
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
+import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
 import com.projectronin.interop.fhir.r4.resource.CarePlan
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
@@ -17,6 +23,7 @@ import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class CarePlanPublishTest {
     private val tenantId = "tenant"
@@ -32,13 +39,16 @@ class CarePlanPublishTest {
     private val patient1 = Patient(id = Id("$tenantId-1234"))
     private val patient2 = Patient(id = Id("$tenantId-5678"))
     private val patient3 = Patient(id = Id("$tenantId-9012"))
+    private val carePlan = CarePlan(id = Id("$tenantId-3456"))
     private val metadata = mockk<Metadata>(relaxed = true) {
         every { runId } returns "run"
     }
 
     @Test
     fun `publish events create a PatientPublishCarePlanRequest`() {
-        val publishEvent = mockk<InteropResourcePublishV1>()
+        val publishEvent = mockk<InteropResourcePublishV1>() {
+            every { resourceType } returns ResourceType.Patient
+        }
         val request = carePlanPublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
         assertInstanceOf(CarePlanPublish.PatientPublishCarePlanRequest::class.java, request)
     }
@@ -97,5 +107,216 @@ class CarePlanPublishTest {
 
         val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-9012")
         assertEquals(emptyList<CarePlan>(), resourcesByKeys[key3])
+    }
+
+    @Test
+    fun `publish events create a PatientPublishCarePlanRequest for careplan publish events`() {
+        val publishEvent = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.CarePlan,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(carePlan),
+            metadata = metadata
+        )
+        val request = carePlanPublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
+        assertInstanceOf(CarePlanPublish.CarePlanPublishCarePlanRequest::class.java, request)
+    }
+
+    @Test
+    fun `publish events throw exception for unsupported publish events`() {
+        val publishEvent = mockk<InteropResourcePublishV1> {
+            every { resourceType } returns ResourceType.Practitioner
+        }
+        val exception = assertThrows<IllegalStateException> {
+            carePlanPublish.convertPublishEventsToRequest(
+                listOf(publishEvent),
+                vendorFactory,
+                tenant
+            )
+        }
+        assertEquals(
+            "Received resource type (Practitioner) that cannot be used to load care plans",
+            exception.message
+        )
+    }
+
+    @Test
+    fun `published care plan with activity cycle defined loads child CarePlan`() {
+        val carePlan1 = carePlan {
+            subject of reference("Patient", "5678")
+            activity of listOf(
+                carePlanActivity {
+                    extension of listOf(
+                        extension {
+                            url of Uri("http://open.epic.com/FHIR/StructureDefinition/extension/cycle")
+                            value of DynamicValues.reference(
+                                reference("CarePlan", "ChildPlanId")
+                            )
+                        }
+                    )
+                }
+            )
+        }
+
+        val carePlan2 = carePlan {
+            id of Id("ChildPlanId")
+            subject of reference("Patient", "5678")
+        }
+
+        every { carePlanService.getByIDs(tenant, listOf("ChildPlanId")) } returns mapOf("ChildPlanId" to carePlan2)
+
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.CarePlan,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(carePlan1),
+            metadata = metadata
+        )
+
+        val request =
+            CarePlanPublish.CarePlanPublishCarePlanRequest(
+                listOf(event1),
+                carePlanService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(1, resourcesByKeys.size)
+
+        val actualCarePlan = resourcesByKeys.entries.first().value.first()
+        assertEquals(carePlan2, actualCarePlan)
+    }
+
+    @Test
+    fun `published care plan with activity but wrong extension doesn't load`() {
+        val carePlan1 = carePlan {
+            subject of reference("Patient", "5678")
+            activity of listOf(
+                carePlanActivity {
+                    extension of listOf(
+                        extension {
+                            url of Uri("NotTheExtensionYoureLookingFor")
+                            value of DynamicValues.reference(
+                                reference("CarePlan", "ChildPlanId")
+                            )
+                        }
+                    )
+                }
+            )
+        }
+
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.CarePlan,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(carePlan1),
+            metadata = metadata
+        )
+
+        val request =
+            CarePlanPublish.CarePlanPublishCarePlanRequest(
+                listOf(event1),
+                carePlanService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(0, resourcesByKeys.size)
+    }
+
+    @Test
+    fun `published care plan with activity but wrong reference type doesn't load`() {
+        val carePlan1 = carePlan {
+            subject of reference("Patient", "5678")
+            activity of listOf(
+                carePlanActivity {
+                    extension of listOf(
+                        extension {
+                            url of Uri("http://open.epic.com/FHIR/StructureDefinition/extension/cycle")
+                            value of DynamicValues.reference(
+                                reference("Patient", "ChildPlanId")
+                            )
+                        }
+                    )
+                }
+            )
+        }
+
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.CarePlan,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(carePlan1),
+            metadata = metadata
+        )
+
+        val request =
+            CarePlanPublish.CarePlanPublishCarePlanRequest(
+                listOf(event1),
+                carePlanService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(0, resourcesByKeys.size)
+    }
+
+    @Test
+    fun `published care plan with activity but null value doesn't load`() {
+        val carePlan1 = carePlan {
+            subject of reference("Patient", "5678")
+            activity of listOf(
+                carePlanActivity {
+                    extension of listOf(
+                        extension {
+                            url of Uri("http://open.epic.com/FHIR/StructureDefinition/extension/cycle")
+                            value of null
+                        }
+                    )
+                }
+            )
+        }
+
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.CarePlan,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(carePlan1),
+            metadata = metadata
+        )
+
+        val request =
+            CarePlanPublish.CarePlanPublishCarePlanRequest(
+                listOf(event1),
+                carePlanService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(0, resourcesByKeys.size)
+    }
+
+    @Test
+    fun `published care plan with activity but wrong value type doesn't load`() {
+        val carePlan1 = carePlan {
+            subject of reference("Patient", "5678")
+            activity of listOf(
+                carePlanActivity {
+                    extension of listOf(
+                        extension {
+                            url of Uri("http://open.epic.com/FHIR/StructureDefinition/extension/cycle")
+                            value of DynamicValues.boolean(false)
+                        }
+                    )
+                }
+            )
+        }
+
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.CarePlan,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(carePlan1),
+            metadata = metadata
+        )
+
+        val request =
+            CarePlanPublish.CarePlanPublishCarePlanRequest(
+                listOf(event1),
+                carePlanService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(0, resourcesByKeys.size)
     }
 }

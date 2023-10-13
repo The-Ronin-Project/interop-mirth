@@ -2,8 +2,10 @@ package com.projectronin.interop.mirth.channels
 
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
+import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
+import com.projectronin.interop.fhir.generators.datatypes.extension
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.datatypes.period
@@ -13,6 +15,7 @@ import com.projectronin.interop.fhir.generators.primitives.dateTime
 import com.projectronin.interop.fhir.generators.primitives.daysFromNow
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.carePlan
+import com.projectronin.interop.fhir.generators.resources.carePlanActivity
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.CarePlan
@@ -119,10 +122,11 @@ class CarePlanLoadTest : BaseChannelTest(
             resources = listOf(fakeAidboxPatient)
         )
 
-        waitForMessage(1)
+        // Care Plan now listens to itself (so will have 2 messages)
+        waitForMessage(2)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
+        assertEquals(2, messageList.size)
         assertEquals(1, getAidboxResourceCount("CarePlan"))
     }
 
@@ -178,10 +182,11 @@ class CarePlanLoadTest : BaseChannelTest(
             metadata = metadata
         )
 
-        waitForMessage(1)
+        // Care Plan now Listens to itself, so will generate 2 messages per plan.
+        waitForMessage(2)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
+        assertEquals(2, messageList.size)
         assertEquals(1, getAidboxResourceCount("CarePlan"))
 
         // Now publish the same event.
@@ -367,5 +372,145 @@ class CarePlanLoadTest : BaseChannelTest(
         assertAllConnectorsError(messageList)
         assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("CarePlan"))
+    }
+
+    @ParameterizedTest
+    @MethodSource("tenantsToTest")
+    fun `check if channel works nightly with CarePlan cycle`(testTenant: String) {
+        tenantInUse = testTenant
+        val startDate = 2.daysFromNow()
+        val endDate = 3.daysFromNow()
+        val fakePatient = patient {
+            birthDate of date {
+                year of 1990
+                month of 1
+                day of 3
+            }
+            identifier of listOf(
+                identifier {
+                    system of "mockPatientInternalSystem"
+                },
+                identifier {
+                    system of "mockEHRMRNSystem"
+                    value of "1000000001"
+                }
+            )
+            name of listOf(
+                name {
+                    use of "usual" // required
+                }
+            )
+            gender of "male"
+        }
+
+        val fakePatientId = MockEHRTestData.add(fakePatient)
+        val fakeAidboxPatientId = "$tenantInUse-$fakePatientId"
+        val fakeAidboxPatient = fakePatient.copy(
+            id = Id(fakeAidboxPatientId),
+            identifier = fakePatient.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(fakePatientId)
+        )
+        AidboxTestData.add(fakeAidboxPatient)
+
+        // Create a Care Plan that will not be returned by the initial patient search,
+        // so it can be loaded by the follow up call.
+        val fakeChildPlan =
+            carePlan {
+                category of listOf(
+                    codeableConcept {
+                        coding of listOf(
+                            coding {
+                                code of if (tenantInUse.contains("cern")) {
+                                    "assess-plan"
+                                } else {
+                                    "736378000"
+                                }
+                            }
+                        )
+                    }
+                )
+                status of "active"
+                subject of if (tenantInUse.contains("cern")) {
+                    reference("Patient", fakePatientId)
+                } else {
+                    // Since Epic doesn't support searching by time range,
+                    // but do not return the children when searching by patient,
+                    // we will fake that scenario by dropping a fake id in here.
+                    // In the future MockEHR can be updated to replicate this strange behavior.
+                    reference("Patient", "NotRightId")
+                }
+                period of period {
+                    start of dateTime {
+                        year of laterish.minusYears(1).year
+                        month of nowish.monthValue
+                        day of nowish.dayOfMonth
+                    }
+                    end of dateTime {
+                        year of laterish.minusYears(1).year
+                        month of laterish.monthValue
+                        day of laterish.dayOfMonth
+                    }
+                }
+            }
+        val fakeChildPlanId = MockEHRTestData.add(fakeChildPlan)
+
+        val fakeCarePlan =
+            carePlan {
+                category of listOf(
+                    codeableConcept {
+                        coding of listOf(
+                            coding {
+                                code of if (tenantInUse.contains("cern")) {
+                                    "assess-plan"
+                                } else {
+                                    "736378000"
+                                }
+                            }
+                        )
+                    }
+                )
+                status of "active"
+                subject of reference("Patient", fakePatientId)
+                period of period {
+                    start of dateTime {
+                        year of nowish.year
+                        month of nowish.monthValue
+                        day of nowish.dayOfMonth
+                    }
+                    end of dateTime {
+                        year of laterish.year
+                        month of laterish.monthValue
+                        day of laterish.dayOfMonth
+                    }
+                }
+                activity of listOf(
+                    carePlanActivity {
+                        extension of listOf(
+                            extension {
+                                url of "http://open.epic.com/FHIR/StructureDefinition/extension/cycle"
+                                value of DynamicValues.reference(
+                                    reference("CarePlan", fakeChildPlanId)
+                                )
+                            }
+                        )
+                    }
+                )
+            }
+        val fakeCarePlanId = MockEHRTestData.add(fakeCarePlan)
+
+        MockOCIServerClient.createExpectations("CarePlan", fakeCarePlanId, tenantInUse)
+        MockOCIServerClient.createExpectations("CarePlan", fakeChildPlanId, tenantInUse)
+
+        KafkaClient.testingClient.pushPublishEvent(
+            tenantId = tenantInUse,
+            trigger = DataTrigger.NIGHTLY,
+            resources = listOf(fakeAidboxPatient)
+        )
+
+        // Message for patient, care plan, and the child care plan
+        waitForMessage(3)
+        val messageList = MirthClient.getChannelMessageIds(testChannelId)
+        assertAllConnectorsSent(messageList)
+        assertEquals(3, messageList.size)
+        assertEquals(2, getAidboxResourceCount("CarePlan"))
     }
 }

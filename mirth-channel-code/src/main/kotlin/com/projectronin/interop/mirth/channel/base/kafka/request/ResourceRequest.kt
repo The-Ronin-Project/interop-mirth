@@ -79,6 +79,10 @@ abstract class ResourceRequest<T : Resource<T>, E> {
      */
     open fun loadResources(requestKeys: List<ResourceRequestKey>): Map<ResourceRequestKey, List<T>> {
         val keysByFhirId = requestKeys.associateBy { it.unlocalizedResourceId }
+        if (keysByFhirId.isEmpty()) {
+            return emptyMap()
+        }
+
         val resourcesByFhirId = loadResourcesForIds(keysByFhirId.keys.toList())
         return resourcesByFhirId.mapKeys { (fhirId, _) -> keysByFhirId[fhirId]!! }
     }
