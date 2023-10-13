@@ -16,15 +16,17 @@ import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.appointment
 import com.projectronin.interop.fhir.generators.resources.patient
-import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.r4.resource.Location
+import com.projectronin.interop.fhir.r4.resource.Organization
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
 import com.projectronin.interop.fhir.ronin.resource.RoninLocation
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.kafka.model.DataTrigger
+import com.projectronin.interop.kafka.model.PublishResourceWrapper
 import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
@@ -77,6 +79,15 @@ class KafkaEventResourcePublisherTest {
     private val location5678 = mockk<Location> {
         every { resourceType } returns "Location"
         every { id?.value } returns "5678"
+    }
+
+    private val transformedLocation1234 = mockk<Location> {
+        every { resourceType } returns "Location"
+        every { id?.value } returns "$tenantId-1234"
+    }
+    private val transformedLocation5678 = mockk<Location> {
+        every { resourceType } returns "Location"
+        every { id?.value } returns "$tenantId-5678"
     }
 
     class TestLocationPublish(
@@ -225,12 +236,53 @@ class KafkaEventResourcePublisherTest {
 
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
-        val transformed = mockk<Location> {}
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed
+        val transformResponse = TransformResponse(transformedLocation1234)
+        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformResponse
         every {
-            publishService.publishFHIRResources(
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
+                any(),
+                DataTrigger.NIGHTLY
+            )
+        } returns true
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+
+        val message = objectMapper.writeValueAsString(listOf(event1))
+        val result = destination.channelDestinationWriter(
+            tenantId,
+            message,
+            mapOf(MirthKey.KAFKA_EVENT.code to InteropResourceLoadV1::class.simpleName!!),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result.status)
+        assertEquals("we made it", result.detailedMessage)
+        assertEquals("Published 1 resource(s).", result.message)
+        assertNull(result.dataMap[MirthKey.EVENT_METADATA_SOURCE.code])
+        assertEquals(1, result.dataMap[MirthKey.RESOURCE_COUNT.code])
+        assertEquals(0, result.dataMap[MirthKey.FAILURE_COUNT.code])
+    }
+
+    @Test
+    fun `channel works with embedded resources`() {
+        val event1 = InteropResourceLoadV1(
+            tenantId = tenantId,
+            resourceFHIRId = "$tenantId-1234",
+            resourceType = ResourceType.Location,
+            dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
+            metadata = metadata
+        )
+
+        every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
+
+        val embedded1 = mockk<Organization>()
+        val embedded2 = mockk<Organization>()
+        val transformResponse = TransformResponse(transformedLocation1234, listOf(embedded1, embedded2))
+        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformResponse
+        every {
+            publishService.publishResourceWrappers(
+                tenantId,
+                listOf(PublishResourceWrapper(transformedLocation1234, listOf(embedded1, embedded2))),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -453,25 +505,29 @@ class KafkaEventResourcePublisherTest {
                 roninLocation,
                 tenant
             )
-        } returns transformed1
+        } returns TransformResponse(transformed1)
         every {
             transformManager.transformResource(
                 match { it.id?.value == "2" },
                 roninLocation,
                 tenant
             )
-        } returns transformed2
+        } returns TransformResponse(transformed2)
         every {
             transformManager.transformResource(
                 match { it.id?.value == "3" },
                 roninLocation,
                 tenant
             )
-        } returns transformed3
+        } returns TransformResponse(transformed3)
         every {
-            publishService.publishFHIRResources(
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed1, transformed2, transformed3),
+                listOf(
+                    PublishResourceWrapper(transformed1),
+                    PublishResourceWrapper(transformed2),
+                    PublishResourceWrapper(transformed3)
+                ),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -505,15 +561,13 @@ class KafkaEventResourcePublisherTest {
 
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
-        val transformed = mockk<Location> {
-            every { resourceType } returns "Location"
-            every { id } returns Id("tenant-1234")
-        }
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location1234, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation1234)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -546,15 +600,13 @@ class KafkaEventResourcePublisherTest {
 
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
-        val transformed = mockk<Location> {
-            every { resourceType } returns "Location"
-            every { id } returns Id("tenant-1234")
-        }
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location1234, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation1234)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -687,12 +739,13 @@ class KafkaEventResourcePublisherTest {
 
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
-        val transformed = mockk<Location> {}
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location1234, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation1234)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -730,7 +783,7 @@ class KafkaEventResourcePublisherTest {
         assertNull(result2.dataMap[MirthKey.RESOURCE_COUNT.code])
 
         verify(exactly = 1) { transformManager.transformResource(any(), roninLocation, tenant) }
-        verify(exactly = 1) { publishService.publishFHIRResources(any(), any(), any(), any()) }
+        verify(exactly = 1) { publishService.publishResourceWrappers(any(), any(), any(), any()) }
     }
 
     @Test
@@ -748,15 +801,13 @@ class KafkaEventResourcePublisherTest {
 
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
-        val transformed = mockk<Location> {
-            every { resourceType } returns "Location"
-            every { id?.value } returns "tenant-1234"
-        }
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location1234, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation1234)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -806,7 +857,7 @@ class KafkaEventResourcePublisherTest {
         assertNull(result2.dataMap[MirthKey.RESOURCE_COUNT.code])
 
         verify(exactly = 1) { transformManager.transformResource(any(), roninLocation, tenant) }
-        verify(exactly = 1) { publishService.publishFHIRResources(any(), any(), any(), any()) }
+        verify(exactly = 1) { publishService.publishResourceWrappers(any(), any(), any(), any()) }
     }
 
     @Test
@@ -824,15 +875,13 @@ class KafkaEventResourcePublisherTest {
 
         every { locationService.getByIDs(tenant, listOf("1233")) } returns mapOf("1233" to location1234)
 
-        val transformed = mockk<Location> {
-            every { resourceType } returns "Location"
-            every { id?.value } returns "tenant-1234"
-        }
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location1234, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation1234)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -881,7 +930,7 @@ class KafkaEventResourcePublisherTest {
         assertNull(result2.dataMap[MirthKey.RESOURCE_COUNT.code])
 
         verify(exactly = 1) { transformManager.transformResource(any(), roninLocation, tenant) }
-        verify(exactly = 1) { publishService.publishFHIRResources(any(), any(), any(), any()) }
+        verify(exactly = 1) { publishService.publishResourceWrappers(any(), any(), any(), any()) }
     }
 
     @Test
@@ -899,15 +948,13 @@ class KafkaEventResourcePublisherTest {
 
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
-        val transformed = mockk<Location> {
-            every { resourceType } returns "Location"
-            every { id?.value } returns "tenant-1234"
-        }
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location1234, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation1234)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -941,15 +988,13 @@ class KafkaEventResourcePublisherTest {
 
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
-        val transformed = mockk<Location> {
-            every { resourceType } returns "Location"
-            every { id } returns Id("tenant-1234")
-        }
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location1234, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation1234)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -983,7 +1028,7 @@ class KafkaEventResourcePublisherTest {
         assertEquals(0, result2.dataMap[MirthKey.FAILURE_COUNT.code])
 
         verify(exactly = 2) { transformManager.transformResource(any(), roninLocation, tenant) }
-        verify(exactly = 2) { publishService.publishFHIRResources(any(), any(), any(), any()) }
+        verify(exactly = 2) { publishService.publishResourceWrappers(any(), any(), any(), any()) }
     }
 
     @Test
@@ -1031,12 +1076,16 @@ class KafkaEventResourcePublisherTest {
             every { resourceType } returns "Condition"
             every { id?.value } returns "$tenantId-2"
         }
-        every { transformManager.transformResource(condition1, roninConditions, tenant) } returns transformed1
-        every { transformManager.transformResource(condition2, roninConditions, tenant) } returns transformed2
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(condition1, roninConditions, tenant)
+        } returns TransformResponse(transformed1)
+        every {
+            transformManager.transformResource(condition2, roninConditions, tenant)
+        } returns TransformResponse(transformed2)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed1, transformed2),
+                listOf(PublishResourceWrapper(transformed1), PublishResourceWrapper(transformed2)),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -1070,7 +1119,7 @@ class KafkaEventResourcePublisherTest {
         assertEquals(0, result2.dataMap[MirthKey.FAILURE_COUNT.code])
 
         verify(exactly = 4) { transformManager.transformResource(any(), roninConditions, tenant) }
-        verify(exactly = 2) { publishService.publishFHIRResources(any(), any(), any(), any()) }
+        verify(exactly = 2) { publishService.publishResourceWrappers(any(), any(), any(), any()) }
     }
 
     @Test
@@ -1095,23 +1144,25 @@ class KafkaEventResourcePublisherTest {
             "5678" to location5678
         )
 
-        val transformed1 = mockk<Location> {}
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed1
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location1234, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation1234)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed1),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
                 any(),
                 DataTrigger.NIGHTLY
             )
         } returns true
 
-        val transformed2 = mockk<Location> {}
-        every { transformManager.transformResource(location5678, roninLocation, tenant) } returns transformed2
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location5678, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation5678)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed2),
+                listOf(PublishResourceWrapper(transformedLocation5678)),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -1156,26 +1207,25 @@ class KafkaEventResourcePublisherTest {
             "5678" to location5678
         )
 
-        val transformed1 = mockk<Location> {}
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed1
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location1234, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation1234)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed1),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
                 any(),
                 DataTrigger.NIGHTLY
             )
         } returns true
 
-        val transformed2 = mockk<Location> {
-            every { resourceType } returns "Location"
-            every { id?.value } returns "$tenantId-5678"
-        }
-        every { transformManager.transformResource(location5678, roninLocation, tenant) } returns transformed2
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location5678, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation5678)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed2),
+                listOf(PublishResourceWrapper(transformedLocation5678)),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -1220,29 +1270,25 @@ class KafkaEventResourcePublisherTest {
             "5678" to location5678
         )
 
-        val transformed1 = mockk<Location> {
-            every { resourceType } returns "Location"
-            every { id?.value } returns "$tenantId-1234"
-        }
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed1
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location1234, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation1234)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed1),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
                 any(),
                 DataTrigger.NIGHTLY
             )
         } returns false
 
-        val transformed2 = mockk<Location> {
-            every { resourceType } returns "Location"
-            every { id?.value } returns "$tenantId-5678"
-        }
-        every { transformManager.transformResource(location5678, roninLocation, tenant) } returns transformed2
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location5678, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation5678)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed2),
+                listOf(PublishResourceWrapper(transformedLocation5678)),
                 any(),
                 DataTrigger.NIGHTLY
             )
@@ -1280,12 +1326,13 @@ class KafkaEventResourcePublisherTest {
 
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
-        val transformed = mockk<Location> {}
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformed
         every {
-            publishService.publishFHIRResources(
+            transformManager.transformResource(location1234, roninLocation, tenant)
+        } returns TransformResponse(transformedLocation1234)
+        every {
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
                 any(),
                 null
             )
@@ -1325,7 +1372,6 @@ class KafkaEventResourcePublisherTest {
 
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
-        val transformed = mockk<Location> {}
         every {
             transformManager.transformResource(
                 location1234,
@@ -1333,11 +1379,11 @@ class KafkaEventResourcePublisherTest {
                 tenant,
                 registryLocalDateTime
             )
-        } returns transformed
+        } returns TransformResponse(transformedLocation1234)
         every {
-            publishService.publishFHIRResources(
+            publishService.publishResourceWrappers(
                 tenantId,
-                listOf(transformed),
+                listOf(PublishResourceWrapper(transformedLocation1234)),
                 any(),
                 DataTrigger.NIGHTLY
             )

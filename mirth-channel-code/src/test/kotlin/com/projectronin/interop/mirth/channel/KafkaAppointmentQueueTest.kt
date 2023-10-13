@@ -5,6 +5,7 @@ import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.ronin.resource.RoninAppointment
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.mirth.channel.destinations.queue.AppointmentTenantlessQueueWriter
 import com.projectronin.interop.queue.kafka.KafkaQueueService
 import com.projectronin.interop.tenant.config.TenantService
@@ -43,7 +44,8 @@ class KafkaAppointmentQueueTest {
         val queueService = mockk<KafkaQueueService>()
         val queueWriter = mockk<AppointmentTenantlessQueueWriter>()
 
-        channel = KafkaAppointmentQueue(tenantService, queueService, queueWriter, mockTransformManager, mockRoninAppointment)
+        channel =
+            KafkaAppointmentQueue(tenantService, queueService, queueWriter, mockTransformManager, mockRoninAppointment)
     }
 
     @Test
@@ -60,16 +62,17 @@ class KafkaAppointmentQueueTest {
         every { JacksonUtil.readJsonObject<Appointment>(any(), any()) } returns mockAppointment
 
         val roninAppointment = mockk<Appointment>()
+        val transformResponse = TransformResponse(roninAppointment)
         every {
             mockTransformManager.transformResource(
                 mockAppointment,
                 mockRoninAppointment,
                 mockTenant
             )
-        } returns roninAppointment
+        } returns transformResponse
 
         val transformedAppointment = channel.deserializeAndTransform("conditionString", mockTenant)
-        assertEquals(roninAppointment, transformedAppointment)
+        assertEquals(transformResponse, transformedAppointment)
     }
 
     @Test

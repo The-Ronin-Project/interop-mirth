@@ -12,6 +12,7 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
 import com.projectronin.interop.fhir.r4.resource.DomainResource
 import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.mirth.channel.destinations.queue.TenantlessQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.util.deserialize
@@ -160,7 +161,8 @@ class KafkaTestQueue(
     override val resourceType: ResourceType = ResourceType.BUNDLE
     override val rootName: String = "Test"
     override val limit: Int = 5
-    override fun deserializeAndTransform(string: String, tenant: Tenant): TestResource = mockRoninDomainResource
+    override fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<TestResource> =
+        TransformResponse(mockRoninDomainResource)
 }
 
 class KafkaTestQueueBad(
@@ -173,7 +175,8 @@ class KafkaTestQueueBad(
     override val resourceType: ResourceType = ResourceType.BUNDLE
     override val rootName: String = "thisnameiscompletelyandutterlymcuhtoolongohno"
     override val limit: Int = 5
-    override fun deserializeAndTransform(string: String, tenant: Tenant): TestResource = mockRoninDomainResource
+    override fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<TestResource> =
+        TransformResponse(mockRoninDomainResource)
 }
 
 class TestResource(

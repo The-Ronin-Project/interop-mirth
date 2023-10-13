@@ -11,6 +11,8 @@ import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.fhir.ronin.resource.base.BaseProfile
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
+import com.projectronin.interop.kafka.model.PublishResourceWrapper
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
 import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
@@ -149,19 +151,19 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 "Received ${resourcesByKey.totalSize()} resources from EHR but only transformed ${transformedResourcesByKey.totalSize()} " +
                     "for tenant: $tenantMnemonic.\n" +
                     "Resources received: ${resourcesByKey.ids()} \n" +
-                    "Resources transformed: ${transformedResourcesByKey.ids()}"
+                    "Resources transformed: ${transformedResourcesByKey.resourceIds()}"
             }
         }
 
         val postTransformedResourcesByKey = postTransform(tenant, transformedResourcesByKey, vendorFactory)
 
-        val resourcesToPublishByEvent = postTransformedResourcesByKey.map { (key, resource) ->
+        val transformsToPublishByEvent = postTransformedResourcesByKey.map { (key, resource) ->
             resourceLoadRequest.eventsByRequestKey[key]!! to resource
         }.groupBy { it.first }.mapValues { e -> e.value.flatMap { v -> v.second } }
 
         // publish says it returns a boolean, but actually throws an error if there was a problem
         val publishResultsByEvent =
-            resourcesToPublishByEvent.map { (event, resources) ->
+            transformsToPublishByEvent.map { (event, transform) ->
                 val dataTrigger = if (event.processDownstreamReferences && !resourceLoadRequest.skipKafkaPublishing) {
                     resourceLoadRequest.dataTrigger
                 } else {
@@ -169,9 +171,9 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 }
 
                 runCatching {
-                    publishService.publishFHIRResources(
+                    publishService.publishResourceWrappers(
                         tenantMnemonic,
-                        resources,
+                        transform.map { it.toResourceWrapper() },
                         event.getUpdatedMetadata(),
                         dataTrigger
                     )
@@ -184,19 +186,20 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 )
             }
 
-        val successfullyPublishedResources = publishResultsByEvent.filter { it.second }
-            .flatMap { resourcesToPublishByEvent[it.first] ?: emptyList() }
+        val successfullyPublishedTransforms = publishResultsByEvent.filter { it.second }
+            .flatMap { transformsToPublishByEvent[it.first] ?: emptyList() }
 
         val failedPublishEvents = publishResultsByEvent.filterNot { it.second }
-        val failedPublishResources =
-            failedPublishEvents.flatMap { (event, _) -> resourcesToPublishByEvent[event] ?: emptyList() }
+        val failedPublishTransforms =
+            failedPublishEvents.flatMap { (event, _) -> transformsToPublishByEvent[event] ?: emptyList() }
         val failedPublishKeys =
             failedPublishEvents.flatMap { (event, _) -> event.requestKeys.union(requestKeysToProcess) }
 
-        if (failedPublishResources.isNotEmpty()) {
+        if (failedPublishTransforms.isNotEmpty()) {
             // in the event of a failure to publish we want to invalidate the keys we put in during loadResources
             // some of these keys were successes, so we're only operating on the failures here. But we do need the successes for informational data
-            val keys = failedPublishResources.map { resource ->
+            val keys = failedPublishTransforms.map { transform ->
+                val resource = transform.resource
                 ResourceRequestKey(
                     resourceLoadRequest.runId,
                     ResourceType.valueOf(resource.resourceType),
@@ -208,22 +211,22 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
             processedResourcesCache.invalidateAll(keys)
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
-                detailedMessage = failedPublishResources.truncateList(),
-                message = "Successfully published ${successfullyPublishedResources.size}, but failed to publish ${failedPublishResources.size} resource(s)",
+                detailedMessage = failedPublishTransforms.truncateResourceList(),
+                message = "Successfully published ${successfullyPublishedTransforms.size}, but failed to publish ${failedPublishTransforms.size} resource(s)",
                 dataMap = newMap + mapOf(
-                    MirthKey.FAILURE_COUNT.code to failedPublishResources.size,
-                    MirthKey.RESOURCE_COUNT.code to successfullyPublishedResources.size
+                    MirthKey.FAILURE_COUNT.code to failedPublishTransforms.size,
+                    MirthKey.RESOURCE_COUNT.code to successfullyPublishedTransforms.size
                 )
             )
         } else {
             return MirthResponse(
                 status = MirthResponseStatus.SENT,
-                detailedMessage = successfullyPublishedResources.truncateList(),
-                message = "Published ${successfullyPublishedResources.size} resource(s).$cachedMessage",
+                detailedMessage = successfullyPublishedTransforms.truncateResourceList(),
+                message = "Published ${successfullyPublishedTransforms.size} resource(s).$cachedMessage",
                 dataMap = newMap +
                     mapOf(
-                        MirthKey.FAILURE_COUNT.code to (resourcesByKey.totalSize() - successfullyPublishedResources.size),
-                        MirthKey.RESOURCE_COUNT.code to successfullyPublishedResources.size
+                        MirthKey.FAILURE_COUNT.code to (resourcesByKey.totalSize() - successfullyPublishedTransforms.size),
+                        MirthKey.RESOURCE_COUNT.code to successfullyPublishedTransforms.size
                     )
             )
         }
@@ -296,10 +299,18 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
     }
 
     private fun Map<*, List<Resource<*>>>.ids(): String {
-        return values.flatten().joinToString(", ") { it.id!!.value!! }
+        return values.flatten().ids()
     }
 
-    private fun Map<*, List<Resource<*>>>.totalSize(): Int {
+    private fun Map<*, List<TransformResponse<*>>>.resourceIds(): String {
+        return values.flatten().map { it.resource }.ids()
+    }
+
+    private fun List<Resource<*>>.ids(): String {
+        return joinToString(", ") { it.id!!.value!! }
+    }
+
+    private fun Map<*, List<*>>.totalSize(): Int {
         return values.sumOf { it.size }
     }
 
@@ -310,6 +321,16 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         }
         return JacksonUtil.writeJsonValue(list)
     }
+
+    private fun Collection<TransformResponse<*>>.truncateResourceList(): String {
+        val list = when {
+            this.size > 5 -> this.map { it.resource.id?.value }
+            else -> this
+        }
+        return JacksonUtil.writeJsonValue(list)
+    }
+
+    private fun TransformResponse<T>.toResourceWrapper() = PublishResourceWrapper(resource, embeddedResources)
 
     /**
      * Turns any type of event that a channel may be subscribed into a class that should be able to handle a request
@@ -354,8 +375,8 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
      */
     open fun postTransform(
         tenant: Tenant,
-        transformedResourcesByKey: Map<ResourceRequestKey, List<T>>,
+        transformedResourcesByKey: Map<ResourceRequestKey, List<TransformResponse<T>>>,
         vendorFactory: VendorFactory
-    ): Map<ResourceRequestKey, List<T>> =
+    ): Map<ResourceRequestKey, List<TransformResponse<T>>> =
         transformedResourcesByKey
 }

@@ -23,6 +23,7 @@ import com.projectronin.interop.fhir.r4.resource.DocumentReference
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.DocumentReferenceStatus
 import com.projectronin.interop.fhir.ronin.profile.RoninExtension
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.fhir.util.asCode
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.DataTrigger
@@ -344,9 +345,13 @@ class DocumentReferencePublishTest {
         }
 
         val key1 = mockk<ResourceRequestKey>()
-        val result = documentReferencePublish.postTransform(tenant, mapOf(key1 to listOf(docReference)), vendorFactory)
+        val result = documentReferencePublish.postTransform(
+            tenant,
+            mapOf(key1 to listOf(TransformResponse(docReference))),
+            vendorFactory
+        )
 
-        val url1 = result[key1]!!.first().content.first().attachment!!.url
+        val url1 = result[key1]!!.first().resource.content.first().attachment!!.url
         assertEquals("https://ehr.local.projectronin.io/tenants/$tenantId/resources/Binary/tenant-12345", url1!!.value)
         assertEquals(
             DynamicValue(DynamicValueType.URL, docReference.content.first().attachment!!.url),

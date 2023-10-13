@@ -5,6 +5,7 @@ import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.resource.RoninPatient
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.mirth.channel.destinations.queue.PatientTenantlessQueueWriter
 import com.projectronin.interop.queue.kafka.KafkaQueueService
 import com.projectronin.interop.tenant.config.TenantService
@@ -60,16 +61,17 @@ class KafkaPatientQueueTest {
         every { JacksonUtil.readJsonObject<Patient>(any(), any()) } returns mockPatient
 
         val roninPatient = mockk<Patient>()
+        val transformResponse = TransformResponse(roninPatient)
         every {
             mockTransformManager.transformResource(
                 mockPatient,
                 mockRoninPatient,
                 mockTenant
             )
-        } returns roninPatient
+        } returns transformResponse
 
         val transformedPatient = channel.deserializeAndTransform("patientString", mockTenant)
-        assertEquals(roninPatient, transformedPatient)
+        assertEquals(transformResponse, transformedPatient)
     }
 
     @Test

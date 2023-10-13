@@ -5,6 +5,7 @@ import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.mirth.channel.destinations.queue.ConditionTenantlessQueueWriter
 import com.projectronin.interop.queue.kafka.KafkaQueueService
 import com.projectronin.interop.tenant.config.TenantService
@@ -43,7 +44,8 @@ class KafkaConditionQueueTest {
         val queueService = mockk<KafkaQueueService>()
         val queueWriter = mockk<ConditionTenantlessQueueWriter>()
 
-        channel = KafkaConditionQueue(tenantService, queueService, queueWriter, mockTransformManager, mockRoninCondition)
+        channel =
+            KafkaConditionQueue(tenantService, queueService, queueWriter, mockTransformManager, mockRoninCondition)
     }
 
     @Test
@@ -60,16 +62,17 @@ class KafkaConditionQueueTest {
         every { JacksonUtil.readJsonObject<Condition>(any(), any()) } returns mockCondition
 
         val roninCondition = mockk<Condition>()
+        val transformResponse = TransformResponse(roninCondition)
         every {
             mockTransformManager.transformResource(
                 mockCondition,
                 mockRoninCondition,
                 mockTenant
             )
-        } returns roninCondition
+        } returns transformResponse
 
         val transformedCondition = channel.deserializeAndTransform("conditionString", mockTenant)
-        assertEquals(roninCondition, transformedCondition)
+        assertEquals(transformResponse, transformedCondition)
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.ronin.resource.RoninPractitioner
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaQueue
 import com.projectronin.interop.mirth.channel.destinations.queue.PractitionerTenantlessQueueWriter
 import com.projectronin.interop.mirth.spring.SpringUtil
@@ -34,7 +35,7 @@ class KafkaPractitionerQueue(
     override val rootName = "KafkaPractitionerQueue"
     override val resourceType = ResourceType.PRACTITIONER
 
-    override fun deserializeAndTransform(string: String, tenant: Tenant): Practitioner {
+    override fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<Practitioner> {
         val practitioner = JacksonUtil.readJsonObject(string, Practitioner::class)
         return transformManager.transformResource(practitioner, roninPractitioner, tenant)
             ?: throw ResourcesNotTransformedException("Failed to transform Practitioner for tenant ${tenant.mnemonic}")

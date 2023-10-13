@@ -20,6 +20,7 @@ import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.profile.RoninExtension
 import com.projectronin.interop.fhir.ronin.resource.RoninDocumentReference
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.fhir.ronin.util.localize
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
@@ -173,12 +174,13 @@ class DocumentReferencePublish(
 
     override fun postTransform(
         tenant: Tenant,
-        transformedResourcesByKey: Map<ResourceRequestKey, List<DocumentReference>>,
+        transformedResourcesByKey: Map<ResourceRequestKey, List<TransformResponse<DocumentReference>>>,
         vendorFactory: VendorFactory
-    ): Map<ResourceRequestKey, List<DocumentReference>> {
+    ): Map<ResourceRequestKey, List<TransformResponse<DocumentReference>>> {
         val binaryService = vendorFactory.binaryService
-        val handledDocumentReferenceList = transformedResourcesByKey.mapValuesNotNull { (_, documentReferences) ->
-            documentReferences.mapNotNull { documentReference ->
+        val handledDocumentReferenceList = transformedResourcesByKey.mapValuesNotNull { (_, transformedResponses) ->
+            transformedResponses.mapNotNull { transformedResponse ->
+                val documentReference = transformedResponse.resource
                 val binaryFHIRIDs = mutableListOf<String>()
                 val docContentList =
                     documentReference.content.filter { it.attachment?.url?.value?.contains("Binary/") == true }
@@ -236,7 +238,7 @@ class DocumentReferencePublish(
                     )
                 }
                 datalakeService.publishBinaryData(tenant.mnemonic, binaryList)
-                newDocumentReference
+                TransformResponse(newDocumentReference, transformedResponse.embeddedResources)
             }.ifEmpty { null }
         }
         return handledDocumentReferenceList

@@ -5,6 +5,7 @@ import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.ronin.resource.RoninAppointment
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaQueue
 import com.projectronin.interop.mirth.channel.destinations.queue.AppointmentTenantlessQueueWriter
 import com.projectronin.interop.mirth.spring.SpringUtil
@@ -34,7 +35,7 @@ class KafkaAppointmentQueue(
     override val rootName = "KafkaAppointmentQueue"
     override val resourceType = ResourceType.APPOINTMENT
 
-    override fun deserializeAndTransform(string: String, tenant: Tenant): Appointment {
+    override fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<Appointment> {
         val condition = JacksonUtil.readJsonObject(string, Appointment::class)
         return transformManager.transformResource(condition, roninAppointment, tenant)
             ?: throw ResourcesNotTransformedException("Failed to transform Appointment for tenant ${tenant.mnemonic}")

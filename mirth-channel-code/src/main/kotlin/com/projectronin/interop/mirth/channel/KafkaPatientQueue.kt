@@ -5,6 +5,7 @@ import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.resource.RoninPatient
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaQueue
 import com.projectronin.interop.mirth.channel.destinations.queue.PatientTenantlessQueueWriter
 import com.projectronin.interop.mirth.spring.SpringUtil
@@ -34,7 +35,7 @@ class KafkaPatientQueue(
     override val rootName = "KafkaPatientQueue"
     override val resourceType = ResourceType.PATIENT
 
-    override fun deserializeAndTransform(string: String, tenant: Tenant): Patient {
+    override fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<Patient> {
         val patient = JacksonUtil.readJsonObject(string, Patient::class)
         return transformManager.transformResource(patient, roninPatient, tenant)
             ?: throw ResourcesNotTransformedException("Failed to transform Patient for tenant ${tenant.mnemonic}")

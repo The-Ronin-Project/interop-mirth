@@ -3,6 +3,7 @@ package com.projectronin.interop.mirth.channel.base.kafka
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.DomainResource
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.queue.TenantlessQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
@@ -52,7 +53,7 @@ abstract class KafkaQueue<K : DomainResource<K>>(
     ): MirthMessage {
         val tenant = tenantService.getTenantForMnemonic(tenantMnemonic)
             ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
-        val transformed = deserializeAndTransform(msg, tenant)
+        val transformed = deserializeAndTransform(msg, tenant).resource
         return MirthMessage(
             message = JacksonManager.objectMapper.writeValueAsString(transformed),
             dataMap = mapOf(
@@ -65,5 +66,5 @@ abstract class KafkaQueue<K : DomainResource<K>>(
     /**
      * Implementers should take a string from off the queue and then turn them into a DomainResource
      */
-    abstract fun deserializeAndTransform(string: String, tenant: Tenant): K
+    abstract fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<K>
 }

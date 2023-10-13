@@ -5,6 +5,7 @@ import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.ronin.resource.RoninConditions
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaQueue
 import com.projectronin.interop.mirth.channel.destinations.queue.ConditionTenantlessQueueWriter
 import com.projectronin.interop.mirth.spring.SpringUtil
@@ -34,7 +35,7 @@ class KafkaConditionQueue(
     override val rootName = "KafkaConditionQueue"
     override val resourceType = ResourceType.CONDITION
 
-    override fun deserializeAndTransform(string: String, tenant: Tenant): Condition {
+    override fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<Condition> {
         val condition = JacksonUtil.readJsonObject(string, Condition::class)
         return transformManager.transformResource(condition, roninCondition, tenant)
             ?: throw ResourcesNotTransformedException("Failed to transform Condition for tenant ${tenant.mnemonic}")
