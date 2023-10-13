@@ -309,6 +309,8 @@ services:
   validation-server:
     restart: on-failure
     image: docker-proxy.devops.projectronin.io/interop-validation:latest
+    env_file:
+      - .env
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://validationuser:ThePassword@mockehrmysql:3306/validation-db
       - AUTH0_AUDIENCE=https://interop-validation.dev.projectronin.io
