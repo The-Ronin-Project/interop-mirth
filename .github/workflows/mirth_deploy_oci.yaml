@@ -20,7 +20,7 @@ on:
         description: 'if enabled, dry-run tests the workflow without side effects'
         required: true
         default: false
-       
+
 
 jobs:
   generate_command:
@@ -47,9 +47,9 @@ jobs:
             [mirth]
             dev_server = "10.211.46.231"
             dev_user = "opc"
-            stage_server = "10.212.34.88"
+            stage_server = "10.212.44.9"
             stage_user = "opc"
-            prod_server = "10.213.34.135"
+            prod_server = "10.213.37.182"
             prod_user = "opc"
             home = "/opt/mirthconnect"
             jar_home = "/opt/mirthconnect/interops.d/"
