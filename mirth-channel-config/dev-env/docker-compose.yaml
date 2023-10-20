@@ -329,3 +329,16 @@ services:
       - ./ehrda:/host
     environment:
       - JSON_CONFIG_PATH=/host/mock-oauth2-config.json
+
+  backfill-server:
+    restart: on-failure
+    image: docker-proxy.devops.projectronin.io/interop-backfill:latest
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://backfilluser:ThePassword@mockehrmysql:3306/backfill-db
+      - AUTH0_AUDIENCE=https://interop-backfill.dev.projectronin.io
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://mock-oauth2:8080/backfill
+    ports:
+      - "8086:8080"
+    depends_on:
+      mock-oauth2:
+        condition: service_started

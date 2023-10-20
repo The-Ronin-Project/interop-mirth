@@ -63,5 +63,10 @@ enum class MirthKey(val code: String) {
     /**
      * An event's source reference.
      */
-    EVENT_RUN_ID("kafkaEventRunId")
+    EVENT_RUN_ID("kafkaEventRunId"),
+
+    /**
+     * The ID for the backfill event
+     */
+    BACKFILL_ID("backfillId")
 }

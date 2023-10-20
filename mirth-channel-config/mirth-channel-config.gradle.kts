@@ -23,6 +23,8 @@ mirth {
 }
 
 dependencies {
+    itImplementation(libs.interop.backfill.client)
+
     itImplementation(libs.interop.common)
     itImplementation(libs.interop.commonHttp)
     itImplementation(libs.interop.commonJackson)

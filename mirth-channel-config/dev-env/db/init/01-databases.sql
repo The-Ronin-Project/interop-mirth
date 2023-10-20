@@ -22,3 +22,8 @@ GRANT ALL PRIVILEGES ON `dataauthority-db`.* TO 'ehrdauser'@'%';
 CREATE DATABASE IF NOT EXISTS `validation-db`;
 CREATE USER 'validationuser'@'%' IDENTIFIED BY 'ThePassword';
 GRANT ALL PRIVILEGES ON `validation-db`.* TO 'validationuser'@'%';
+
+# backfill-db
+CREATE DATABASE IF NOT EXISTS `backfill-db`;
+CREATE USER 'backfilluser'@'%' IDENTIFIED BY 'ThePassword';
+GRANT ALL PRIVILEGES ON `backfill-db`.* TO 'backfilluser'@'%';

@@ -33,6 +33,22 @@
           }
         }
       ]
+    },
+    {
+      "issuerId": "backfill",
+      "tokenExpiry": 1200,
+      "requestMappings": [
+        {
+          "requestParam": "client_id",
+          "match": "*",
+          "claims": {
+            "sub": "clientId@clients",
+            "aud": "https://interop-backfill.dev.projectronin.io",
+            "iss": "http://mock-oauth2:8080/backfill",
+            "scope": "read:backfill create:backfill delete:backfill read:discovery update:discovery delete:discovery read:queue create:queue update:queue delete:queue"
+          }
+        }
+      ]
     }
   ]
 }

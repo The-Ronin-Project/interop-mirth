@@ -51,7 +51,13 @@ import kotlin.reflect.full.functions
         SetEnvironmentVariable(key = "KAFKA_CLOUD_REGION", value = "region"),
         SetEnvironmentVariable(key = "KAFKA_BOOTSTRAP_SERVERS", value = "servers"),
         SetEnvironmentVariable(key = "KAFKA_PUBLISH_SOURCE", value = "source"),
-        SetEnvironmentVariable(key = "KAFKA_RETRIEVE_GROUPID", value = "group")
+        SetEnvironmentVariable(key = "KAFKA_RETRIEVE_GROUPID", value = "group"),
+        SetEnvironmentVariable(key = "BACKFILL_SERVER_URL", value = "http://backfill-server:8080"),
+        SetEnvironmentVariable(key = "BACKFILL_AUTH_TOKEN_URL", value = "http://mock-oauth2:8080/backfill/token"),
+        SetEnvironmentVariable(key = "BACKFILL_AUTH_AUDIENCE", value = "https://backfill.dev.projectronin.io"),
+        SetEnvironmentVariable(key = "BACKFILL_AUTH_CLIENT_ID", value = "id"),
+        SetEnvironmentVariable(key = "BACKFILL_AUTH_CLIENT_SECRET", value = "secret"),
+        SetEnvironmentVariable(key = "BACKFILL_AUTH_METHOD", value = "STANDARD")
     ]
 )
 class SpringMirthChannelsIT {

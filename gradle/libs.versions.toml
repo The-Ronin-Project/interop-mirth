@@ -5,6 +5,7 @@ dbrider = "1.41.0"
 ehrda = "1.5.3"
 guava = "32.1.3-jre"
 interop-aidbox = "8.1.0"
+interop-backfill = "1.0.0"
 interop-common = "3.13.3"
 interop-datalake = "8.4.2"
 interop-ehr = "12.2.0"
@@ -48,6 +49,7 @@ event-interop-resource-request = { module = "com.projectronin.contract.event:eve
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 # aidbox just used for testing, should be removed eventually
 interop-aidbox = { module = "com.projectronin.interop.publish:interop-aidbox", version.ref = "interop-aidbox" }
+interop-backfill-client = { module = "com.projectronin.interop.backfill:interop-backfill-client", version.ref = "interop-backfill" }
 interop-common = { module = "com.projectronin.interop:interop-common", version.ref = "interop-common" }
 interop-commonHttp = { module = "com.projectronin.interop:interop-common-http", version.ref = "interop-common" }
 interop-commonJackson = { module = "com.projectronin.interop:interop-common-jackson", version.ref = "interop-common" }

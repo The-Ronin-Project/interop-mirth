@@ -53,6 +53,9 @@ databaseChangeLog:
               - column:
                   name: timezone
                   value: 'Etc/UTC'
+              - column:
+                  name: monitored_indicator
+                  value: 1
         - insert:
             dbms: 'mysql'
             tableName: io_tenant_epic
@@ -146,6 +149,9 @@ databaseChangeLog:
               - column:
                   name: timezone
                   value: "Etc/UTC"
+              - column:
+                  name: monitored_indicator
+                  value: 1
         - insert:
             dbms: 'mysql'
             tableName: io_tenant_cerner

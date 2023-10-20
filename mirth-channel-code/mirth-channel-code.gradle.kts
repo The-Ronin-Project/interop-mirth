@@ -20,6 +20,7 @@ dependencies {
         }
     }
     implementation(libs.ehr.data.authority.client)
+    implementation(libs.interop.backfill.client)
     implementation(libs.interop.common)
     implementation(libs.interop.commonHttp)
     implementation(libs.interop.commonJackson)
