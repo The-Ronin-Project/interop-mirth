@@ -48,3 +48,7 @@ dependencies {
     itImplementation(libs.interop.aidbox)
     itImplementation("io.github.microutils:kotlin-logging:3.0.5")
 }
+
+tasks.withType<Test> {
+    maxHeapSize = "2g"
+}

@@ -1,8 +1,11 @@
 package com.projectronin.interop.mirth.channel.destinations
 
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.ResourceType
+import com.projectronin.interop.common.collection.mapListValues
+import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.ehr.MedicationService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
@@ -109,11 +112,44 @@ class MedicationPublish(
         }
     }
 
+    /**
+     * Base class for medication resource requests that may be based off embedded medications.
+     */
+    abstract class EmbeddedMedicationResourceRequest : PublishResourceRequest<Medication>() {
+        private val embeddedReferenceIndicators = setOf("contained", "codeable")
+
+        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Medication>> {
+            // Look for any FHIR IDs that are associated to embedded resources, and load those.
+            val fhirIdsForEmbedded = requestFhirIds.filter { id ->
+                embeddedReferenceIndicators.any { id.startsWith("$it-") }
+            }
+            val embeddedResourcesByFhirId = if (fhirIdsForEmbedded.isNotEmpty()) {
+                val allEmbeddedResources = sourceEvents.flatMap { it.sourceEvent.embeddedResources ?: emptyList() }
+                    .filter { it.resourceType == ResourceType.Medication }
+                    .map { JacksonManager.objectMapper.readValue<Medication>(it.resourceJson) }
+                fhirIdsForEmbedded.associateWith { fhirId ->
+                    allEmbeddedResources.firstOrNull { it.id?.value == fhirId }?.let { listOf(it) } ?: emptyList()
+                }
+            } else {
+                emptyMap()
+            }
+
+            val nonEmbeddedFhirIds = requestFhirIds - fhirIdsForEmbedded.toSet()
+            val nonEmbeddedResourcesByFhirId = if (nonEmbeddedFhirIds.isNotEmpty()) {
+                fhirService.getByIDs(tenant, nonEmbeddedFhirIds).mapListValues()
+            } else {
+                emptyMap()
+            }
+
+            return embeddedResourcesByFhirId + nonEmbeddedResourcesByFhirId
+        }
+    }
+
     internal class MedicationRequestPublishMedicationRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: MedicationService,
         override val tenant: Tenant
-    ) : PublishReferenceResourceRequest<Medication>() {
+    ) : EmbeddedMedicationResourceRequest() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { MedicationRequestPublishEvent(it, tenant) }
 
@@ -146,7 +182,7 @@ class MedicationPublish(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: MedicationService,
         override val tenant: Tenant
-    ) : PublishReferenceResourceRequest<Medication>() {
+    ) : EmbeddedMedicationResourceRequest() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { MedicationStatementPublishEvent(it, tenant) }
 

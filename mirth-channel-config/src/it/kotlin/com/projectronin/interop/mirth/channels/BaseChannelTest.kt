@@ -106,7 +106,7 @@ abstract class BaseChannelTest(
     }
 
     protected fun installAndDeployChannel(channelToInstall: String = channelName): String {
-        val id = installChannel()
+        val id = installChannel(channelToInstall)
         deployAndStartChannel(channelToDeploy = id)
         return id
     }
@@ -163,9 +163,9 @@ abstract class BaseChannelTest(
         }
     }
 
-    protected fun assertAllConnectorsSent(messageList: List<Int>) {
+    protected fun assertAllConnectorsSent(messageList: List<Int>, channelId: String = testChannelId) {
         val messages = messageList.map {
-            MirthClient.getMessageById(testChannelId, it)
+            MirthClient.getMessageById(channelId, it)
         }
         messages.forEach { connectorMessage ->
             connectorMessage.destinationMessages.forEach {

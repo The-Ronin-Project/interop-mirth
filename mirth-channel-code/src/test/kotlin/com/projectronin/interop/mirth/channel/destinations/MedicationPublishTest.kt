@@ -257,7 +257,7 @@ class MedicationPublishTest {
     }
 
     @Test
-    fun `MedicationRequestPublishMedicationRequest supports loads resources`() {
+    fun `MedicationRequestPublishMedicationRequest loads resources`() {
         val medication1 = mockk<Medication>()
         val medication2 = mockk<Medication>()
         every {
@@ -308,6 +308,129 @@ class MedicationPublishTest {
     }
 
     @Test
+    fun `MedicationRequestPublishMedicationRequest loads resources with embedded resources`() {
+        val medication1 = this.medication1.copy(id = Id("contained-1234"))
+        val embedded1 = InteropResourcePublishV1.EmbeddedResource(
+            resourceType = ResourceType.Medication,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medication1)
+        )
+
+        val medication2 = this.medication2.copy(id = Id("codeable-5678"))
+        val embedded2 = InteropResourcePublishV1.EmbeddedResource(
+            resourceType = ResourceType.Medication,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medication2)
+        )
+
+        val medicationRequest1 = MedicationRequest(
+            id = Id("$tenantId-1234"),
+            medication = DynamicValue(
+                DynamicValueType.REFERENCE,
+                Reference(reference = FHIRString("Medication/$tenantId-contained-1234"))
+            ),
+            intent = MedicationRequestIntent.FILLER_ORDER.asCode(),
+            status = MedicationRequestStatus.ACTIVE.asCode(),
+            subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+        )
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationRequest,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationRequest1),
+            metadata = metadata,
+            embeddedResources = listOf(embedded1)
+        )
+
+        val medicationRequest2 = MedicationRequest(
+            id = Id("$tenantId-5678"),
+            medication = DynamicValue(
+                DynamicValueType.REFERENCE,
+                Reference(reference = FHIRString("Medication/$tenantId-codeable-5678"))
+            ),
+            intent = MedicationRequestIntent.FILLER_ORDER.asCode(),
+            status = MedicationRequestStatus.ACTIVE.asCode(),
+            subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+        )
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationRequest,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationRequest2),
+            metadata = metadata,
+            embeddedResources = listOf(embedded2)
+        )
+
+        val request =
+            MedicationPublish.MedicationRequestPublishMedicationRequest(
+                listOf(event1, event2),
+                medicationService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(2, resourcesByKeys.size)
+
+        val key1 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-contained-1234")
+        assertEquals(listOf(medication1), resourcesByKeys[key1])
+
+        val key2 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-codeable-5678")
+        assertEquals(listOf(medication2), resourcesByKeys[key2])
+    }
+
+    @Test
+    fun `MedicationRequestPublishMedicationRequest loads resources with embedded and remote resources`() {
+        val medication1 = this.medication1.copy(id = Id("contained-1234"))
+        val embedded1 = InteropResourcePublishV1.EmbeddedResource(
+            resourceType = ResourceType.Medication,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medication1)
+        )
+
+        val medication2 = mockk<Medication>()
+        every {
+            medicationService.getByIDs(
+                tenant,
+                listOf("5678")
+            )
+        } returns mapOf("5678" to medication2)
+
+        val medicationRequest1 = MedicationRequest(
+            id = Id("$tenantId-1234"),
+            medication = DynamicValue(
+                DynamicValueType.REFERENCE,
+                Reference(reference = FHIRString("Medication/$tenantId-contained-1234"))
+            ),
+            intent = MedicationRequestIntent.FILLER_ORDER.asCode(),
+            status = MedicationRequestStatus.ACTIVE.asCode(),
+            subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+        )
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationRequest,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationRequest1),
+            metadata = metadata,
+            embeddedResources = listOf(embedded1)
+        )
+
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationRequest,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationRequest2),
+            metadata = metadata
+        )
+
+        val request =
+            MedicationPublish.MedicationRequestPublishMedicationRequest(
+                listOf(event1, event2),
+                medicationService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(2, resourcesByKeys.size)
+
+        val key1 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-contained-1234")
+        assertEquals(listOf(medication1), resourcesByKeys[key1])
+
+        val key2 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-5678")
+        assertEquals(listOf(medication2), resourcesByKeys[key2])
+    }
+
+    @Test
     fun `publish events create a MedicationStatementPublishMedicationRequest for medicationStatement publish events`() {
         val publishEvent = mockk<InteropResourcePublishV1>(relaxed = true) {
             every { resourceType } returns ResourceType.MedicationStatement
@@ -319,7 +442,7 @@ class MedicationPublishTest {
     }
 
     @Test
-    fun `MedicationStatementPublishMedicationRequest supports loads resources`() {
+    fun `MedicationStatementPublishMedicationRequest loads resources`() {
         val medication1 = mockk<Medication>()
         val medication2 = mockk<Medication>()
         every {
@@ -377,6 +500,126 @@ class MedicationPublishTest {
             tenant,
             "$tenantId-5678"
         )
+        assertEquals(listOf(medication2), resourcesByKeys[key2])
+    }
+
+    @Test
+    fun `MedicationStatementPublishMedicationRequest loads resources with embedded resources`() {
+        val medication1 = this.medication1.copy(id = Id("contained-1234"))
+        val embedded1 = InteropResourcePublishV1.EmbeddedResource(
+            resourceType = ResourceType.Medication,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medication1)
+        )
+
+        val medication2 = this.medication2.copy(id = Id("codeable-5678"))
+        val embedded2 = InteropResourcePublishV1.EmbeddedResource(
+            resourceType = ResourceType.Medication,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medication2)
+        )
+
+        val medicationStatement1 = MedicationStatement(
+            id = Id("$tenantId-1234"),
+            medication = DynamicValue(
+                DynamicValueType.REFERENCE,
+                Reference(reference = FHIRString("Medication/$tenantId-contained-1234"))
+            ),
+            status = MedicationStatementStatus.ACTIVE.asCode(),
+            subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+        )
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationStatement,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationStatement1),
+            metadata = metadata,
+            embeddedResources = listOf(embedded1)
+        )
+
+        val medicationStatement2 = MedicationStatement(
+            id = Id("$tenantId-5678"),
+            medication = DynamicValue(
+                DynamicValueType.REFERENCE,
+                Reference(reference = FHIRString("Medication/$tenantId-codeable-5678"))
+            ),
+            status = MedicationStatementStatus.ACTIVE.asCode(),
+            subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+        )
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationStatement,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationStatement2),
+            metadata = metadata,
+            embeddedResources = listOf(embedded2)
+        )
+
+        val request =
+            MedicationPublish.MedicationStatementPublishMedicationRequest(
+                listOf(event1, event2),
+                medicationService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(2, resourcesByKeys.size)
+
+        val key1 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-contained-1234")
+        assertEquals(listOf(medication1), resourcesByKeys[key1])
+
+        val key2 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-codeable-5678")
+        assertEquals(listOf(medication2), resourcesByKeys[key2])
+    }
+
+    @Test
+    fun `MedicationStatementPublishMedicationRequest loads resources with embedded and remote resources`() {
+        val medication1 = this.medication1.copy(id = Id("contained-1234"))
+        val embedded1 = InteropResourcePublishV1.EmbeddedResource(
+            resourceType = ResourceType.Medication,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medication1)
+        )
+
+        val medication2 = mockk<Medication>()
+        every {
+            medicationService.getByIDs(
+                tenant,
+                listOf("5678")
+            )
+        } returns mapOf("5678" to medication2)
+
+        val medicationStatement1 = MedicationStatement(
+            id = Id("$tenantId-1234"),
+            medication = DynamicValue(
+                DynamicValueType.REFERENCE,
+                Reference(reference = FHIRString("Medication/$tenantId-contained-1234"))
+            ),
+            status = MedicationStatementStatus.ACTIVE.asCode(),
+            subject = Reference(reference = FHIRString("Patient/$tenantId-1234"))
+        )
+        val event1 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationStatement,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationStatement1),
+            metadata = metadata,
+            embeddedResources = listOf(embedded1)
+        )
+
+        val event2 = InteropResourcePublishV1(
+            tenantId = tenantId,
+            resourceType = ResourceType.MedicationStatement,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(medicationStatement2),
+            metadata = metadata
+        )
+
+        val request =
+            MedicationPublish.MedicationStatementPublishMedicationRequest(
+                listOf(event1, event2),
+                medicationService,
+                tenant
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(2, resourcesByKeys.size)
+
+        val key1 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-contained-1234")
+        assertEquals(listOf(medication1), resourcesByKeys[key1])
+
+        val key2 = ResourceRequestKey("run", ResourceType.Medication, tenant, "$tenantId-5678")
         assertEquals(listOf(medication2), resourcesByKeys[key2])
     }
 }

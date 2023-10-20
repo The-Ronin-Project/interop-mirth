@@ -51,14 +51,24 @@ object AidboxClient {
 
     private const val FHIR_URL = "$BASE_URL/fhir"
     const val RESOURCES_FORMAT = "$FHIR_URL/%s"
-    private const val RESOURCE_FORMAT = "$RESOURCES_FORMAT/%s"
+    const val RESOURCE_FORMAT = "$RESOURCES_FORMAT/%s"
 
-    private const val TENANT_IDENTIFIER_FORMAT = "http://projectronin.com/id/tenantId|%s"
+    const val TENANT_IDENTIFIER_FORMAT = "http://projectronin.com/id/tenantId|%s"
 
     fun getAuthorizationHeader(): String {
         val authentication = authenticationBroker.getAuthentication()
         return "${authentication.tokenType} ${authentication.accessToken}"
     }
+
+    inline fun <reified T : Resource<T>> getResource(resourceType: String, resourceId: String): T =
+        runBlocking {
+            val url = RESOURCE_FORMAT.format(resourceType, resourceId)
+            httpClient.get(url) {
+                headers {
+                    append(HttpHeaders.Authorization, getAuthorizationHeader())
+                }
+            }.body()
+        }
 
     fun getAllResourcesForTenant(resourceType: String, tenant: String): JsonNode = runBlocking {
         val tenantIdentifier = TENANT_IDENTIFIER_FORMAT.format(tenant)
