@@ -21,7 +21,8 @@ class MedicationLoad(
     override val publishedResourcesSubscriptions = listOf(
         ResourceType.Medication,
         ResourceType.MedicationRequest,
-        ResourceType.MedicationStatement
+        ResourceType.MedicationStatement,
+        ResourceType.MedicationAdministration
     )
     override val resource = ResourceType.Medication
 

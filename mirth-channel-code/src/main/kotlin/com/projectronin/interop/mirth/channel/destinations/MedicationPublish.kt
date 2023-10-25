@@ -12,6 +12,7 @@ import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.datatype.DynamicValueType
 import com.projectronin.interop.fhir.r4.datatype.Reference
 import com.projectronin.interop.fhir.r4.resource.Medication
+import com.projectronin.interop.fhir.r4.resource.MedicationAdministration
 import com.projectronin.interop.fhir.r4.resource.MedicationRequest
 import com.projectronin.interop.fhir.r4.resource.MedicationStatement
 import com.projectronin.interop.fhir.ronin.resource.RoninMedication
@@ -63,6 +64,12 @@ class MedicationPublish(
             )
 
             ResourceType.Medication -> MedicationPublishMedicationRequest(
+                events,
+                vendorFactory.medicationService,
+                tenant
+            )
+
+            ResourceType.MedicationAdministration -> MedicationAdministrationPublishMedicationRequest(
                 events,
                 vendorFactory.medicationService,
                 tenant
@@ -188,6 +195,39 @@ class MedicationPublish(
 
         private class MedicationStatementPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
             PublishResourceEvent<MedicationStatement>(publishEvent, MedicationStatement::class) {
+            override val requestKeys: Set<ResourceRequestKey> by lazy {
+                val medication = sourceResource.medication!!
+                val medicationId = medication.let {
+                    if (medication.type == DynamicValueType.REFERENCE) {
+                        val medicationReference = (medication.value as Reference)
+                        if (medicationReference.isForType(ResourceType.Medication)) {
+                            return@let medicationReference.decomposedId()!!
+                        }
+                    }
+                    return@lazy emptySet()
+                }
+                setOf(
+                    ResourceRequestKey(
+                        metadata.runId,
+                        ResourceType.Medication,
+                        tenant,
+                        medicationId
+                    )
+                )
+            }
+        }
+    }
+
+    internal class MedicationAdministrationPublishMedicationRequest(
+        publishEvents: List<InteropResourcePublishV1>,
+        override val fhirService: MedicationService,
+        override val tenant: Tenant
+    ) : EmbeddedMedicationResourceRequest() {
+        override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
+            publishEvents.map { MedicationAdministrationPublishEvent(it, tenant) }
+
+        private class MedicationAdministrationPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
+            PublishResourceEvent<MedicationAdministration>(publishEvent, MedicationAdministration::class) {
             override val requestKeys: Set<ResourceRequestKey> by lazy {
                 val medication = sourceResource.medication!!
                 val medicationId = medication.let {
