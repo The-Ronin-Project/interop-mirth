@@ -12,7 +12,7 @@ interop-ehr = "12.3.0"
 interop-event-internal = "1.2.1"
 interop-event-request = "1.1.0"
 interop-fhir = "8.10.3"
-interop-gradle = "3.2.0"
+interop-gradle = "3.3.0"
 interop-kafka = "8.5.0"
 interop-publishers = "9.2.0"
 interop-queue = "2.0.0"
@@ -138,6 +138,7 @@ interop-base = { id = "com.projectronin.interop.gradle.base", version.ref = "int
 interop-integration = { id = "com.projectronin.interop.gradle.integration", version.ref = "interop-gradle" }
 interop-junit = { id = "com.projectronin.interop.gradle.junit", version.ref = "interop-gradle" }
 interop-publish = { id = "com.projectronin.interop.gradle.publish", version.ref = "interop-gradle" }
+interop-sonarqube = { id = "com.projectronin.interop.gradle.sonarqube", version.ref = "interop-gradle" }
 interop-spring = { id = "com.projectronin.interop.gradle.spring", version.ref = "interop-gradle" }
 interop-version = { id = "com.projectronin.interop.gradle.version", version.ref = "interop-gradle" }
 interop-version-catalog = { id = "com.projectronin.interop.gradle.version-catalog-update", version.ref = "interop-gradle" }

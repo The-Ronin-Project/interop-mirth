@@ -5,4 +5,5 @@ plugins {
     alias(libs.plugins.interop.junit) apply false
     alias(libs.plugins.interop.publish) apply false
     alias(libs.plugins.interop.spring) apply false
+    alias(libs.plugins.interop.sonarqube)
 }

@@ -3,6 +3,10 @@ plugins {
     id("com.projectronin.interop.gradle.mirth")
 }
 
+sonar {
+    isSkipProject = true
+}
+
 mirth {
     dockerDirectory = layout.buildDirectory.dir("../dev-env")
     mirthConnectorLibrary = project(":mirth-channel-code")
