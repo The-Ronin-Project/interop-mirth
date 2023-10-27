@@ -23,6 +23,7 @@ import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.fhir.ronin.util.localize
 import com.projectronin.interop.kafka.KafkaPublishService
+import com.projectronin.interop.kafka.model.PublishResourceWrapper
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
@@ -36,6 +37,7 @@ import kotlinx.coroutines.runBlocking
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.LocalDate
+import java.time.OffsetDateTime
 
 @Component
 class DocumentReferencePublish(
@@ -120,10 +122,10 @@ class DocumentReferencePublish(
                     }
 
                     // push each DocumentReference individually so the destination can multi-thread Binary reads
-                    kafkaService.publishResources(
+                    kafkaService.publishResourceWrappers(
                         tenant.mnemonic,
                         dataTrigger,
-                        documentsWithLocalizedIds,
+                        documentsWithLocalizedIds.map { PublishResourceWrapper(it) },
                         event.getUpdatedMetadata()
                     )
                     key to documents
@@ -131,7 +133,11 @@ class DocumentReferencePublish(
             }.toMap()
         }
 
-        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<DocumentReference>> {
+        override fun loadResourcesForIds(
+            requestFhirIds: List<String>,
+            startDate: OffsetDateTime?,
+            endDate: OffsetDateTime?
+        ): Map<String, List<DocumentReference>> {
             // We overrode the method that used this.
             TODO("Not yet implemented")
         }
@@ -150,7 +156,11 @@ class DocumentReferencePublish(
 
         override val skipKafkaPublishing = true // prevent infinite loop of kafka events
 
-        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<DocumentReference>> {
+        override fun loadResourcesForIds(
+            requestFhirIds: List<String>,
+            startDate: OffsetDateTime?,
+            endDate: OffsetDateTime?
+        ): Map<String, List<DocumentReference>> {
             return eventsByRequestKey.map { (key, event) ->
                 key.unlocalizedResourceId to listOf((event as DocumentReferencePublishEvent).sourceResource)
             }.toMap()

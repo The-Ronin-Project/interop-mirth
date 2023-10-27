@@ -156,7 +156,7 @@ class LocationLoadTest : BaseChannelTest(
         val message = MirthClient.getMessageById(testChannelId, messageList2.first())
         val publishResponse =
             message.destinationMessages.find { it.connectorName == "Publish Locations" }!!.response!!
-        Assertions.assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Location:$testTenant:$locationFhirId</message>"))
+        Assertions.assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Location:null:$testTenant:$locationFhirId</message>"))
     }
 
     @ParameterizedTest

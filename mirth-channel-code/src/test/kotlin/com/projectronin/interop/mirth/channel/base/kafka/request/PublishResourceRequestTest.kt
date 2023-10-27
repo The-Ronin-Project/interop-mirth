@@ -11,6 +11,7 @@ import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.OffsetDateTime
 
 class PublishResourceRequestTest {
     private val fhirService = mockk<FHIRService<Location>>()
@@ -39,15 +40,25 @@ class PublishResourceRequestTest {
     }
 
     @Test
-    fun `throws exception for unknown data trigger`() {
+    fun `sets dataTrigger for backfill events`() {
         val publishEvent = mockk<ResourceEvent<InteropResourcePublishV1>> {
             every { sourceEvent.dataTrigger } returns InteropResourcePublishV1.DataTrigger.backfill
         }
 
         val request = TestPublishResourceRequest(listOf(publishEvent), fhirService, tenant)
+        assertEquals(DataTrigger.BACKFILL, request.dataTrigger)
+    }
+
+    @Test
+    fun `throws exception for unknown data trigger`() {
+        val publishEvent = mockk<ResourceEvent<InteropResourcePublishV1>> {
+            every { sourceEvent.dataTrigger } returns null
+        }
+
+        val request = TestPublishResourceRequest(listOf(publishEvent), fhirService, tenant)
         val exception = assertThrows<IllegalStateException> { request.dataTrigger }
         assertEquals(
-            "Received a data trigger (backfill) which cannot be transformed to a known value",
+            "Received a null data trigger which cannot be transformed to a known value",
             exception.message
         )
     }
@@ -57,7 +68,11 @@ class PublishResourceRequestTest {
         override val fhirService: FHIRService<Location>,
         override val tenant: Tenant
     ) : PublishResourceRequest<Location>() {
-        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Location>> {
+        override fun loadResourcesForIds(
+            requestFhirIds: List<String>,
+            startDate: OffsetDateTime?,
+            endDate: OffsetDateTime?
+        ): Map<String, List<Location>> {
             TODO("Not yet implemented")
         }
     }

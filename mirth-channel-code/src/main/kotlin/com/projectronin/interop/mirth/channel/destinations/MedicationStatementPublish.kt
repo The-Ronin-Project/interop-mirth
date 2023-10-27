@@ -18,6 +18,7 @@ import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
+import java.time.OffsetDateTime
 
 @Component
 class MedicationStatementPublish(
@@ -57,7 +58,11 @@ class MedicationStatementPublish(
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { PatientPublishEvent(it, tenant) }
 
-        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<MedicationStatement>> {
+        override fun loadResourcesForIds(
+            requestFhirIds: List<String>,
+            startDate: OffsetDateTime?,
+            endDate: OffsetDateTime?
+        ): Map<String, List<MedicationStatement>> {
             return requestFhirIds.associateWith { fhirService.getMedicationStatementsByPatientFHIRId(tenant, it) }
         }
 

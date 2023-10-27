@@ -10,6 +10,7 @@ import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -162,9 +163,11 @@ class ResourceRequestTest {
 
         val key1 = mockk<ResourceRequestKey> {
             every { unlocalizedResourceId } returns "fhirId1"
+            every { dateRange } returns null
         }
         val key2 = mockk<ResourceRequestKey> {
             every { unlocalizedResourceId } returns "fhirId2"
+            every { dateRange } returns null
         }
 
         val resources = request.loadResources(listOf(key1, key2))
@@ -186,9 +189,11 @@ class ResourceRequestTest {
 
         val key1 = mockk<ResourceRequestKey> {
             every { unlocalizedResourceId } returns "fhirId1"
+            every { dateRange } returns null
         }
         val key2 = mockk<ResourceRequestKey> {
             every { unlocalizedResourceId } returns "fhirId2"
+            every { dateRange } returns null
         }
 
         val resources = request.loadResources(listOf(key1, key2))
@@ -205,13 +210,63 @@ class ResourceRequestTest {
 
         val key1 = mockk<ResourceRequestKey> {
             every { unlocalizedResourceId } returns "fhirId1"
+            every { dateRange } returns null
         }
         val key2 = mockk<ResourceRequestKey> {
             every { unlocalizedResourceId } returns "fhirId2"
+            every { dateRange } returns null
         }
 
         val resources = request.loadResources(listOf(key1, key2))
         assertEquals(0, resources.size)
+    }
+
+    @Test
+    fun `backfill logic works`() {
+        val location1 = mockk<Location>()
+        val location2 = mockk<Location>()
+        val location3 = mockk<Location>()
+
+        every { fhirService.getByIDs(tenant, listOf("fhirId1")) } returns mapOf("fhirId1" to location1)
+        every { fhirService.getByIDs(tenant, listOf("fhirId2")) } returns mapOf("fhirId2" to location2)
+        every { fhirService.getByIDs(tenant, listOf("fhirId2", "fhirId3")) } returns mapOf(
+            "fhirId2" to location2,
+            "fhirId3" to location3
+        )
+
+        val event = mockk<ResourceEvent<InteropResourcePublishV1>>()
+        val request = TestResourceRequest(listOf(event), fhirService, tenant)
+        val date1 = OffsetDateTime.of(2023, 10, 24, 12, 0, 0, 0, ZoneOffset.UTC)
+        val date2 = OffsetDateTime.of(2023, 10, 25, 12, 0, 0, 0, ZoneOffset.UTC)
+        val date3 = OffsetDateTime.of(2023, 10, 26, 12, 0, 0, 0, ZoneOffset.UTC)
+
+        val key1 = mockk<ResourceRequestKey> {
+            every { unlocalizedResourceId } returns "fhirId1"
+            every { dateRange } returns null
+        }
+        val key2 = mockk<ResourceRequestKey> {
+            every { unlocalizedResourceId } returns "fhirId2"
+            every { dateRange } returns Pair(date1, date2)
+        }
+        val key3 = mockk<ResourceRequestKey> {
+            every { unlocalizedResourceId } returns "fhirId3"
+            every { dateRange } returns Pair(date1, date2)
+        }
+        val key4 = mockk<ResourceRequestKey> {
+            every { unlocalizedResourceId } returns "fhirId2"
+            every { dateRange } returns Pair(date2, date3)
+        }
+
+        val resources = request.loadResources(listOf(key1, key2, key3, key4))
+        verify(exactly = 3) { fhirService.getByIDs(tenant, any()) }
+        verify(exactly = 1) { fhirService.getByIDs(tenant, listOf("fhirId1")) }
+        verify(exactly = 1) { fhirService.getByIDs(tenant, listOf("fhirId2")) }
+        verify(exactly = 1) { fhirService.getByIDs(tenant, listOf("fhirId2", "fhirId3")) }
+        assertEquals(4, resources.size)
+        assertEquals(listOf(location1), resources[key1])
+        assertEquals(listOf(location2), resources[key2])
+        assertEquals(listOf(location3), resources[key3])
+        assertEquals(listOf(location2), resources[key4])
     }
 
     @Test
@@ -288,7 +343,11 @@ class ResourceRequestTest {
         override val dataTrigger: DataTrigger
             get() = TODO("Not yet implemented")
 
-        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Location>> {
+        override fun loadResourcesForIds(
+            requestFhirIds: List<String>,
+            startDate: OffsetDateTime?,
+            endDate: OffsetDateTime?
+        ): Map<String, List<Location>> {
             return fhirService.getByIDs(tenant, requestFhirIds).mapListValues()
         }
     }

@@ -6,12 +6,15 @@ import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
 import com.projectronin.interop.tenant.config.model.Tenant
+import mu.KotlinLogging
 import java.time.OffsetDateTime
 
 /**
  * Base class for all resource requests, where [T] is the type of the resource being requested and [E] is the type of event that triggered the request.
  */
 abstract class ResourceRequest<T : Resource<T>, E> {
+    val logger = KotlinLogging.logger { }
+
     /**
      * The source events backing this request.
      */
@@ -72,18 +75,38 @@ abstract class ResourceRequest<T : Resource<T>, E> {
     /**
      * Loads the resources for the supplied [requestFhirIds] and returns them keyed by their supplied ID.
      */
-    abstract fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<T>>
+    abstract fun loadResourcesForIds(
+        requestFhirIds: List<String>,
+        startDate: OffsetDateTime? = null,
+        endDate: OffsetDateTime? = null
+    ): Map<String, List<T>>
 
     /**
      * Loads the resources for the supplied [requestKeys] and returns them keyed by their supplied key.
      */
     open fun loadResources(requestKeys: List<ResourceRequestKey>): Map<ResourceRequestKey, List<T>> {
-        val keysByFhirId = requestKeys.associateBy { it.unlocalizedResourceId }
-        if (keysByFhirId.isEmpty()) {
+        if (requestKeys.isEmpty()) {
             return emptyMap()
         }
+        val partition = requestKeys.partition { it.dateRange == null }
+        val undatedRequests = partition.first
+        val undatedKeysByFhirID = undatedRequests.associateBy { it.unlocalizedResourceId }
+        logger.debug { "undatedKeysByFhirID $undatedKeysByFhirID " }
+        val undatedResourcesByFhirID = loadResourcesForIds(undatedKeysByFhirID.keys.toList())
+        val undatedResourceMap = undatedResourcesByFhirID.mapKeys { (fhirId, _) -> undatedKeysByFhirID[fhirId]!! }
 
-        val resourcesByFhirId = loadResourcesForIds(keysByFhirId.keys.toList())
-        return resourcesByFhirId.mapKeys { (fhirId, _) -> keysByFhirId[fhirId]!! }
+        // for backfills we can group the request by their date range
+        // for each date range we'll do a version of the undated request but then we need to fold those separate maps back
+        // into one large map that we can add to our initial request
+        val backfillRequests = partition.second
+        logger.debug { "backfillRequests $backfillRequests " }
+
+        val backfillMap = backfillRequests.groupBy { it.dateRange!! }.flatMap { datedRequestKeyGroup ->
+            val requestsByFhirID = datedRequestKeyGroup.value.associateBy { it.unlocalizedResourceId }
+            logger.debug { "backfillMap $requestsByFhirID " }
+            val resourcesByFhirID = loadResourcesForIds(requestsByFhirID.keys.toList(), datedRequestKeyGroup.key.first, datedRequestKeyGroup.key.second)
+            resourcesByFhirID.mapKeys { (fhirId, _) -> requestsByFhirID[fhirId]!! }.toList()
+        }.toMap()
+        return undatedResourceMap + backfillMap
     }
 }

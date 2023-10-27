@@ -20,6 +20,7 @@ class ObservationLoad(
     override val channelGroupId = "interop-mirth-observation_group"
     override val publishedResourcesSubscriptions = listOf(ResourceType.Patient, ResourceType.Condition)
     override val resource = ResourceType.Observation
+    override val maxBackfillDays = 30
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(ObservationLoad::class.java)

@@ -19,5 +19,6 @@ class CarePlanLoadTest {
         assertEquals("CarePlanLoad", channel.rootName)
         assertEquals("interop-mirth-care_plan_group", channel.channelGroupId)
         assertEquals(1, channel.destinations.size)
+        assertEquals(30, channel.maxBackfillDays)
     }
 }

@@ -34,6 +34,7 @@ class MedicationStatementPublishTest {
     private val patient3 = Patient(id = Id("$tenantId-9012"))
     private val metadata = mockk<Metadata>(relaxed = true) {
         every { runId } returns "run"
+        every { backfillRequest } returns null
     }
 
     @Test

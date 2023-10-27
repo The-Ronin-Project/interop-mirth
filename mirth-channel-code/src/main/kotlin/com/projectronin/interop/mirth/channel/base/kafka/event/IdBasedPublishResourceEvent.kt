@@ -15,12 +15,14 @@ abstract class IdBasedPublishResourceEvent<S : Resource<S>>(
     sourceClass: KClass<S>
 ) : PublishResourceEvent<S>(sourceEvent, sourceClass) {
     override val requestKeys: Set<ResourceRequestKey> by lazy {
+        val datePair = sourceEvent.metadata.backfillRequest?.let { Pair(it.backfillStartDate, it.backfillEndDate) }
         setOf(
             ResourceRequestKey(
                 metadata.runId,
                 sourceEvent.resourceType,
                 tenant,
-                sourceResource.id!!.value!!
+                sourceResource.id!!.value!!,
+                datePair
             )
         )
     }

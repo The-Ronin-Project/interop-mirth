@@ -27,6 +27,7 @@ import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.fhir.util.asCode
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.DataTrigger
+import com.projectronin.interop.kafka.model.PublishResourceWrapper
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.Runs
@@ -96,6 +97,7 @@ class DocumentReferencePublishTest {
 
     private val metadata = mockk<Metadata>(relaxed = true) {
         every { runId } returns "run"
+        every { backfillRequest } returns null
     }
 
     @Test
@@ -223,7 +225,7 @@ class DocumentReferencePublishTest {
         } returns listOf(docRef3)
 
         val kafkaService = mockk<KafkaPublishService> {
-            every { publishResources(tenantId, DataTrigger.NIGHTLY, any(), any()) } returns mockk()
+            every { publishResourceWrappers(tenantId, DataTrigger.NIGHTLY, any(), any()) } returns mockk()
         }
 
         val publishEvent1 = mockk<InteropResourcePublishV1>(relaxed = true) {
@@ -266,18 +268,18 @@ class DocumentReferencePublishTest {
             status = DocumentReferenceStatus.CURRENT.asCode()
         )
         verify(exactly = 1) {
-            kafkaService.publishResources(
+            kafkaService.publishResourceWrappers(
                 tenantId,
                 DataTrigger.NIGHTLY,
-                listOf(tenantDocRef1, tenantDocRef2),
+                listOf(PublishResourceWrapper(tenantDocRef1), PublishResourceWrapper(tenantDocRef2)),
                 any()
             )
         }
         verify(exactly = 1) {
-            kafkaService.publishResources(
+            kafkaService.publishResourceWrappers(
                 tenantId,
                 DataTrigger.NIGHTLY,
-                listOf(tenantDocRef3),
+                listOf(PublishResourceWrapper(tenantDocRef3)),
                 any()
             )
         }

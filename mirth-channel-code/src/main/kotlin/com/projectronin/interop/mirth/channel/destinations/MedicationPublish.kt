@@ -29,6 +29,7 @@ import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
+import java.time.OffsetDateTime
 
 @Component
 class MedicationPublish(
@@ -125,7 +126,11 @@ class MedicationPublish(
     abstract class EmbeddedMedicationResourceRequest : PublishResourceRequest<Medication>() {
         private val embeddedReferenceIndicators = setOf("contained", "codeable")
 
-        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Medication>> {
+        override fun loadResourcesForIds(
+            requestFhirIds: List<String>,
+            startDate: OffsetDateTime?,
+            endDate: OffsetDateTime?
+        ): Map<String, List<Medication>> {
             // Look for any FHIR IDs that are associated to embedded resources, and load those.
             val fhirIdsForEmbedded = requestFhirIds.filter { id ->
                 embeddedReferenceIndicators.any { id.startsWith("$it-") }

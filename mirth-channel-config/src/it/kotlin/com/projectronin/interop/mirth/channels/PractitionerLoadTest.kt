@@ -183,7 +183,7 @@ class PractitionerLoadTest : BaseChannelTest(
         val message = MirthClient.getMessageById(testChannelId, messageList2.first())
         val publishResponse =
             message.destinationMessages.find { it.connectorName == "Publish Practitioners" }!!.response!!
-        assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Practitioner:$testTenant:$fakePractitionerId</message>"))
+        assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Practitioner:null:$testTenant:$fakePractitionerId</message>"))
     }
 
     @ParameterizedTest

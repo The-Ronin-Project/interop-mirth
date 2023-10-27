@@ -27,6 +27,7 @@ import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
+import java.time.OffsetDateTime
 
 @Component
 class ObservationPublish(
@@ -80,7 +81,11 @@ class ObservationPublish(
             publishEvents.map { PatientPublishEvent(it, tenant) }
 
         private val categoryValueSet = CodeSystem.OBSERVATION_CATEGORY.uri.value
-        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Observation>> {
+        override fun loadResourcesForIds(
+            requestFhirIds: List<String>,
+            startDate: OffsetDateTime?,
+            endDate: OffsetDateTime?
+        ): Map<String, List<Observation>> {
             return requestFhirIds.associateWith {
                 fhirService.findObservationsByPatientAndCategory(
                     tenant,
@@ -88,7 +93,9 @@ class ObservationPublish(
                     listOf(
                         FHIRSearchToken(categoryValueSet, ObservationCategoryCodes.VITAL_SIGNS.code),
                         FHIRSearchToken(categoryValueSet, ObservationCategoryCodes.LABORATORY.code)
-                    )
+                    ),
+                    startDate?.toLocalDate(),
+                    endDate?.toLocalDate()
                 )
             }
         }

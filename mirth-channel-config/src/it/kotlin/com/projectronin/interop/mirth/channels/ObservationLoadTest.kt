@@ -175,7 +175,7 @@ class ObservationLoadTest : BaseChannelTest(
         val message = MirthClient.getMessageById(testChannelId, messageList2.first())
         val publishResponse =
             message.destinationMessages.find { it.connectorName == "Publish Observations" }!!.response!!
-        assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Patient:$tenantInUse:$patient1Id</message>"))
+        assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Patient:null:$tenantInUse:$patient1Id</message>"))
     }
 
     @ParameterizedTest
@@ -337,7 +337,7 @@ class ObservationLoadTest : BaseChannelTest(
         val message = MirthClient.getMessageById(testChannelId, messageList2.first())
         val publishResponse =
             message.destinationMessages.find { it.connectorName == "Publish Observations" }!!.response!!
-        assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Observation:$testTenant:$obsvId</message>"))
+        assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Observation:null:$testTenant:$obsvId</message>"))
     }
 
     @ParameterizedTest

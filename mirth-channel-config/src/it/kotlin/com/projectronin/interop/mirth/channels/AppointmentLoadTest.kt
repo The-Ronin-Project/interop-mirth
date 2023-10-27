@@ -187,7 +187,7 @@ class AppointmentLoadTest : BaseChannelTest(
         val message = MirthClient.getMessageById(testChannelId, messageList2.first())
         val publishResponse =
             message.destinationMessages.find { it.connectorName == "Publish Appointments" }!!.response!!
-        assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Patient:$tenantInUse:$fakePatientId</message>"))
+        assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Patient:null:$tenantInUse:$fakePatientId</message>"))
     }
 
     @ParameterizedTest

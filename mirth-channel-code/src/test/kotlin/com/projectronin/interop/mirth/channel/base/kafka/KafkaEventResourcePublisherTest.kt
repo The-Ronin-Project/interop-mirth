@@ -170,7 +170,11 @@ class KafkaEventResourcePublisherTest {
                 override val fhirService: ConditionService = vendorFactory.conditionService
                 override val tenant: Tenant = tenant
 
-                override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Condition>> {
+                override fun loadResourcesForIds(
+                    requestFhirIds: List<String>,
+                    startDate: OffsetDateTime?,
+                    endDate: OffsetDateTime?
+                ): Map<String, List<Condition>> {
                     return requestFhirIds.associateWith {
                         fhirService.findConditions(
                             tenant,
@@ -774,7 +778,7 @@ class KafkaEventResourcePublisherTest {
         )
         assertEquals(MirthResponseStatus.SENT, result2.status)
         assertEquals(
-            "All requested resources have already been processed this run: $runId:Location:$tenantId:1234",
+            "All requested resources have already been processed this run: $runId:Location:null:$tenantId:1234",
             result2.detailedMessage
         )
         assertEquals("Already processed", result2.message)
@@ -921,7 +925,7 @@ class KafkaEventResourcePublisherTest {
         )
         assertEquals(MirthResponseStatus.SENT, result2.status)
         assertEquals(
-            "All requested resources have already been processed this run: run1:Location:tenant:1234",
+            "All requested resources have already been processed this run: run1:Location:null:tenant:1234",
             result2.detailedMessage
         )
         assertEquals("Already processed", result2.message)

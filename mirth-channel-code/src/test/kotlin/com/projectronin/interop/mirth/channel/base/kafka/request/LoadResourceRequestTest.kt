@@ -85,7 +85,7 @@ class LoadResourceRequestTest {
     }
 
     @Test
-    fun `throws exception for unknown data trigger`() {
+    fun `sets dataTrigger for backfill events`() {
         val loadEvent = InteropResourceLoadV1(
             tenantId = "tenant",
             resourceFHIRId = "12345",
@@ -93,10 +93,23 @@ class LoadResourceRequestTest {
             dataTrigger = InteropResourceLoadV1.DataTrigger.backfill,
             metadata = metadata
         )
+        val request = TestLoadResourceRequest(listOf(loadEvent), tenant, fhirService)
+        assertEquals(DataTrigger.BACKFILL, request.dataTrigger)
+    }
+
+    @Test
+    fun `throws exception for unknown data trigger`() {
+        val loadEvent = InteropResourceLoadV1(
+            tenantId = "tenant",
+            resourceFHIRId = "12345",
+            resourceType = ResourceType.Location,
+            dataTrigger = null,
+            metadata = metadata
+        )
         val exception =
             assertThrows<IllegalStateException> { TestLoadResourceRequest(listOf(loadEvent), tenant, fhirService) }
         assertEquals(
-            "Received a data trigger (backfill) which cannot be transformed to a known value",
+            "Received a null data trigger which cannot be transformed to a known value",
             exception.message
         )
     }
@@ -114,7 +127,7 @@ class LoadResourceRequestTest {
             metadata = metadata
         )
         val request = TestLoadResourceRequest(listOf(loadEvent), tenant, fhirService)
-        val resources = request.loadResourcesForIds(listOf("12345"))
+        val resources = request.loadResourcesForIds(listOf("12345"), endDate = null)
         assertEquals(1, resources.size)
         assertEquals(listOf(location), resources["12345"])
 

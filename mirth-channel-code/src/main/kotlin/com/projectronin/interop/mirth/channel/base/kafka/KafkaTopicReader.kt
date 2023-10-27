@@ -126,17 +126,17 @@ abstract class KafkaTopicReader(
     // Given an event, decide if the date range is too big and split
     private fun InteropResourcePublishV1.splitByDateRange(): List<InteropResourcePublishV1> {
         val oldMetadata = this.metadata
-        val oldBackfillInfo = oldMetadata.backfillRequst!!
-        val startDate = oldBackfillInfo.backfillStartDate!!
-        val endDate = oldBackfillInfo.backfillEndDate!!
+        val oldBackfillInfo = oldMetadata.backfillRequest ?: return listOf(this)
+        val startDate = oldBackfillInfo.backfillStartDate
+        val endDate = oldBackfillInfo.backfillEndDate
         val dayPairs = splitDateRange(startDate, endDate, maxBackfillDays!!)
         return dayPairs.map {
             val backfillModified = oldBackfillInfo.copy(
                 backfillStartDate = it.first,
                 backfillEndDate = it.second
             )
-            val modifiedMetad = oldMetadata.copy(backfillRequst = backfillModified)
-            this.copy(metadata = modifiedMetad)
+            val modifiedMetadata = oldMetadata.copy(backfillRequest = backfillModified)
+            this.copy(metadata = modifiedMetadata)
         }
     }
 

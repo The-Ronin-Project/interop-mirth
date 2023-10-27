@@ -25,7 +25,7 @@ class PublishReferenceResourceRequestTest {
         val publishEvent = mockk<ResourceEvent<InteropResourcePublishV1>>()
 
         val request = TestPublishReferenceResourceRequest(listOf(publishEvent), fhirService, tenant)
-        val resources = request.loadResourcesForIds(listOf("12345"))
+        val resources = request.loadResourcesForIds(listOf("12345"), endDate = null)
         Assertions.assertEquals(1, resources.size)
         Assertions.assertEquals(listOf(location), resources["12345"])
     }

@@ -21,6 +21,7 @@ import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
+import java.time.OffsetDateTime
 
 @Component
 class ConditionPublish(
@@ -62,7 +63,11 @@ class ConditionPublish(
 
         private val categorySystem = CodeSystem.CONDITION_CATEGORY.uri.value
         private val categoryHealthConcernSystem = CodeSystem.CONDITION_CATEGORY_HEALTH_CONCERN.uri.value
-        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Condition>> {
+        override fun loadResourcesForIds(
+            requestFhirIds: List<String>,
+            startDate: OffsetDateTime?,
+            endDate: OffsetDateTime?
+        ): Map<String, List<Condition>> {
             return requestFhirIds.associateWith {
                 fhirService.findConditionsByCodes(
                     tenant,

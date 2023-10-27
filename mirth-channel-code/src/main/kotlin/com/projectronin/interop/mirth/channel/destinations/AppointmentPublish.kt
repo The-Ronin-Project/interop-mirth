@@ -19,6 +19,7 @@ import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
 import java.time.LocalDate
+import java.time.OffsetDateTime
 
 @Component
 class AppointmentPublish(
@@ -58,13 +59,17 @@ class AppointmentPublish(
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { PatientPublishEvent(it, tenant) }
 
-        override fun loadResourcesForIds(requestFhirIds: List<String>): Map<String, List<Appointment>> {
+        override fun loadResourcesForIds(
+            requestFhirIds: List<String>,
+            startDate: OffsetDateTime?,
+            endDate: OffsetDateTime?
+        ): Map<String, List<Appointment>> {
             return requestFhirIds.associateWith {
                 fhirService.findPatientAppointments(
                     tenant,
                     it,
-                    startDate = LocalDate.now().minusMonths(1),
-                    endDate = LocalDate.now().plusMonths(1)
+                    startDate = startDate?.toLocalDate() ?: LocalDate.now().minusMonths(1),
+                    endDate = endDate?.toLocalDate() ?: LocalDate.now().plusMonths(1)
                 )
             }
         }

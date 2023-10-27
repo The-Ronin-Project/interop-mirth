@@ -10,13 +10,11 @@ import com.projectronin.interop.kafka.model.DataTrigger
  */
 abstract class PublishResourceRequest<T : Resource<T>> : ResourceRequest<T, InteropResourcePublishV1>() {
     final override val dataTrigger: DataTrigger by lazy {
-        when (val trigger = sourceEvents.first().sourceEvent.dataTrigger) {
+        when (sourceEvents.first().sourceEvent.dataTrigger) {
             InteropResourcePublishV1.DataTrigger.adhoc -> DataTrigger.AD_HOC
             InteropResourcePublishV1.DataTrigger.nightly -> DataTrigger.NIGHTLY
-            else -> {
-                // backfill
-                throw IllegalStateException("Received a data trigger ($trigger) which cannot be transformed to a known value")
-            }
+            InteropResourcePublishV1.DataTrigger.backfill -> DataTrigger.BACKFILL
+            null -> throw IllegalStateException("Received a null data trigger which cannot be transformed to a known value")
         }
     }
 }

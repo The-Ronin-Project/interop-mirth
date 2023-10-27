@@ -24,7 +24,7 @@ class ResourceRequestKeyTest {
     @Test
     fun `toString returns proper details`() {
         val key = ResourceRequestKey("run1", ResourceType.Location, tenant, "tenant-1234")
-        assertEquals("run1:Location:tenant:1234", key.toString())
+        assertEquals("run1:Location:null:tenant:1234", key.toString())
     }
 
     @Test

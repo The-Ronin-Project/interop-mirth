@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.OffsetDateTime
 
 class ObservationPublishTest {
     private val tenantId = "tenant"
@@ -83,6 +84,7 @@ class ObservationPublishTest {
 
     private val metadata = mockk<Metadata>(relaxed = true) {
         every { runId } returns "run"
+        every { backfillRequest } returns null
     }
 
     @Test
@@ -140,6 +142,8 @@ class ObservationPublishTest {
         val observation1 = mockk<Observation>()
         val observation2 = mockk<Observation>()
         val observation3 = mockk<Observation>()
+        val startDate = OffsetDateTime.now()
+        val endDate = OffsetDateTime.now()
         every {
             observationService.findObservationsByPatientAndCategory(
                 tenant,
@@ -161,7 +165,9 @@ class ObservationPublishTest {
             observationService.findObservationsByPatientAndCategory(
                 tenant,
                 listOf("9012"),
-                categories
+                categories,
+                startDate.toLocalDate(),
+                endDate.toLocalDate()
             )
         } returns emptyList()
 
@@ -181,7 +187,16 @@ class ObservationPublishTest {
             tenantId = tenantId,
             resourceType = ResourceType.Patient,
             resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
-            metadata = metadata
+            metadata = Metadata(
+                runId = "run",
+                runDateTime = OffsetDateTime.now(),
+                upstreamReferences = null,
+                backfillRequest = Metadata.BackfillRequest(
+                    backfillID = "123",
+                    backfillStartDate = startDate,
+                    backfillEndDate = endDate
+                )
+            )
         )
         val request =
             ObservationPublish.PatientPublishObservationRequest(
@@ -198,7 +213,7 @@ class ObservationPublishTest {
         val key2 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-5678")
         assertEquals(listOf(observation3), resourcesByKeys[key2])
 
-        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-9012")
+        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-9012", Pair(startDate, endDate))
         assertEquals(emptyList<Observation>(), resourcesByKeys[key3])
     }
 

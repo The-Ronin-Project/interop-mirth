@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.OffsetDateTime
 
 class CarePlanPublishTest {
     private val tenantId = "tenant"
@@ -42,6 +43,7 @@ class CarePlanPublishTest {
     private val carePlan = CarePlan(id = Id("$tenantId-3456"))
     private val metadata = mockk<Metadata>(relaxed = true) {
         every { runId } returns "run"
+        every { backfillRequest } returns null
     }
 
     @Test
@@ -65,12 +67,14 @@ class CarePlanPublishTest {
         val carePlan1 = mockk<CarePlan>()
         val carePlan2 = mockk<CarePlan>()
         val carePlan3 = mockk<CarePlan>()
+        val startDate = OffsetDateTime.now()
+        val endDate = OffsetDateTime.now()
         every { carePlanService.findPatientCarePlans(tenant, "1234", any(), any()) } returns listOf(
             carePlan1,
             carePlan2
         )
         every { carePlanService.findPatientCarePlans(tenant, "5678", any(), any()) } returns listOf(carePlan3)
-        every { carePlanService.findPatientCarePlans(tenant, "9012", any(), any()) } returns emptyList()
+        every { carePlanService.findPatientCarePlans(tenant, "9012", startDate.toLocalDate(), endDate.toLocalDate()) } returns emptyList()
 
         val event1 = InteropResourcePublishV1(
             tenantId = tenantId,
@@ -88,7 +92,16 @@ class CarePlanPublishTest {
             tenantId = tenantId,
             resourceType = ResourceType.Patient,
             resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
-            metadata = metadata
+            metadata = Metadata(
+                runId = "run",
+                runDateTime = OffsetDateTime.now(),
+                upstreamReferences = null,
+                backfillRequest = Metadata.BackfillRequest(
+                    backfillID = "123",
+                    backfillStartDate = startDate,
+                    backfillEndDate = endDate
+                )
+            )
         )
         val request =
             CarePlanPublish.PatientPublishCarePlanRequest(
@@ -105,7 +118,7 @@ class CarePlanPublishTest {
         val key2 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-5678")
         assertEquals(listOf(carePlan3), resourcesByKeys[key2])
 
-        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-9012")
+        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-9012", Pair(startDate, endDate))
         assertEquals(emptyList<CarePlan>(), resourcesByKeys[key3])
     }
 

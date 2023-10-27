@@ -20,7 +20,7 @@ class AppointmentLoad(
     override val channelGroupId = "interop-mirth-appointment_group"
     override val publishedResourcesSubscriptions = listOf(ResourceType.Patient)
     override val resource = ResourceType.Appointment
-
+    override val maxBackfillDays = 30
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(AppointmentLoad::class.java)
     }

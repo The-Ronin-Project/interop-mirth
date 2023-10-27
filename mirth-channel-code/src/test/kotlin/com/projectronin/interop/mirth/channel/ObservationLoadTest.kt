@@ -19,5 +19,6 @@ class ObservationLoadTest {
         assertEquals("ObservationLoad", channel.rootName)
         assertEquals("interop-mirth-observation_group", channel.channelGroupId)
         assertEquals(1, channel.destinations.size)
+        assertEquals(30, channel.maxBackfillDays)
     }
 }

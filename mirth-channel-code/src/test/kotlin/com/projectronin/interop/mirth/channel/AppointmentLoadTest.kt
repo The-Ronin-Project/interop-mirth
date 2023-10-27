@@ -19,5 +19,6 @@ class AppointmentLoadTest {
         assertEquals("AppointmentLoad", channel.rootName)
         assertEquals("interop-mirth-appointment_group", channel.channelGroupId)
         assertEquals(1, channel.destinations.size)
+        assertEquals(30, channel.maxBackfillDays)
     }
 }

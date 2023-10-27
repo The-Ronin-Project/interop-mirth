@@ -560,7 +560,7 @@ class KafkaTopicReaderTest {
             metadata = Metadata(
                 runId = "1234",
                 runDateTime = OffsetDateTime.now(),
-                backfillRequst = Metadata.BackfillRequst(
+                backfillRequest = Metadata.BackfillRequest(
                     backfillID = "123",
                     backfillStartDate = startDate,
                     backfillEndDate = endDate
@@ -586,12 +586,12 @@ class KafkaTopicReaderTest {
         val messages = splittingChannel.channelSourceReader(emptyMap())
         assertEquals(2, messages.size)
         val events = messages.map { JacksonUtil.readJsonList(it.message, InteropResourcePublishV1::class) }.flatten()
-        assertEquals("123", events[0].metadata.backfillRequst?.backfillID)
-        assertEquals("123", events[1].metadata.backfillRequst?.backfillID)
-        assertEquals(startDate, events[0].metadata.backfillRequst?.backfillStartDate)
-        assertEquals(startDate.plusDays(5), events[1].metadata.backfillRequst?.backfillStartDate)
-        assertEquals(startDate.plusDays(5), events[0].metadata.backfillRequst?.backfillEndDate)
-        assertEquals(endDate, events[1].metadata.backfillRequst?.backfillEndDate)
+        assertEquals("123", events[0].metadata.backfillRequest?.backfillID)
+        assertEquals("123", events[1].metadata.backfillRequest?.backfillID)
+        assertEquals(startDate, events[0].metadata.backfillRequest?.backfillStartDate)
+        assertEquals(startDate.plusDays(5), events[1].metadata.backfillRequest?.backfillStartDate)
+        assertEquals(startDate.plusDays(5), events[0].metadata.backfillRequest?.backfillEndDate)
+        assertEquals(endDate, events[1].metadata.backfillRequest?.backfillEndDate)
         assertEquals("mockTenant", events[0].tenantId)
         assertEquals("mockTenant", events[1].tenantId)
     }

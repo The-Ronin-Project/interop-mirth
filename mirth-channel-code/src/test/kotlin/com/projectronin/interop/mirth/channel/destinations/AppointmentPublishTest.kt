@@ -17,6 +17,7 @@ import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
+import java.time.OffsetDateTime
 
 class AppointmentPublishTest {
     private val tenantId = "tenant"
@@ -34,6 +35,7 @@ class AppointmentPublishTest {
     private val patient3 = Patient(id = Id("$tenantId-9012"))
     private val metadata = mockk<Metadata>(relaxed = true) {
         every { runId } returns "run"
+        every { backfillRequest } returns null
     }
 
     @Test
@@ -55,12 +57,14 @@ class AppointmentPublishTest {
         val appointment1 = mockk<Appointment>()
         val appointment2 = mockk<Appointment>()
         val appointment3 = mockk<Appointment>()
+        val startDate = OffsetDateTime.now()
+        val endDate = OffsetDateTime.now()
         every { appointmentService.findPatientAppointments(tenant, "1234", any(), any()) } returns listOf(
             appointment1,
             appointment2
         )
         every { appointmentService.findPatientAppointments(tenant, "5678", any(), any()) } returns listOf(appointment3)
-        every { appointmentService.findPatientAppointments(tenant, "9012", any(), any()) } returns emptyList()
+        every { appointmentService.findPatientAppointments(tenant, "9012", startDate.toLocalDate(), endDate.toLocalDate()) } returns emptyList()
 
         val event1 = InteropResourcePublishV1(
             tenantId = tenantId,
@@ -74,11 +78,21 @@ class AppointmentPublishTest {
             resourceJson = JacksonManager.objectMapper.writeValueAsString(patient2),
             metadata = metadata
         )
+
         val event3 = InteropResourcePublishV1(
             tenantId = tenantId,
             resourceType = ResourceType.Patient,
             resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
-            metadata = metadata
+            metadata = Metadata(
+                runId = "run",
+                runDateTime = OffsetDateTime.now(),
+                upstreamReferences = null,
+                backfillRequest = Metadata.BackfillRequest(
+                    backfillID = "123",
+                    backfillStartDate = startDate,
+                    backfillEndDate = endDate
+                )
+            )
         )
         val request =
             AppointmentPublish.PatientPublishAppointmentRequest(
@@ -95,7 +109,7 @@ class AppointmentPublishTest {
         val key2 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-5678")
         assertEquals(listOf(appointment3), resourcesByKeys[key2])
 
-        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-9012")
+        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-9012", Pair(startDate, endDate))
         assertEquals(emptyList<Appointment>(), resourcesByKeys[key3])
     }
 }
