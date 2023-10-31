@@ -143,7 +143,8 @@ object TenantClient {
         val patientOnboardedFlagId: String,
         val hsi: String?,
         override val instanceName: String,
-        val departmentInternalSystem: String
+        val departmentInternalSystem: String,
+        val orderSystem: String
     ) : Vendor {
         override val vendorType: VendorType = VendorType.EPIC
     }

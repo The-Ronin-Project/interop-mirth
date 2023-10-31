@@ -219,7 +219,7 @@ return;</undeployScript>
         <timezone>America/Chicago</timezone>
       </lastModified>
       <pruningSettings>
-        <pruneMetaDataDays>60</pruneMetaDataDays>
+        <pruneMetaDataDays>14</pruneMetaDataDays>
         <archiveEnabled>true</archiveEnabled>
       </pruningSettings>
     </metadata>

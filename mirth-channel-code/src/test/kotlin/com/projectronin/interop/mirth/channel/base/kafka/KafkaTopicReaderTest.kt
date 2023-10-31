@@ -578,7 +578,13 @@ class KafkaTopicReaderTest {
             tenantConfigService.getConfiguration("mockTenant")
         } returns configDO
         every { kafkaLoadService.retrieveLoadEvents(any(), any()) } returns emptyList()
-        every { kafkaPublishService.retrievePublishEvents(any(), match { it == DataTrigger.NIGHTLY }, any()) } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                any(),
+                match { it == DataTrigger.NIGHTLY },
+                any()
+            )
+        } returns emptyList()
         every {
             kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.AD_HOC, "test")
         } returns listOf(actualEvent)

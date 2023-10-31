@@ -68,7 +68,9 @@ abstract class KafkaTopicReader(
             val splitBackfillEvents = if (backfillEvents.isNotEmpty()) {
                 val splitBackfillEvents = backfillEvents.splitDateRange()
                 splitBackfillEvents.toPublishMirthMessages()
-            } else { emptyList() }
+            } else {
+                emptyList()
+            }
 
             return adHocEvents.toPublishMirthMessages() + splitBackfillEvents
         }
@@ -141,7 +143,11 @@ abstract class KafkaTopicReader(
     }
 
     // split a given set of dates into a list of pairs of roughly equal length
-    private fun splitDateRange(startDate: OffsetDateTime, endDate: OffsetDateTime, maxDayRange: Int): List<Pair<OffsetDateTime, OffsetDateTime>> {
+    private fun splitDateRange(
+        startDate: OffsetDateTime,
+        endDate: OffsetDateTime,
+        maxDayRange: Int
+    ): List<Pair<OffsetDateTime, OffsetDateTime>> {
         // add one, since this function technically returns the number of days BETWEEN two days
         // don't need to add 2 tho, because the range function we use later has an inclusive end
         val daysBetween = ChronoUnit.DAYS.between(startDate, endDate) + 1

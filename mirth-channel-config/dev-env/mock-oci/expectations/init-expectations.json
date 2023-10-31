@@ -400,6 +400,30 @@
           "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521c",
           "version": 1,
           "filename": "ConditionConceptMap.json"
+        },
+        {
+          "resource_type": "MedicationAdministration",
+          "data_element": "MedicationAdministration.status",
+          "tenant_id": "epicmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "MedicationAdministrationStatus.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceMedicationAdministrationStatus",
+          "registry_uuid": "24",
+          "concept_map_name": "MedicationAdministrationStatusRonin"
+        },
+        {
+          "resource_type": "MedicationAdministration",
+          "data_element": "MedicationAdministration.status",
+          "tenant_id": "cernmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "MedicationAdministrationStatus.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceMedicationAdministrationStatus",
+          "registry_uuid": "25",
+          "concept_map_name": "MedicationAdministrationStatusRonin"
         }
       ]
     },
@@ -840,6 +864,68 @@
       }
     },
     "id": "GetRoninDocumentReferenceType",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/MedicationAdministrationStatus.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ConceptMap",
+        "title": "Ronin MedicationAdministration Statuses to FHIR R4 MedicationAdministrationStatus",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a2",
+        "name": "MedicationAdministrationStatusRonin",
+        "url": "http://projectronin.io/fhir/StructureDefinition/ConceptMap/4ffae118-778f-4df9-bd73-aece934b521b",
+        "purpose": "FHIR Interops Concept Map",
+        "publisher": "Project Ronin",
+        "experimental": false,
+        "date": "2022-12-02",
+        "version": 1,
+        "group": [
+          {
+            "source": "http://projectronin.io/fhir/CodeSystem/epicmock/MedicationAdministrationStatus",
+            "sourceVersion": "1.0",
+            "target": "http://hl7.org/fhir/ValueSet/medication-admin-status",
+            "targetVersion": "4.0.1",
+            "element": [
+              {
+                "code": "Given",
+                "display": "Given",
+                "target": [
+                  {
+                    "code": "completed",
+                    "display": "completed",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://projectronin.io/fhir/ronin.common-fhir-model.uscore-r4/StructureDefinition/Extension/ronin-ConceptMapSchema",
+            "valueString": "1.0.0"
+          }
+        ]
+      }
+    },
+    "id": "GetRoninMedicationAdministrationStatus",
     "priority": 0,
     "timeToLive": {
       "unlimited": true
