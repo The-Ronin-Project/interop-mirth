@@ -1,17 +1,17 @@
-<channel version="3.11.0">
+<channel version="4.4.0">
   <id>83ead971-6f47-4ff9-bc59-e6a5b595522b</id>
   <nextMetaDataId>5</nextMetaDataId>
   <name>PatientDiscovery</name>
   <description>Version 1.0.0.
 
 Uses a set list of locations to find patients with upcoming appointments and triggers the nightly load</description>
-  <revision>2</revision>
-  <sourceConnector version="3.11.0">
+  <revision>1</revision>
+  <sourceConnector version="4.4.0">
     <metaDataId>0</metaDataId>
     <name>sourceConnector</name>
-    <properties class="com.mirth.connect.connectors.js.JavaScriptReceiverProperties" version="3.11.0">
+    <properties class="com.mirth.connect.connectors.js.JavaScriptReceiverProperties" version="4.4.0">
       <pluginProperties/>
-      <pollConnectorProperties version="3.11.0">
+      <pollConnectorProperties version="4.4.0">
         <pollingType>INTERVAL</pollingType>
         <pollOnStart>true</pollOnStart>
         <pollingFrequency>1800000</pollingFrequency>
@@ -38,7 +38,7 @@ Uses a set list of locations to find patients with upcoming appointments and tri
           <endingMinute>0</endingMinute>
         </pollConnectorPropertiesAdvanced>
       </pollConnectorProperties>
-      <sourceConnectorProperties version="3.11.0">
+      <sourceConnectorProperties version="4.4.0">
         <responseVariable>None</responseVariable>
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
@@ -54,9 +54,9 @@ Uses a set list of locations to find patients with upcoming appointments and tri
       </sourceConnectorProperties>
       <script>return sourceReader()</script>
     </properties>
-    <transformer version="3.11.0">
+    <transformer version="4.4.0">
       <elements>
-        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="3.11.0">
+        <com.mirth.connect.plugins.javascriptstep.JavaScriptStep version="4.4.0">
           <name>Source Transform</name>
           <sequenceNumber>0</sequenceNumber>
           <enabled>true</enabled>
@@ -67,20 +67,20 @@ Uses a set list of locations to find patients with upcoming appointments and tri
       <outboundTemplate encoding="base64"></outboundTemplate>
       <inboundDataType>RAW</inboundDataType>
       <outboundDataType>RAW</outboundDataType>
-      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
+      <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.4.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.4.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </inboundProperties>
-      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
-        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
+      <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.4.0">
+        <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.4.0">
           <splitType>JavaScript</splitType>
           <batchScript></batchScript>
         </batchProperties>
       </outboundProperties>
     </transformer>
-    <filter version="3.11.0">
+    <filter version="4.4.0">
       <elements/>
     </filter>
     <transportName>JavaScript Reader</transportName>
@@ -89,12 +89,12 @@ Uses a set list of locations to find patients with upcoming appointments and tri
     <waitForPrevious>true</waitForPrevious>
   </sourceConnector>
   <destinationConnectors>
-    <connector version="3.11.0">
+    <connector version="4.4.0">
       <metaDataId>1</metaDataId>
       <name>Request Patients</name>
-      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="3.11.0">
+      <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="4.4.0">
         <pluginProperties/>
-        <destinationConnectorProperties version="3.11.0">
+        <destinationConnectorProperties version="4.4.0">
           <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
@@ -116,43 +116,43 @@ Uses a set list of locations to find patients with upcoming appointments and tri
         </destinationConnectorProperties>
         <script>return destinationWriter(&quot;Kafka&quot;);</script>
       </properties>
-      <transformer version="3.11.0">
+      <transformer version="4.4.0">
         <elements/>
         <inboundTemplate encoding="base64"></inboundTemplate>
         <outboundTemplate encoding="base64"></outboundTemplate>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.4.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.4.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.4.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.4.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </transformer>
-      <responseTransformer version="3.11.0">
+      <responseTransformer version="4.4.0">
         <elements/>
         <inboundDataType>RAW</inboundDataType>
         <outboundDataType>RAW</outboundDataType>
-        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
+        <inboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.4.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.4.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </inboundProperties>
-        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="3.11.0">
-          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="3.11.0">
+        <outboundProperties class="com.mirth.connect.plugins.datatypes.raw.RawDataTypeProperties" version="4.4.0">
+          <batchProperties class="com.mirth.connect.plugins.datatypes.raw.RawBatchProperties" version="4.4.0">
             <splitType>JavaScript</splitType>
             <batchScript></batchScript>
           </batchProperties>
         </outboundProperties>
       </responseTransformer>
-      <filter version="3.11.0">
+      <filter version="4.4.0">
         <elements/>
       </filter>
       <transportName>JavaScript Writer</transportName>
@@ -174,10 +174,12 @@ onDeploy(channelService)
   <undeployScript>// This script executes once when the channel is undeployed
 // You only have access to the globalMap and globalChannelMap here to persist data
 return;</undeployScript>
-  <properties version="3.11.0">
+  <properties version="4.4.0">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
     <messageStorageMode>DEVELOPMENT</messageStorageMode>
     <encryptData>false</encryptData>
+    <encryptAttachments>false</encryptAttachments>
+    <encryptCustomMetaData>false</encryptCustomMetaData>
     <removeContentOnCompletion>false</removeContentOnCompletion>
     <removeOnlyFilteredOnCompletion>false</removeOnlyFilteredOnCompletion>
     <removeAttachmentsOnCompletion>false</removeAttachmentsOnCompletion>
@@ -200,7 +202,7 @@ return;</undeployScript>
         <mappingName>kafkaEventRunId</mappingName>
       </metaDataColumn>
     </metaDataColumns>
-    <attachmentProperties version="3.11.0">
+    <attachmentProperties version="4.4.0">
       <type>None</type>
       <properties/>
     </attachmentProperties>
@@ -213,7 +215,7 @@ return;</undeployScript>
   </properties>
   <exportData>
     <metadata>
-      <enabled>false</enabled>
+      <enabled>true</enabled>
       <lastModified>
         <time>1691181452811</time>
         <timezone>America/Chicago</timezone>
@@ -221,6 +223,7 @@ return;</undeployScript>
       <pruningSettings>
         <pruneMetaDataDays>14</pruneMetaDataDays>
         <archiveEnabled>true</archiveEnabled>
+        <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>
     </metadata>
   </exportData>

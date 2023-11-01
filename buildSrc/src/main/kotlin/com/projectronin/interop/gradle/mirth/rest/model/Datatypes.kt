@@ -2,7 +2,7 @@ package com.projectronin.interop.gradle.mirth.rest.model
 
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
 
-internal const val MIRTH_VERSION = "3.11.0"
+internal const val MIRTH_VERSION = "4.4.0"
 
 /**
  * Mirth transport layer for providing a List of resources.

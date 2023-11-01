@@ -1,48 +1,55 @@
-<codeTemplateLibrary version="3.11.0">
+<codeTemplateLibrary version="4.4.0">
   <id>fc461d5a-b070-422f-b1c6-c5aa4256eed6</id>
   <name>Standard Functions</name>
   <revision>1</revision>
   <lastModified>
-    <time>1658174816203</time>
+    <time>1698687953087</time>
     <timezone>Etc/UTC</timezone>
   </lastModified>
   <description></description>
   <includeNewChannels>true</includeNewChannels>
   <enabledChannelIds>
-    <string>698bd306-9112-4d77-baa6-c15b1462f67f</string>
-    <string>ronin-ea1af8ef-ab0e-469f-8011-c43917</string>
-    <string>ea1af8ef-ab0e-469f-8011-c43917cb3bcf</string>
-    <string>14ca4dbf-5e1d-4760-a978-fd56b2562ecc</string>
-    <string>1ad1b43a-207d-4efa-bc96-3c19bde2b7a5</string>
-    <string>ronin-1ad1b43a-207d-4efa-bc96-3c19bd</string>
-    <string>ronin-26ab27c7-31b7-4c61-9403-6f4e61</string>
-    <string>ronin-0f0aec05-3c59-4fd5-8b60-b0d9c4</string>
-    <string>ronin-d90aa9f3-b609-4067-b715-9a0b34</string>
-    <string>9da3eedc-7405-4805-899c-9b9e4c55260c</string>
+    <string>97b6f1db-9bd9-4251-9d04-d25871723b14</string>
+    <string>d8dcc430-8e99-49af-a8e5-13160ef09cc3</string>
+    <string>01602608-999c-42e8-979d-80f59dc5a08a</string>
+    <string>41b32717-852d-40d9-1524-9db9bd1f6b79</string>
+    <string>1cf7c2b1-b8b4-4afb-9fbf-19e188532ac9</string>
+    <string>ff6a5085-470d-4b90-bbbb-641f50b92577</string>
+    <string>83ead971-6f47-4ff9-bc59-e6a5b595522b</string>
+    <string>85fadd5c-7d27-432f-96a5-74caeeb53fc0</string>
+    <string>1eaf4bd8-7f32-44d7-8697-0b758e7c581e</string>
+    <string>f2956ab4-9c8b-4dbe-b788-12726f91454d</string>
+    <string>1c1cc5bc-bfca-4ff8-a7fd-099c3d8f4959</string>
+    <string>765556ad-91c7-4ca8-9189-0c465393fe8e</string>
+    <string>cf0088fe-c085-491f-a926-c498b68e2ef7</string>
+    <string>f2956ab5-9c8c-4dbf-b789-12726f91454e</string>
+    <string>160b2076-2763-4772-b4ef-0ef1c78a676f</string>
     <string>50968316-2e13-41f7-b5dd-1d6a46d17c62</string>
-    <string>d90aa9f3-b609-4067-b715-9a0b348228fb</string>
-    <string>ronin-14ca4dbf-5e1d-4760-a978-fd56b2</string>
-    <string>26ab27c7-31b7-4c61-9403-6f4e61b789e0</string>
-    <string>0f0aec05-3c59-4fd5-8b60-b0d9c441e6ed</string>
-    <string>6b98c9ba-262f-44e9-8370-f662e5db4fba</string>
+    <string>54c15c0b-2ab9-46af-b7db-278ba2c02bb8</string>
+    <string>a3dc2a35-a776-476f-b973-7db20b3a4285</string>
+    <string>9978bb41-45b2-4492-8377-df5371eb08d0</string>
+    <string>ee431a1e-2711-4f51-80e3-3881f9890122</string>
+    <string>ee431a1e-2711-4f51-80e3-2770e878f011</string>
+    <string>1c9acf4e-f825-4f10-befb-eefdf7d124ed</string>
+    <string>735716c7-fbd9-4c9c-b7e2-f33153fda6c2</string>
   </enabledChannelIds>
   <disabledChannelIds/>
   <codeTemplates>
-    <codeTemplate version="3.11.0">
+    <codeTemplate version="4.4.0">
       <id>e1d808c8-23b1-4ccc-aa36-9a42e92b4776</id>
       <name>Destination Filter</name>
       <revision>1</revision>
       <lastModified>
-        <time>1658174814237</time>
+        <time>1698687949194</time>
         <timezone>Etc/UTC</timezone>
       </lastModified>
       <contextSet>
         <delegate>
           <contextType>DESTINATION_DISPATCHER</contextType>
-          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>SOURCE_RECEIVER</contextType>
-          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
         </delegate>
       </contextSet>
       <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
@@ -60,21 +67,21 @@ function destinationFilter(destinationName) {
 }</code>
       </properties>
     </codeTemplate>
-    <codeTemplate version="3.11.0">
+    <codeTemplate version="4.4.0">
       <id>e0751f00-ebe9-47a3-8402-2d25e155c899</id>
       <name>Destination Transform</name>
       <revision>1</revision>
       <lastModified>
-        <time>1658174814651</time>
+        <time>1698687949724</time>
         <timezone>Etc/UTC</timezone>
       </lastModified>
       <contextSet>
         <delegate>
           <contextType>DESTINATION_DISPATCHER</contextType>
-          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>SOURCE_RECEIVER</contextType>
-          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
         </delegate>
       </contextSet>
       <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
@@ -91,21 +98,21 @@ function destinationTransform(destinationName) {
 }</code>
       </properties>
     </codeTemplate>
-    <codeTemplate version="3.11.0">
+    <codeTemplate version="4.4.0">
       <id>064699d6-67d0-447d-9afe-a06fafbb875e</id>
       <name>Destination Writer</name>
       <revision>1</revision>
       <lastModified>
-        <time>1658174814896</time>
+        <time>1698687950214</time>
         <timezone>Etc/UTC</timezone>
       </lastModified>
       <contextSet>
         <delegate>
           <contextType>DESTINATION_DISPATCHER</contextType>
-          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>SOURCE_RECEIVER</contextType>
-          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
         </delegate>
       </contextSet>
       <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
@@ -124,27 +131,27 @@ function destinationWriter(destinationName) {
 }</code>
       </properties>
     </codeTemplate>
-    <codeTemplate version="3.11.0">
+    <codeTemplate version="4.4.0">
       <id>0a49a2f2-efa2-4092-b3e4-771d0c9e7445</id>
       <name>On Deploy</name>
-      <revision>8</revision>
+      <revision>1</revision>
       <lastModified>
-        <time>1658269497188</time>
+        <time>1698687950754</time>
         <timezone>Etc/UTC</timezone>
       </lastModified>
       <contextSet>
         <delegate>
-          <contextType>DESTINATION_DISPATCHER</contextType>
-          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
-          <contextType>SOURCE_RECEIVER</contextType>
-          <contextType>CHANNEL_POSTPROCESSOR</contextType>
           <contextType>CHANNEL_BATCH</contextType>
-          <contextType>CHANNEL_DEPLOY</contextType>
-          <contextType>CHANNEL_PREPROCESSOR</contextType>
-          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
           <contextType>CHANNEL_ATTACHMENT</contextType>
+          <contextType>CHANNEL_POSTPROCESSOR</contextType>
+          <contextType>DESTINATION_DISPATCHER</contextType>
+          <contextType>SOURCE_RECEIVER</contextType>
+          <contextType>CHANNEL_PREPROCESSOR</contextType>
           <contextType>CHANNEL_UNDEPLOY</contextType>
+          <contextType>CHANNEL_DEPLOY</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
         </delegate>
       </contextSet>
       <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
@@ -160,21 +167,21 @@ function onDeploy(channelService) {
 }</code>
       </properties>
     </codeTemplate>
-    <codeTemplate version="3.11.0">
+    <codeTemplate version="4.4.0">
       <id>5947202c-fb91-45f7-969c-d2369f34de13</id>
       <name>Source Error Check</name>
       <revision>1</revision>
       <lastModified>
-        <time>1658174815316</time>
+        <time>1698687951225</time>
         <timezone>Etc/UTC</timezone>
       </lastModified>
       <contextSet>
         <delegate>
           <contextType>DESTINATION_DISPATCHER</contextType>
-          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>SOURCE_RECEIVER</contextType>
-          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
         </delegate>
       </contextSet>
       <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
@@ -190,21 +197,21 @@ function checkForErrorMessage() {
 }</code>
       </properties>
     </codeTemplate>
-    <codeTemplate version="3.11.0">
+    <codeTemplate version="4.4.0">
       <id>1caa5f49-4a91-4c6d-af47-5aae1dc85eb8</id>
       <name>Source Filter</name>
       <revision>1</revision>
       <lastModified>
-        <time>1658174815562</time>
+        <time>1698687951690</time>
         <timezone>Etc/UTC</timezone>
       </lastModified>
       <contextSet>
         <delegate>
           <contextType>DESTINATION_DISPATCHER</contextType>
-          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>SOURCE_RECEIVER</contextType>
-          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
         </delegate>
       </contextSet>
       <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
@@ -222,21 +229,21 @@ function sourceFilter() {
 }</code>
       </properties>
     </codeTemplate>
-    <codeTemplate version="3.11.0">
+    <codeTemplate version="4.4.0">
       <id>b9d0ac8a-da20-4205-bd00-04b98eb8ffb7</id>
       <name>Source Reader</name>
       <revision>1</revision>
       <lastModified>
-        <time>1658174815777</time>
+        <time>1698687952156</time>
         <timezone>Etc/UTC</timezone>
       </lastModified>
       <contextSet>
         <delegate>
           <contextType>DESTINATION_DISPATCHER</contextType>
-          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>SOURCE_RECEIVER</contextType>
-          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
         </delegate>
       </contextSet>
       <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">
@@ -269,21 +276,21 @@ function messageArrayList(messageList) {
 </code>
       </properties>
     </codeTemplate>
-    <codeTemplate version="3.11.0">
+    <codeTemplate version="4.4.0">
       <id>eaf8ca4c-56c5-432f-872a-51884dd879f4</id>
       <name>Source Transform</name>
       <revision>1</revision>
       <lastModified>
-        <time>1658174815927</time>
+        <time>1698687952620</time>
         <timezone>Etc/UTC</timezone>
       </lastModified>
       <contextSet>
         <delegate>
           <contextType>DESTINATION_DISPATCHER</contextType>
-          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>SOURCE_RECEIVER</contextType>
-          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
+          <contextType>SOURCE_FILTER_TRANSFORMER</contextType>
           <contextType>DESTINATION_FILTER_TRANSFORMER</contextType>
+          <contextType>DESTINATION_RESPONSE_TRANSFORMER</contextType>
         </delegate>
       </contextSet>
       <properties class="com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties">

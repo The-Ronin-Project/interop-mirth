@@ -27,7 +27,8 @@ open class AddInteropDirectoryResourceTask : BaseMirthTask() {
         description = "Interop resources",
         includeWithGlobalScripts = false,
         directory = INTEROP_DIRECTORY,
-        directoryRecursion = true
+        directoryRecursion = true,
+        loadParentFirst = true
     )
 
     @TaskAction

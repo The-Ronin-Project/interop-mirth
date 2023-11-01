@@ -197,10 +197,10 @@ class CarePlanLoadTest : BaseChannelTest(
             metadata = metadata
         )
 
-        waitForMessage(2)
+        waitForMessage(3)
         val messageList2 = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsSent(messageList2)
-        assertEquals(2, messageList2.size)
+        assertEquals(3, messageList2.size)
         assertEquals(1, getAidboxResourceCount("CarePlan"))
     }
 

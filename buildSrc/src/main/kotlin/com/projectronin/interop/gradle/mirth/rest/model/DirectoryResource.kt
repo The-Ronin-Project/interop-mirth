@@ -23,7 +23,8 @@ data class DirectoryResource(
     val description: String,
     val includeWithGlobalScripts: Boolean,
     val directory: String,
-    val directoryRecursion: Boolean = true
+    val directoryRecursion: Boolean = true,
+    val loadParentFirst: Boolean = false
 ) {
     @JsonProperty("@version")
     val version: String = MIRTH_VERSION

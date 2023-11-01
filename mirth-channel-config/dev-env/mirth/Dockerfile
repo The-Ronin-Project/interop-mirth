@@ -1,4 +1,4 @@
-FROM docker-proxy.devops.projectronin.io/ronin/base/mirth-base:3.11.0
+FROM nextgenhealthcare/connect:4.4.0
 USER root
 RUN apt-get update && apt-get install sudo
 RUN adduser mirth sudo
@@ -27,3 +27,4 @@ j/7LBRe2wfNmjXFYm5GqWft10UJ7Ypb3XYoGwcDac+IUvrgmgTHD+E3klV3SUi8i\n\
 Gm5MBedhPkXrLWmwuoMJd7tzARRHHT6PBH/ZGw==\n\
 -----END CERTIFICATE-----' > /usr/local/share/ca-certificates/MockCertificate.crt
 RUN update-ca-certificates
+RUN keytool -import -file /usr/local/share/ca-certificates/MockCertificate.crt -storepass changeit -cacerts -alias Mock -noprompt
