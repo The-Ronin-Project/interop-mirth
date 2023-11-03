@@ -1,35 +1,21 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.interop.fhir.r4.CodeSystem
-import com.projectronin.interop.fhir.r4.datatype.Identifier
-import com.projectronin.interop.fhir.r4.resource.Appointment
-import com.projectronin.interop.fhir.r4.resource.Condition
-import com.projectronin.interop.fhir.r4.resource.Location
-import com.projectronin.interop.fhir.r4.resource.Observation
-import com.projectronin.interop.fhir.r4.resource.Patient
-import com.projectronin.interop.fhir.r4.resource.Practitioner
-import com.projectronin.interop.fhir.r4.resource.PractitionerRole
-import com.projectronin.interop.fhir.r4.resource.Resource
+import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channels.client.AidboxClient
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
-import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
+import com.projectronin.interop.mirth.channels.client.mirth.ChannelMap
+import com.projectronin.interop.mirth.channels.client.mirth.Message
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import mu.KotlinLogging
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
-import java.io.File
-import java.io.StringWriter
 import java.util.stream.Stream
-import javax.xml.parsers.DocumentBuilderFactory
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.dom.DOMSource
-import javax.xml.transform.stream.StreamResult
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -45,28 +31,28 @@ abstract class BaseChannelTest(
     private val mockEHRResourceTypes: List<String> = emptyList()
 ) {
     var tenantInUse = "NOTSET"
-    protected val testChannelId = installAndDeployChannel()
+    protected val testChannelId = ChannelMap.installedDag[channelName]!!
+    val logger = KotlinLogging.logger { }
 
     @BeforeEach
     fun setup() {
+        logger.info { "Starting test" }
+        logger.debug { "BeforeEach start" }
         clearMessages()
-        MirthClient.startChannel(testChannelId)
-        MockEHRTestData.purge()
-        AidboxTestData.purge()
         deleteAidboxResources(*aidboxResourceTypes.toTypedArray())
         deleteMockEHRResources(*mockEHRResourceTypes.toTypedArray())
         MockOCIServerClient.client.clear("PutObjectExpectation")
         MockOCIServerClient.resetRawPublish()
-        KafkaClient.testingClient.reset()
-        clearMessages()
+        logger.debug { "BeforeEach end" }
     }
 
     @AfterEach
     fun tearDown() {
+        logger.info { "Finishing test" }
+        logger.debug { "AfterEach start" }
         MockEHRTestData.purge()
         AidboxTestData.purge()
-        stopChannel()
-        KafkaClient.testingClient.reset()
+        logger.debug { "AfterEach end" }
     }
 
     companion object {
@@ -84,63 +70,25 @@ abstract class BaseChannelTest(
         }
     }
 
-    protected fun installChannel(channelToInstall: String = channelName): String {
-        val channelFile = File("channels/$channelToInstall/channel/$channelToInstall.xml")
-        val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
-        val document = documentBuilder.parse(channelFile)
-
-        val channelId = document.getElementsByTagName("id").item(0).firstChild.textContent
-
-        val domSource = DOMSource(document)
-        val transformer = TransformerFactory.newInstance().newTransformer()
-
-        val stringWriter = StringWriter()
-        val streamResult = StreamResult(stringWriter)
-        transformer.transform(domSource, streamResult)
-
-        val modifiedXml = stringWriter.toString()
-        MirthClient.putChannel(channelId, modifiedXml)
-        MirthClient.enableChannel(channelId)
-
-        return channelId
-    }
-
-    protected fun installAndDeployChannel(channelToInstall: String = channelName): String {
-        val id = installChannel(channelToInstall)
-        deployAndStartChannel(channelToDeploy = id)
-        return id
-    }
-
     /**
      * Clears the messages and statistics for this channel. If the channel is currently running, it will be restarted.
      */
-    protected fun clearMessages(channelToClear: String = testChannelId) {
-        MirthClient.clearAllStatistics()
-        MirthClient.clearChannelMessages(channelToClear)
+    protected fun clearMessages() {
+        MirthClient.clearChannelMessages(testChannelId)
     }
 
-    protected fun deployAndStartChannel(
+    protected fun startChannel(
         waitForMessage: Boolean = false,
-        timeout: Int = 60,
         channelToDeploy: String = testChannelId
     ) {
-        MirthClient.deployChannel(channelToDeploy)
         MirthClient.startChannel(channelToDeploy)
 
         if (waitForMessage) {
-            waitForMessage(1, timeout)
+            waitForMessage(1)
         }
     }
 
-    protected fun stopChannel(channelToStop: String = testChannelId) {
-        MirthClient.stopChannel(channelToStop)
-    }
-
-    protected fun undeployChannel(channelToStop: String = testChannelId) {
-        MirthClient.undeployChannel(channelToStop)
-    }
-
-    protected fun getChannelMessageIds(): List<Int> {
+    protected fun getChannelMessageIds(): List<Message> {
         return MirthClient.getChannelMessageIds(testChannelId)
     }
 
@@ -149,7 +97,7 @@ abstract class BaseChannelTest(
         return resources.get("total").asInt()
     }
 
-    protected fun deleteAidboxResources(vararg resourceTypes: String) {
+    private fun deleteAidboxResources(vararg resourceTypes: String) {
         resourceTypes.forEach {
             tenantsToTest().forEach { tenant ->
                 AidboxClient.deleteAllResources(it, tenant)
@@ -157,77 +105,29 @@ abstract class BaseChannelTest(
         }
     }
 
-    protected fun deleteMockEHRResources(vararg resourceTypes: String) {
+    private fun deleteMockEHRResources(vararg resourceTypes: String) {
         resourceTypes.forEach {
             MockEHRClient.deleteAllResources(it)
         }
     }
 
-    protected fun assertAllConnectorsSent(messageList: List<Int>, channelId: String = testChannelId) {
-        val messages = messageList.map {
-            MirthClient.getMessageById(channelId, it)
-        }
-        messages.forEach { connectorMessage ->
+    protected fun assertAllConnectorsStatus(messageList: List<Message>, status: MirthResponseStatus = MirthResponseStatus.SENT) {
+        messageList.forEach { connectorMessage ->
             connectorMessage.destinationMessages.forEach {
                 assertEquals(
-                    "SENT",
+                    status.name,
                     it.status,
-                    "status for connector ${it.connectorName} was not SENT. Actual status: ${it.status}"
+                    "status for connector ${it.connectorName} was not ${status.name}. Actual status: ${it.status}"
                 )
             }
         }
     }
 
-    protected fun assertAllConnectorsError(messageList: List<Int>) {
-        val messages = messageList.map {
-            MirthClient.getMessageById(testChannelId, it)
-        }
-        messages.forEach { connectorMessage ->
-            connectorMessage.destinationMessages.forEach {
-                assertEquals(
-                    "ERROR",
-                    it.status,
-                    "status for connector ${it.connectorName} was not ERROR. Actual status: ${it.status}"
-                )
-            }
-        }
-    }
-
-    protected fun waitForMessage(minimumCount: Int, timeout: Int = 180, channelID: String = testChannelId) {
+    protected fun waitForMessage(minimumCount: Int, timeout: Int = 20, channelID: String = testChannelId) {
         runBlocking {
             withTimeout(timeout = timeout.seconds) {
-                waitForMessage(minimumCount, channelID)
+                MirthClient.waitForMessage(minimumCount, channelID)
             }
         }
     }
-
-    private suspend fun waitForMessage(minimumCount: Int, channelID: String) {
-        while (true) {
-            val count = MirthClient.getCompletedMessageCount(channelID)
-            if (count >= minimumCount) {
-                // delay a moment to allow message to process, one destination might complete but give others a chance
-                delay(1000)
-                break
-            } else {
-                delay(1000)
-            }
-        }
-    }
-
-    protected fun Resource<*>.getFhirIdentifier(): Identifier? {
-        val identifiers = when (this::class) {
-            Appointment::class -> (this as Appointment).identifier
-            Condition::class -> (this as Condition).identifier
-            Location::class -> (this as Location).identifier
-            Observation::class -> (this as Observation).identifier
-            Patient::class -> (this as Patient).identifier
-            Practitioner::class -> (this as Practitioner).identifier
-            PractitionerRole::class -> (this as PractitionerRole).identifier
-            else -> throw IllegalStateException("Resource has not been cast or has no identifier field")
-        }
-        return identifiers.firstOrNull { it.system == CodeSystem.RONIN_FHIR_ID.uri }
-    }
-
-    @Deprecated("Use waitForMessage to give Mirth time to receive messages", ReplaceWith("waitForMessage(count, 1000)"))
-    protected fun pause(time: Long = 1000) = runBlocking { delay(time) }
 }

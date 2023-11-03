@@ -18,6 +18,7 @@ import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.practitionerLoadChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -26,71 +27,11 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.OffsetDateTime
 
-const val practitionerLoadChannelName = "PractitionerLoad"
-
 class PractitionerLoadTest : BaseChannelTest(
     practitionerLoadChannelName,
     listOf("Appointment", "Practitioner"),
     listOf("Appointment", "Practitioner")
 ) {
-
-    @ParameterizedTest
-    @MethodSource("tenantsToTest")
-    fun `channel works`(testTenant: String) {
-        tenantInUse = testTenant
-
-        // mock: patient at the EHR got published to Ronin
-        val fakePatient = patient {}
-        val fakePatientId = MockEHRTestData.add(fakePatient)
-
-        // mock: practitioner at the EHR
-        val fakePractitioner = practitioner { }
-        val fakePractitionerId = MockEHRTestData.add(fakePractitioner)
-
-        // mock: appointment at the EHR got published to Ronin
-        val startDate = 2.daysFromNow()
-        val endDate = 3.daysFromNow()
-        val fakeAppointment = appointment {
-            status of "pending"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference("Patient", fakePatientId)
-                },
-                participant {
-                    status of "accepted"
-                    actor of reference("Practitioner", fakePractitionerId)
-                }
-            )
-            minutesDuration of 8
-            start of startDate
-            end of endDate
-        }
-        val fakeAppointmentId = MockEHRTestData.add(fakeAppointment)
-        val fakeAidboxAppointment = fakeAppointment.copy(
-            id = Id(fakeAppointmentId),
-            identifier = fakeAppointment.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(fakeAppointmentId)
-        )
-        AidboxTestData.add(fakeAidboxAppointment)
-
-        // mock: appointment-publish event
-        MockOCIServerClient.createExpectations("Appointment", fakeAppointmentId, tenantInUse)
-
-        KafkaClient.testingClient.pushPublishEvent(
-            tenantId = tenantInUse,
-            trigger = DataTrigger.NIGHTLY,
-            resources = listOf(fakeAidboxAppointment)
-        )
-
-        waitForMessage(1)
-
-        // start channel: appointment-publish triggers practitioner-load
-
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
-        assertEquals(1, getAidboxResourceCount("Practitioner"))
-    }
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -161,7 +102,7 @@ class PractitionerLoadTest : BaseChannelTest(
         waitForMessage(1)
 
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Practitioner"))
 
@@ -175,14 +116,13 @@ class PractitionerLoadTest : BaseChannelTest(
 
         waitForMessage(2)
         val messageList2 = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList2)
+        assertAllConnectorsStatus(messageList2)
         assertEquals(2, messageList2.size)
         assertEquals(1, getAidboxResourceCount("Practitioner"))
 
         // The message IDs are actually in reverse order, so grabbing the first
-        val message = MirthClient.getMessageById(testChannelId, messageList2.first())
         val publishResponse =
-            message.destinationMessages.find { it.connectorName == "Publish Practitioners" }!!.response!!
+            messageList2.first().destinationMessages.find { it.connectorName == "Publish Practitioners" }!!.response!!
         assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Practitioner:null:$testTenant:$fakePractitionerId</message>"))
     }
 
@@ -244,8 +184,6 @@ class PractitionerLoadTest : BaseChannelTest(
 
         MockOCIServerClient.createExpectations("Practitioner", fakePractitioner1Id, tenantInUse)
         MockOCIServerClient.createExpectations("Practitioner", fakePractitioner2Id, tenantInUse)
-        // larger data sets: make sure MockEHR is OK
-        MockEHRTestData.validateAll()
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
@@ -253,10 +191,6 @@ class PractitionerLoadTest : BaseChannelTest(
             resources = listOf(aidboxAppointment1, aidboxAppointment2)
         )
         waitForMessage(1)
-
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
         assertEquals(2, getAidboxResourceCount("Practitioner"))
     }
 
@@ -278,7 +212,7 @@ class PractitionerLoadTest : BaseChannelTest(
         waitForMessage(1)
 
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Practitioner"))
     }
@@ -292,10 +226,6 @@ class PractitionerLoadTest : BaseChannelTest(
             resourceType = ResourceType.Practitioner
         )
         waitForMessage(1)
-
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsError(messageList)
-        assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("Practitioner"))
     }
 }

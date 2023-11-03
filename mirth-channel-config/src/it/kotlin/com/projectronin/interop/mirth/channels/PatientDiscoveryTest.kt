@@ -17,14 +17,14 @@ import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.TenantClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
+import com.projectronin.interop.mirth.channels.client.mirth.ChannelMap
+import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.patientDiscoverChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.patientLoadChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import java.time.LocalTime
-
-const val patientDiscoverChannelName = "PatientDiscovery"
 
 class PatientDiscoveryTest : BaseChannelTest(
     patientDiscoverChannelName,
@@ -34,7 +34,7 @@ class PatientDiscoveryTest : BaseChannelTest(
     private val patientType = "Patient"
 
     @Test
-    fun `channel works`() {
+    fun `channel works with multiple patients`() {
         tenantsToTest().forEach {
             tenantInUse = it
             val location = location {
@@ -69,15 +69,53 @@ class PatientDiscoveryTest : BaseChannelTest(
                 gender of "male"
             }
             val patient1Id = MockEHRTestData.add(patient1)
+            val patient2 = patient {
+                birthDate of date {
+                    year of 1990
+                    month of 1
+                    day of 3
+                }
+                identifier of listOf(
+                    identifier {
+                        system of "mockPatientInternalSystem"
+                    },
+                    identifier {
+                        system of "mockEHRMRNSystem"
+                        value of "1000000002"
+                    }
+                )
+                name of listOf(
+                    name {
+                        use of "usual" // This is required to generate the Epic response.
+                    }
+                )
+                gender of "male"
+            }
+            val patient2Id = MockEHRTestData.add(patient2)
 
             val appointment1 = appointment {
                 status of "arrived"
                 participant of listOf(
                     participant {
                         status of "accepted"
+                        actor of reference(patientType, patient2Id)
+                    },
+                    participant {
+                        status of "accepted"
+                        actor of reference("Location", locationFhirId)
+                    }
+                )
+                start of 2.daysFromNow()
+                end of 3.daysFromNow()
+            }
+
+            val appointment2 = appointment {
+                status of "arrived"
+                participant of listOf(
+                    participant {
+                        status of "accepted"
                         actor of reference(patientType, patient1Id)
                     },
-
                     participant {
                         status of "accepted"
                         actor of reference("Location", locationFhirId)
@@ -87,6 +125,7 @@ class PatientDiscoveryTest : BaseChannelTest(
                 end of 3.daysFromNow()
             }
             MockEHRTestData.add(appointment1)
+            MockEHRTestData.add(appointment2)
 
             val aidboxLocation1 = location.copy(
                 identifier = location.identifier + tenantIdentifier(it) + fhirIdentifier(locationFhirId)
@@ -99,124 +138,15 @@ class PatientDiscoveryTest : BaseChannelTest(
             TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
         }
 
-        deployAndStartChannel(false)
-        waitForMessage(2)
-        val tenantConfig = TenantClient.getMirthConfig(tenantInUse)
+        MirthClient.deployChannel(testChannelId)
+        startChannel(true)
         val messages = getChannelMessageIds()
-        assertAllConnectorsSent(messages)
-        assertNotNull(tenantConfig.lastUpdated)
-    }
-
-    @Test
-    @Disabled // INT-1398
-    fun `channel works with multiple patients`() {
-        val location = location {
-            identifier of listOf(
-                identifier {
-                    system of "mockEHRDepartmentInternalSystem"
-                    value of "123"
-                }
-            )
-        }
-        val locationFhirId = MockEHRTestData.add(location)
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-            gender of "male"
-        }
-        val patient1Id = MockEHRTestData.add(patient1)
-        val patient2 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000002"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-            gender of "male"
-        }
-        val patient2Id = MockEHRTestData.add(patient2)
-
-        val appointment1 = appointment {
-            status of "arrived"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference(patientType, patient2Id)
-                },
-                participant {
-                    status of "accepted"
-                    actor of reference("Location", locationFhirId)
-                }
-            )
-            start of 2.daysFromNow()
-            end of 3.daysFromNow()
-        }
-
-        val appointment2 = appointment {
-            status of "arrived"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference(patientType, patient1Id)
-                },
-                participant {
-                    status of "accepted"
-                    actor of reference("Location", locationFhirId)
-                }
-            )
-            start of 2.daysFromNow()
-            end of 3.daysFromNow()
-        }
-        MockEHRTestData.add(appointment1)
-        MockEHRTestData.add(appointment2)
-
-        val aidboxLocation1 = location.copy(
-            identifier = location.identifier + tenantIdentifier(testTenant) + fhirIdentifier(locationFhirId)
-        )
-
-        AidboxTestData.add(aidboxLocation1)
-        deployAndStartChannel(true)
-        val messages = getChannelMessageIds()
-        assertAllConnectorsSent(messages)
-    }
-
-    @Test
-    @Disabled // this case should be tested eventually but we don't have a great paradigm for it
-    fun `channel works with multiple tenants`() {
+        assertAllConnectorsStatus(messages)
     }
 
     @Test
     fun `no appointments no events`() {
+        KafkaClient.testingClient.reset()
         tenantsToTest().forEach {
             tenantInUse = it
             val location = location {
@@ -262,17 +192,18 @@ class PatientDiscoveryTest : BaseChannelTest(
             TenantClient.putTenant(newTenant)
             TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
         }
-        deployAndStartChannel(true)
+        MirthClient.deployChannel(testChannelId)
+        startChannel(true)
         val events = KafkaClient.testingClient.kafkaLoadService.retrieveLoadEvents(ResourceType.Patient)
         assertEquals(0, events.size)
     }
 
     @Test
     fun `channel kicks off dag`() {
-        val patientLoadTopic = KafkaClient.testingClient.loadTopic(ResourceType.Patient)
+        KafkaClient.testingClient.reset()
 
-        val patientChannelId = installChannel(patientLoadChannelName)
-        clearMessages(patientChannelId)
+        val patientChannelId = ChannelMap.installedDag[patientLoadChannelName]!!
+        MirthClient.clearChannelMessages(patientChannelId)
         tenantsToTest().forEach {
             tenantInUse = it
 
@@ -342,12 +273,9 @@ class PatientDiscoveryTest : BaseChannelTest(
             TenantClient.putTenant(newTenant)
             TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
         }
-
-        deployAndStartChannel()
-        deployAndStartChannel(channelToDeploy = patientChannelId)
-        KafkaClient.testingClient.ensureStability(patientLoadTopic.topicName)
+        MirthClient.deployChannel(testChannelId)
+        startChannel()
         waitForMessage(1, channelID = patientChannelId)
-        stopChannel(patientChannelId)
 
         assertEquals(1, getAidboxResourceCount(patientType))
     }

@@ -18,12 +18,11 @@ import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.TenantClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.onboardFlagChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
-
-const val onboardFlagChannelName = "OnboardFlag"
 
 class OnboardFlagTest : BaseChannelTest(
     onboardFlagChannelName,
@@ -155,7 +154,6 @@ class OnboardFlagTest : BaseChannelTest(
 
         waitForMessage(1)
         val message = MirthClient.getChannelMessageIds(testChannelId).first()
-            .let { MirthClient.getMessageById(testChannelId, it) }
         assertEquals("FILTERED", message.destinationMessages.first().status)
         TenantClient.putMirthConfig(tenantInUse, oldConfig)
     }

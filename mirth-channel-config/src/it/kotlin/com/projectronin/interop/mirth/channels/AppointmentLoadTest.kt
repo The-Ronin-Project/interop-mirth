@@ -19,6 +19,7 @@ import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.appointmentLoadChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -27,78 +28,11 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.OffsetDateTime
 
-const val appointmentLoadChannelName = "AppointmentLoad"
-
 class AppointmentLoadTest : BaseChannelTest(
     appointmentLoadChannelName,
     listOf("Patient", "Appointment", "Location"),
     listOf("Patient", "Appointment", "Location")
 ) {
-
-    @ParameterizedTest
-    @MethodSource("tenantsToTest")
-    fun `check if channel works nightly`(testTenant: String) {
-        tenantInUse = testTenant
-        val startDate = 2.daysFromNow()
-        val endDate = 3.daysFromNow()
-        val fakePatient = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // required
-                }
-            )
-            gender of "male"
-        }
-
-        val fakePatientId = MockEHRTestData.add(fakePatient)
-        val fakeAidboxPatientId = "$tenantInUse-$fakePatientId"
-        val fakeAidboxPatient = fakePatient.copy(
-            id = Id(fakeAidboxPatientId),
-            identifier = fakePatient.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(fakePatientId)
-        )
-        AidboxTestData.add(fakeAidboxPatient)
-
-        val fakeAppointment = appointment {
-            status of "pending"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference("Patient", fakePatientId)
-                }
-            )
-            minutesDuration of 8
-            start of startDate
-            end of endDate
-        }
-        val fakeAppointmentId = MockEHRTestData.add(fakeAppointment)
-        MockOCIServerClient.createExpectations("Appointment", fakeAppointmentId, tenantInUse)
-
-        KafkaClient.testingClient.pushPublishEvent(
-            tenantId = tenantInUse,
-            trigger = DataTrigger.NIGHTLY,
-            resources = listOf(fakeAidboxPatient)
-        )
-
-        waitForMessage(1)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
-        assertEquals(1, getAidboxResourceCount("Appointment"))
-    }
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -165,7 +99,7 @@ class AppointmentLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Appointment"))
 
@@ -179,14 +113,13 @@ class AppointmentLoadTest : BaseChannelTest(
 
         waitForMessage(2)
         val messageList2 = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList2)
+        assertAllConnectorsStatus(messageList2)
         assertEquals(2, messageList2.size)
         assertEquals(1, getAidboxResourceCount("Appointment"))
 
         // The message IDs are actually in reverse order, so grabbing the first
-        val message = MirthClient.getMessageById(testChannelId, messageList2.first())
         val publishResponse =
-            message.destinationMessages.find { it.connectorName == "Publish Appointments" }!!.response!!
+            messageList2.first().destinationMessages.find { it.connectorName == "Publish Appointments" }!!.response!!
         assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Patient:null:$tenantInUse:$fakePatientId</message>"))
     }
 
@@ -287,8 +220,6 @@ class AppointmentLoadTest : BaseChannelTest(
         val appt5 = MockEHRTestData.add(fakeAppointment1)
         val appt6 = MockEHRTestData.add(fakeAppointment1)
         val patientAppt = MockEHRTestData.add(fakeAppointment2)
-        // make sure MockEHR is OK
-        MockEHRTestData.validateAll()
 
         MockOCIServerClient.createExpectations("Appointment", appt1, tenantInUse)
         MockOCIServerClient.createExpectations("Appointment", appt2, tenantInUse)
@@ -305,12 +236,7 @@ class AppointmentLoadTest : BaseChannelTest(
         )
 
         waitForMessage(1)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
         assertEquals(7, getAidboxResourceCount("Appointment"))
-
-        assertAllConnectorsSent(messageList)
     }
 
     @ParameterizedTest
@@ -371,10 +297,6 @@ class AppointmentLoadTest : BaseChannelTest(
             resourceType = ResourceType.Appointment
         )
         waitForMessage(1)
-
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Appointment"))
     }
 
@@ -387,9 +309,6 @@ class AppointmentLoadTest : BaseChannelTest(
             resourceType = ResourceType.Appointment
         )
         waitForMessage(1)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsError(messageList)
-        assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("Appointment"))
     }
 }

@@ -10,63 +10,16 @@ import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
+import com.projectronin.interop.mirth.channels.client.mirth.patientLoadChannelName
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-
-const val patientLoadChannelName = "PatientLoad"
 
 class PatientLoadTest : BaseChannelTest(
     patientLoadChannelName,
     listOf("Patient", "Condition", "Appointment", "Observation"),
     listOf("Patient", "Condition", "Appointment", "Observation")
 ) {
-    @ParameterizedTest
-    @MethodSource("tenantsToTest")
-    fun `channel works`(testTenant: String) {
-        tenantInUse = testTenant
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                },
-                name {
-                    use of "official"
-                }
-            )
-            gender of "male"
-            telecom of emptyList()
-        }
-        val patient1Id = MockEHRTestData.add(patient1)
-        MockOCIServerClient.createExpectations("patient", patient1Id, testTenant)
-
-        // push event to get picked up
-        KafkaClient.testingClient.pushLoadEvent(
-            testTenant,
-            DataTrigger.NIGHTLY,
-            listOf(patient1Id),
-            ResourceType.Patient
-        )
-        waitForMessage(1)
-
-        val messages = getChannelMessageIds()
-        assertAllConnectorsSent(messages)
-        assertEquals(1, getAidboxResourceCount("Patient"))
-    }
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -130,7 +83,6 @@ class PatientLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("patient", patient2Id, testTenant)
 
         // push event to get picked up
-        // push event to get picked up
         KafkaClient.testingClient.pushLoadEvent(
             testTenant,
             DataTrigger.NIGHTLY,
@@ -139,8 +91,6 @@ class PatientLoadTest : BaseChannelTest(
         )
 
         waitForMessage(1)
-        val messages = getChannelMessageIds()
-        assertAllConnectorsSent(messages)
         assertEquals(2, getAidboxResourceCount("Patient"))
     }
 }

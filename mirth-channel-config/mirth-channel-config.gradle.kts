@@ -50,7 +50,7 @@ dependencies {
     itImplementation(libs.interop.kafka)
     itImplementation(libs.interop.kafka.testing.client)
     itImplementation(libs.interop.aidbox)
-    itImplementation("io.github.microutils:kotlin-logging:3.0.5")
+    itImplementation(libs.kotlin.logging)
 }
 
 tasks.withType<Test> {

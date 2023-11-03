@@ -2,6 +2,7 @@ package com.projectronin.interop.mirth.channels.client.mirth
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.projectronin.interop.common.jackson.JacksonManager
+import com.projectronin.interop.common.jackson.JacksonUtil
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
@@ -24,9 +25,12 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.jackson.jackson
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import mu.KotlinLogging
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
+import kotlin.time.Duration.Companion.seconds
 
 object MirthClient {
     private val httpClient = HttpClient(CIO) {
@@ -77,7 +81,7 @@ object MirthClient {
             header("X-Requested-With", "OpenAPI")
         }
     }
-
+    val logger = KotlinLogging.logger { }
     private const val BASE_URL = "https://localhost:8443/api"
     private const val CHANNELS_URL = "$BASE_URL/channels"
     private const val CHANNELS_FORMAT = "$CHANNELS_URL/%s"
@@ -85,13 +89,10 @@ object MirthClient {
     private const val CHANNELS_DEPLOY_FORMAT = "$CHANNELS_FORMAT/_deploy"
     private const val CHANNELS_START_FORMAT = "$CHANNELS_FORMAT/_start"
     private const val CHANNELS_STOP_FORMAT = "$CHANNELS_FORMAT/_stop"
-    private const val CHANNELS_UNDEPLOY_FORMAT = "$CHANNELS_FORMAT/_undeploy"
     private const val CHANNELS_MESSAGES_FORMAT = "$CHANNELS_FORMAT/messages"
-    private const val CHANNELS_MESSAGE_FORMAT = "$CHANNELS_MESSAGES_FORMAT/%d"
     private const val CHANNELS_MESSAGES_COUNT_FORMAT = "$CHANNELS_MESSAGES_FORMAT/count"
     private const val CHANNELS_MESSAGES_REMOVEALL_FORMAT = "$CHANNELS_MESSAGES_FORMAT/_removeAll"
     private const val CLEAR_STATISTICS_URL = "$CHANNELS_URL/_clearAllStatistics"
-
     fun putChannel(channelId: String, channelXml: String): HttpStatusCode = runBlocking {
         val channelUrl = CHANNELS_FORMAT.format(channelId)
         httpClient.put(channelUrl) {
@@ -134,7 +135,7 @@ object MirthClient {
         }
     }
 
-    fun getChannelMessages(channelId: String): JsonNode = runBlocking {
+    private fun getChannelMessages(channelId: String): JsonNode = runBlocking {
         val messagesUrl = CHANNELS_MESSAGES_FORMAT.format(channelId)
         httpClient.get(messagesUrl) {
             url {
@@ -159,21 +160,16 @@ object MirthClient {
         }.body()
     }
 
-    fun getChannelMessageIds(channelId: String): List<Int> {
+    fun getChannelMessageIds(channelId: String): List<Message> {
         val node = getChannelMessages(channelId)
         val messageNode = node.get("list") ?: return emptyList()
         if (messageNode.isNull) return emptyList()
         val messageList = messageNode.get("message")
         // mirth :/
         if (messageList.isArray) {
-            return messageList.map { it.get("messageId").asInt() }
+            return JacksonUtil.readJsonList(messageList.toPrettyString(), Message::class)
         }
-        return listOf(messageList.get("messageId").asInt())
-    }
-
-    fun getMessageById(channelId: String, messageId: Int): Message = runBlocking {
-        val messageUrl = CHANNELS_MESSAGE_FORMAT.format(channelId, messageId)
-        httpClient.get(messageUrl) {}.body<MessageWrapper>().message
+        return listOf(JacksonUtil.readJsonObject(messageList.toPrettyString(), Message::class))
     }
 
     fun clearChannelMessages(channelId: String) = runBlocking {
@@ -200,11 +196,17 @@ object MirthClient {
         httpClient.post(CLEAR_STATISTICS_URL)
     }
 
-    fun undeployChannel(channelId: String) = runBlocking {
-        val stopUrl = CHANNELS_UNDEPLOY_FORMAT.format(channelId)
-        httpClient.post(stopUrl) {
-            url {
-                parameters.append("returnErrors", "true")
+    suspend fun waitForMessage(minimumCount: Int, channelID: String) {
+        logger.info { "Waiting for $minimumCount channel messages" }
+        delay(.5.seconds)
+        while (true) {
+            val count = getCompletedMessageCount(channelID)
+            if (count >= minimumCount) {
+                // delay a moment to allow message to process, one destination might complete but give others a chance
+                delay(.25.seconds)
+                break
+            } else {
+                delay(.25.seconds)
             }
         }
     }

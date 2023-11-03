@@ -11,6 +11,12 @@
     <logger name="com.projectronin" level="INFO" additivity="false">
         <appender-ref ref="STDOUT"/>
     </logger>
+    <logger name="com.projectronin.interop.kafka.testing" level="WARN" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+    <logger name="org.apache.kafka" level="ERROR" additivity="false">
+        <appender-ref ref="STDOUT"/>
+    </logger>
     <!-- Update level to INFO if ktor logging is needed -->
     <logger name="io.ktor" level="WARN" additivity="false">
         <appender-ref ref="STDOUT"/>

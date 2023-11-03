@@ -20,11 +20,8 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.jackson.jackson
 import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
 
 object MockEHRClient {
-    val logger = KotlinLogging.logger { }
-
     val httpClient = HttpClient(CIO) {
         // If not a successful response, Ktor will throw Exceptions
         expectSuccess = true
@@ -58,7 +55,6 @@ object MockEHRClient {
             setBody(resource)
         }
         val location = response.headers["Content-Location"]
-        logger.warn { "$location" }
         location!!.removePrefix("$resourceUrl/")
     }
 
@@ -69,7 +65,6 @@ object MockEHRClient {
 
     fun deleteAllResources(resourceType: String) = runBlocking {
         val resources = getAllResources(resourceType)
-        KotlinLogging.logger { }.warn { resources }
         resources.entry.forEach {
             val resourceId = it.resource?.id?.value
             resourceId?.let { deleteResource(resourceType, resourceId) }
@@ -78,9 +73,9 @@ object MockEHRClient {
 
     fun getAllResources(resourceType: String): Bundle = runBlocking {
         val url = RESOURCES_FORMAT.format(resourceType)
-        httpClient.get(url) {
-        }.body()
+        httpClient.get(url) {}.body()
     }
+
     fun getPlainBinary(fhirId: String): String = runBlocking {
         val url = RESOURCES_FORMAT.format("Binary") + "/$fhirId"
         httpClient.get(url) {

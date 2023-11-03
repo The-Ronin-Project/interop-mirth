@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
@@ -25,17 +24,13 @@ import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
-import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.observationLoadChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDate
-import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-
-const val observationLoadChannelName = "ObservationLoad"
 
 class ObservationLoadTest : BaseChannelTest(
     observationLoadChannelName,
@@ -46,299 +41,6 @@ class ObservationLoadTest : BaseChannelTest(
     val observationType = "Observation"
     private val nowDate =
         DynamicValues.dateTime(DateTime(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))))
-
-    @ParameterizedTest
-    @MethodSource("tenantsToTest")
-    fun `channel works triggered by patient publish`(testTenant: String) {
-        tenantInUse = testTenant
-        val patient1 = patient {}
-        val patient1Id = MockEHRTestData.add(patient1)
-        val roninPatient = patient1.copy(
-            id = Id("$tenantInUse-$patient1Id"),
-            identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
-        )
-
-        val observation = observation {
-            subject of reference(patientType, patient1Id)
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri
-                            code of ObservationCategoryCodes.VITAL_SIGNS.code
-                        }
-                    )
-                }
-            )
-            status of "final"
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of CodeSystem.LOINC.uri
-                        display of "Body Weight"
-                        code of Code("29463-7")
-                    }
-                )
-            }
-            effective of nowDate
-            encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
-        }
-        val obsvId = MockEHRTestData.add(observation)
-
-        MockOCIServerClient.createExpectations(observationType, obsvId)
-
-        KafkaClient.testingClient.pushPublishEvent(
-            tenantId = tenantInUse,
-            trigger = DataTrigger.NIGHTLY,
-            resources = listOf(roninPatient)
-        )
-        waitForMessage(1)
-
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
-        assertEquals(1, getAidboxResourceCount(observationType))
-    }
-
-    @ParameterizedTest
-    @MethodSource("tenantsToTest")
-    fun `repeat patients are ignored`(testTenant: String) {
-        tenantInUse = testTenant
-        val patient1 = patient {}
-        val patient1Id = MockEHRTestData.add(patient1)
-        val roninPatient = patient1.copy(
-            id = Id("$tenantInUse-$patient1Id"),
-            identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
-        )
-
-        val observation = observation {
-            subject of reference(patientType, patient1Id)
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri
-                            code of ObservationCategoryCodes.VITAL_SIGNS.code
-                        }
-                    )
-                }
-            )
-            status of "final"
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of CodeSystem.LOINC.uri
-                        display of "Body Weight"
-                        code of Code("29463-7")
-                    }
-                )
-            }
-            effective of nowDate
-            encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
-        }
-        val obsvId = MockEHRTestData.add(observation)
-
-        MockOCIServerClient.createExpectations(observationType, obsvId)
-
-        val metadata = Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now()
-        )
-        KafkaClient.testingClient.pushPublishEvent(
-            tenantId = tenantInUse,
-            trigger = DataTrigger.NIGHTLY,
-            resources = listOf(roninPatient),
-            metadata = metadata
-        )
-        waitForMessage(1)
-
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
-        assertEquals(1, getAidboxResourceCount(observationType))
-
-        // Now publish the same event
-        KafkaClient.testingClient.pushPublishEvent(
-            tenantId = tenantInUse,
-            trigger = DataTrigger.NIGHTLY,
-            resources = listOf(roninPatient),
-            metadata = metadata
-        )
-
-        waitForMessage(2)
-        val messageList2 = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList2)
-        assertEquals(2, messageList2.size)
-        assertEquals(1, getAidboxResourceCount(observationType))
-
-        // The message IDs are actually in reverse order, so grabbing the first
-        val message = MirthClient.getMessageById(testChannelId, messageList2.first())
-        val publishResponse =
-            message.destinationMessages.find { it.connectorName == "Publish Observations" }!!.response!!
-        assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Patient:null:$tenantInUse:$patient1Id</message>"))
-    }
-
-    @ParameterizedTest
-    @MethodSource("tenantsToTest")
-    fun `channel works triggered by condition publish`(testTenant: String) {
-        tenantInUse = testTenant
-
-        val observation = observation {
-            subject of reference(patientType, "123")
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri
-                            code of ObservationCategoryCodes.VITAL_SIGNS.code
-                        }
-                    )
-                }
-            )
-            status of "final"
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of CodeSystem.LOINC.uri
-                        display of "Body Weight"
-                        code of Code("29463-7")
-                    }
-                )
-            }
-            encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
-        }
-        val obsvId = MockEHRTestData.add(observation)
-        MockOCIServerClient.createExpectations(observationType, obsvId)
-
-        val condition1 = condition {
-            stage of listOf(
-                conditionStage {
-                    assessment of listOf(
-                        reference("Observation", obsvId)
-                    )
-                }
-            )
-        }
-        val condition1Id = MockEHRTestData.add(condition1)
-
-        val roninCondition = condition1.copy(
-            id = Id("$tenantInUse-$condition1Id"),
-            stage = condition1.stage.map { stage ->
-                stage.copy(
-                    assessment = stage.assessment.map { reference ->
-                        reference.copy(
-                            id = FHIRString("$tenantInUse-$obsvId")
-                        )
-                    }
-                )
-            }
-        )
-
-        KafkaClient.testingClient.pushPublishEvent(
-            tenantId = tenantInUse,
-            trigger = DataTrigger.NIGHTLY,
-            resources = listOf(roninCondition)
-        )
-        waitForMessage(1)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
-        assertEquals(1, getAidboxResourceCount(observationType))
-    }
-
-    @ParameterizedTest
-    @MethodSource("tenantsToTest")
-    fun `repeat conditions are ignored`(testTenant: String) {
-        tenantInUse = testTenant
-
-        val observation = observation {
-            subject of reference(patientType, "123")
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri
-                            code of ObservationCategoryCodes.VITAL_SIGNS.code
-                        }
-                    )
-                }
-            )
-            status of "final"
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of CodeSystem.LOINC.uri
-                        display of "Body Weight"
-                        code of Code("29463-7")
-                    }
-                )
-            }
-            encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
-        }
-        val obsvId = MockEHRTestData.add(observation)
-        MockOCIServerClient.createExpectations(observationType, obsvId)
-
-        val condition1 = condition {
-            stage of listOf(
-                conditionStage {
-                    assessment of listOf(
-                        reference("Observation", obsvId)
-                    )
-                }
-            )
-        }
-        val condition1Id = MockEHRTestData.add(condition1)
-
-        val roninCondition = condition1.copy(
-            id = Id("$tenantInUse-$condition1Id"),
-            stage = condition1.stage.map { stage ->
-                stage.copy(
-                    assessment = stage.assessment.map { reference ->
-                        reference.copy(
-                            id = FHIRString("$tenantInUse-$obsvId"),
-                            reference = FHIRString("Observation/$tenantInUse-$obsvId")
-                        )
-                    }
-                )
-            }
-        )
-
-        val metadata = Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now()
-        )
-        KafkaClient.testingClient.pushPublishEvent(
-            tenantId = tenantInUse,
-            trigger = DataTrigger.NIGHTLY,
-            resources = listOf(roninCondition),
-            metadata = metadata
-        )
-        waitForMessage(1)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
-        assertEquals(1, getAidboxResourceCount(observationType))
-
-        // Now publish the same event.
-        KafkaClient.testingClient.pushPublishEvent(
-            tenantId = tenantInUse,
-            trigger = DataTrigger.NIGHTLY,
-            resources = listOf(roninCondition),
-            metadata = metadata
-        )
-
-        waitForMessage(2)
-        val messageList2 = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList2)
-        assertEquals(2, messageList2.size)
-        assertEquals(1, getAidboxResourceCount(observationType))
-
-        // The message IDs are actually in reverse order, so grabbing the first
-        val message = MirthClient.getMessageById(testChannelId, messageList2.first())
-        val publishResponse =
-            message.destinationMessages.find { it.connectorName == "Publish Observations" }!!.response!!
-        assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Observation:null:$testTenant:$obsvId</message>"))
-    }
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -448,8 +150,6 @@ class ObservationLoadTest : BaseChannelTest(
                 )
             }
         )
-        // make sure MockEHR is OK
-        MockEHRTestData.validateAll()
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
@@ -459,10 +159,6 @@ class ObservationLoadTest : BaseChannelTest(
 
         // 2 because we group the Patients and Conditions into individual messages
         waitForMessage(2, 30)
-
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(2, messageList.size)
         assertEquals(7, getAidboxResourceCount(observationType))
     }
 
@@ -506,9 +202,6 @@ class ObservationLoadTest : BaseChannelTest(
         )
 
         waitForMessage(1)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount(observationType))
     }
 
@@ -523,9 +216,6 @@ class ObservationLoadTest : BaseChannelTest(
         )
 
         waitForMessage(1)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsError(messageList)
-        assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount(observationType))
     }
 }

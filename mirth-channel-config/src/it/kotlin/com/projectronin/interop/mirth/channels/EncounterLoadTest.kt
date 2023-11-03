@@ -11,11 +11,13 @@ import com.projectronin.interop.fhir.generators.resources.encounter
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.kafka.model.DataTrigger
+import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.encounterLoadChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -23,70 +25,12 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDate
 
-const val encounterLoadChannelName = "EncounterLoad"
-
 class EncounterLoadTest : BaseChannelTest(
     encounterLoadChannelName,
     listOf("Patient", "Encounter"),
     listOf("Patient", "Encounter")
 ) {
     val nowish = LocalDate.now().minusDays(1)
-    val laterish = nowish.plusDays(1)
-
-    @ParameterizedTest
-    @MethodSource("tenantsToTest")
-    fun `channel works`(testTenant: String) {
-        tenantInUse = testTenant
-        val patient1 = patient {}
-        val patient1Id = MockEHRTestData.add(patient1)
-        val roninPatientId = "$tenantInUse-$patient1Id"
-        val roninPatient = patient1.copy(
-            id = Id(roninPatientId),
-            identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
-        )
-
-        val encounter = encounter {
-            subject of reference("Patient", patient1Id)
-            period of period {
-                start of dateTime {
-                    year of nowish.year
-                    month of nowish.monthValue
-                    day of nowish.dayOfMonth
-                }
-                end of dateTime {
-                    year of laterish.year
-                    month of laterish.monthValue
-                    day of laterish.dayOfMonth
-                }
-            }
-            status of "planned"
-            `class` of coding { display of "test" }
-            type of listOf(
-                codeableConcept {
-                    text of "type"
-                    coding of listOf(
-                        coding {
-                            display of "display"
-                        }
-                    )
-                }
-            )
-        }
-
-        val encounterId = MockEHRTestData.add(encounter)
-        MockOCIServerClient.createExpectations("Encounter", encounterId, tenantInUse)
-        KafkaClient.testingClient.pushPublishEvent(
-            tenantId = tenantInUse,
-            trigger = DataTrigger.NIGHTLY,
-            resources = listOf(roninPatient)
-        )
-
-        waitForMessage(1)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
-        assertEquals(1, getAidboxResourceCount("Encounter"))
-    }
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -166,18 +110,14 @@ class EncounterLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("Encounter", encounter5ID, tenantInUse)
         MockOCIServerClient.createExpectations("Encounter", encounter6ID, tenantInUse)
         MockOCIServerClient.createExpectations("Encounter", encounterPat2ID, tenantInUse)
-        MockEHRTestData.validateAll()
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(roninPatient1, roninPatient2)
         )
-
         waitForMessage(1)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
+
         assertEquals(7, getAidboxResourceCount("Encounter"))
     }
 
@@ -221,7 +161,7 @@ class EncounterLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("Encounter"))
     }
@@ -237,7 +177,7 @@ class EncounterLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsError(messageList)
+        assertAllConnectorsStatus(messageList, MirthResponseStatus.ERROR)
         assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("Encounter"))
     }

@@ -30,9 +30,11 @@ import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
+import com.projectronin.interop.mirth.channels.client.mirth.ChannelMap
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.medicationAdministrationLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.medicationLoadChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -43,8 +45,6 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-
-const val medicationAdministrationLoadChannelName = "MedicationAdministrationLoad"
 
 class MedicationAdministrationLoadTest : BaseChannelTest(
     medicationAdministrationLoadChannelName,
@@ -57,17 +57,11 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
     private val medicationRequestType = "MedicationRequest"
     private val medicationType = "Medication"
 
-    private lateinit var medicationChannelId: String
+    private val medicationChannelId = ChannelMap.installedDag[medicationLoadChannelName]!!
 
     @BeforeEach
     fun setupMedicationChannel() {
-        medicationChannelId = installAndDeployChannel(medicationLoadChannelName)
-        clearMessages(medicationChannelId)
-    }
-
-    @AfterEach
-    fun tearDownMedicationChannel() {
-        stopChannel(medicationChannelId)
+        MirthClient.clearChannelMessages(medicationChannelId)
     }
 
     @ParameterizedTest
@@ -128,7 +122,7 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
 
         val expectedAidboxResourceCount = if (testTenant == "epicmock") 0 else 1 // Epic does not load for Patients
@@ -250,7 +244,7 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
 
         val expectedAidboxResourceCount =
@@ -290,7 +284,7 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
 
         val expectedAidboxResourceCount = if (testTenant == "epicmock") 0 else 1 // Epic cannot load for ad-hoc
@@ -367,13 +361,13 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount(medicationAdministrationType))
 
         waitForMessage(2, channelID = medicationChannelId)
         val medicationMessageList = MirthClient.getChannelMessageIds(medicationChannelId)
-        assertAllConnectorsSent(medicationMessageList, medicationChannelId)
+        assertAllConnectorsStatus(medicationMessageList)
         assertEquals(2, medicationMessageList.size) // Also checks the Medication for child-references
         assertEquals(1, getAidboxResourceCount(medicationType))
 
@@ -466,13 +460,13 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount(medicationAdministrationType))
 
         waitForMessage(2, channelID = medicationChannelId)
         val medicationMessageList = MirthClient.getChannelMessageIds(medicationChannelId)
-        assertAllConnectorsSent(medicationMessageList, medicationChannelId)
+        assertAllConnectorsStatus(medicationMessageList)
         assertEquals(2, medicationMessageList.size) // Also checks the Medication for child-references
         assertEquals(1, getAidboxResourceCount(medicationType))
 

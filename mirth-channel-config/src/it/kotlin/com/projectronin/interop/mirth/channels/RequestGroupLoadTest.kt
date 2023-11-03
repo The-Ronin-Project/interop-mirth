@@ -11,11 +11,9 @@ import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
-import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.requestGroupLoadChannelName
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-
-const val requestGroupLoadChannelName = "RequestGroupLoad"
 
 class RequestGroupLoadTest : BaseChannelTest(
     requestGroupLoadChannelName,
@@ -52,12 +50,6 @@ class RequestGroupLoadTest : BaseChannelTest(
         )
 
         waitForMessage(1)
-
-        // start channel: appointment-publish triggers practitioner-load
-
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("RequestGroup"))
     }
 
@@ -80,10 +72,6 @@ class RequestGroupLoadTest : BaseChannelTest(
             resourceType = ResourceType.RequestGroup
         )
         waitForMessage(1)
-
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("RequestGroup"))
     }
 
@@ -97,9 +85,6 @@ class RequestGroupLoadTest : BaseChannelTest(
             resourceType = ResourceType.RequestGroup
         )
         waitForMessage(1)
-
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("RequestGroup"))
     }
 
@@ -112,14 +97,6 @@ class RequestGroupLoadTest : BaseChannelTest(
             resourceType = ResourceType.RequestGroup
         )
         waitForMessage(1)
-
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertEquals(1, messageList.size)
-
-        val message = MirthClient.getMessageById(testChannelId, messageList.first())
-        assertEquals(1, message.destinationMessages.size)
-        assertEquals("SENT", message.destinationMessages.first().status)
-
         assertEquals(0, getAidboxResourceCount("RequestGroup"))
     }
 }

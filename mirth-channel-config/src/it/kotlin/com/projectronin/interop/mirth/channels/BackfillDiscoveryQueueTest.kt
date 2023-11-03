@@ -19,14 +19,14 @@ import com.projectronin.interop.mirth.channels.client.BackfillClient.queueClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.TenantClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
+import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.backfillDiscoveryQueueName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
-
-const val backfillDiscoveryQueueName = "BackfillDiscoveryQueue"
 
 class BackfillDiscoveryQueueTest : BaseChannelTest(
     backfillDiscoveryQueueName,
@@ -115,10 +115,9 @@ class BackfillDiscoveryQueueTest : BaseChannelTest(
             val newTenant = TenantClient.getTenant(it)
             TenantClient.putTenant(newTenant)
         }
-        deployAndStartChannel(false)
+        MirthClient.deployChannel(testChannelId)
+        startChannel(false)
         waitForMessage(2)
-        val messages = getChannelMessageIds()
-        assertAllConnectorsSent(messages)
         tenantsToTest().forEach {
             val entries = runBlocking { discoveryQueueClient.getDiscoveryQueueEntries(it) }
             assertEquals(1, entries.size)

@@ -19,12 +19,11 @@ import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.docRefLoadName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-
-const val docRefLoadName = "DocumentReferenceLoad"
 
 @Disabled // Disable until INT-2131 is fixed
 class DocumentReferenceLoadTest : BaseChannelTest(
@@ -93,9 +92,6 @@ class DocumentReferenceLoadTest : BaseChannelTest(
 
         waitForMessage(2)
 
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(2, messageList.size)
         assertEquals(1, getAidboxResourceCount("DocumentReference"))
 
         // now we test if the change detection stuff works
@@ -106,7 +102,7 @@ class DocumentReferenceLoadTest : BaseChannelTest(
         )
         waitForMessage(4)
         val messageList2 = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList2)
+        assertAllConnectorsStatus(messageList2)
         assertEquals(4, messageList2.size)
         // should have 4 messages still only 1 doc reference in aidbox
         assertEquals(1, getAidboxResourceCount("DocumentReference"))

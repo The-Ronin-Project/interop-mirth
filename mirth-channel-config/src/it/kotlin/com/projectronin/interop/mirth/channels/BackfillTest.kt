@@ -21,6 +21,12 @@ import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
+import com.projectronin.interop.mirth.channels.client.mirth.ChannelMap
+import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.appointmentLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.locationLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.patientLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.practitionerLoadChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -28,6 +34,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.OffsetDateTime
+import kotlin.time.Duration.Companion.seconds
 
 // This is a special test case where we're testing the dag and making sure that everything
 class BackfillTest : BaseChannelTest(
@@ -45,12 +52,12 @@ class BackfillTest : BaseChannelTest(
         val locationLoadTopic = KafkaClient.testingClient.loadTopic(ResourceType.Location)
         val practitionerLoadTopic = KafkaClient.testingClient.loadTopic(ResourceType.Practitioner)
 
-        val appointmentChannelID = installChannel(appointmentLoadChannelName)
-        val locationChannelID = installChannel(practitionerLoadChannelName)
-        val practitionerChannelId = installChannel(locationLoadChannelName)
-        clearMessages(appointmentChannelID)
-        clearMessages(locationChannelID)
-        clearMessages(practitionerChannelId)
+        val appointmentChannelID = ChannelMap.installedDag[appointmentLoadChannelName]!!
+        val locationChannelID = ChannelMap.installedDag[practitionerLoadChannelName]!!
+        val practitionerChannelId = ChannelMap.installedDag[locationLoadChannelName]!!
+        MirthClient.clearChannelMessages(appointmentChannelID)
+        MirthClient.clearChannelMessages(locationChannelID)
+        MirthClient.clearChannelMessages(practitionerChannelId)
 
         val patient1 = patient {
             birthDate of date {
@@ -225,10 +232,6 @@ class BackfillTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("Appointment", appt3, "epicmock")
         MockOCIServerClient.createExpectations("Appointment", appt4, "epicmock")
 
-        deployAndStartChannel()
-        deployAndStartChannel(channelToDeploy = appointmentChannelID)
-        deployAndStartChannel(channelToDeploy = locationChannelID)
-        deployAndStartChannel(channelToDeploy = practitionerChannelId)
         KafkaClient.testingClient.ensureStability(patientLoadTopic.topicName)
         KafkaClient.testingClient.ensureStability(appointmentLoadTopic.topicName)
         KafkaClient.testingClient.ensureStability(locationLoadTopic.topicName)
@@ -250,10 +253,7 @@ class BackfillTest : BaseChannelTest(
         waitForMessage(2, channelID = appointmentChannelID)
         waitForMessage(1, channelID = locationChannelID)
         waitForMessage(1, channelID = practitionerChannelId)
-        stopChannel(appointmentChannelID)
-        stopChannel(locationChannelID)
-        stopChannel(practitionerChannelId)
-        runBlocking { delay(10000) }
+        runBlocking { delay(2.seconds) }
 
         // we put in two at the start so we could resolve them, but they're gonna have different IDs
         assertEquals(4, getAidboxResourceCount("Location"))

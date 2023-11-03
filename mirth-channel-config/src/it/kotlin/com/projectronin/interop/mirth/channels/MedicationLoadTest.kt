@@ -15,11 +15,10 @@ import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.medicationLoadChannelName
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-
-const val medicationLoadChannelName = "MedicationLoad"
 
 class MedicationLoadTest : BaseChannelTest(
     medicationLoadChannelName,
@@ -61,7 +60,7 @@ class MedicationLoadTest : BaseChannelTest(
         waitForMessage(2)
 
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(2, messageList.size)
         assertEquals(1, getAidboxResourceCount("Medication"))
     }
@@ -110,7 +109,7 @@ class MedicationLoadTest : BaseChannelTest(
         waitForMessage(2)
 
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(2, messageList.size)
         assertEquals(2, getAidboxResourceCount("Medication"))
     }
@@ -142,7 +141,7 @@ class MedicationLoadTest : BaseChannelTest(
         waitForMessage(2)
 
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(2, messageList.size)
         assertEquals(1, getAidboxResourceCount("Medication"))
     }
@@ -179,7 +178,7 @@ class MedicationLoadTest : BaseChannelTest(
         waitForMessage(2)
 
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(2, messageList.size)
         assertEquals(1, getAidboxResourceCount("Medication"))
     }

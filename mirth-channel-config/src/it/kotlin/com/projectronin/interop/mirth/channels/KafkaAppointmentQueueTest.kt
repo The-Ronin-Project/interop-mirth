@@ -15,15 +15,13 @@ import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.ProxyClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
-import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.kafkaAppointmentQueueChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDate
 import kotlin.random.Random
-
-const val kafkaAppointmentQueueChannelName = "KafkaAppointmentQueue"
 
 class KafkaAppointmentQueueTest : BaseChannelTest(
     kafkaAppointmentQueueChannelName,
@@ -98,10 +96,6 @@ class KafkaAppointmentQueueTest : BaseChannelTest(
         // make sure a message queued in mirth
         waitForMessage(1)
 
-        val list = MirthClient.getChannelMessageIds(testChannelId)
-        assertEquals(1, list.size)
-        assertAllConnectorsSent(list)
-
         // appointment successfully added to Aidbox
         assertEquals(1, getAidboxResourceCount(appointmentType))
 
@@ -109,6 +103,6 @@ class KafkaAppointmentQueueTest : BaseChannelTest(
         MockOCIServerClient.verify()
         val datalakeObject = MockOCIServerClient.getLastPublishPutBody()
         val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Appointment::class)
-        assertEquals(appointment1Id, datalakeFhirResource.getFhirIdentifier()?.value?.value)
+        assertEquals(appointment1Id, datalakeFhirResource.findFhirId())
     }
 }

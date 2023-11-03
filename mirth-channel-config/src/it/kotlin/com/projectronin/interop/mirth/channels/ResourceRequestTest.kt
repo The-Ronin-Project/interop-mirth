@@ -14,21 +14,20 @@ import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
+import com.projectronin.interop.mirth.channels.client.mirth.ChannelMap
+import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.conditionLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.patientLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.resourceRequestChannelName
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-
-const val resourceRequestChannelName = "ResourceRequest"
 
 class ResourceRequestTest : BaseChannelTest(
     resourceRequestChannelName,
     listOf("Patient", "Condition"),
     listOf("Patient", "Condition")
 ) {
-    private val resourceRequestTopic = KafkaClient.testingClient.requestSpringConfig.requestTopic()
-    private val patientLoadTopic = KafkaClient.testingClient.loadTopic(ResourceType.Patient)
-    private val conditionLoadTopic = KafkaClient.testingClient.loadTopic(ResourceType.Condition)
-    private val patientPublishTopics = KafkaClient.testingClient.publishTopics(ResourceType.Patient)
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -41,8 +40,8 @@ class ResourceRequestTest : BaseChannelTest(
             conditionLoadChannelName
         )
         val channelNamesToIds = channels.associateWith {
-            val id = installChannel(it)
-            clearMessages(id)
+            val id = ChannelMap.installedDag[it]!!
+            MirthClient.clearChannelMessages(id)
             id
         }
 
@@ -114,21 +113,6 @@ class ResourceRequestTest : BaseChannelTest(
 
         val conditionFhirId = MockEHRTestData.add(condition)
         MockOCIServerClient.createExpectations(conditionType, conditionFhirId, testTenant)
-
-        deployAndStartChannel()
-        // other dag channels
-        channelNamesToIds.values.forEach {
-            deployAndStartChannel(channelToDeploy = it)
-        }
-        KafkaClient.testingClient.ensureStability(resourceRequestTopic.topicName)
-        // patient channel
-        KafkaClient.testingClient.ensureStability(patientLoadTopic.topicName)
-
-        // condition channel
-        patientPublishTopics.forEach {
-            KafkaClient.testingClient.ensureStability(it.topicName)
-        }
-        KafkaClient.testingClient.ensureStability(conditionLoadTopic.topicName)
 
         // push event to get picked up
         KafkaClient.testingClient.kafkaRequestService.pushRequestEvent(
@@ -146,9 +130,6 @@ class ResourceRequestTest : BaseChannelTest(
         waitForMessage(2)
         waitForMessage(1, channelID = channelNamesToIds[patientLoadChannelName]!!)
         waitForMessage(2, channelID = channelNamesToIds[conditionLoadChannelName]!!)
-        channelNamesToIds.values.forEach {
-            stopChannel(it)
-        }
 
         assertEquals(1, getAidboxResourceCount(patientType))
         assertEquals(1, getAidboxResourceCount(conditionType))
@@ -165,8 +146,8 @@ class ResourceRequestTest : BaseChannelTest(
             conditionLoadChannelName
         )
         val channelNamesToIds = channels.associateWith {
-            val id = installChannel(it)
-            clearMessages(id)
+            val id = ChannelMap.installedDag[it]!!
+            MirthClient.clearChannelMessages(id)
             id
         }
 
@@ -239,21 +220,6 @@ class ResourceRequestTest : BaseChannelTest(
         val conditionFhirId = MockEHRTestData.add(condition)
         MockOCIServerClient.createExpectations(conditionType, conditionFhirId, testTenant)
 
-        deployAndStartChannel()
-        // other dag channels
-        channelNamesToIds.values.forEach {
-            deployAndStartChannel(channelToDeploy = it)
-        }
-        KafkaClient.testingClient.ensureStability(resourceRequestTopic.topicName)
-        // patient channel
-        KafkaClient.testingClient.ensureStability(patientLoadTopic.topicName)
-
-        // condition channel
-        patientPublishTopics.forEach {
-            KafkaClient.testingClient.ensureStability(it.topicName)
-        }
-        KafkaClient.testingClient.ensureStability(conditionLoadTopic.topicName)
-
         // push event to get picked up
         KafkaClient.testingClient.kafkaRequestService.pushRequestEvent(
             testTenant,
@@ -266,7 +232,6 @@ class ResourceRequestTest : BaseChannelTest(
         )
         waitForMessage(1)
         waitForMessage(1, channelID = channelNamesToIds[patientLoadChannelName]!!)
-        waitForMessage(0, channelID = channelNamesToIds[conditionLoadChannelName]!!)
 
         // Do this after the initial just to have given the patient time to have caused the condition, though we do not expect it to.
         KafkaClient.testingClient.kafkaRequestService.pushRequestEvent(
@@ -281,9 +246,6 @@ class ResourceRequestTest : BaseChannelTest(
         waitForMessage(2)
         waitForMessage(1, channelID = channelNamesToIds[patientLoadChannelName]!!)
         waitForMessage(1, channelID = channelNamesToIds[conditionLoadChannelName]!!)
-        channelNamesToIds.values.forEach {
-            stopChannel(it)
-        }
 
         assertEquals(1, getAidboxResourceCount(patientType))
         assertEquals(1, getAidboxResourceCount(conditionType))

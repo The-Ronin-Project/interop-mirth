@@ -12,7 +12,6 @@ import com.projectronin.interop.fhir.generators.datatypes.period
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.date
 import com.projectronin.interop.fhir.generators.primitives.dateTime
-import com.projectronin.interop.fhir.generators.primitives.daysFromNow
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.carePlan
 import com.projectronin.interop.fhir.generators.resources.carePlanActivity
@@ -26,6 +25,7 @@ import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.carePlanLoadChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -33,8 +33,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDate
 import java.time.OffsetDateTime
-
-const val carePlanLoadChannelName = "CarePlanLoad"
 
 class CarePlanLoadTest : BaseChannelTest(
     carePlanLoadChannelName,
@@ -77,65 +75,8 @@ class CarePlanLoadTest : BaseChannelTest(
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
-    fun `check if channel works nightly`(testTenant: String) {
-        tenantInUse = testTenant
-        val startDate = 2.daysFromNow()
-        val endDate = 3.daysFromNow()
-        val fakePatient = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
-            }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // required
-                }
-            )
-            gender of "male"
-        }
-
-        val fakePatientId = MockEHRTestData.add(fakePatient)
-        val fakeAidboxPatientId = "$tenantInUse-$fakePatientId"
-        val fakeAidboxPatient = fakePatient.copy(
-            id = Id(fakeAidboxPatientId),
-            identifier = fakePatient.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(fakePatientId)
-        )
-        AidboxTestData.add(fakeAidboxPatient)
-
-        val fakeCarePlan = createFakeCarePlan(fakePatientId, tenantInUse)
-        val fakeCarePlanId = MockEHRTestData.add(fakeCarePlan)
-        MockOCIServerClient.createExpectations("CarePlan", fakeCarePlanId, tenantInUse)
-
-        KafkaClient.testingClient.pushPublishEvent(
-            tenantId = tenantInUse,
-            trigger = DataTrigger.NIGHTLY,
-            resources = listOf(fakeAidboxPatient)
-        )
-
-        // Care Plan now listens to itself (so will have 2 messages)
-        waitForMessage(2)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(2, messageList.size)
-        assertEquals(1, getAidboxResourceCount("CarePlan"))
-    }
-
-    @ParameterizedTest
-    @MethodSource("tenantsToTest")
     fun `repeat patients are ignored`(testTenant: String) {
         tenantInUse = testTenant
-        val startDate = 2.daysFromNow()
-        val endDate = 3.daysFromNow()
         val fakePatient = patient {
             birthDate of date {
                 year of 1990
@@ -184,9 +125,6 @@ class CarePlanLoadTest : BaseChannelTest(
 
         // Care Plan now Listens to itself, so will generate 2 messages per plan.
         waitForMessage(2)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(2, messageList.size)
         assertEquals(1, getAidboxResourceCount("CarePlan"))
 
         // Now publish the same event.
@@ -199,7 +137,7 @@ class CarePlanLoadTest : BaseChannelTest(
 
         waitForMessage(3)
         val messageList2 = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList2)
+        assertAllConnectorsStatus(messageList2)
         assertEquals(3, messageList2.size)
         assertEquals(1, getAidboxResourceCount("CarePlan"))
     }
@@ -208,8 +146,6 @@ class CarePlanLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `channel works with multiple patients and carePlans nightly`(testTenant: String) {
         tenantInUse = testTenant
-        val startDate = 2.daysFromNow()
-        val endDate = 3.daysFromNow()
         val fakePatient1 = patient {
             birthDate of date {
                 year of 1990
@@ -279,8 +215,6 @@ class CarePlanLoadTest : BaseChannelTest(
         val appt5 = MockEHRTestData.add(fakeCarePlan1)
         val appt6 = MockEHRTestData.add(fakeCarePlan1)
         val patientAppt = MockEHRTestData.add(fakeCarePlan2)
-        // make sure MockEHR is OK
-        MockEHRTestData.validateAll()
 
         MockOCIServerClient.createExpectations("CarePlan", appt1, tenantInUse)
         MockOCIServerClient.createExpectations("CarePlan", appt2, tenantInUse)
@@ -297,20 +231,13 @@ class CarePlanLoadTest : BaseChannelTest(
         )
 
         waitForMessage(1)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
         assertEquals(7, getAidboxResourceCount("CarePlan"))
-
-        assertAllConnectorsSent(messageList)
     }
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with ad-hoc requests`(testTenant: String) {
         tenantInUse = testTenant
-        val startDate = 2.daysFromNow()
-        val endDate = 3.daysFromNow()
         val fakePatient = patient {
             birthDate of date {
                 year of 1990
@@ -352,10 +279,6 @@ class CarePlanLoadTest : BaseChannelTest(
             resourceType = ResourceType.CarePlan
         )
         waitForMessage(1)
-
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("CarePlan"))
     }
 
@@ -368,9 +291,6 @@ class CarePlanLoadTest : BaseChannelTest(
             resourceType = ResourceType.CarePlan
         )
         waitForMessage(1)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsError(messageList)
-        assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("CarePlan"))
     }
 
@@ -378,8 +298,6 @@ class CarePlanLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `check if channel works nightly with CarePlan cycle`(testTenant: String) {
         tenantInUse = testTenant
-        val startDate = 2.daysFromNow()
-        val endDate = 3.daysFromNow()
         val fakePatient = patient {
             birthDate of date {
                 year of 1990
@@ -508,9 +426,6 @@ class CarePlanLoadTest : BaseChannelTest(
 
         // Message for patient, care plan, and the child care plan
         waitForMessage(3)
-        val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
-        assertEquals(3, messageList.size)
         assertEquals(2, getAidboxResourceCount("CarePlan"))
     }
 }

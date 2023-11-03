@@ -11,12 +11,10 @@ import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.ProxyClient
-import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.kafkaConditionQueueChannelName
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-
-const val kafkaConditionQueueChannelName = "KafkaConditionQueue"
 
 class KafkaConditionQueueTest : BaseChannelTest(kafkaConditionQueueChannelName, listOf("Condition")) {
     private val conditionType = "Condition"
@@ -71,10 +69,6 @@ class KafkaConditionQueueTest : BaseChannelTest(kafkaConditionQueueChannelName, 
         // make sure a message queued in mirth
         waitForMessage(1)
 
-        val list = MirthClient.getChannelMessageIds(testChannelId)
-        assertEquals(1, list.size)
-        assertAllConnectorsSent(list)
-
         // condition successfully added to Aidbox
         assertEquals(1, getAidboxResourceCount(conditionType))
 
@@ -82,6 +76,6 @@ class KafkaConditionQueueTest : BaseChannelTest(kafkaConditionQueueChannelName, 
         MockOCIServerClient.verify()
         val datalakeObject = MockOCIServerClient.getLastPublishPutBody()
         val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Condition::class)
-        assertEquals(conditionFhirId, datalakeFhirResource.getFhirIdentifier()?.value?.value)
+        assertEquals(conditionFhirId, datalakeFhirResource.findFhirId())
     }
 }

@@ -18,22 +18,23 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Medication
 import com.projectronin.interop.fhir.r4.resource.MedicationRequest
 import com.projectronin.interop.kafka.model.DataTrigger
+import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channels.client.AidboxClient
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
 import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
+import com.projectronin.interop.mirth.channels.client.mirth.ChannelMap
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
+import com.projectronin.interop.mirth.channels.client.mirth.medicationLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.medicationRequestLoadChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
-import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-
-const val medicationRequestLoadChannelName = "MedicationRequestLoad"
 
 class MedicationRequestLoadTest : BaseChannelTest(
     medicationRequestLoadChannelName,
@@ -44,17 +45,11 @@ class MedicationRequestLoadTest : BaseChannelTest(
     private val medicationRequestType = "MedicationRequest"
     private val medicationType = "Medication"
 
-    private lateinit var medicationChannelId: String
+    private val medicationChannelId = ChannelMap.installedDag[medicationLoadChannelName]!!
 
     @BeforeEach
     fun setupMedicationChannel() {
-        medicationChannelId = installAndDeployChannel(medicationLoadChannelName)
-        clearMessages(medicationChannelId)
-    }
-
-    @AfterEach
-    fun tearDownMedicationChannel() {
-        stopChannel(medicationChannelId)
+        MirthClient.clearChannelMessages(medicationChannelId)
     }
 
     @ParameterizedTest
@@ -109,7 +104,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount(medicationRequestType))
     }
@@ -164,7 +159,6 @@ class MedicationRequestLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("MedicationRequest", medRequest5ID, tenantInUse)
         MockOCIServerClient.createExpectations("MedicationRequest", medRequest6ID, tenantInUse)
         MockOCIServerClient.createExpectations("MedicationRequest", medRequest7ID, tenantInUse)
-        MockEHRTestData.validateAll()
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
@@ -174,7 +168,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
         assertEquals(7, getAidboxResourceCount("MedicationRequest"))
     }
@@ -206,7 +200,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount("MedicationRequest"))
     }
@@ -222,7 +216,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsError(messageList)
+        assertAllConnectorsStatus(messageList, MirthResponseStatus.ERROR)
         assertEquals(1, messageList.size)
         assertEquals(0, getAidboxResourceCount("MedicationRequest"))
     }
@@ -292,13 +286,13 @@ class MedicationRequestLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount(medicationRequestType))
 
         waitForMessage(2, channelID = medicationChannelId)
         val medicationMessageList = MirthClient.getChannelMessageIds(medicationChannelId)
-        assertAllConnectorsSent(medicationMessageList, medicationChannelId)
+        assertAllConnectorsStatus(medicationMessageList)
         assertEquals(2, medicationMessageList.size) // Also checks the Medication for child-references
         assertEquals(1, getAidboxResourceCount(medicationType))
 
@@ -384,13 +378,13 @@ class MedicationRequestLoadTest : BaseChannelTest(
 
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
-        assertAllConnectorsSent(messageList)
+        assertAllConnectorsStatus(messageList)
         assertEquals(1, messageList.size)
         assertEquals(1, getAidboxResourceCount(medicationRequestType))
 
         waitForMessage(2, channelID = medicationChannelId)
         val medicationMessageList = MirthClient.getChannelMessageIds(medicationChannelId)
-        assertAllConnectorsSent(medicationMessageList, medicationChannelId)
+        assertAllConnectorsStatus(medicationMessageList)
         assertEquals(2, medicationMessageList.size) // Also checks the Medication for child-references
         assertEquals(1, getAidboxResourceCount(medicationType))
 

@@ -9,12 +9,11 @@ import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.ProxyClient
+import com.projectronin.interop.mirth.channels.client.mirth.kafkaPractitionerQueueChannelName
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import kotlin.random.Random
-
-const val kafkaPractitionerQueueChannelName = "KafkaPractitionerQueue"
 
 class KafkaPractitionerQueueTest : BaseChannelTest(kafkaPractitionerQueueChannelName, listOf("Practitioner")) {
     val practitionerType = "Practitioner"
@@ -53,6 +52,6 @@ class KafkaPractitionerQueueTest : BaseChannelTest(kafkaPractitionerQueueChannel
         MockOCIServerClient.verify()
         val datalakeObject = MockOCIServerClient.getLastPublishPutBody()
         val datalakeFhirResource = JacksonUtil.readJsonObject(datalakeObject, Practitioner::class)
-        assertEquals(fhirId, datalakeFhirResource.getFhirIdentifier()?.value?.value)
+        assertEquals(fhirId, datalakeFhirResource.findFhirId())
     }
 }
