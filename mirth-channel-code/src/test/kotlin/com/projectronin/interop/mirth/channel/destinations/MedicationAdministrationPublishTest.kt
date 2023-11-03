@@ -191,7 +191,7 @@ class MedicationAdministrationPublishTest {
                 runDateTime = OffsetDateTime.now(),
                 upstreamReferences = null,
                 backfillRequest = Metadata.BackfillRequest(
-                    backfillID = "123",
+                    backfillId = "123",
                     backfillStartDate = startDate,
                     backfillEndDate = endDate
                 )
@@ -259,7 +259,7 @@ class MedicationAdministrationPublishTest {
                 runDateTime = OffsetDateTime.now(),
                 upstreamReferences = null,
                 backfillRequest = Metadata.BackfillRequest(
-                    backfillID = "123",
+                    backfillId = "123",
                     backfillStartDate = startDate,
                     backfillEndDate = endDate
                 )

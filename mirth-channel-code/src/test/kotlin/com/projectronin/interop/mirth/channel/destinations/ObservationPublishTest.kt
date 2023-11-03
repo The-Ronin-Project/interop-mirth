@@ -192,7 +192,7 @@ class ObservationPublishTest {
                 runDateTime = OffsetDateTime.now(),
                 upstreamReferences = null,
                 backfillRequest = Metadata.BackfillRequest(
-                    backfillID = "123",
+                    backfillId = "123",
                     backfillStartDate = startDate,
                     backfillEndDate = endDate
                 )

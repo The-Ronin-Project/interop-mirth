@@ -561,7 +561,7 @@ class KafkaTopicReaderTest {
                 runId = "1234",
                 runDateTime = OffsetDateTime.now(),
                 backfillRequest = Metadata.BackfillRequest(
-                    backfillID = "123",
+                    backfillId = "123",
                     backfillStartDate = startDate,
                     backfillEndDate = endDate
                 )
@@ -592,8 +592,8 @@ class KafkaTopicReaderTest {
         val messages = splittingChannel.channelSourceReader(emptyMap())
         assertEquals(2, messages.size)
         val events = messages.map { JacksonUtil.readJsonList(it.message, InteropResourcePublishV1::class) }.flatten()
-        assertEquals("123", events[0].metadata.backfillRequest?.backfillID)
-        assertEquals("123", events[1].metadata.backfillRequest?.backfillID)
+        assertEquals("123", events[0].metadata.backfillRequest?.backfillId)
+        assertEquals("123", events[1].metadata.backfillRequest?.backfillId)
         assertEquals(startDate, events[0].metadata.backfillRequest?.backfillStartDate)
         assertEquals(startDate.plusDays(5), events[1].metadata.backfillRequest?.backfillStartDate)
         assertEquals(startDate.plusDays(5), events[0].metadata.backfillRequest?.backfillEndDate)

@@ -243,7 +243,7 @@ class BackfillTest : BaseChannelTest(
             ResourceType.Patient,
             generateMetadata().copy(
                 backfillRequest = Metadata.BackfillRequest(
-                    backfillID = "123",
+                    backfillId = "123",
                     backfillStartDate = OffsetDateTime.now().minusYears(2),
                     backfillEndDate = OffsetDateTime.now()
                 )
