@@ -83,8 +83,8 @@ jakarta-ws = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref = "jakart
 jersey-glassfish-client = { module = "org.glassfish.jersey.core:jersey-client", version.ref = "jersey" }
 junit-pioneer = { module = "org.junit-pioneer:junit-pioneer", version.ref = "junit-pioneer" }
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "apache-kafka" }
-kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin-logging" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
