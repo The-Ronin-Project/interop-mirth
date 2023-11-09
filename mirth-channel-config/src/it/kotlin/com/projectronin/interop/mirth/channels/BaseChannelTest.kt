@@ -32,7 +32,7 @@ abstract class BaseChannelTest(
 ) {
     var tenantInUse = "NOTSET"
     protected val testChannelId = ChannelMap.installedDag[channelName]!!
-    val logger = KotlinLogging.logger { }
+    protected val logger = KotlinLogging.logger(this::class.java.name)
 
     @BeforeEach
     fun setup() {
@@ -92,8 +92,8 @@ abstract class BaseChannelTest(
         return MirthClient.getChannelMessageIds(testChannelId)
     }
 
-    protected fun getAidboxResourceCount(resourceType: String): Int {
-        val resources = AidboxClient.getAllResourcesForTenant(resourceType, tenantInUse)
+    protected fun getAidboxResourceCount(resourceType: String, tenant: String = tenantInUse): Int {
+        val resources = AidboxClient.getAllResourcesForTenant(resourceType, tenant)
         return resources.get("total").asInt()
     }
 

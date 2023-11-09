@@ -1,5 +1,10 @@
 package com.projectronin.interop.mirth.channel
 
+import com.projectronin.event.interop.internal.v1.Metadata
+import com.projectronin.interop.backfill.client.QueueClient
+import com.projectronin.interop.backfill.client.generated.models.BackfillStatus
+import com.projectronin.interop.backfill.client.generated.models.QueueEntry
+import com.projectronin.interop.backfill.client.generated.models.UpdateQueueEntry
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
@@ -7,11 +12,14 @@ import com.projectronin.interop.mirth.channel.destinations.PatientDiscoveryWrite
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.util.generateMetadata
+import com.projectronin.interop.mirth.channel.util.getMetadata
 import com.projectronin.interop.mirth.channel.util.serialize
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
+import kotlinx.coroutines.runBlocking
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -24,19 +32,23 @@ class PatientDiscovery(
     val tenantService: TenantService,
     patientDiscoveryWriter: PatientDiscoveryWriter,
     private val ehrFactory: EHRFactory,
-    private val tenantConfigurationService: TenantConfigurationService
+    private val tenantConfigurationService: TenantConfigurationService,
+    @Value("\${backfill.enabled:no}")
+    private val backfillEnabledString: String,
+    private val backfillQueueClient: QueueClient
 ) : TenantlessSourceService() {
     override val rootName = "PatientDiscovery"
     override val destinations = mapOf("Kafka" to patientDiscoveryWriter)
     private val futureDateRange: Long = 7
     private val pastDateRange: Long = 1
+    private val backfillEnabled = backfillEnabledString.lowercase() == "yes"
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(PatientDiscovery::class.java)
     }
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
-        return tenantService.getMonitoredTenants()
+        val nightlyMessages = tenantService.getMonitoredTenants()
             .filter { needsLoad(it) }
             .mapNotNull { tenant ->
                 try {
@@ -59,6 +71,54 @@ class PatientDiscovery(
                     null
                 }
             }
+        if (nightlyMessages.isNotEmpty()) {
+            return nightlyMessages
+        } else if (backfillEnabled) {
+            val now = OffsetDateTime.now(ZoneOffset.UTC)
+            val tenantsOkToRun = tenantService
+                .getAllTenants()
+                // we should be in a tenant's window to poll
+                .filter { AvailableWindow(it).isInWindow(now) }
+            // loop through the tenants and take the first tenant we find with a backfill entry
+            val backfillQueueEntry = tenantsOkToRun
+                .asSequence()
+                .map { runBlocking { backfillQueueClient.getQueueEntries(it.mnemonic).firstOrNull() } }
+                .firstNotNullOfOrNull { it }
+
+            backfillQueueEntry?.let { queueEntry ->
+                val tenantTimezone = tenantsOkToRun
+                    .single { it.mnemonic == queueEntry.tenantId }
+                    .timezone.rules.getOffset(LocalDateTime.now())
+                val metadata = generateMetadata(
+                    backfillInfo = Metadata.BackfillRequest(
+                        backfillId = queueEntry.backfillId.toString(),
+                        // these are offset date times, but backfill provides localdate time
+                        // offsetdatetime is more precise than we probably care about
+                        backfillStartDate = OffsetDateTime.of(
+                            queueEntry.startDate.atStartOfDay(),
+                            tenantTimezone
+                        ),
+                        backfillEndDate = OffsetDateTime.of(
+                            queueEntry.endDate.atStartOfDay(),
+                            tenantTimezone
+                        )
+                    )
+                )
+                return listOf(
+                    MirthMessage(
+                        message = JacksonUtil.writeJsonValue(queueEntry),
+                        dataMap = mapOf(
+                            MirthKey.TENANT_MNEMONIC.code to queueEntry.tenantId,
+                            MirthKey.EVENT_METADATA.code to serialize(metadata),
+                            MirthKey.EVENT_RUN_ID.code to metadata.runId
+                        )
+                    )
+                )
+            }
+        }
+
+        // either didn't find any message or backfill wasn't enabled or backfill didn't find messages
+        return emptyList()
     }
 
     override fun channelSourceTransformer(
@@ -67,6 +127,19 @@ class PatientDiscovery(
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthMessage {
+        val metadata = getMetadata(sourceMap)
+
+        // if it's a backfill request we already have the patient id, just grab that and stop processing
+        if (metadata.backfillRequest != null) {
+            val backfillEntry = JacksonUtil.readJsonObject(msg, QueueEntry::class)
+            // tell backfill we're (re)processing this
+            runBlocking {
+                backfillQueueClient.updateQueueEntryByID(backfillEntry.id, UpdateQueueEntry(BackfillStatus.STARTED))
+            }
+            return MirthMessage(message = JacksonUtil.writeJsonValue(listOf(backfillEntry.patientId)))
+        }
+
+        // Normal patient discovery
         val currentDate = LocalDate.now()
         val endDate = currentDate.plusDays(futureDateRange)
         val startDate = currentDate.minusDays(pastDateRange)

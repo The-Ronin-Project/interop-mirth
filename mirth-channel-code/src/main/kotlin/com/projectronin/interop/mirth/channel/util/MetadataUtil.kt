@@ -11,8 +11,12 @@ import java.util.UUID
 /**
  * Generates a new [Metadata] with a random UUID and the current time.
  */
-fun generateMetadata(): Metadata =
-    Metadata(runId = UUID.randomUUID().toString(), runDateTime = OffsetDateTime.now(ZoneOffset.UTC))
+fun generateMetadata(backfillInfo: Metadata.BackfillRequest? = null): Metadata =
+    Metadata(
+        runId = UUID.randomUUID().toString(),
+        runDateTime = OffsetDateTime.now(ZoneOffset.UTC),
+        backfillRequest = backfillInfo
+    )
 
 /**
  * Generates a new [Metadata] with a random UUID and the current time and serializes it.

@@ -18,7 +18,7 @@ services:
       - "./custom-lib:/opt/connect/custom-lib" # Mirth general use
       - "./custom-ext:/opt/connect/custom-extensions"   # Mirth plug-ins or extensions
       - "./doc:/opt/connect/doc"                        # Mirth server configuration (i.e. Java 9+)
-      - "./conf/log4j.properties:/opt/connect/conf/log4j.properties"    # Mirth logging settings
+      - "./conf/log4j2.properties:/opt/connect/conf/log4j2.properties"    # Mirth logging settings
       - "./interop:/opt/connect/interop"       # Ronin interop JAR and other interop resources
       - "./xml/read:/data/xml/read"            # Ronin DiagramChannel
       - "./xml/done:/data/xml/done"            # Ronin DiagramChannel
@@ -320,6 +320,8 @@ services:
     depends_on:
       mock-oauth2:
         condition: service_started
+      kafka:
+        condition: service_started
 
   mock-oauth2:
     image: ghcr.io/navikt/mock-oauth2-server:0.5.4
@@ -337,8 +339,11 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://backfilluser:ThePassword@mockehrmysql:3306/backfill-db
       - AUTH0_AUDIENCE=https://interop-backfill.dev.projectronin.io
       - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://mock-oauth2:8080/backfill
+      - SPRING_KAFKA_BOOTSTRAPSERVERS=kafka:19092
     ports:
       - "8086:8080"
     depends_on:
       mock-oauth2:
+        condition: service_started
+      kafka:
         condition: service_started

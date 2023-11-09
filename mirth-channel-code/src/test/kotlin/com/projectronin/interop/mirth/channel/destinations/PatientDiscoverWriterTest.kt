@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.destinations
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.model.DataTrigger
@@ -13,6 +14,7 @@ import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.OffsetDateTime
 
 class PatientDiscoverWriterTest {
     lateinit var kafkaLoadService: KafkaLoadService
@@ -45,6 +47,34 @@ class PatientDiscoverWriterTest {
         val result = writer.channelDestinationWriter(
             "ronin",
             "[\"Patient/123\",\"Patient/456\"]",
+            mapOf(MirthKey.EVENT_METADATA.code to serialize(metadata)),
+            emptyMap()
+        )
+        assertEquals(MirthResponseStatus.SENT, result.status)
+    }
+
+    @Test
+    fun `channelDestinationWriter  - backfill - works`() {
+        val metadata = generateMetadata(
+            backfillInfo = Metadata.BackfillRequest(
+                backfillId = "123",
+                backfillStartDate = OffsetDateTime.now(),
+                backfillEndDate = OffsetDateTime.now()
+            )
+        )
+        every {
+            kafkaLoadService.pushLoadEvent(
+                "ronin",
+                DataTrigger.BACKFILL,
+                listOf("123"),
+                ResourceType.Patient,
+                any()
+            )
+        } returns kafkaPushResponse
+
+        val result = writer.channelDestinationWriter(
+            "ronin",
+            "[\"123\"]",
             mapOf(MirthKey.EVENT_METADATA.code to serialize(metadata)),
             emptyMap()
         )

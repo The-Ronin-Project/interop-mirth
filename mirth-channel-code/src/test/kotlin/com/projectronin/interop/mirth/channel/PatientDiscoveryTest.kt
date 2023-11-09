@@ -1,6 +1,12 @@
 package com.projectronin.interop.mirth.channel
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.aidbox.PatientService
+import com.projectronin.interop.backfill.client.QueueClient
+import com.projectronin.interop.backfill.client.generated.models.BackfillStatus
+import com.projectronin.interop.backfill.client.generated.models.QueueEntry
+import com.projectronin.interop.backfill.client.generated.models.UpdateQueueEntry
+import com.projectronin.interop.common.http.exceptions.ClientFailureException
 import com.projectronin.interop.ehr.AppointmentService
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
@@ -16,12 +22,16 @@ import com.projectronin.interop.fhir.r4.valueset.AppointmentStatus
 import com.projectronin.interop.fhir.r4.valueset.ParticipationStatus
 import com.projectronin.interop.mirth.channel.destinations.PatientDiscoveryWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
+import com.projectronin.interop.mirth.channel.util.generateMetadata
+import com.projectronin.interop.mirth.channel.util.serialize
 import com.projectronin.interop.mirth.connector.util.asCode
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.data.model.MirthTenantConfigDO
 import com.projectronin.interop.tenant.config.model.Tenant
+import io.ktor.http.HttpStatusCode
 import io.mockk.Runs
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -33,10 +43,12 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.OffsetTime
 import java.time.ZoneId
+import java.util.UUID
 
 class PatientDiscoveryTest {
     lateinit var tenant: Tenant
@@ -45,7 +57,18 @@ class PatientDiscoveryTest {
     lateinit var vendorFactory: VendorFactory
     lateinit var patientService: PatientService
     lateinit var channel: PatientDiscovery
+    lateinit var backfillVersionChannel: PatientDiscovery
+    lateinit var queueClient: QueueClient
     lateinit var tenantConfigurationService: TenantConfigurationService
+    val backfillEventString = "{" +
+        "\"id\":\"67d28e26-ae11-4afb-968b-0991aa11c80b\"," +
+        "\"backfill_id\":\"be3eddd1-e31b-4140-8e41-88aeb4b394c8\"," +
+        "\"tenant_id\":\"blah\"," +
+        "\"start_date\":\"2008-11-15\"," +
+        "\"end_date\":\"2023-11-15\"," +
+        "\"patient_id\":\"pattythepatient\"," +
+        "\"status\":\"NOT_STARTED\"" +
+        "}"
 
     @BeforeEach
     fun setup() {
@@ -71,6 +94,7 @@ class PatientDiscoveryTest {
         tenantService = mockk {
             every { getTenantForMnemonic("ronin") } returns tenant
             every { getMonitoredTenants() } returns listOf(tenant, tenant2)
+            every { getAllTenants() } returns listOf(tenant, tenant2)
         }
         val ehrFactory = mockk<EHRFactory> {
             every { getVendorFactory(tenant) } returns vendorFactory
@@ -91,7 +115,18 @@ class PatientDiscoveryTest {
             tenantService,
             writer,
             ehrFactory,
-            tenantConfigurationService
+            tenantConfigurationService,
+            "",
+            mockk {}
+        )
+        queueClient = mockk {}
+        backfillVersionChannel = PatientDiscovery(
+            tenantService,
+            writer,
+            ehrFactory,
+            tenantConfigurationService,
+            "yes",
+            queueClient
         )
     }
 
@@ -379,6 +414,43 @@ class PatientDiscoveryTest {
     }
 
     @Test
+    fun `sourceReader works - backfill`() {
+        val entryId = UUID.fromString("67d28e26-ae11-4afb-968b-0991aa11c80b")
+        val backfillId = UUID.fromString("be3eddd1-e31b-4140-8e41-88aeb4b394c8")
+        every { tenantConfigurationService.getLocationIDsByTenant(any()) } returns emptyList()
+        coEvery { queueClient.getQueueEntries("ronin") } returns emptyList()
+        coEvery { queueClient.getQueueEntries("blah") } returns listOf(
+            QueueEntry(
+                id = entryId,
+                backfillId = backfillId,
+                tenantId = "blah",
+                startDate = LocalDate.of(2008, 11, 15),
+                endDate = LocalDate.of(2023, 11, 15),
+                patientId = "pattythepatient",
+                status = BackfillStatus.NOT_STARTED
+            ),
+            // this should be found but discarded because we're only taking one
+            mockk {}
+        )
+
+        val list = backfillVersionChannel.channelSourceReader(emptyMap())
+        assertEquals(1, list.size)
+        assertEquals(backfillEventString, list.first().message)
+        assertEquals("blah", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertNotNull(list.first().dataMap[MirthKey.EVENT_RUN_ID.code])
+    }
+
+    @Test
+    fun `sourceReader works - backfill - no backfill entries no events`() {
+        every { tenantConfigurationService.getLocationIDsByTenant(any()) } returns emptyList()
+        coEvery { queueClient.getQueueEntries("ronin") } returns emptyList()
+        coEvery { queueClient.getQueueEntries("blah") } returns emptyList()
+
+        val list = backfillVersionChannel.channelSourceReader(emptyMap())
+        assertEquals(0, list.size)
+    }
+
+    @Test
     fun `sourceTransform - works`() {
         val patient1 = Participant(
             status = ParticipationStatus.ACCEPTED.asCode(),
@@ -411,8 +483,63 @@ class PatientDiscoveryTest {
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
 
-        val message = channel.channelSourceTransformer("ronin", "[\"123\"]", emptyMap(), emptyMap())
+        val message = channel.channelSourceTransformer(
+            "ronin",
+            "[\"123\"]",
+            mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
+            emptyMap()
+        )
         assertEquals("[\"Patient/patFhirID\"]", message.message)
+    }
+
+    @Test
+    fun `sourceTransform - backfill - works`() {
+        val entryId = UUID.fromString("67d28e26-ae11-4afb-968b-0991aa11c80b")
+        coEvery { queueClient.updateQueueEntryByID(entryId, UpdateQueueEntry(BackfillStatus.STARTED)) } returns true
+        val message = backfillVersionChannel.channelSourceTransformer(
+            "blah",
+            backfillEventString,
+            mapOf(
+                MirthKey.EVENT_METADATA.code to serialize(
+                    generateMetadata(
+                        backfillInfo = Metadata.BackfillRequest(
+                            backfillId = "123",
+                            backfillStartDate = OffsetDateTime.now(),
+                            backfillEndDate = OffsetDateTime.now()
+                        )
+                    )
+                )
+            ),
+            emptyMap()
+        )
+        assertEquals("[\"pattythepatient\"]", message.message)
+    }
+
+    @Test
+    fun `sourceTransform - backfill - fails`() {
+        val entryId = UUID.fromString("67d28e26-ae11-4afb-968b-0991aa11c80b")
+        coEvery {
+            queueClient.updateQueueEntryByID(entryId, UpdateQueueEntry(BackfillStatus.STARTED))
+        } throws ClientFailureException(HttpStatusCode.BadGateway, "SERVER", "SERVICE")
+        val failure = assertThrows<ClientFailureException> {
+            backfillVersionChannel.channelSourceTransformer(
+                "blah",
+                backfillEventString,
+                mapOf(
+                    MirthKey.EVENT_METADATA.code to serialize(
+                        generateMetadata(
+                            backfillInfo = Metadata.BackfillRequest(
+                                backfillId = "123",
+                                backfillStartDate = OffsetDateTime.now(),
+                                backfillEndDate = OffsetDateTime.now()
+                            )
+                        )
+                    )
+                ),
+                emptyMap()
+            )
+        }
+        assertEquals("Received 502 Bad Gateway when calling SERVER for SERVICE", failure.message)
     }
 
     @Test

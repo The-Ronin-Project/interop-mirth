@@ -27,14 +27,19 @@ class PatientDiscoveryWriter(val kafkaLoadService: KafkaLoadService) : Tenantles
                 "No Patients found for tenant $tenantMnemonic"
             )
         }
+        val metadata = getMetadata(sourceMap)
+        val dataTrigger = when (metadata.backfillRequest) {
+            null -> DataTrigger.NIGHTLY
+            else -> DataTrigger.BACKFILL
+        }
 
         return try {
             val result = kafkaLoadService.pushLoadEvent(
                 tenantMnemonic,
-                DataTrigger.NIGHTLY,
+                dataTrigger,
                 references.map { it.substringAfter("/") },
                 ResourceType.Patient,
-                getMetadata(sourceMap)
+                metadata
             )
             val status = when (result.failures.isEmpty()) {
                 true -> MirthResponseStatus.SENT

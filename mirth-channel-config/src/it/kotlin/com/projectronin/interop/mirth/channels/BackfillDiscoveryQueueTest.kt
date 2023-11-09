@@ -45,6 +45,7 @@ class BackfillDiscoveryQueueTest : BaseChannelTest(
                 }
             }
         }
+        clearMessages()
     }
 
     @Test

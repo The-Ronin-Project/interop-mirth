@@ -1,6 +1,11 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.event.interop.internal.v1.ResourceType
+import com.projectronin.interop.backfill.client.generated.models.BackfillStatus
+import com.projectronin.interop.backfill.client.generated.models.DiscoveryQueueStatus
+import com.projectronin.interop.backfill.client.generated.models.NewBackfill
+import com.projectronin.interop.backfill.client.generated.models.NewQueueEntry
+import com.projectronin.interop.backfill.client.generated.models.UpdateDiscoveryEntry
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.datatypes.participant
@@ -12,6 +17,7 @@ import com.projectronin.interop.fhir.generators.resources.appointment
 import com.projectronin.interop.fhir.generators.resources.location
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.mirth.channels.client.AidboxTestData
+import com.projectronin.interop.mirth.channels.client.BackfillClient
 import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
@@ -22,9 +28,15 @@ import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.mirth.patientDiscoverChannelName
 import com.projectronin.interop.mirth.channels.client.mirth.patientLoadChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
 import java.time.LocalTime
+import java.time.OffsetDateTime
+import kotlin.time.Duration.Companion.seconds
 
 class PatientDiscoveryTest : BaseChannelTest(
     patientDiscoverChannelName,
@@ -32,6 +44,19 @@ class PatientDiscoveryTest : BaseChannelTest(
     listOf("Patient", "Appointment", "Location")
 ) {
     private val patientType = "Patient"
+
+    @BeforeEach
+    fun `delete it all`() {
+        // failed tests can leave a backfill id, so get all backfill ids and then delete them
+        tenantsToTest().forEach {
+            runBlocking {
+                val backfills = BackfillClient.backfillClient.getBackfills(it)
+                backfills.forEach {
+                    BackfillClient.backfillClient.deleteBackfill(it.id)
+                }
+            }
+        }
+    }
 
     @Test
     fun `channel works with multiple patients`() {
@@ -278,5 +303,110 @@ class PatientDiscoveryTest : BaseChannelTest(
         waitForMessage(1, channelID = patientChannelId)
 
         assertEquals(1, getAidboxResourceCount(patientType))
+    }
+
+    @Test
+    fun `backfill kicks off dag`() {
+        KafkaClient.testingClient.reset()
+        val patientChannelId = ChannelMap.installedDag[patientLoadChannelName]!!
+        MirthClient.clearChannelMessages(patientChannelId)
+        tenantsToTest().forEach {
+            tenantInUse = it
+            val patient1 = patient {
+                birthDate of date {
+                    year of 1990
+                    month of 1
+                    day of 3
+                }
+                identifier of listOf(
+                    identifier {
+                        system of "mockPatientInternalSystem"
+                    },
+                    identifier {
+                        system of "mockEHRMRNSystem"
+                        value of "1000000001"
+                    }
+                )
+                name of listOf(
+                    name {
+                        use of "usual" // This is required to generate the Epic response.
+                    },
+                    name {
+                        use of "official"
+                    }
+                )
+                gender of "male"
+                telecom of emptyList()
+            }
+            val patient1Id = MockEHRTestData.add(patient1)
+
+            runBlocking {
+                // make a new backfill
+                val backfillId = BackfillClient.backfillClient.postBackfill(
+                    newBackfill = NewBackfill(
+                        tenantInUse,
+                        listOf("123"),
+                        startDate = LocalDate.now().minusYears(1),
+                        endDate = LocalDate.now()
+                    )
+                ).id!!
+                // complete the undiscovered queues so they don't accidentally resolve the and add the queues
+                val undiscovereEntries = BackfillClient.discoveryQueueClient.getDiscoveryQueueEntries(testTenant)
+                undiscovereEntries.forEach {
+                    BackfillClient.discoveryQueueClient.updateDiscoveryQueueEntryByID(
+                        it.id,
+                        UpdateDiscoveryEntry(
+                            DiscoveryQueueStatus.DISCOVERED
+                        )
+                    )
+                }
+                BackfillClient.queueClient.postQueueEntry(backfillId, listOf(NewQueueEntry(backfillId, patient1Id)))
+            }
+
+            TenantClient.putMirthConfig(
+                it,
+                TenantClient.MirthConfig(
+                    locationIds = listOf("123"),
+                    // make it think we just ran the nightly load
+                    lastUpdated = OffsetDateTime.now()
+                )
+            )
+            MockOCIServerClient.createExpectations("patient", patient1Id, it)
+            val newTenant = TenantClient.getTenant(it)
+                .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
+            TenantClient.putTenant(newTenant)
+            TenantClient.putMirthConfig(
+                it,
+                TenantClient.MirthConfig(
+                    locationIds = listOf("123"),
+                    // make it think we just ran the nightly load
+                    lastUpdated = OffsetDateTime.now()
+                )
+            )
+        }
+        MirthClient.deployChannel(testChannelId)
+        startChannel()
+
+        waitForMessage(1, channelID = patientChannelId)
+
+        runBlocking { delay(5.seconds) }
+
+        // we only do one backfill event at a time
+        MirthClient.deployChannel(testChannelId)
+        startChannel()
+        waitForMessage(2, channelID = patientChannelId)
+
+        assertEquals(2, tenantsToTest().mapToInt { getAidboxResourceCount("Patient", it) }.sum())
+        tenantsToTest().forEach {
+            runBlocking {
+                val backfills = BackfillClient.backfillClient.getBackfills(it)
+                assertEquals(1, backfills.size)
+                assertEquals(BackfillStatus.STARTED, backfills.first().status)
+
+                val queueEntries = BackfillClient.queueClient.getEntriesByBackfillID(backfills.first().id)
+                assertEquals(1, queueEntries.size)
+                assertEquals(BackfillStatus.STARTED, queueEntries.first().status)
+            }
+        }
     }
 }
