@@ -24,6 +24,7 @@ const val patientLoadChannelName = "PatientLoad"
 const val patientDiscoverChannelName = "PatientDiscovery"
 const val practitionerLoadChannelName = "PractitionerLoad"
 const val requestGroupLoadChannelName = "RequestGroupLoad"
+const val diagnosticReportLoadChannelName = "DiagnosticReportLoad"
 
 // some non dag but still install to make easier
 const val backfillDiscoveryQueueName = "BackfillDiscoveryQueue"
@@ -52,6 +53,7 @@ object ChannelMap {
         patientDiscoverChannelName,
         practitionerLoadChannelName,
         requestGroupLoadChannelName,
+        diagnosticReportLoadChannelName,
 
         // non dag
         backfillDiscoveryQueueName,
