@@ -26,7 +26,7 @@ env:
 
 jobs:
   tag:
-    runs-on: self-hosted
+    runs-on: oci-shared
     steps:
       - uses: actions/checkout@v2
         with:
@@ -63,7 +63,7 @@ jobs:
       tag: ${{ steps.get-version.outputs.version }}
 
   release:
-    runs-on: self-hosted
+    runs-on: oci-shared
     needs: tag
     steps:
       - uses: actions/checkout@v2
