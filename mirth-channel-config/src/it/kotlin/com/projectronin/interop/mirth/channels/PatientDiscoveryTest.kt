@@ -33,6 +33,10 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.mockserver.matchers.Times
+import org.mockserver.model.HttpRequest
+import org.mockserver.model.HttpResponse
+import org.mockserver.model.MediaType
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.OffsetDateTime
@@ -407,6 +411,77 @@ class PatientDiscoveryTest : BaseChannelTest(
                 assertEquals(1, queueEntries.size)
                 assertEquals(BackfillStatus.STARTED, queueEntries.first().status)
             }
+        }
+    }
+
+    @Test
+    fun `channel works with clinical trial patients`() {
+        KafkaClient.testingClient.reset()
+        MockOCIServerClient.client.clear(HttpRequest.request().withMethod("GET").withPath("/subjects"))
+
+        val patient1 = patient {
+            birthDate of date {
+                year of 1990
+                month of 1
+                day of 3
+            }
+            identifier of listOf(
+                identifier {
+                    system of "mockPatientInternalSystem"
+                },
+                identifier {
+                    system of "mockEHRMRNSystem"
+                    value of "1000000001"
+                }
+            )
+            name of listOf(
+                name {
+                    use of "usual" // This is required to generate the Epic response.
+                }
+            )
+            gender of "male"
+        }
+        val patient1Id = MockEHRTestData.add(patient1)
+        val tenantSubjectJson =
+            tenantsToTest().toArray().joinToString(",") { """{ "roninFhirId" : "$it-$patient1Id" }""" }
+
+        MockOCIServerClient.client.`when`(
+            HttpRequest.request()
+                .withMethod("GET")
+                .withPath("/subjects")
+                .withQueryStringParameter("activeIdsOnly", "true"),
+            Times.exactly(2)
+        ).respond(
+            HttpResponse.response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON)
+                .withBody("[$tenantSubjectJson]")
+        )
+
+        tenantsToTest().forEach {
+            tenantInUse = it
+
+            val newTenant = TenantClient.getTenant(it)
+                .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
+            TenantClient.putTenant(newTenant)
+            TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf("ClinicalTrialLoadLocation")))
+        }
+
+        MirthClient.deployChannel(testChannelId)
+        startChannel()
+        waitForMessage(2, channelID = testChannelId)
+        val messages = getChannelMessageIds()
+        assertAllConnectorsStatus(messages)
+
+        tenantsToTest().forEach { tenant ->
+            val connector = messages.flatMap { it.connectorMessages.entry }.singleOrNull { connector ->
+                connector.connectorMessage.connectorName == "Request Patients" && connector.connectorMessage.metaDataMap?.entry?.any { e ->
+                    e.string == listOf(
+                        "TENANT",
+                        tenant
+                    )
+                } == true
+            }
+
+            assertEquals("[\"Patient/$patient1Id\"]", connector?.connectorMessage?.raw?.content)
         }
     }
 }

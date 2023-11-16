@@ -60,7 +60,7 @@ object MirthClient {
 
         // Enable logging.
         install(Logging) {
-            level = LogLevel.NONE
+            level = LogLevel.ALL
         }
 
         // Disable SSL

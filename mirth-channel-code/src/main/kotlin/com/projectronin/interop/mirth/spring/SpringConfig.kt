@@ -16,7 +16,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.vault.annotation.VaultPropertySource
 
 @Configuration
-@ComponentScan("com.projectronin.interop", "com.projectronin.ehr")
+@ComponentScan("com.projectronin.interop", "com.projectronin.ehr", "com.projectronin.clinical.trial.client")
 @EnableConfigurationProperties(KafkaConfig::class)
 @VaultPropertySource("interop-mirth-connector/\${ENVIRONMENT}")
 class SpringConfig {

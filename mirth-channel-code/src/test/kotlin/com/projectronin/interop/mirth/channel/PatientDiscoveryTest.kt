@@ -1,5 +1,7 @@
 package com.projectronin.interop.mirth.channel
 
+import com.projectronin.clinical.trial.client.ClinicalTrialClient
+import com.projectronin.clinical.trial.models.Subject
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.aidbox.PatientService
 import com.projectronin.interop.backfill.client.QueueClient
@@ -59,6 +61,7 @@ class PatientDiscoveryTest {
     lateinit var channel: PatientDiscovery
     lateinit var backfillVersionChannel: PatientDiscovery
     lateinit var queueClient: QueueClient
+    lateinit var clinicalTrialClient: ClinicalTrialClient
     lateinit var tenantConfigurationService: TenantConfigurationService
     val backfillEventString = "{" +
         "\"id\":\"67d28e26-ae11-4afb-968b-0991aa11c80b\"," +
@@ -110,6 +113,8 @@ class PatientDiscoveryTest {
             every { getConfiguration("blah") } returns configDO
             every { updateConfiguration(any()) } just Runs
         }
+        clinicalTrialClient = mockk()
+
         val writer = mockk<PatientDiscoveryWriter>()
         channel = PatientDiscovery(
             tenantService,
@@ -117,7 +122,8 @@ class PatientDiscoveryTest {
             ehrFactory,
             tenantConfigurationService,
             "",
-            mockk {}
+            mockk {},
+            clinicalTrialClient
         )
         queueClient = mockk {}
         backfillVersionChannel = PatientDiscovery(
@@ -126,7 +132,8 @@ class PatientDiscoveryTest {
             ehrFactory,
             tenantConfigurationService,
             "yes",
-            queueClient
+            queueClient,
+            clinicalTrialClient
         )
     }
 
@@ -490,6 +497,88 @@ class PatientDiscoveryTest {
             emptyMap()
         )
         assertEquals("[\"Patient/patFhirID\"]", message.message)
+    }
+
+    @Test
+    fun `sourceTransform works with only clinical trial location`() {
+        val subject1 = mockk<Subject> {
+            every { roninFhirId } returns "ronin-patFhirID"
+        }
+        coEvery { clinicalTrialClient.getSubjects(true) } returns listOf(subject1)
+
+        val message = channel.channelSourceTransformer(
+            "ronin",
+            "[\"ClinicalTrialLoadLocation\"]",
+            mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
+            emptyMap()
+        )
+        assertEquals("[\"Patient/patFhirID\"]", message.message)
+    }
+
+    @Test
+    fun `sourceTransform works with clinical trial location when only subjects for other tenants exist`() {
+        val subject1 = mockk<Subject> {
+            every { roninFhirId } returns "tenant1-patFhirID"
+        }
+        val subject2 = mockk<Subject> {
+            every { roninFhirId } returns "tenant2-patFhirID"
+        }
+        coEvery { clinicalTrialClient.getSubjects(true) } returns listOf(subject1, subject2)
+
+        val message = channel.channelSourceTransformer(
+            "ronin",
+            "[\"ClinicalTrialLoadLocation\"]",
+            mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
+            emptyMap()
+        )
+        assertEquals("[]", message.message)
+    }
+
+    @Test
+    fun `sourceTransform works with regular location and clinical trial location`() {
+        val patient1 = Participant(
+            status = ParticipationStatus.ACCEPTED.asCode(),
+            actor = Reference(
+                reference = "Patient/patFhirID".asFHIR(),
+                identifier = Identifier(value = "patientID".asFHIR(), system = Uri("system"))
+            )
+        )
+        val location =
+            Participant(
+                status = ParticipationStatus.ACCEPTED.asCode(),
+                actor = Reference(reference = "Location".asFHIR())
+            )
+        val appt1 = Appointment(
+            id = Id("1"),
+            participant = listOf(location, patient1),
+            status = AppointmentStatus.BOOKED.asCode()
+        )
+        val appt2 = Appointment(
+            id = Id("2"),
+            participant = listOf(location, patient1),
+            status = AppointmentStatus.BOOKED.asCode()
+        )
+        val appointments = listOf(appt1, appt2)
+        val findPractitionersResponse = AppointmentsWithNewPatients(appointments)
+
+        val mockAppointmentService = mockk<AppointmentService> {
+            every { findLocationAppointments(tenant, listOf("123"), any(), any()) } returns findPractitionersResponse
+        }
+
+        every { vendorFactory.appointmentService } returns mockAppointmentService
+
+        val subject1 = mockk<Subject> {
+            every { roninFhirId } returns "ronin-patFhirID2"
+        }
+        coEvery { clinicalTrialClient.getSubjects(true) } returns listOf(subject1)
+
+        val message = channel.channelSourceTransformer(
+            "ronin",
+            "[\"123\",\"ClinicalTrialLoadLocation\"]",
+            mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
+            emptyMap()
+        )
+        assertEquals("[\"Patient/patFhirID2\",\"Patient/patFhirID\"]", message.message)
     }
 
     @Test

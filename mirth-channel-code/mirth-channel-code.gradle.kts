@@ -38,8 +38,10 @@ dependencies {
         exclude(group = "org.yaml", module = "snakeyaml")
     }
     implementation(libs.bundles.interop.kafka.events)
-
     implementation(libs.interop.ehr.tenant)
+
+    implementation(libs.clinical.trial.client)
+
     implementation(libs.spring.vault.core)
     implementation("org.springframework:spring-context")
     implementation(libs.spring.boot.autoconfigure)

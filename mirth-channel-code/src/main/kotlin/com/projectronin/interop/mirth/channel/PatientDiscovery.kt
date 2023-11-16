@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel
 
+import com.projectronin.clinical.trial.client.ClinicalTrialClient
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.backfill.client.QueueClient
 import com.projectronin.interop.backfill.client.generated.models.BackfillStatus
@@ -14,6 +15,7 @@ import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.util.generateMetadata
 import com.projectronin.interop.mirth.channel.util.getMetadata
 import com.projectronin.interop.mirth.channel.util.serialize
+import com.projectronin.interop.mirth.channel.util.unlocalize
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
@@ -35,13 +37,15 @@ class PatientDiscovery(
     private val tenantConfigurationService: TenantConfigurationService,
     @Value("\${backfill.enabled:no}")
     private val backfillEnabledString: String,
-    private val backfillQueueClient: QueueClient
+    private val backfillQueueClient: QueueClient,
+    private val clinicalTrialClient: ClinicalTrialClient
 ) : TenantlessSourceService() {
     override val rootName = "PatientDiscovery"
     override val destinations = mapOf("Kafka" to patientDiscoveryWriter)
     private val futureDateRange: Long = 7
     private val pastDateRange: Long = 1
     private val backfillEnabled = backfillEnabledString.lowercase() == "yes"
+    private val clinicalTrialLocation = "ClinicalTrialLoadLocation"
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(PatientDiscovery::class.java)
@@ -139,14 +143,36 @@ class PatientDiscovery(
             return MirthMessage(message = JacksonUtil.writeJsonValue(listOf(backfillEntry.patientId)))
         }
 
+        val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: throw Exception("No Tenant Found")
+
+        val locations = JacksonUtil.readJsonList(msg, String::class).toMutableList()
+        val patientIds = mutableListOf<String>()
+
+        // Clinical trial patient discovery
+        if (locations.contains(clinicalTrialLocation)) {
+            val clinicalTrialSubjects = runBlocking { clinicalTrialClient.getSubjects(true) }
+            val clinicalTrialPatients = clinicalTrialSubjects.filter { it.roninFhirId.startsWith("$tenantMnemonic-") }
+                .map { "Patient/${it.roninFhirId.unlocalize(tenant)}" }
+            patientIds.addAll(clinicalTrialPatients)
+
+            locations.remove(clinicalTrialLocation)
+        }
+
         // Normal patient discovery
+        if (locations.isNotEmpty()) {
+            val locationBasedPatients = getPatientIdsFromLocations(locations, tenant)
+            patientIds.addAll(locationBasedPatients)
+        }
+
+        return MirthMessage(message = JacksonUtil.writeJsonValue(patientIds))
+    }
+
+    private fun getPatientIdsFromLocations(locations: List<String>, tenant: Tenant): List<String> {
         val currentDate = LocalDate.now()
         val endDate = currentDate.plusDays(futureDateRange)
         val startDate = currentDate.minusDays(pastDateRange)
-        val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: throw Exception("No Tenant Found")
 
         val vendorFactory = ehrFactory.getVendorFactory(tenant)
-        val locations = JacksonUtil.readJsonList(msg, String::class)
         val fullAppointments = vendorFactory.appointmentService.findLocationAppointments(
             tenant,
             locations,
@@ -154,12 +180,10 @@ class PatientDiscovery(
             endDate
         )
 
-        val patients = fullAppointments.appointments.flatMap { appointment ->
+        return fullAppointments.appointments.flatMap { appointment ->
             appointment.participant.mapNotNull { it.actor?.reference?.value }
                 .filter { it.contains("Patient") }
         }.distinct()
-
-        return MirthMessage(message = JacksonUtil.writeJsonValue(patients))
     }
 
     // Given a tenantDO, should we run for tonight's nightly load?

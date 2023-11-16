@@ -65,6 +65,7 @@ object ChannelMap {
         resourceRequestChannelName
     )
     val installedDag: Map<String, String>
+
     init {
         installedDag = fullDag.associateWith {
             val id = installChannel(it)

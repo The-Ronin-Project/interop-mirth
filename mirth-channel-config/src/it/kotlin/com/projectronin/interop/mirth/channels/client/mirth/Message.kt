@@ -26,7 +26,13 @@ data class ConnectorMessages(val entry: List<ConnectorMessageWrapper>)
 
 data class ConnectorMessageWrapper(val connectorMessage: ConnectorMessage)
 
-data class ConnectorMessage(val connectorName: String, val status: String, val response: Response?)
+data class ConnectorMessage(
+    val connectorName: String,
+    val status: String,
+    val response: Response?,
+    val raw: Response?,
+    val metaDataMap: MetaDataMap?
+)
 
 class ConnectorMessagesDeserializer : StdDeserializer<ConnectorMessages>(ConnectorMessages::class.java) {
     override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ConnectorMessages {
@@ -41,3 +47,22 @@ class ConnectorMessagesDeserializer : StdDeserializer<ConnectorMessages>(Connect
 }
 
 data class Response(val content: String)
+
+data class MetaDataMap(val entry: List<MetaDataMapEntry>)
+
+@JsonDeserialize(using = MetaDataMapEntryDeserializer::class)
+data class MetaDataMapEntry(val string: List<String>)
+
+class MetaDataMapEntryDeserializer : StdDeserializer<MetaDataMapEntry>(MetaDataMapEntry::class.java) {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): MetaDataMapEntry {
+        val node = p.codec.readTree<JsonNode>(p) ?: throw JsonParseException(p, "Unable to parse node")
+        val entry = node.get("string")
+        return if (entry.isNull) {
+            MetaDataMapEntry(emptyList())
+        } else if (entry.isArray) {
+            MetaDataMapEntry(node.getAsList("string", p))
+        } else {
+            MetaDataMapEntry(listOf(node.getAs("string", p)))
+        }
+    }
+}

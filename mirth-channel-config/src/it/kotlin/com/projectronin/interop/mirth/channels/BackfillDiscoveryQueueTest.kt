@@ -19,8 +19,10 @@ import com.projectronin.interop.mirth.channels.client.BackfillClient.queueClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.TenantClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
+import com.projectronin.interop.mirth.channels.client.mirth.ChannelMap
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.mirth.backfillDiscoveryQueueName
+import com.projectronin.interop.mirth.channels.client.mirth.patientDiscoverChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -116,6 +118,12 @@ class BackfillDiscoveryQueueTest : BaseChannelTest(
             val newTenant = TenantClient.getTenant(it)
             TenantClient.putTenant(newTenant)
         }
+
+        // We need to stop the PatientDiscovery channel here to make sure it doesn't pick up our backfill and thus change the number of queue entries before we can verify.
+        ChannelMap.installedDag[patientDiscoverChannelName]?.let { // If it's not installed, we don't need to stop it.
+            MirthClient.stopChannel(it)
+        }
+
         MirthClient.deployChannel(testChannelId)
         startChannel(false)
         waitForMessage(2)
