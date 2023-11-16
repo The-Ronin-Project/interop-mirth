@@ -10,6 +10,7 @@ import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthResponse
 import com.projectronin.interop.mirth.channel.util.generateMetadata
+import com.projectronin.interop.mirth.channel.util.unlocalize
 import com.projectronin.interop.tenant.config.TenantService
 import org.springframework.stereotype.Component
 
@@ -34,7 +35,7 @@ class ResourceRequestPublish(
         val result = kafkaLoadService.pushLoadEvent(
             tenantId = tenant.mnemonic,
             resourceType = resourceType,
-            resourceFHIRIds = listOf(requestEvent.resourceFHIRId),
+            resourceFHIRIds = listOf(requestEvent.resourceFHIRId.unlocalize(tenant)),
             trigger = DataTrigger.AD_HOC,
             metadata = generateMetadata(),
             flowOptions = requestEvent.flowOptions?.forLoad()
