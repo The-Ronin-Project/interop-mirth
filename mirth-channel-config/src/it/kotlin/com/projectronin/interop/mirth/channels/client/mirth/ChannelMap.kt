@@ -24,6 +24,7 @@ const val patientLoadChannelName = "PatientLoad"
 const val patientDiscoverChannelName = "PatientDiscovery"
 const val practitionerLoadChannelName = "PractitionerLoad"
 const val requestGroupLoadChannelName = "RequestGroupLoad"
+const val serviceRequestGroupLoadChannelName = "ServiceRequestLoad"
 const val diagnosticReportLoadChannelName = "DiagnosticReportLoad"
 
 // some non dag but still install to make easier
@@ -53,6 +54,7 @@ object ChannelMap {
         patientDiscoverChannelName,
         practitionerLoadChannelName,
         requestGroupLoadChannelName,
+        serviceRequestGroupLoadChannelName,
         diagnosticReportLoadChannelName,
 
         // non dag

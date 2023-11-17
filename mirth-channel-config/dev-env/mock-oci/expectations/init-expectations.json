@@ -424,6 +424,54 @@
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceMedicationAdministrationStatus",
           "registry_uuid": "25",
           "concept_map_name": "MedicationAdministrationStatusRonin"
+        },
+        {
+          "resource_type": "ServiceRequest",
+          "data_element": "ServiceRequest.code",
+          "tenant_id": "cernmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "ServiceRequestCode.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceServiceRequestCode",
+          "registry_uuid": "26",
+          "concept_map_name": "ServiceRequestCodeRonin"
+        },
+        {
+          "resource_type": "ServiceRequest",
+          "data_element": "ServiceRequest.code",
+          "tenant_id": "epicmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "ServiceRequestCode.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceServiceRequestCode",
+          "registry_uuid": "27",
+          "concept_map_name": "ServiceRequestCodeRonin"
+        },
+        {
+          "resource_type": "ServiceRequest",
+          "data_element": "ServiceRequest.category",
+          "tenant_id": "cernmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "ServiceRequestCategory.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceServiceRequestCategory",
+          "registry_uuid": "28",
+          "concept_map_name": "ServiceRequestCategoryRonin"
+        },
+        {
+          "resource_type": "ServiceRequest",
+          "data_element": "ServiceRequest.category",
+          "tenant_id": "epicmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "ServiceRequestCategory.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceServiceRequestCategory",
+          "registry_uuid": "29",
+          "concept_map_name": "ServiceRequestCategoryRonin"
         }
       ]
     },
@@ -926,6 +974,132 @@
       }
     },
     "id": "GetRoninMedicationAdministrationStatus",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/ServiceRequestCode.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ConceptMap",
+        "title": "Ronin ServiceRequest Codes to FHIR R4 ServiceRequestCodes",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a2",
+        "name": "ServiceRequestCodeRonin",
+        "url": "http://projectronin.io/fhir/StructureDefinition/ConceptMap/4ffae118-778f-4df9-bd73-aece934b521b",
+        "purpose": "FHIR Interops Concept Map",
+        "publisher": "Project Ronin",
+        "experimental": false,
+        "date": "2022-12-02",
+        "version": 1,
+        "group": [
+          {
+            "source": "http://projectronin.io/fhir/CodeSystem/epicmock/ServiceRequestCode",
+            "sourceVersion": "1.0",
+            "target": "http://hl7.org/fhir/ValueSet/service-request-code",
+            "targetVersion": "4.0.1",
+            "element": [
+              {
+                "code": "1",
+                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.798268.30",
+                "display": "Procedures",
+                "target": [
+                  {
+                    "code": "completed",
+                    "display": "completed",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://projectronin.io/fhir/ronin.common-fhir-model.uscore-r4/StructureDefinition/Extension/ronin-ConceptMapSchema",
+            "valueString": "1.0.0"
+          }
+        ]
+      }
+    },
+    "id": "GetRoninServiceRequestCode",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/ServiceRequestCategory.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ConceptMap",
+        "title": "Ronin ServiceRequest Category to FHIR R4 ServiceRequestCategory",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a2",
+        "name": "ServiceRequestCategoryRonin",
+        "url": "http://projectronin.io/fhir/StructureDefinition/ConceptMap/4ffae118-778f-4df9-bd73-aece934b521b",
+        "purpose": "FHIR Interops Concept Map",
+        "publisher": "Project Ronin",
+        "experimental": false,
+        "date": "2022-12-02",
+        "version": 1,
+        "group": [
+          {
+            "source": "http://projectronin.io/fhir/CodeSystem/epicmock/ServiceRequestCategory",
+            "sourceVersion": "1.0",
+            "target": "http://hl7.org/fhir/ValueSet/service-request-category",
+            "targetVersion": "4.0.1",
+            "element": [
+              {
+                "code": "1",
+                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.798268.30",
+                "display": "Procedures",
+                "target": [
+                  {
+                    "code": "completed",
+                    "display": "completed",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://projectronin.io/fhir/ronin.common-fhir-model.uscore-r4/StructureDefinition/Extension/ronin-ConceptMapSchema",
+            "valueString": "1.0.0"
+          }
+        ]
+      }
+    },
+    "id": "GetRoninServiceRequestCategory",
     "priority": 0,
     "timeToLive": {
       "unlimited": true

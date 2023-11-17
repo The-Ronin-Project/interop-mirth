@@ -35,6 +35,7 @@ dependencies {
 
     itImplementation(libs.interop.fhir)
     itImplementation(libs.interop.ehr.fhir.ronin)
+    itImplementation(libs.interop.ehr.fhir.ronin.generators)
 
     itImplementation(libs.bundles.jackson)
     itImplementation(libs.bundles.ktor)
