@@ -302,6 +302,18 @@
           "filename": "RoninDocumentReferenceType.json"
         },
         {
+          "registry_uuid": "17c",
+          "resource_type": "DocumentReference",
+          "data_element": "DocumentReference.type",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece694b521b",
+          "tenant_id": "cernmock",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceDocumentReferenceType",
+          "registry_entry_type": "concept_map",
+          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-documentReference",
+          "version": 2,
+          "filename": "RoninDocumentReferenceType.json"
+        },
+        {
           "registry_uuid": "18",
           "resource_type": "Medication",
           "data_element": "Medication.code",

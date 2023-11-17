@@ -8,9 +8,11 @@ import com.projectronin.interop.fhir.generators.datatypes.attachment
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.identifier
+import com.projectronin.interop.fhir.generators.datatypes.internalIdentifier
 import com.projectronin.interop.fhir.generators.datatypes.name
 import com.projectronin.interop.fhir.generators.datatypes.participant
 import com.projectronin.interop.fhir.generators.datatypes.period
+import com.projectronin.interop.fhir.generators.datatypes.quantity
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.dateTime
 import com.projectronin.interop.fhir.generators.primitives.daysAgo
@@ -26,7 +28,9 @@ import com.projectronin.interop.fhir.generators.resources.documentReferenceConte
 import com.projectronin.interop.fhir.generators.resources.encounter
 import com.projectronin.interop.fhir.generators.resources.ingredient
 import com.projectronin.interop.fhir.generators.resources.location
+import com.projectronin.interop.fhir.generators.resources.medAdminDosage
 import com.projectronin.interop.fhir.generators.resources.medication
+import com.projectronin.interop.fhir.generators.resources.medicationAdministration
 import com.projectronin.interop.fhir.generators.resources.medicationRequest
 import com.projectronin.interop.fhir.generators.resources.medicationStatement
 import com.projectronin.interop.fhir.generators.resources.observation
@@ -35,6 +39,7 @@ import com.projectronin.interop.fhir.generators.resources.practitioner
 import com.projectronin.interop.fhir.generators.resources.requestGroup
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
+import com.projectronin.interop.fhir.r4.datatype.primitive.DateTime
 import com.projectronin.interop.fhir.r4.datatype.primitive.Url
 import com.projectronin.interop.fhir.r4.resource.EncounterLocation
 import com.projectronin.interop.fhir.r4.resource.Resource
@@ -59,6 +64,8 @@ import io.ktor.http.contentType
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
+import java.math.BigDecimal
+import java.time.Instant
 import java.time.LocalDate
 
 @Component
@@ -94,7 +101,7 @@ class ValidationTest(
                     mockEHR.addResourceAndValidate(
                         patient {
                             identifier of listOf(
-                                identifier { system of "mockPatientInternalSystem" },
+                                internalIdentifier { system of "mockPatientInternalSystem" },
                                 identifier { system of "mockEHRMRNSystem" }
                             )
                             name of listOf(
@@ -184,8 +191,8 @@ class ValidationTest(
                     status of "planned"
                     `class` of coding { display of "test" }
                     subject of reference("Patient", patientID)
-                    // location is not part of fhir-generators
-                }.copy(location = listOf(EncounterLocation(location = reference("Location", locationID))))
+                    location of listOf(EncounterLocation(location = reference("Location", locationID)))
+                }
                 mockEHR.addResourceAndValidate(encounter1)
 
                 // Care Plan Section
@@ -357,9 +364,98 @@ class ValidationTest(
                             medication of DynamicValues.reference(reference("Medication", statementMedicationID))
                             status of "completed"
                         },
-                        STU3 = true
+                        useSTU3 = true
                     )
                 }
+
+                // Medication Administration Section
+                if ("MedicationAdministration" !in ignoreTypeList) {
+                    val medicationCodeableConcept =
+                        codeableConcept {
+                            coding of listOf(
+                                coding {
+                                    system of "ok"
+                                    code of "yeah"
+                                }
+                            )
+                            text of "medication"
+                        }
+
+                    val encounterId = mockEHR.addResourceAndValidate(
+                        encounter {
+                            type of listOf(
+                                codeableConcept {
+                                    text of "type"
+                                    coding of listOf(
+                                        coding {
+                                            display of "display"
+                                        }
+                                    )
+                                }
+                            )
+                            period of period {
+                                start of dateTime {
+                                    year of nowish.year
+                                    month of nowish.monthValue
+                                    day of nowish.dayOfMonth
+                                }
+                                end of dateTime {
+                                    year of laterish.year
+                                    month of laterish.monthValue
+                                    day of laterish.dayOfMonth
+                                }
+                            }
+                            status of "planned"
+                            `class` of coding { display of "test" }
+                            subject of reference("Patient", patientID)
+                            location of listOf(EncounterLocation(location = reference("Location", locationID)))
+                            identifier plus identifier { system of "mockEncounterCSNSystem" }
+                        },
+                        skipValidation = "Encounter" in ignoreTypeList
+                    )
+
+                    val orderIdentifier = identifier {
+                        system of "mockEHROrderSystem"
+                    }
+                    val medicationRequestID = mockEHR.addResourceAndValidate(
+                        medicationRequest {
+                            subject of reference("Patient", patientID)
+                            medication of DynamicValues.codeableConcept(medicationCodeableConcept)
+                            requester of reference("Practitioner", "12345")
+                            identifier plus orderIdentifier
+                            encounter of reference("Encounter", encounterId)
+                        },
+                        skipValidation = "MedicationRequest" in ignoreTypeList
+                    )
+
+                    val dateTime = "${nowish.year}-${nowish.monthValue}-${nowish.dayOfMonth}T10:15:30.00Z"
+                    val medAdminId = mockEHR.addResourceAndValidate(
+                        medicationAdministration {
+                            subject of reference("Patient", patientID)
+                            medication of DynamicValues.codeableConcept(medicationCodeableConcept)
+                            effective of DynamicValues.dateTime(DateTime(dateTime))
+                            request of reference("MedicationRequest", medicationRequestID)
+                            dosage of medAdminDosage {
+                                dose of quantity {
+                                    value of BigDecimal.TEN
+                                    unit of "mg"
+                                }
+                            }
+                            status of "completed"
+                        },
+                        useBaseFhir = true,
+                        skipValidation = true
+                    )
+
+                    val validationId = if (mockEHR.vendorType == "epic") {
+                        "${orderIdentifier.value!!.value!!}-${Instant.parse(dateTime).epochSecond}"
+                    } else {
+                        medAdminId
+                    }
+
+                    validationList.add("MedicationAdministration/$validationId")
+                }
+
                 val binaryID = mockEHR.addResourceAndValidate(binary { })
                 mockEHR.addResourceAndValidate(
                     documentReference {
@@ -407,49 +503,63 @@ class ValidationTest(
 
     class MockEHRUtil(
         val httpClient: HttpClient,
-        URL: String,
+        vendorUrl: String,
         val ignoreTypeList: List<String> = emptyList(),
         val validationList: MutableList<String> = mutableListOf()
     ) {
 
         val logger = KotlinLogging.logger { }
 
-        private val BASE_URL = URL
-
-        private val FHIR_URL = when {
-            BASE_URL.contains("epic") -> "$BASE_URL/api/FHIR/R4"
-            BASE_URL.contains("cerner") -> BASE_URL
-            else -> "$BASE_URL/fhir/r4"
+        val vendorType = when {
+            vendorUrl.contains("epic") -> "epic"
+            vendorUrl.contains("cerner") -> "cerner"
+            else -> null
         }
-        val RESOURCES_FORMAT = "$FHIR_URL/%s"
 
-        inline fun <reified T : Resource<T>> addResourceAndValidate(
+        val VENDOR_SPECIFIC_URL = when {
+            vendorUrl.contains("epic") -> "$vendorUrl/api/FHIR/R4"
+            vendorUrl.contains("cerner") -> vendorUrl
+            else -> "$vendorUrl/fhir/r4"
+        }
+
+        val FHIR_URL = when {
+            vendorUrl.contains("epic") -> vendorUrl.replace("/epic", "/fhir/r4")
+            vendorUrl.contains("cerner") -> vendorUrl.replace("/cerner", "")
+            else -> vendorUrl
+        }
+
+        fun <T : Resource<T>> addResourceAndValidate(
             resource: Resource<T>,
-            STU3: Boolean = false
+            useBaseFhir: Boolean = false,
+            useSTU3: Boolean = false,
+            skipValidation: Boolean = false
         ): String {
             return if (resource.resourceType in ignoreTypeList) {
                 "IGNORED"
             } else {
                 runBlocking {
+                    val fhirUrl = if (useBaseFhir) FHIR_URL else VENDOR_SPECIFIC_URL
                     val resourceUrl =
-                        RESOURCES_FORMAT.format(resource.resourceType).replace("R4", if (STU3) "STU3" else "R4")
+                        "$fhirUrl/%s".format(resource.resourceType).replace("R4", if (useSTU3) "STU3" else "R4")
                     val response = httpClient.post(resourceUrl) {
                         contentType(ContentType.Application.FhirJson)
                         accept(ContentType.Application.FhirJson)
-                        setBody(resource)
+                        setBody<Resource<*>>(resource)
                     }
                     val location = response.headers["Content-Location"]
                     logger.debug { "$location" }
 
                     val id = location!!.removePrefix("$resourceUrl/")
-                    validationList.add("${resource.resourceType}/$id")
+                    if (!skipValidation) {
+                        validationList.add("${resource.resourceType}/$id")
+                    }
                     id
                 }
             }
         }
 
         fun deleteResource(resourceReference: String) = runBlocking {
-            val url = RESOURCES_FORMAT.format(resourceReference)
+            val url = "$FHIR_URL/$resourceReference"
             httpClient.delete(url)
         }
     }
