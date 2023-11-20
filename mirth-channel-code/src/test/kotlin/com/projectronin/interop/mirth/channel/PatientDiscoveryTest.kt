@@ -490,7 +490,7 @@ class PatientDiscoveryTest {
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
 
-        val message = channel.channelSourceTransformer(
+        val message = channel.getSourceTransformer()!!.transform(
             "ronin",
             "[\"123\"]",
             mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
@@ -506,7 +506,7 @@ class PatientDiscoveryTest {
         }
         coEvery { clinicalTrialClient.getSubjects(true) } returns listOf(subject1)
 
-        val message = channel.channelSourceTransformer(
+        val message = channel.getSourceTransformer()!!.transform(
             "ronin",
             "[\"ClinicalTrialLoadLocation\"]",
             mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
@@ -525,7 +525,7 @@ class PatientDiscoveryTest {
         }
         coEvery { clinicalTrialClient.getSubjects(true) } returns listOf(subject1, subject2)
 
-        val message = channel.channelSourceTransformer(
+        val message = channel.getSourceTransformer()!!.transform(
             "ronin",
             "[\"ClinicalTrialLoadLocation\"]",
             mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
@@ -572,7 +572,7 @@ class PatientDiscoveryTest {
         }
         coEvery { clinicalTrialClient.getSubjects(true) } returns listOf(subject1)
 
-        val message = channel.channelSourceTransformer(
+        val message = channel.getSourceTransformer()!!.transform(
             "ronin",
             "[\"123\",\"ClinicalTrialLoadLocation\"]",
             mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
@@ -585,7 +585,7 @@ class PatientDiscoveryTest {
     fun `sourceTransform - backfill - works`() {
         val entryId = UUID.fromString("67d28e26-ae11-4afb-968b-0991aa11c80b")
         coEvery { queueClient.updateQueueEntryByID(entryId, UpdateQueueEntry(BackfillStatus.STARTED)) } returns true
-        val message = backfillVersionChannel.channelSourceTransformer(
+        val message = backfillVersionChannel.getSourceTransformer()!!.transform(
             "blah",
             backfillEventString,
             mapOf(
@@ -611,7 +611,7 @@ class PatientDiscoveryTest {
             queueClient.updateQueueEntryByID(entryId, UpdateQueueEntry(BackfillStatus.STARTED))
         } throws ClientFailureException(HttpStatusCode.BadGateway, "SERVER", "SERVICE")
         val failure = assertThrows<ClientFailureException> {
-            backfillVersionChannel.channelSourceTransformer(
+            backfillVersionChannel.getSourceTransformer()!!.transform(
                 "blah",
                 backfillEventString,
                 mapOf(
@@ -635,7 +635,7 @@ class PatientDiscoveryTest {
     fun `sourceTransform -  bad tenant throws exception`() {
         every { tenantService.getTenantForMnemonic("no") } throws Exception("e")
         assertThrows<Exception> {
-            channel.channelSourceTransformer("no", "[\"123\"]", emptyMap(), emptyMap())
+            channel.getSourceTransformer()!!.transform("no", "[\"123\"]", emptyMap(), emptyMap())
         }
     }
 }

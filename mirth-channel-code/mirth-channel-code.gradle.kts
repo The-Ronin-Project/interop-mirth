@@ -73,6 +73,20 @@ dependencies {
         exclude(group = "org.yaml", module = "snakeyaml")
     }
 
+    // Mirth XML deps
+    testImplementation("com.mirth.connect:mirth-server:4.4.0")
+    testImplementation("com.mirth.connect:donkey-model:4.4.0")
+    testImplementation("com.mirth.connect.connectors:js-shared:4.4.0")
+    testImplementation("com.mirth.connect.connectors:tcp-shared:4.4.0")
+    testImplementation("com.mirth.connect.connectors:vm-shared:4.4.0")
+    testImplementation("com.mirth.connect.plugins:javascriptrule-shared:4.4.0")
+    testImplementation("com.mirth.connect.plugins:javascriptstep-shared:4.4.0")
+    testImplementation("com.mirth.connect.plugins:mllpmode-shared:4.4.0")
+    testImplementation("com.mirth.connect.plugins.datatypes:datatype-hl7v2-shared:4.4.0")
+    testImplementation("com.mirth.connect.plugins.datatypes:datatype-raw-shared:4.4.0")
+    testImplementation("com.thoughtworks.xstream:xstream:1.4.20")
+    testImplementation("org.mozilla:rhino:1.7.14")
+
     testImplementation(libs.mockk)
     testImplementation(libs.interop.commonTestDb)
     testImplementation(libs.interop.ehr.liquibase)
@@ -121,4 +135,10 @@ dependencyCheck {
     scanConfigurations = listOf("compileClasspath", "runtimeClasspath")
     skipTestGroups = true
     suppressionFile = "${project.projectDir}/conf/owasp-suppress.xml"
+}
+
+repositories {
+    maven {
+        url = uri("https://repo.repsy.io/mvn/kpalang/mirthconnect")
+    }
 }

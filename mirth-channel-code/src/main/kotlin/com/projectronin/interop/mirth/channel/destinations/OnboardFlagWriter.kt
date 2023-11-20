@@ -1,6 +1,9 @@
 package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.interop.ehr.factory.EHRFactory
+import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
+import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
+import com.projectronin.interop.mirth.channel.base.MirthFilter
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
@@ -18,16 +21,23 @@ class OnboardFlagWriter(
 ) :
     TenantlessDestinationService() {
 
-    override fun channelDestinationFilter(
-        tenantMnemonic: String,
-        msg: String,
-        sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
-    ): MirthFilterResponse {
-        val blockedResourceList =
-            tenantConfigurationService.getConfiguration(tenantMnemonic).blockedResources?.split(",")
-                ?: return MirthFilterResponse(true)
-        return MirthFilterResponse("PatientOnboardFlag" !in blockedResourceList)
+    override fun getConfiguration(): DestinationConfiguration =
+        JavaScriptDestinationConfiguration(name = "Write Onboard Flag")
+
+    override fun getFilter(): MirthFilter? {
+        return object : MirthFilter {
+            override fun filter(
+                tenantMnemonic: String,
+                msg: String,
+                sourceMap: Map<String, Any>,
+                channelMap: Map<String, Any>
+            ): MirthFilterResponse {
+                val blockedResourceList =
+                    tenantConfigurationService.getConfiguration(tenantMnemonic).blockedResources?.split(",")
+                        ?: return MirthFilterResponse(true)
+                return MirthFilterResponse("PatientOnboardFlag" !in blockedResourceList)
+            }
+        }
     }
 
     override fun channelDestinationWriter(

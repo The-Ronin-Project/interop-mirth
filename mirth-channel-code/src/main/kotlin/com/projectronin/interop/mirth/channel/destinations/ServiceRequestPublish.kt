@@ -17,6 +17,8 @@ import com.projectronin.interop.fhir.r4.resource.Procedure
 import com.projectronin.interop.fhir.r4.resource.ServiceRequest
 import com.projectronin.interop.fhir.ronin.resource.RoninServiceRequest
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
+import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
@@ -45,6 +47,9 @@ class ServiceRequestPublish(
     publishService,
     profileTransformer
 ) {
+    override fun getConfiguration(): DestinationConfiguration =
+        JavaScriptDestinationConfiguration(name = "Publish Service Requests")
+
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,

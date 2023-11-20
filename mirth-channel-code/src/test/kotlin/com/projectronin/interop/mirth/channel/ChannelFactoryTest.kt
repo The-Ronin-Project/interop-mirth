@@ -2,7 +2,7 @@ package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.mirth.channel.base.ChannelService
-import com.projectronin.interop.mirth.channel.base.DestinationService
+import com.projectronin.interop.mirth.channel.base.MirthDestination
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
@@ -58,7 +58,7 @@ class TestChannelService :
     companion object : ChannelFactory<TestChannelService>()
 
     override val rootName: String = "test"
-    override val destinations: Map<String, DestinationService> = emptyMap()
+    override val destinations: Map<String, MirthDestination> = emptyMap()
 
     override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
         TODO("Not yet implemented")

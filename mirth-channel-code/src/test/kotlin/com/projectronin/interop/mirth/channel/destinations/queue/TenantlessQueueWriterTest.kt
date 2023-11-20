@@ -73,12 +73,6 @@ class TenantlessQueueWriterTest {
     }
 
     @Test
-    fun `destination transformer`() {
-        val message = writer.channelDestinationTransformer("name", "message", emptyMap(), emptyMap())
-        assertEquals("message", message.message)
-    }
-
-    @Test
     fun `destinationWriter - has resource but publish fails`() {
         val mockSerialized = """{
         |  "id": "12345",

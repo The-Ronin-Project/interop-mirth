@@ -36,6 +36,7 @@ class TenantlessSourceServiceTest {
                 return emptyList()
             }
         }
+
         val channel = BasicSource()
         assertDoesNotThrow { channel.onDeploy("blah", emptyMap()) }
         assertDoesNotThrow { channel.sourceReader("blah", emptyMap()) }
@@ -59,7 +60,7 @@ class TenantlessSourceServiceTest {
 
     @Test
     fun `all calls - channel can error`() {
-        val channel = TestChannelService()
+        val channel = TestChannelService(true)
         assertThrows<Exception> {
             channel.onDeploy("blah", mapOf("Error" to true))
         }
@@ -86,7 +87,7 @@ class TenantlessSourceServiceTest {
 
     @Test
     fun `tenant required`() {
-        val channel = TestChannelService()
+        val channel = TestChannelService(true)
         assertThrows<Exception> {
             channel.sourceTransformer(
                 "blah",
@@ -107,7 +108,8 @@ class TenantlessSourceServiceTest {
 
         assertThrows<MapVariableMissing> { channel.sourceReader("test", mapOf("Bad Message" to true)) }
     }
-    class TestChannelService : TenantlessSourceService() {
+
+    class TestChannelService(val error: Boolean = false) : TenantlessSourceService() {
         override val rootName = CHANNEL_ROOT_NAME
         override val destinations = emptyMap<String, TenantlessDestinationService>()
         override fun channelOnDeploy(serviceMap: Map<String, Any>): Map<String, Any> {
@@ -117,6 +119,7 @@ class TenantlessSourceServiceTest {
 
             return super.channelOnDeploy(serviceMap)
         }
+
         override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
             if (serviceMap.containsKey("Error")) {
                 throw Exception("Everything died")
@@ -127,29 +130,37 @@ class TenantlessSourceServiceTest {
             return listOf(MirthMessage("Good Mesasage", mapOf(MirthKey.TENANT_MNEMONIC.code to "yes")))
         }
 
-        override fun channelSourceFilter(
-            tenantMnemonic: String,
-            msg: String,
-            sourceMap: Map<String, Any>,
-            channelMap: Map<String, Any>
-        ): MirthFilterResponse {
-            if (sourceMap.containsKey("Error")) {
-                throw Exception("Everything died")
+        override fun getSourceTransformer(): MirthTransformer? =
+            if (!error) {
+                null
+            } else {
+                object : MirthTransformer {
+                    override fun transform(
+                        tenantMnemonic: String,
+                        msg: String,
+                        sourceMap: Map<String, Any>,
+                        channelMap: Map<String, Any>
+                    ): MirthMessage {
+                        throw Exception("Everything died")
+                    }
+                }
             }
-            return super.channelSourceFilter(tenantMnemonic, msg, sourceMap, channelMap)
-        }
 
-        override fun channelSourceTransformer(
-            tenantMnemonic: String,
-            msg: String,
-            sourceMap: Map<String, Any>,
-            channelMap: Map<String, Any>
-        ): MirthMessage {
-            if (sourceMap.containsKey("Error")) {
-                throw Exception("Everything died")
+        override fun getSourceFilter(): MirthFilter? =
+            if (!error) {
+                null
+            } else {
+                object : MirthFilter {
+                    override fun filter(
+                        tenantMnemonic: String,
+                        msg: String,
+                        sourceMap: Map<String, Any>,
+                        channelMap: Map<String, Any>
+                    ): MirthFilterResponse {
+                        throw Exception("Everything died")
+                    }
+                }
             }
-            return super.channelSourceTransformer(tenantMnemonic, msg, sourceMap, channelMap)
-        }
     }
 
     class BadTestChannelService : TenantlessSourceService() {

@@ -46,13 +46,17 @@ import com.projectronin.interop.fhir.r4.resource.Resource
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.model.DataTrigger
+import com.projectronin.interop.mirth.channel.base.ChannelConfiguration
+import com.projectronin.interop.mirth.channel.base.ChannelDestinationConfiguration
+import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
+import com.projectronin.interop.mirth.channel.base.PollingConfig
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
+import com.projectronin.interop.mirth.channel.base.TimedPollingConfig
 import com.projectronin.interop.mirth.channel.destinations.ValidationTestDestination
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.util.generateMetadata
 import com.projectronin.interop.mirth.channel.util.generateSerializedMetadata
-import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
 import io.ktor.client.HttpClient
 import io.ktor.client.request.accept
@@ -78,8 +82,36 @@ class ValidationTest(
     override val rootName = "ValidationTest"
     override val destinations = mapOf("ValidationTest" to validationDestination)
 
-    companion object {
-        fun create() = SpringUtil.applicationContext.getBean(ValidationTest::class.java)
+    companion object : ChannelConfiguration<ValidationTest>() {
+        override val channelClass = ValidationTest::class
+        override val id = "a3dc2a35-a776-476f-b973-7db20b3a4285"
+        override val description =
+            "Uses a set list of locations to find patients with upcoming appointments and triggers the nightly load"
+        override val metadataColumns: Map<String, String> = mapOf(
+            "TENANT" to "tenantMnemonic",
+            "RESOURCETYPE" to "resourceType"
+        )
+
+        override val isStartOnDeploy: Boolean = false
+        override val sourceThreads: Int = 2
+        override val pollingConfig: PollingConfig =
+            TimedPollingConfig(
+                hour = 2,
+                minute = 30
+            )
+    }
+
+    private val patientDiscoveryDestination = ChannelDestinationConfiguration(
+        name = "Kick-off Discovery",
+        queueEnabled = false,
+        threadCount = 2,
+        channelId = PatientDiscovery.id,
+        channelTemplate = "\${message.encodedData}",
+        variables = listOf("tenantMnemonic", "kafkaEventMetadata")
+    )
+
+    override fun getNonJavascriptDestinations(): List<DestinationConfiguration> {
+        return listOf(patientDiscoveryDestination)
     }
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {

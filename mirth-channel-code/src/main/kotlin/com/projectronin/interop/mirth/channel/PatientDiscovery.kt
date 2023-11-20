@@ -8,6 +8,10 @@ import com.projectronin.interop.backfill.client.generated.models.QueueEntry
 import com.projectronin.interop.backfill.client.generated.models.UpdateQueueEntry
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.EHRFactory
+import com.projectronin.interop.mirth.channel.base.ChannelConfiguration
+import com.projectronin.interop.mirth.channel.base.IntervalPollingConfig
+import com.projectronin.interop.mirth.channel.base.MirthTransformer
+import com.projectronin.interop.mirth.channel.base.PollingConfig
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.PatientDiscoveryWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
@@ -17,7 +21,6 @@ import com.projectronin.interop.mirth.channel.util.getMetadata
 import com.projectronin.interop.mirth.channel.util.serialize
 import com.projectronin.interop.mirth.channel.util.unlocalize
 import com.projectronin.interop.mirth.service.TenantConfigurationService
-import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import kotlinx.coroutines.runBlocking
@@ -47,8 +50,21 @@ class PatientDiscovery(
     private val backfillEnabled = backfillEnabledString.lowercase() == "yes"
     private val clinicalTrialLocation = "ClinicalTrialLoadLocation"
 
-    companion object {
-        fun create() = SpringUtil.applicationContext.getBean(PatientDiscovery::class.java)
+    companion object : ChannelConfiguration<PatientDiscovery>() {
+        override val channelClass = PatientDiscovery::class
+        override val id = "83ead971-6f47-4ff9-bc59-e6a5b595522b"
+        override val description =
+            "Uses a set list of locations to find patients with upcoming appointments and triggers the nightly load"
+        override val metadataColumns: Map<String, String> = mapOf(
+            "TENANT" to "tenantMnemonic",
+            "FHIRID" to "locationFhirID",
+            "RUN" to "kafkaEventRunId"
+        )
+
+        override val pollingConfig: PollingConfig =
+            IntervalPollingConfig(
+                pollingFrequency = 1800000
+            )
     }
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
@@ -125,46 +141,54 @@ class PatientDiscovery(
         return emptyList()
     }
 
-    override fun channelSourceTransformer(
-        tenantMnemonic: String,
-        msg: String,
-        sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
-    ): MirthMessage {
-        val metadata = getMetadata(sourceMap)
+    override fun getSourceTransformer(): MirthTransformer? {
+        return object : MirthTransformer {
+            override fun transform(
+                tenantMnemonic: String,
+                msg: String,
+                sourceMap: Map<String, Any>,
+                channelMap: Map<String, Any>
+            ): MirthMessage {
+                val metadata = getMetadata(sourceMap)
 
-        // if it's a backfill request we already have the patient id, just grab that and stop processing
-        if (metadata.backfillRequest != null) {
-            val backfillEntry = JacksonUtil.readJsonObject(msg, QueueEntry::class)
-            // tell backfill we're (re)processing this
-            runBlocking {
-                backfillQueueClient.updateQueueEntryByID(backfillEntry.id, UpdateQueueEntry(BackfillStatus.STARTED))
+                // if it's a backfill request we already have the patient id, just grab that and stop processing
+                if (metadata.backfillRequest != null) {
+                    val backfillEntry = JacksonUtil.readJsonObject(msg, QueueEntry::class)
+                    // tell backfill we're (re)processing this
+                    runBlocking {
+                        backfillQueueClient.updateQueueEntryByID(
+                            backfillEntry.id,
+                            UpdateQueueEntry(BackfillStatus.STARTED)
+                        )
+                    }
+                    return MirthMessage(message = JacksonUtil.writeJsonValue(listOf(backfillEntry.patientId)))
+                }
+
+                val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: throw Exception("No Tenant Found")
+
+                val locations = JacksonUtil.readJsonList(msg, String::class).toMutableList()
+                val patientIds = mutableListOf<String>()
+
+                // Clinical trial patient discovery
+                if (locations.contains(clinicalTrialLocation)) {
+                    val clinicalTrialSubjects = runBlocking { clinicalTrialClient.getSubjects(true) }
+                    val clinicalTrialPatients =
+                        clinicalTrialSubjects.filter { it.roninFhirId.startsWith("$tenantMnemonic-") }
+                            .map { "Patient/${it.roninFhirId.unlocalize(tenant)}" }
+                    patientIds.addAll(clinicalTrialPatients)
+
+                    locations.remove(clinicalTrialLocation)
+                }
+
+                // Normal patient discovery
+                if (locations.isNotEmpty()) {
+                    val locationBasedPatients = getPatientIdsFromLocations(locations, tenant)
+                    patientIds.addAll(locationBasedPatients)
+                }
+
+                return MirthMessage(message = JacksonUtil.writeJsonValue(patientIds))
             }
-            return MirthMessage(message = JacksonUtil.writeJsonValue(listOf(backfillEntry.patientId)))
         }
-
-        val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: throw Exception("No Tenant Found")
-
-        val locations = JacksonUtil.readJsonList(msg, String::class).toMutableList()
-        val patientIds = mutableListOf<String>()
-
-        // Clinical trial patient discovery
-        if (locations.contains(clinicalTrialLocation)) {
-            val clinicalTrialSubjects = runBlocking { clinicalTrialClient.getSubjects(true) }
-            val clinicalTrialPatients = clinicalTrialSubjects.filter { it.roninFhirId.startsWith("$tenantMnemonic-") }
-                .map { "Patient/${it.roninFhirId.unlocalize(tenant)}" }
-            patientIds.addAll(clinicalTrialPatients)
-
-            locations.remove(clinicalTrialLocation)
-        }
-
-        // Normal patient discovery
-        if (locations.isNotEmpty()) {
-            val locationBasedPatients = getPatientIdsFromLocations(locations, tenant)
-            patientIds.addAll(locationBasedPatients)
-        }
-
-        return MirthMessage(message = JacksonUtil.writeJsonValue(patientIds))
     }
 
     private fun getPatientIdsFromLocations(locations: List<String>, tenant: Tenant): List<String> {

@@ -2,7 +2,6 @@ package com.projectronin.interop.mirth.channel.base
 
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.exceptions.MapVariableMissing
-import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import mu.KotlinLogging
 
@@ -75,78 +74,9 @@ abstract class TenantlessSourceService : MirthSource {
      */
     abstract fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage>
 
-    override fun sourceFilter(
-        deployedChannelName: String,
-        msg: String,
-        sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
-    ): MirthFilterResponse {
-        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
-        try {
-            return channelSourceFilter(tenantMnemonic, msg, sourceMap, channelMap)
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during sourceFilter: ${e.message}" }
-            throw e
-        }
-    }
+    override fun getSourceFilter(): MirthFilter? = null
 
-    /**
-     * [TenantlessSourceService] subclasses must override channelSourceFilter() to execute actions for sourceFilter()
-     * if the channel has a Source Filter; otherwise omit it.
-     *
-     *
-     * @param tenantMnemonic expect the correct value to be supplied.
-     * @param sourceMap expect [onDeploy] to pass in the serviceMap it receives.
-     *      Map keys: For conventions and a few reserved values see [BaseService].
-     * @return true if the message should continue processing, false to stop processing the message.
-     */
-    open fun channelSourceFilter(
-        tenantMnemonic: String,
-        msg: String,
-        sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
-    ): MirthFilterResponse {
-        return MirthFilterResponse(true)
-    }
-
-    override fun sourceTransformer(
-        deployedChannelName: String,
-        msg: String,
-        sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
-    ): MirthMessage {
-        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
-        try {
-            return channelSourceTransformer(
-                tenantMnemonic,
-                msg,
-                sourceMap,
-                channelMap
-            )
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during sourceTransformer: ${e.message}" }
-            throw e
-        }
-    }
-
-    /**
-     * [TenantlessSourceService] subclasses must override channelSourceTransformer() to execute actions for sourceTransformer()
-     * if the channel has a Source Transformer; otherwise omit it.
-     *
-     *
-     * @param tenantMnemonic expect the correct value to be supplied.
-     * @param sourceMap expect [onDeploy] to pass in the serviceMap it receives.
-     *      Map keys: For conventions and a few reserved values see [BaseService].
-     * @return a Mirth message to pass to the next channel stage.
-     */
-    open fun channelSourceTransformer(
-        tenantMnemonic: String,
-        msg: String,
-        sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
-    ): MirthMessage {
-        return MirthMessage(msg)
-    }
+    override fun getSourceTransformer(): MirthTransformer? = null
 
     private fun List<MirthMessage>.checkTenant() {
         this.forEach {

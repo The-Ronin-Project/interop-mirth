@@ -10,47 +10,63 @@ import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
 
 class TenantlessDestinationServiceTest {
-    class TestDestinationService() : TenantlessDestinationService() {
+    class TestDestinationService(val error: Boolean = false) : TenantlessDestinationService() {
+        override fun getConfiguration(): DestinationConfiguration {
+            TODO("Not yet implemented")
+        }
+
         override fun channelDestinationWriter(
             tenantMnemonic: String,
             msg: String,
             sourceMap: Map<String, Any>,
             channelMap: Map<String, Any>
         ): MirthResponse {
-            if (sourceMap.containsKey("Error")) {
+            if (error) {
                 throw Exception("Everything died")
             }
             return MirthResponse(MirthResponseStatus.SENT)
         }
 
-        override fun channelDestinationFilter(
-            tenantMnemonic: String,
-            msg: String,
-            sourceMap: Map<String, Any>,
-            channelMap: Map<String, Any>
-        ): MirthFilterResponse {
-            if (sourceMap.containsKey("Error")) {
-                throw Exception("Everything died")
+        override fun getFilter(): MirthFilter? =
+            if (!error) {
+                null
+            } else {
+                object : MirthFilter {
+                    override fun filter(
+                        tenantMnemonic: String,
+                        msg: String,
+                        sourceMap: Map<String, Any>,
+                        channelMap: Map<String, Any>
+                    ): MirthFilterResponse {
+                        throw Exception("Everything died")
+                    }
+                }
             }
-            return super.channelDestinationFilter(tenantMnemonic, msg, sourceMap, channelMap)
-        }
 
-        override fun channelDestinationTransformer(
-            unusedValue: String,
-            msg: String,
-            sourceMap: Map<String, Any>,
-            channelMap: Map<String, Any>
-        ): MirthMessage {
-            if (sourceMap.containsKey("Error")) {
-                throw Exception("Everything died")
+        override fun getTransformer(): MirthTransformer? =
+            if (!error) {
+                null
+            } else {
+                object : MirthTransformer {
+                    override fun transform(
+                        tenantMnemonic: String,
+                        msg: String,
+                        sourceMap: Map<String, Any>,
+                        channelMap: Map<String, Any>
+                    ): MirthMessage {
+                        throw Exception("Everything died")
+                    }
+                }
             }
-            return super.destinationTransformer(unusedValue, msg, sourceMap, channelMap)
-        }
     }
 
     @Test
     fun `minimal channel works`() {
         class BasicDestination : TenantlessDestinationService() {
+            override fun getConfiguration(): DestinationConfiguration {
+                TODO("Not yet implemented")
+            }
+
             override fun channelDestinationWriter(
                 tenantMnemonic: String,
                 msg: String,
@@ -60,6 +76,7 @@ class TenantlessDestinationServiceTest {
                 return MirthResponse(MirthResponseStatus.SENT)
             }
         }
+
         val channel = BasicDestination()
         assertDoesNotThrow {
             channel.destinationFilter(
@@ -89,7 +106,7 @@ class TenantlessDestinationServiceTest {
 
     @Test
     fun `all calls - destination can error`() {
-        val channel = TestDestinationService()
+        val channel = TestDestinationService(error = true)
         assertThrows<Exception> {
             channel.destinationFilter(
                 "blah",
@@ -118,7 +135,7 @@ class TenantlessDestinationServiceTest {
 
     @Test
     fun `tenant required`() {
-        val channel = TestDestinationService()
+        val channel = TestDestinationService(error = true)
         assertThrows<Exception> {
             channel.destinationFilter(
                 "blah",

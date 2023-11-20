@@ -4,6 +4,7 @@ import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.DomainResource
 import com.projectronin.interop.fhir.ronin.transform.TransformResponse
+import com.projectronin.interop.mirth.channel.base.MirthTransformer
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.queue.TenantlessQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
@@ -45,22 +46,26 @@ abstract class KafkaQueue<K : DomainResource<K>>(
         }
     }
 
-    override fun channelSourceTransformer(
-        tenantMnemonic: String,
-        msg: String,
-        sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
-    ): MirthMessage {
-        val tenant = tenantService.getTenantForMnemonic(tenantMnemonic)
-            ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
-        val transformed = deserializeAndTransform(msg, tenant).resource
-        return MirthMessage(
-            message = JacksonManager.objectMapper.writeValueAsString(transformed),
-            dataMap = mapOf(
-                MirthKey.FHIR_ID.code to (transformed.id?.value ?: ""),
-                MirthKey.TENANT_MNEMONIC.code to tenantMnemonic
-            )
-        )
+    override fun getSourceTransformer(): MirthTransformer? {
+        return object : MirthTransformer {
+            override fun transform(
+                tenantMnemonic: String,
+                msg: String,
+                sourceMap: Map<String, Any>,
+                channelMap: Map<String, Any>
+            ): MirthMessage {
+                val tenant = tenantService.getTenantForMnemonic(tenantMnemonic)
+                    ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
+                val transformed = deserializeAndTransform(msg, tenant).resource
+                return MirthMessage(
+                    message = JacksonManager.objectMapper.writeValueAsString(transformed),
+                    dataMap = mapOf(
+                        MirthKey.FHIR_ID.code to (transformed.id?.value ?: ""),
+                        MirthKey.TENANT_MNEMONIC.code to tenantMnemonic
+                    )
+                )
+            }
+        }
     }
 
     /**

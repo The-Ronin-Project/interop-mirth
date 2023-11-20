@@ -24,6 +24,8 @@ import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.fhir.ronin.util.localize
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.PublishResourceWrapper
+import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
+import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
@@ -59,6 +61,9 @@ class DocumentReferencePublish(
     profileTransformer
 ) {
     private val ehrdaBinaryUrlFormat = "${ehrDataAuthorityBaseUrl.removeSuffix("/")}/tenants/%s/resources/Binary/%s"
+
+    override fun getConfiguration(): DestinationConfiguration =
+        JavaScriptDestinationConfiguration(name = "Publish Document References")
 
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,

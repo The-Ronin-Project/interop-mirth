@@ -29,46 +29,8 @@ import mu.KotlinLogging
  * The [ChannelService] MUST define a unique key to each of its [DestinationService] subclasses in this map:
  * - destinations
  */
-abstract class ChannelService {
+abstract class ChannelService : MirthSource {
     protected val logger = KotlinLogging.logger(this::class.java.name)
-
-    /**
-     * rootName is the tenant agnostic channel name as archived in source control.
-     * Example: "PractitionerLoad".
-     *
-     * Each deployed channel in Mirth prefixes a tenant mnemonic and hyphen to this rootName.
-     * The tenant mnemonic is the lowercase string defined for each Ronin customer in the Ronin tenant ID list.
-     *
-     * Example: the deployed channel name "MDAOC-PractitionerLoad" in Mirth
-     * corresponds to the [ChannelService] rootName "PractitionerLoad"
-     * for the "mdaoc" tenant mnemonic.
-     */
-    abstract val rootName: String
-
-    /**
-     * Mirth channels may have multiple Destination Writers. They must have at least one.
-     *
-     * Each Destination Writer has its own [DestinationService] subclass to define its functions,
-     * including its optional Destination Filter and Destination Transformer stages.
-     *
-     * A [ChannelService] must set the rootName and map key for each of its [DestinationService] subclasses
-     * when it populates the members of its destinations list. The map key may be any String.
-     *
-     * Mirth channels invoke [DestinationService] functions as follows.
-     * Suppose the key for the [DestinationService] is "publish" in the
-     * [ChannelService] destinations map. In the Mirth channel code, the Filter script for that Destination may call:
-     *
-     * ```
-     * $gc("channelService").destinations.get("publish").destinationFilter(src, sourceMap, channelMap)
-     * ```
-     *
-     * In the Mirth channel code, the Writer script for that Destination may call:
-     *
-     * ```
-     * $gc("channelService").destinations.get("publish").destinationWriter(src, sourceMap, channelMap)
-     * ```
-     */
-    abstract val destinations: Map<String, DestinationService>
 
     /**
      * Required: Mirth channels must call onDeploy() from the channel Deploy script.
@@ -94,7 +56,7 @@ abstract class ChannelService {
      * @return a map of values to be used during later channel stages.
      *      Map keys: For conventions and a few reserved values see [BaseService].
      */
-    fun onDeploy(deployedChannelName: String, serviceMap: Map<String, Any>): Map<String, Any> {
+    override fun onDeploy(deployedChannelName: String, serviceMap: Map<String, Any>): Map<String, Any> {
         require(rootName.length <= 31) { "Channel root name length is over the limit of 31" }
         require(deployedChannelName.length <= 40) { "Deployed channel name length is over the limit of 40" }
         val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
@@ -261,7 +223,7 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a list of Mirth message data to pass to the next channel stage.
      */
-    fun sourceReader(deployedChannelName: String, serviceMap: Map<String, Any>): List<MirthMessage> {
+    override fun sourceReader(deployedChannelName: String, serviceMap: Map<String, Any>): List<MirthMessage> {
         val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
         val tenantId = tenantMap[MirthKey.TENANT_MNEMONIC.code] as String
         try {
@@ -298,42 +260,25 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return true if the message should continue processing, false to stop processing the message.
      */
-    open fun sourceFilter(
+    override fun sourceFilter(
         deployedChannelName: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthFilterResponse {
+        val filter = getSourceFilter() ?: return MirthFilterResponse(true)
+
         val tenantMap = addTenantToServiceMap(deployedChannelName, channelMap)
+        val tenantMnemonic = tenantMap[MirthKey.TENANT_MNEMONIC.code] as String
         try {
-            return channelSourceFilter(tenantMap[MirthKey.TENANT_MNEMONIC.code] as String, msg, sourceMap, tenantMap)
+            return filter.filter(tenantMnemonic, msg, sourceMap, channelMap)
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during sourceFilter: ${e.message}" }
             throw e
         }
     }
 
-    /**
-     * [ChannelService] subclasses must override channelSourceFilter() to execute actions for sourceFilter()
-     * if the channel has a Source Filter; otherwise omit it.
-     *
-     * Previous channel stage: Source Reader.
-     *
-     * Next channel stage: Source Transformer, or later stages.
-     *
-     * @param tenantMnemonic expect the correct value to be supplied.
-     * @param serviceMap expect [onDeploy] to pass in the serviceMap it receives.
-     *      Map keys: For conventions and a few reserved values see [BaseService].
-     * @return true if the message should continue processing, false to stop processing the message.
-     */
-    open fun channelSourceFilter(
-        tenantMnemonic: String,
-        msg: String,
-        sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
-    ): MirthFilterResponse {
-        return MirthFilterResponse(true)
-    }
+    override fun getSourceFilter(): MirthFilter? = null
 
     /**
      * Mirth channels call sourceTransformer() from the Source Transformer script, if the channel has a Source Transformer.
@@ -347,19 +292,22 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a Mirth message to pass to the next channel stage.
      */
-    open fun sourceTransformer(
+    override fun sourceTransformer(
         deployedChannelName: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
     ): MirthMessage {
+        val transformer = getSourceTransformer() ?: return MirthMessage(msg)
+
         val tenantMap = addTenantToServiceMap(deployedChannelName, channelMap)
+        val tenantMnemonic = tenantMap[MirthKey.TENANT_MNEMONIC.code]!! as String
         try {
-            return channelSourceTransformer(
-                tenantMap[MirthKey.TENANT_MNEMONIC.code] as String,
+            return transformer.transform(
+                tenantMnemonic,
                 msg,
                 sourceMap,
-                tenantMap
+                channelMap
             )
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during sourceTransformer: ${e.message}" }
@@ -367,27 +315,7 @@ abstract class ChannelService {
         }
     }
 
-    /**
-     * [ChannelService] subclasses must override channelSourceTransformer() to execute actions for sourceTransformer()
-     * if the channel has a Source Transformer; otherwise omit it.
-     *
-     * Previous channel stage: Source Filter, or earlier stages.
-     *
-     * Next channel stage: one of the Destination stages, i.e. Destination Writer.
-     *
-     * @param tenantMnemonic expect the correct value to be supplied.
-     * @param serviceMap expect [onDeploy] to pass in the serviceMap it receives.
-     *      Map keys: For conventions and a few reserved values see [BaseService].
-     * @return a Mirth message to pass to the next channel stage.
-     */
-    open fun channelSourceTransformer(
-        tenantMnemonic: String,
-        msg: String,
-        sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
-    ): MirthMessage {
-        return MirthMessage(msg)
-    }
+    override fun getSourceTransformer(): MirthTransformer? = null
 
     /**
      * If the tenant mnemonic value is not already present in the input serviceMap,

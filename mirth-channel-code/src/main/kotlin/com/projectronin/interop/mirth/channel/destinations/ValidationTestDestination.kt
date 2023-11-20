@@ -2,6 +2,8 @@ package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.interop.aidbox.auth.AidboxAuthenticationBroker
 import com.projectronin.interop.mirth.channel.ValidationTest
+import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
+import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
@@ -28,6 +30,9 @@ class ValidationTestDestination(
     val authenticationBroker: AidboxAuthenticationBroker
 ) : TenantlessDestinationService() {
 
+    override fun getConfiguration(): DestinationConfiguration =
+        JavaScriptDestinationConfiguration(name = "Validate Data", queueEnabled = false, threadCount = 2)
+
     override fun channelDestinationWriter(
         tenantMnemonic: String,
         msg: String,
@@ -48,7 +53,11 @@ class ValidationTestDestination(
                     if (failed.isNotEmpty()) failed.toList() else initialResources.filterNot { it.contains("Binary") } // Only check the failed resources, if any
                 failed.clear()
                 resourcesToCheck.forEach { resource ->
-                    if (aidbox.doesResourceExist(resource, tenantMnemonic)) { success.add(resource) } else failed.add(resource)
+                    if (aidbox.doesResourceExist(resource, tenantMnemonic)) {
+                        success.add(resource)
+                    } else {
+                        failed.add(resource)
+                    }
                 }
                 if (failed.isEmpty()) {
                     break // Exit the loop if all resources have been deleted successfully

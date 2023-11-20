@@ -7,6 +7,7 @@ import com.projectronin.interop.backfill.client.generated.models.DiscoveryQueueS
 import com.projectronin.interop.backfill.client.generated.models.UpdateDiscoveryEntry
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.EHRFactory
+import com.projectronin.interop.mirth.channel.base.MirthTransformer
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.BackfillDiscoveryQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
@@ -70,35 +71,39 @@ class BackfillDiscoveryQueue(
             }.flatten()
     }
 
-    override fun channelSourceTransformer(
-        tenantMnemonic: String,
-        msg: String,
-        sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
-    ): MirthMessage {
-        val queueEntry = JacksonUtil.readJsonObject(msg, DiscoveryQueueEntry::class)
-        runBlocking {
-            discoveryQueueClient.updateDiscoveryQueueEntryByID(
-                queueEntry.id,
-                UpdateDiscoveryEntry(DiscoveryQueueStatus.DISCOVERED)
-            )
+    override fun getSourceTransformer(): MirthTransformer? {
+        return object : MirthTransformer {
+            override fun transform(
+                tenantMnemonic: String,
+                msg: String,
+                sourceMap: Map<String, Any>,
+                channelMap: Map<String, Any>
+            ): MirthMessage {
+                val queueEntry = JacksonUtil.readJsonObject(msg, DiscoveryQueueEntry::class)
+                runBlocking {
+                    discoveryQueueClient.updateDiscoveryQueueEntryByID(
+                        queueEntry.id,
+                        UpdateDiscoveryEntry(DiscoveryQueueStatus.DISCOVERED)
+                    )
+                }
+                val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: throw Exception("No Tenant Found")
+
+                val vendorFactory = ehrFactory.getVendorFactory(tenant)
+                val location = queueEntry.locationId
+                val fullAppointments = vendorFactory.appointmentService.findLocationAppointments(
+                    tenant,
+                    listOf(location),
+                    queueEntry.startDate,
+                    queueEntry.endDate
+                )
+
+                val patients = fullAppointments.appointments.flatMap { appointment ->
+                    appointment.participant.mapNotNull { it.actor?.reference?.value }
+                        .filter { it.contains("Patient") }
+                }.distinct()
+
+                return MirthMessage(message = JacksonUtil.writeJsonValue(patients))
+            }
         }
-        val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: throw Exception("No Tenant Found")
-
-        val vendorFactory = ehrFactory.getVendorFactory(tenant)
-        val location = queueEntry.locationId
-        val fullAppointments = vendorFactory.appointmentService.findLocationAppointments(
-            tenant,
-            listOf(location),
-            queueEntry.startDate,
-            queueEntry.endDate
-        )
-
-        val patients = fullAppointments.appointments.flatMap { appointment ->
-            appointment.participant.mapNotNull { it.actor?.reference?.value }
-                .filter { it.contains("Patient") }
-        }.distinct()
-
-        return MirthMessage(message = JacksonUtil.writeJsonValue(patients))
     }
 }

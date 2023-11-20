@@ -62,7 +62,7 @@ class OnboardFlagWriterTest {
             every { blockedResources } returns "PatientOnboardFlag,MedicationStatement"
         }
         val result =
-            channel.channelDestinationFilter("tenant", "12345", mapOf(MirthKey.FHIR_ID.code to "12345"), emptyMap())
+            channel.getFilter()!!.filter("tenant", "12345", mapOf(MirthKey.FHIR_ID.code to "12345"), emptyMap())
         assertFalse(result.result)
     }
 
@@ -72,7 +72,7 @@ class OnboardFlagWriterTest {
             every { blockedResources } returns null
         }
         val result =
-            channel.channelDestinationFilter("tenant", "12345", mapOf(MirthKey.FHIR_ID.code to "12345"), emptyMap())
+            channel.getFilter()!!.filter("tenant", "12345", mapOf(MirthKey.FHIR_ID.code to "12345"), emptyMap())
         assertTrue(result.result)
     }
 

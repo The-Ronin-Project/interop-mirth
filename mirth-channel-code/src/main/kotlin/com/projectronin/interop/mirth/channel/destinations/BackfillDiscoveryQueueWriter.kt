@@ -3,6 +3,8 @@ package com.projectronin.interop.mirth.channel.destinations
 import com.projectronin.interop.backfill.client.QueueClient
 import com.projectronin.interop.backfill.client.generated.models.NewQueueEntry
 import com.projectronin.interop.common.jackson.JacksonUtil
+import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
+import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
@@ -13,6 +15,9 @@ import java.util.UUID
 
 @Component
 class BackfillDiscoveryQueueWriter(val backfillQueueClient: QueueClient) : TenantlessDestinationService() {
+
+    override fun getConfiguration(): DestinationConfiguration =
+        JavaScriptDestinationConfiguration(name = "Post Results")
 
     override fun channelDestinationWriter(
         tenantMnemonic: String,

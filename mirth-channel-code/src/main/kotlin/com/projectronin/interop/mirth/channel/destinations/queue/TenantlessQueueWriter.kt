@@ -3,6 +3,8 @@ package com.projectronin.interop.mirth.channel.destinations.queue
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.DomainResource
+import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
+import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthResponse
@@ -18,6 +20,9 @@ abstract class TenantlessQueueWriter<T : DomainResource<T>>(
     private val publishService: PublishService,
     private val type: KClass<out T>
 ) : TenantlessDestinationService() {
+
+    override fun getConfiguration(): DestinationConfiguration =
+        JavaScriptDestinationConfiguration(name = "Publish ${type.simpleName}s")
 
     override fun channelDestinationWriter(
         tenantMnemonic: String,

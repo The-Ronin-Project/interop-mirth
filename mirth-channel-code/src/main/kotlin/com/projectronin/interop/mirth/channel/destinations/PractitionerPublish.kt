@@ -10,6 +10,8 @@ import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.ronin.resource.RoninPractitioner
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
+import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
@@ -37,6 +39,9 @@ class PractitionerPublish(
     profileTransformer
 ) {
     override val cacheAndCompareResults: Boolean = true
+
+    override fun getConfiguration(): DestinationConfiguration =
+        JavaScriptDestinationConfiguration(name = "Publish Practitioners")
 
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,

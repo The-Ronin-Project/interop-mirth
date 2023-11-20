@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.base
 
+import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 
@@ -40,6 +41,12 @@ interface MirthSource {
     val destinations: Map<String, MirthDestination>
 
     /**
+     * Some channels may need to use non-Javascript destinations. Such channels should provide the configuration for
+     * those destinations here in order to allow us to generate the appropriate destinations.
+     */
+    fun getNonJavascriptDestinations(): List<DestinationConfiguration> = emptyList()
+
+    /**
      * Required: Mirth channels must call onDeploy() from the channel Deploy script.
      *
      * The Deploy script runs once, each time someone Deploys the channel.
@@ -65,9 +72,10 @@ interface MirthSource {
      */
     fun sourceReader(deployedChannelName: String, serviceMap: Map<String, Any>): List<MirthMessage>
 
+    fun getSourceFilter(): MirthFilter?
+
     /**
      * Mirth channels call sourceFilter() from the Source Filter script.
-     *
      *
      * @param deployedChannelName pass in the Mirth global variable called channelName.
      * @param sourceMap a map of values to be used during the Source Reader stage.
@@ -79,11 +87,21 @@ interface MirthSource {
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
-    ): MirthFilterResponse
+    ): MirthFilterResponse {
+        val filter = getSourceFilter() ?: return MirthFilterResponse(true)
+
+        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
+        try {
+            return filter.filter(tenantMnemonic, msg, sourceMap, channelMap)
+        } catch (e: Throwable) {
+            throw e
+        }
+    }
+
+    fun getSourceTransformer(): MirthTransformer?
 
     /**
      * Mirth channels call sourceTransformer() from the Source Transformer script
-     *
      *
      * @param deployedChannelName pass in the Mirth global variable called channelName.
      * @param sourceMap a map of values to be used during the Source Transformer stage.
@@ -95,5 +113,19 @@ interface MirthSource {
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
-    ): MirthMessage
+    ): MirthMessage {
+        val transformer = getSourceTransformer() ?: return MirthMessage(msg)
+
+        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
+        try {
+            return transformer.transform(
+                tenantMnemonic,
+                msg,
+                sourceMap,
+                channelMap
+            )
+        } catch (e: Throwable) {
+            throw e
+        }
+    }
 }

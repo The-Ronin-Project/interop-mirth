@@ -27,6 +27,7 @@ import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.kafka.model.PublishResourceWrapper
+import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
@@ -104,6 +105,10 @@ class KafkaEventResourcePublisherTest {
         publishService,
         profileTransformer
     ) {
+        override fun getConfiguration(): DestinationConfiguration {
+            TODO("Not yet implemented")
+        }
+
         override fun convertPublishEventsToRequest(
             events: List<InteropResourcePublishV1>,
             vendorFactory: VendorFactory,
@@ -157,6 +162,10 @@ class KafkaEventResourcePublisherTest {
         publishService,
         profileTransformer
     ) {
+        override fun getConfiguration(): DestinationConfiguration {
+            TODO("Not yet implemented")
+        }
+
         override fun convertPublishEventsToRequest(
             events: List<InteropResourcePublishV1>,
             vendorFactory: VendorFactory,

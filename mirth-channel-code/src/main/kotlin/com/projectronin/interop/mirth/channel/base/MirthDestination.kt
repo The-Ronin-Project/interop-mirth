@@ -1,10 +1,15 @@
 package com.projectronin.interop.mirth.channel.base
 
+import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.model.MirthResponse
 
 interface MirthDestination {
+    fun getConfiguration(): DestinationConfiguration
+
+    fun getFilter(): MirthFilter?
+
     /**
      * Mirth channels call destinationFilter() from the Destination Filter script
      *
@@ -20,7 +25,24 @@ interface MirthDestination {
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
-    ): MirthFilterResponse
+    ): MirthFilterResponse {
+        val filter = getFilter() ?: return MirthFilterResponse(true)
+
+        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
+
+        try {
+            return filter.filter(
+                tenantMnemonic,
+                msg,
+                sourceMap,
+                channelMap
+            )
+        } catch (e: Throwable) {
+            throw e
+        }
+    }
+
+    fun getTransformer(): MirthTransformer?
 
     /**
      * Mirth channels call destinationTransformer() from the Destination Transformer script
@@ -37,7 +59,21 @@ interface MirthDestination {
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>
-    ): MirthMessage
+    ): MirthMessage {
+        val transformer = getTransformer() ?: return MirthMessage(msg)
+
+        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
+        try {
+            return transformer.transform(
+                tenantMnemonic,
+                msg,
+                sourceMap,
+                channelMap
+            )
+        } catch (e: Throwable) {
+            throw e
+        }
+    }
 
     /**
      * Required. Mirth channels call destinationWriter() from each Destination Writer script.

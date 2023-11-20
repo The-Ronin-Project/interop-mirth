@@ -8,6 +8,8 @@ import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.ronin.resource.RoninPatient
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
+import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
 import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
@@ -30,6 +32,9 @@ class PatientPublish(
     publishService,
     profileTransformer
 ) {
+    override fun getConfiguration(): DestinationConfiguration =
+        JavaScriptDestinationConfiguration(name = "Publish Patients")
+
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,

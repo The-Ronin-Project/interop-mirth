@@ -40,8 +40,24 @@ class BackfillDiscoveryQueueTest {
     val backfillID = UUID.randomUUID()
     val start = LocalDate.now().minusMonths(10)
     val end = LocalDate.now()
-    val queueEntry1 = DiscoveryQueueEntry(UUID.randomUUID(), "ronin", "123", start, end, backfillID, DiscoveryQueueStatus.UNDISCOVERED)
-    val queueEntry2 = DiscoveryQueueEntry(UUID.randomUUID(), "ronin", "456", start, end, backfillID, DiscoveryQueueStatus.UNDISCOVERED)
+    val queueEntry1 = DiscoveryQueueEntry(
+        UUID.randomUUID(),
+        "ronin",
+        "123",
+        start,
+        end,
+        backfillID,
+        DiscoveryQueueStatus.UNDISCOVERED
+    )
+    val queueEntry2 = DiscoveryQueueEntry(
+        UUID.randomUUID(),
+        "ronin",
+        "456",
+        start,
+        end,
+        backfillID,
+        DiscoveryQueueStatus.UNDISCOVERED
+    )
 
     @BeforeEach
     fun setup() {
@@ -52,7 +68,10 @@ class BackfillDiscoveryQueueTest {
             every { mnemonic } returns "blah"
         }
         discoveryQueueClient = mockk {
-            coEvery { getDiscoveryQueueEntries("ronin", DiscoveryQueueStatus.UNDISCOVERED) } returns listOf(queueEntry1, queueEntry2)
+            coEvery { getDiscoveryQueueEntries("ronin", DiscoveryQueueStatus.UNDISCOVERED) } returns listOf(
+                queueEntry1,
+                queueEntry2
+            )
             coEvery { getDiscoveryQueueEntries("blah", DiscoveryQueueStatus.UNDISCOVERED) } returns emptyList()
         }
         vendorFactory = mockk()
@@ -91,7 +110,12 @@ class BackfillDiscoveryQueueTest {
 
     @Test
     fun `sourceReader errors don't cause it to crash`() {
-        coEvery { discoveryQueueClient.getDiscoveryQueueEntries("blah", DiscoveryQueueStatus.UNDISCOVERED) } throws IllegalArgumentException("oops")
+        coEvery {
+            discoveryQueueClient.getDiscoveryQueueEntries(
+                "blah",
+                DiscoveryQueueStatus.UNDISCOVERED
+            )
+        } throws IllegalArgumentException("oops")
         val list = channel.channelSourceReader(emptyMap())
         assertEquals(2, list.size)
         assertEquals(JacksonUtil.writeJsonValue(queueEntry1), list.first().message)
@@ -134,7 +158,8 @@ class BackfillDiscoveryQueueTest {
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
 
-        val message = channel.channelSourceTransformer("ronin", JacksonUtil.writeJsonValue(queueEntry1), emptyMap(), emptyMap())
+        val message = channel.getSourceTransformer()!!
+            .transform("ronin", JacksonUtil.writeJsonValue(queueEntry1), emptyMap(), emptyMap())
         assertEquals("[\"Patient/patFhirID\"]", message.message)
     }
 
@@ -143,7 +168,8 @@ class BackfillDiscoveryQueueTest {
         coEvery { discoveryQueueClient.updateDiscoveryQueueEntryByID(queueEntry1.id, any()) } returns true
         every { tenantService.getTenantForMnemonic("no") } returns null
         val exception = assertThrows<Exception> {
-            channel.channelSourceTransformer("no", JacksonUtil.writeJsonValue(queueEntry1), emptyMap(), emptyMap())
+            channel.getSourceTransformer()!!
+                .transform("no", JacksonUtil.writeJsonValue(queueEntry1), emptyMap(), emptyMap())
         }
         assertEquals("No Tenant Found", exception.message)
     }

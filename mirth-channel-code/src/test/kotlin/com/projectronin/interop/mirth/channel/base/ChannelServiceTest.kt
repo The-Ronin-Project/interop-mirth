@@ -105,7 +105,7 @@ class ChannelServiceTest {
 
         val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
-            override val destinations: Map<String, DestinationService> = emptyMap()
+            override val destinations: Map<String, MirthDestination> = emptyMap()
 
             override fun channelOnDeploy(tenantMnemonic: String, serviceMap: Map<String, Any>): Map<String, Any> {
                 throw IllegalStateException("channelOnDeploy exception")
@@ -190,7 +190,7 @@ class ChannelServiceTest {
 
         val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
-            override val destinations: Map<String, DestinationService> = emptyMap()
+            override val destinations: Map<String, MirthDestination> = emptyMap()
 
             override fun channelOnUndeploy(tenantMnemonic: String, serviceMap: Map<String, Any>): Map<String, Any> {
                 throw IllegalStateException("channelOnUndeploy exception")
@@ -278,7 +278,7 @@ class ChannelServiceTest {
 
         val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
-            override val destinations: Map<String, DestinationService> = emptyMap()
+            override val destinations: Map<String, MirthDestination> = emptyMap()
 
             override fun channelOnPreprocessor(tenantMnemonic: String, serviceMap: Map<String, Any>): Map<String, Any> {
                 throw IllegalStateException("channelOnPreprocessor exception")
@@ -366,7 +366,7 @@ class ChannelServiceTest {
 
         val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
-            override val destinations: Map<String, DestinationService> = emptyMap()
+            override val destinations: Map<String, MirthDestination> = emptyMap()
 
             override fun channelOnPostprocessor(
                 tenantMnemonic: String,
@@ -455,7 +455,7 @@ class ChannelServiceTest {
 
         val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
-            override val destinations: Map<String, DestinationService> = emptyMap()
+            override val destinations: Map<String, MirthDestination> = emptyMap()
 
             override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
                 throw IllegalStateException("channelSourceReader exception")
@@ -547,15 +547,19 @@ class ChannelServiceTest {
 
         val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
-            override val destinations: Map<String, DestinationService> = emptyMap()
+            override val destinations: Map<String, MirthDestination> = emptyMap()
 
-            override fun channelSourceTransformer(
-                tenantMnemonic: String,
-                msg: String,
-                sourceMap: Map<String, Any>,
-                channelMap: Map<String, Any>
-            ): MirthMessage {
-                throw IllegalStateException("channelSourceTransformer exception")
+            override fun getSourceTransformer(): MirthTransformer? {
+                return object : MirthTransformer {
+                    override fun transform(
+                        tenantMnemonic: String,
+                        msg: String,
+                        sourceMap: Map<String, Any>,
+                        channelMap: Map<String, Any>
+                    ): MirthMessage {
+                        throw IllegalStateException("channelSourceTransformer exception")
+                    }
+                }
             }
 
             override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
@@ -650,15 +654,19 @@ class ChannelServiceTest {
 
         val service = object : ChannelService() {
             override val rootName: String = CHANNEL_ROOT_NAME
-            override val destinations: Map<String, DestinationService> = emptyMap()
+            override val destinations: Map<String, MirthDestination> = emptyMap()
 
-            override fun channelSourceFilter(
-                tenantMnemonic: String,
-                msg: String,
-                sourceMap: Map<String, Any>,
-                channelMap: Map<String, Any>
-            ): MirthFilterResponse {
-                throw IllegalStateException("channelSourceFilter exception")
+            override fun getSourceFilter(): MirthFilter? {
+                return object : MirthFilter {
+                    override fun filter(
+                        tenantMnemonic: String,
+                        msg: String,
+                        sourceMap: Map<String, Any>,
+                        channelMap: Map<String, Any>
+                    ): MirthFilterResponse {
+                        throw IllegalStateException("channelSourceFilter exception")
+                    }
+                }
             }
 
             override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
@@ -702,7 +710,7 @@ class ChannelServiceTest {
 
 class TestChannelService : ChannelService() {
     override val rootName = CHANNEL_ROOT_NAME
-    override val destinations = mapOf("testKey" to TestDestinationService())
+    override val destinations = mapOf("testKey" to mockk<MirthDestination>())
     override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
         return emptyList()
     }
@@ -710,7 +718,7 @@ class TestChannelService : ChannelService() {
 
 class TestChannelServiceBadName : ChannelService() {
     override val rootName = "PatientByQuestionnaireResponseLoad"
-    override val destinations = mapOf("testKeyBadName" to TestDestinationService())
+    override val destinations = mapOf("testKeyBadName" to mockk<MirthDestination>())
     override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
         return emptyList()
     }

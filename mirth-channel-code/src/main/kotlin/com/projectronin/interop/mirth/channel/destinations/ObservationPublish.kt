@@ -14,6 +14,8 @@ import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
 import com.projectronin.interop.fhir.ronin.resource.RoninObservations
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
+import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
+import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
@@ -44,6 +46,9 @@ class ObservationPublish(
     profileTransformer
 ) {
     override val cacheAndCompareResults: Boolean = true
+
+    override fun getConfiguration(): DestinationConfiguration =
+        JavaScriptDestinationConfiguration(name = "Publish Observations")
 
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
