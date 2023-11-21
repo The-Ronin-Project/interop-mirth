@@ -11,8 +11,6 @@ import com.projectronin.interop.fhir.r4.resource.Encounter
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.ronin.resource.RoninLocation
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
-import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
-import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
@@ -20,6 +18,8 @@ import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceReq
 import com.projectronin.interop.mirth.channel.base.kafka.request.PublishReferenceResourceRequest
 import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
+import com.projectronin.interop.mirth.models.destination.DestinationConfiguration
+import com.projectronin.interop.mirth.models.destination.JavaScriptDestinationConfiguration
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant

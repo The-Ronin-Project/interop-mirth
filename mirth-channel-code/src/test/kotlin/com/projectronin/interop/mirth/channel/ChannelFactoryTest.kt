@@ -3,7 +3,7 @@ package com.projectronin.interop.mirth.channel
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.mirth.channel.base.ChannelService
 import com.projectronin.interop.mirth.channel.base.MirthDestination
-import com.projectronin.interop.mirth.channel.model.MirthMessage
+import com.projectronin.interop.mirth.models.MirthMessage
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
 import io.mockk.every

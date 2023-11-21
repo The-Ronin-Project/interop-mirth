@@ -1,9 +1,11 @@
 package com.projectronin.interop.mirth.channel.base
 
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
-import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
-import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.models.MirthMessage
+import com.projectronin.interop.mirth.models.filter.MirthFilter
+import com.projectronin.interop.mirth.models.filter.MirthFilterResponse
+import com.projectronin.interop.mirth.models.transformer.MirthTransformer
 import com.projectronin.interop.tenant.config.exception.TenantMissingException
 import io.mockk.clearAllMocks
 import io.mockk.every
@@ -697,7 +699,18 @@ class ChannelServiceTest {
 
     @Test
     fun `destinations map - testKey - finds TestDestinationService`() {
-        val response = TestChannelService().destinations["testKey"]?.destinationWriter(
+        val destination = mockk<MirthDestination> {
+            every {
+                destinationWriter(
+                    "unused",
+                    "",
+                    mapOf(TENANT_MNEMONIC to VALID_TENANT_ID),
+                    emptyMap()
+                )
+            } returns MirthResponse(MirthResponseStatus.SENT)
+        }
+
+        val response = TestChannelService(destination).destinations["testKey"]?.destinationWriter(
             "unused",
             "",
             mapOf<String, Any>(TENANT_MNEMONIC to VALID_TENANT_ID),
@@ -708,11 +721,37 @@ class ChannelServiceTest {
     }
 }
 
-class TestChannelService : ChannelService() {
+class TestChannelService(destination: MirthDestination = mockk()) : ChannelService() {
     override val rootName = CHANNEL_ROOT_NAME
-    override val destinations = mapOf("testKey" to mockk<MirthDestination>())
+    override val destinations = mapOf("testKey" to destination)
     override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
         return emptyList()
+    }
+
+    override fun getSourceFilter(): MirthFilter? {
+        return object : MirthFilter {
+            override fun filter(
+                tenantMnemonic: String,
+                msg: String,
+                sourceMap: Map<String, Any>,
+                channelMap: Map<String, Any>
+            ): MirthFilterResponse {
+                return MirthFilterResponse(true)
+            }
+        }
+    }
+
+    override fun getSourceTransformer(): MirthTransformer? {
+        return object : MirthTransformer {
+            override fun transform(
+                tenantMnemonic: String,
+                msg: String,
+                sourceMap: Map<String, Any>,
+                channelMap: Map<String, Any>
+            ): MirthMessage {
+                return MirthMessage(msg)
+            }
+        }
     }
 }
 

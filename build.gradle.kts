@@ -7,3 +7,7 @@ plugins {
     alias(libs.plugins.interop.spring) apply false
     alias(libs.plugins.interop.sonarqube)
 }
+
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor(0, TimeUnit.SECONDS)
+}

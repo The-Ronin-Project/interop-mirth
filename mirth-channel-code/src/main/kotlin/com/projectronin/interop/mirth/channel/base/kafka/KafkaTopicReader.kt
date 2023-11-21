@@ -9,9 +9,9 @@ import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
-import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.util.filterBlockedLoadEvents
 import com.projectronin.interop.mirth.channel.util.filterBlockedPublishedEvents
+import com.projectronin.interop.mirth.models.MirthMessage
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit

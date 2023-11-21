@@ -1,9 +1,9 @@
 package com.projectronin.interop.mirth.channel.base
 
 import com.projectronin.interop.mirth.channel.enums.MirthKey
-import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
-import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.models.MirthMessage
+import com.projectronin.interop.mirth.models.filter.MirthFilterResponse
 import mu.KotlinLogging
 
 /**

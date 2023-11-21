@@ -27,7 +27,6 @@ import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.kafka.model.PublishResourceWrapper
-import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
@@ -38,6 +37,7 @@ import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequest
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.exceptions.MapVariableMissing
+import com.projectronin.interop.mirth.models.destination.DestinationConfiguration
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant

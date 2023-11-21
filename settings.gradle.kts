@@ -26,6 +26,10 @@ pluginManagement {
                 releasesOnly()
             }
         }
+        maven {
+            // TODO: Put into Artifactory so it's resolved to public.
+            url = uri("https://repo.repsy.io/mvn/kpalang/mirthconnect")
+        }
         mavenLocal()
         gradlePluginPortal()
     }

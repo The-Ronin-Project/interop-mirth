@@ -6,13 +6,13 @@ import com.projectronin.event.interop.resource.request.v1.InteropResourceRequest
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.model.DataTrigger
-import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
-import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthResponse
 import com.projectronin.interop.mirth.channel.util.generateMetadata
 import com.projectronin.interop.mirth.channel.util.unlocalize
+import com.projectronin.interop.mirth.models.destination.DestinationConfiguration
+import com.projectronin.interop.mirth.models.destination.JavaScriptDestinationConfiguration
 import com.projectronin.interop.tenant.config.TenantService
 import org.springframework.stereotype.Component
 

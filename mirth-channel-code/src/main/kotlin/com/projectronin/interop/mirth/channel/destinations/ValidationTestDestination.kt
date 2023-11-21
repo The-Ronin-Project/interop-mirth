@@ -2,12 +2,12 @@ package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.interop.aidbox.auth.AidboxAuthenticationBroker
 import com.projectronin.interop.mirth.channel.ValidationTest
-import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
-import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.models.destination.DestinationConfiguration
+import com.projectronin.interop.mirth.models.destination.JavaScriptDestinationConfiguration
 import io.ktor.client.HttpClient
 import io.ktor.client.request.accept
 import io.ktor.client.request.delete

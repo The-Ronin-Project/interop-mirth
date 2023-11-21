@@ -7,7 +7,7 @@ import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.OnboardFlagWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
-import com.projectronin.interop.mirth.channel.model.MirthMessage
+import com.projectronin.interop.mirth.models.MirthMessage
 import com.projectronin.interop.mirth.spring.SpringUtil
 import org.springframework.stereotype.Component
 

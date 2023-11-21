@@ -1,14 +1,14 @@
 package com.projectronin.interop.mirth.channel.destinations
 
 import com.projectronin.interop.ehr.factory.EHRFactory
-import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
-import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
-import com.projectronin.interop.mirth.channel.base.MirthFilter
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
-import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.models.destination.DestinationConfiguration
+import com.projectronin.interop.mirth.models.destination.JavaScriptDestinationConfiguration
+import com.projectronin.interop.mirth.models.filter.MirthFilter
+import com.projectronin.interop.mirth.models.filter.MirthFilterResponse
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.tenant.config.TenantService
 import org.springframework.stereotype.Component

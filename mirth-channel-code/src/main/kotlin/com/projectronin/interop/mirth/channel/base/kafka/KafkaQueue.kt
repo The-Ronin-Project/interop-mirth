@@ -4,12 +4,12 @@ import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.DomainResource
 import com.projectronin.interop.fhir.ronin.transform.TransformResponse
-import com.projectronin.interop.mirth.channel.base.MirthTransformer
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.queue.TenantlessQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
-import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.util.serialize
+import com.projectronin.interop.mirth.models.MirthMessage
+import com.projectronin.interop.mirth.models.transformer.MirthTransformer
 import com.projectronin.interop.queue.kafka.KafkaQueueService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant

@@ -5,6 +5,7 @@ clinical-trial = "1.1.1"
 dbrider = "1.41.0"
 ehrda = "1.5.5"
 guava = "32.1.3-jre"
+hackathon = "1.0.0-godzilla-vs-mirthra-SNAPSHOT"
 interop-aidbox = "8.1.0"
 interop-backfill = "1.1.1"
 interop-common = "3.13.3"
@@ -96,6 +97,7 @@ ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "k
 ktor-serialization-jackson = { module = "io.ktor:ktor-serialization-jackson", version.ref = "ktor" }
 ktorm-core = { module = "org.ktorm:ktorm-core", version.ref = "ktorm" }
 ktorm-support-mysql = { module = "org.ktorm:ktorm-support-mysql", version.ref = "ktorm" }
+mirth-models = { module = "com.projectronin.interop.mirth:mirth-models", version.ref = "hackathon" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockserver-client-java = { module = "org.mock-server:mockserver-client-java", version.ref = "mockserver" }
 mysql-connector-java = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
@@ -147,4 +149,5 @@ interop-sonarqube = { id = "com.projectronin.interop.gradle.sonarqube", version.
 interop-spring = { id = "com.projectronin.interop.gradle.spring", version.ref = "interop-gradle" }
 interop-version = { id = "com.projectronin.interop.gradle.version", version.ref = "interop-gradle" }
 interop-version-catalog = { id = "com.projectronin.interop.gradle.version-catalog-update", version.ref = "interop-gradle" }
+mirth-generation = { id = "com.projectronin.interop.mirth.generation", version.ref = "hackathon" }
 shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }

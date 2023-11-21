@@ -1,8 +1,10 @@
 package com.projectronin.interop.mirth.channel.base
 
 import com.projectronin.interop.mirth.channel.enums.MirthKey
-import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
-import com.projectronin.interop.mirth.channel.model.MirthMessage
+import com.projectronin.interop.mirth.models.MirthMessage
+import com.projectronin.interop.mirth.models.filter.MirthFilter
+import com.projectronin.interop.mirth.models.filter.MirthFilterResponse
+import com.projectronin.interop.mirth.models.transformer.MirthTransformer
 import com.projectronin.interop.tenant.config.exception.TenantMissingException
 import mu.KotlinLogging
 

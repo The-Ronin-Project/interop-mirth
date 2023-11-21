@@ -2,6 +2,8 @@ package com.projectronin.interop.mirth.channel.base
 
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.models.filter.MirthFilter
+import com.projectronin.interop.mirth.models.transformer.MirthTransformer
 import mu.KotlinLogging
 
 abstract class TenantlessDestinationService : MirthDestination {

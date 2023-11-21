@@ -24,14 +24,14 @@ import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.fhir.ronin.util.localize
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.PublishResourceWrapper
-import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
-import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
 import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
+import com.projectronin.interop.mirth.models.destination.DestinationConfiguration
+import com.projectronin.interop.mirth.models.destination.JavaScriptDestinationConfiguration
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant

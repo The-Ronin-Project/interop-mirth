@@ -1,10 +1,12 @@
 package com.projectronin.interop.mirth.channel.base
 
 import com.projectronin.interop.mirth.channel.enums.MirthKey
-import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
-import com.projectronin.interop.mirth.channel.model.MirthMessage
+import com.projectronin.interop.mirth.models.MirthMessage
+import com.projectronin.interop.mirth.models.channel.MirthChannel
+import com.projectronin.interop.mirth.models.filter.MirthFilter
+import com.projectronin.interop.mirth.models.filter.MirthFilterResponse
 
-interface MirthSource {
+interface MirthSource : MirthChannel {
     /**
      * rootName is the tenant agnostic channel name as archived in source control.
      * Example: "PractitionerLoad".
@@ -14,37 +16,6 @@ interface MirthSource {
      * for the "mdaoc" tenant mnemonic.
      */
     val rootName: String
-
-    /**
-     * Mirth channels may have multiple Destination Writers. They must have at least one.
-     *
-     * Each Destination Writer has its own [DestinationService] subclass to define its functions,
-     * including its optional Destination Filter and Destination Transformer stages.
-     *
-     * An [MirthSource] must set the rootName and map key for each of its [MirthDestination] subclasses
-     * when it populates the members of its destinations list. The map key may be any String.
-     *
-     * Mirth channels invoke [MirthDestination] functions as follows.
-     * Suppose the key for the [MirthDestination] is "publish" in the
-     * [MirthSource] destinations map. In the Mirth channel code, the Filter script for that Destination may call:
-     *
-     * ```
-     * $gc("channelService").destinations.get("publish").destinationFilter(src, sourceMap, channelMap)
-     * ```
-     *
-     * In the Mirth channel code, the Writer script for that Destination may call:
-     *
-     * ```
-     * $gc("channelService").destinations.get("publish").destinationWriter(src, sourceMap, channelMap)
-     * ```
-     */
-    val destinations: Map<String, MirthDestination>
-
-    /**
-     * Some channels may need to use non-Javascript destinations. Such channels should provide the configuration for
-     * those destinations here in order to allow us to generate the appropriate destinations.
-     */
-    fun getNonJavascriptDestinations(): List<DestinationConfiguration> = emptyList()
 
     /**
      * Required: Mirth channels must call onDeploy() from the channel Deploy script.
@@ -97,8 +68,6 @@ interface MirthSource {
             throw e
         }
     }
-
-    fun getSourceTransformer(): MirthTransformer?
 
     /**
      * Mirth channels call sourceTransformer() from the Source Transformer script

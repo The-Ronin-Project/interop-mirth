@@ -3,12 +3,12 @@ package com.projectronin.interop.mirth.channel.destinations.queue
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.DomainResource
-import com.projectronin.interop.mirth.channel.base.DestinationConfiguration
-import com.projectronin.interop.mirth.channel.base.JavaScriptDestinationConfiguration
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthResponse
 import com.projectronin.interop.mirth.channel.util.getMetadata
+import com.projectronin.interop.mirth.models.destination.DestinationConfiguration
+import com.projectronin.interop.mirth.models.destination.JavaScriptDestinationConfiguration
 import com.projectronin.interop.publishers.PublishService
 import kotlin.reflect.KClass
 

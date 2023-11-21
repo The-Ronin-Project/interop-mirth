@@ -1,15 +1,11 @@
 package com.projectronin.interop.mirth.channel.base
 
 import com.projectronin.interop.mirth.channel.enums.MirthKey
-import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
-import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.models.MirthMessage
+import com.projectronin.interop.mirth.models.filter.MirthFilterResponse
 
-interface MirthDestination {
-    fun getConfiguration(): DestinationConfiguration
-
-    fun getFilter(): MirthFilter?
-
+interface MirthDestination : com.projectronin.interop.mirth.models.destination.MirthDestination {
     /**
      * Mirth channels call destinationFilter() from the Destination Filter script
      *
@@ -41,8 +37,6 @@ interface MirthDestination {
             throw e
         }
     }
-
-    fun getTransformer(): MirthTransformer?
 
     /**
      * Mirth channels call destinationTransformer() from the Destination Transformer script
