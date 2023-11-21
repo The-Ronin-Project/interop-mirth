@@ -22,7 +22,7 @@ abstract class TenantlessQueueWriter<T : DomainResource<T>>(
 ) : TenantlessDestinationService() {
 
     override fun getConfiguration(): DestinationConfiguration =
-        JavaScriptDestinationConfiguration(name = "Publish ${type.simpleName}s")
+        JavaScriptDestinationConfiguration(name = "Publish ${type.simpleName}s", queueEnabled = false, threadCount = 1)
 
     override fun channelDestinationWriter(
         tenantMnemonic: String,

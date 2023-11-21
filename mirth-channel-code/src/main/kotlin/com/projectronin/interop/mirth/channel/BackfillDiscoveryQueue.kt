@@ -13,6 +13,8 @@ import com.projectronin.interop.mirth.channel.destinations.BackfillDiscoveryQueu
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.util.serialize
 import com.projectronin.interop.mirth.models.MirthMessage
+import com.projectronin.interop.mirth.models.polling.IntervalPollingConfig
+import com.projectronin.interop.mirth.models.polling.PollingConfig
 import com.projectronin.interop.mirth.models.transformer.MirthTransformer
 import com.projectronin.interop.tenant.config.TenantService
 import kotlinx.coroutines.runBlocking
@@ -40,6 +42,11 @@ class BackfillDiscoveryQueue(
             "FHIRID" to "locationFhirID",
             "BACKFILLID" to "backfillID"
         )
+
+        override val pollingConfig: PollingConfig = IntervalPollingConfig(
+            pollingFrequency = 1800000
+        )
+        override val sourceThreads: Int = 2
     }
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {

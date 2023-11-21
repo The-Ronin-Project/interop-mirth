@@ -12,7 +12,7 @@
       <pollConnectorProperties version="4.4.0">
         <pollingType>INTERVAL</pollingType>
         <pollOnStart>true</pollOnStart>
-        <pollingFrequency>5000</pollingFrequency>
+        <pollingFrequency>1800000</pollingFrequency>
         <pollingHour>0</pollingHour>
         <pollingMinute>0</pollingMinute>
         <cronJobs/>
@@ -41,7 +41,7 @@
         <respondAfterProcessing>true</respondAfterProcessing>
         <processBatch>false</processBatch>
         <firstResponse>false</firstResponse>
-        <processingThreads>1</processingThreads>
+        <processingThreads>2</processingThreads>
         <resourceIds class="linked-hash-map">
           <entry>
             <string>206087b7-266c-464f-af3b-7477264b3b89</string>
@@ -98,7 +98,7 @@
           <retryCount>0</retryCount>
           <rotate>false</rotate>
           <includeFilterTransformer>false</includeFilterTransformer>
-          <threadCount>5</threadCount>
+          <threadCount>1</threadCount>
           <threadAssignmentVariable></threadAssignmentVariable>
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">

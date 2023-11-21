@@ -8,14 +8,14 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class OnboardFlagServiceTest {
+class OnboardFlagTest {
 
-    private lateinit var channel: OnboardFlagService
+    private lateinit var channel: OnboardFlag
     private val patientOnboardService: KafkaPatientOnboardService = mockk()
 
     @BeforeEach
     fun setup() {
-        channel = OnboardFlagService(patientOnboardService, mockk())
+        channel = OnboardFlag(patientOnboardService, mockk())
     }
 
     @Test

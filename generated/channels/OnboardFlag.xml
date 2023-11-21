@@ -1,7 +1,7 @@
 <channel version="4.4.0">
   <id>54c15c0b-2ab9-46af-b7db-278ba2c02bb8</id>
   <nextMetaDataId>2</nextMetaDataId>
-  <name>OnboardFlagService</name>
+  <name>OnboardFlag</name>
   <description>Reads Kafka events and sets a flag in the EHR marking the patient as having been onboarded in Ronin.</description>
   <revision>1</revision>
   <sourceConnector version="4.4.0">
@@ -154,7 +154,7 @@
       <waitForPrevious>true</waitForPrevious>
     </connector>
   </destinationConnectors>
-  <deployScript>var channelService = Packages.com.projectronin.interop.mirth.channel.OnboardFlagService.Companion.create();
+  <deployScript>var channelService = Packages.com.projectronin.interop.mirth.channel.OnboardFlag.Companion.create();
 onDeploy(channelService)</deployScript>
   <properties version="4.4.0">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
@@ -194,7 +194,7 @@ onDeploy(channelService)</deployScript>
     <metadata>
       <enabled>true</enabled>
       <pruningSettings>
-        <pruneMetaDataDays>14</pruneMetaDataDays>
+        <pruneMetaDataDays>60</pruneMetaDataDays>
         <archiveEnabled>true</archiveEnabled>
         <pruneErroredMessages>false</pruneErroredMessages>
       </pruningSettings>

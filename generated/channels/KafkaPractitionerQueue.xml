@@ -91,14 +91,14 @@
       <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="4.4.0">
         <pluginProperties/>
         <destinationConnectorProperties version="4.4.0">
-          <queueEnabled>true</queueEnabled>
+          <queueEnabled>false</queueEnabled>
           <sendFirst>false</sendFirst>
           <retryIntervalMillis>10000</retryIntervalMillis>
           <regenerateTemplate>false</regenerateTemplate>
           <retryCount>0</retryCount>
           <rotate>false</rotate>
           <includeFilterTransformer>false</includeFilterTransformer>
-          <threadCount>5</threadCount>
+          <threadCount>1</threadCount>
           <threadAssignmentVariable></threadAssignmentVariable>
           <validateResponse>false</validateResponse>
           <resourceIds class="linked-hash-map">

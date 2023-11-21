@@ -17,7 +17,7 @@ import java.util.UUID
 class BackfillDiscoveryQueueWriter(val backfillQueueClient: QueueClient) : TenantlessDestinationService() {
 
     override fun getConfiguration(): DestinationConfiguration =
-        JavaScriptDestinationConfiguration(name = "Post Results")
+        JavaScriptDestinationConfiguration(name = "Post Results", threadCount = 1)
 
     override fun channelDestinationWriter(
         tenantMnemonic: String,
