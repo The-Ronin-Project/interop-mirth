@@ -3,10 +3,10 @@ package com.projectronin.interop.mirth.channel
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
+import com.projectronin.interop.mirth.channel.base.LoadChannelConfiguration
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaTopicReader
 import com.projectronin.interop.mirth.channel.destinations.ServiceRequestPublish
 import com.projectronin.interop.mirth.service.TenantConfigurationService
-import com.projectronin.interop.mirth.spring.SpringUtil
 import org.springframework.stereotype.Component
 
 @Component
@@ -30,7 +30,9 @@ class ServiceRequestLoad(
     )
     override val resource = ResourceType.ServiceRequest
 
-    companion object {
-        fun create() = SpringUtil.applicationContext.getBean(ServiceRequestLoad::class.java)
+    companion object : LoadChannelConfiguration<ServiceRequestLoad>() {
+        override val channelClass = ServiceRequestLoad::class
+        override val id = "4217863c-4c60-4432-9f42-1bb17dca62e9"
+        override val description = "Reads Kafka events and finds appropriate service requests based on those events"
     }
 }

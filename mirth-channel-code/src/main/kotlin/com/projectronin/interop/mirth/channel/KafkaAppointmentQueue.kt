@@ -6,9 +6,9 @@ import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.ronin.resource.RoninAppointment
 import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.fhir.ronin.transform.TransformResponse
+import com.projectronin.interop.mirth.channel.base.ChannelConfiguration
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaQueue
 import com.projectronin.interop.mirth.channel.destinations.queue.AppointmentTenantlessQueueWriter
-import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.queue.kafka.KafkaQueueService
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
@@ -27,8 +27,15 @@ class KafkaAppointmentQueue(
     private val roninAppointment: RoninAppointment
 ) :
     KafkaQueue<Appointment>(tenantService, queueService, appointmentQueueWriter) {
-    companion object {
-        fun create() = SpringUtil.applicationContext.getBean(KafkaAppointmentQueue::class.java)
+    companion object : ChannelConfiguration<KafkaAppointmentQueue>() {
+        override val channelClass = KafkaAppointmentQueue::class
+        override val id = "f2956ab5-9c8c-4dbf-b789-12726f91454e"
+        override val description =
+            "Reads Appointments off the Kafka Queue. Transforms and publishes them to the clinical data store."
+        override val metadataColumns: Map<String, String> = mapOf(
+            "TENANT" to "tenantMnemonic",
+            "FHIRID" to "fhirID"
+        )
     }
 
     override val limit = 1 // this is used as a hack to give the channel a unique group ID

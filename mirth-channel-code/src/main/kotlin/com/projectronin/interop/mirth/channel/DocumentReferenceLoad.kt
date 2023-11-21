@@ -3,10 +3,10 @@ package com.projectronin.interop.mirth.channel
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
+import com.projectronin.interop.mirth.channel.base.LoadChannelConfiguration
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaTopicReader
 import com.projectronin.interop.mirth.channel.destinations.DocumentReferencePublish
 import com.projectronin.interop.mirth.service.TenantConfigurationService
-import com.projectronin.interop.mirth.spring.SpringUtil
 import org.springframework.stereotype.Component
 
 @Component
@@ -24,7 +24,9 @@ class DocumentReferenceLoad(
     )
     override val resource = ResourceType.DocumentReference
 
-    companion object {
-        fun create() = SpringUtil.applicationContext.getBean(DocumentReferenceLoad::class.java)
+    companion object : LoadChannelConfiguration<DocumentReferenceLoad>() {
+        override val channelClass = DocumentReferenceLoad::class
+        override val id = "d8dcc430-8e99-49af-a8e5-13160ef09cc3"
+        override val description = "Reads Kafka events and finds appropriate document references based on those events"
     }
 }

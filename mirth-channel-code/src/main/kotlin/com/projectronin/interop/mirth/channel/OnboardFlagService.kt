@@ -3,12 +3,12 @@ package com.projectronin.interop.mirth.channel
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.kafka.KafkaPatientOnboardService
 import com.projectronin.interop.kafka.PatientOnboardingStatus
+import com.projectronin.interop.mirth.channel.base.ChannelConfiguration
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.OnboardFlagWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.models.MirthMessage
-import com.projectronin.interop.mirth.spring.SpringUtil
 import org.springframework.stereotype.Component
 
 @Component
@@ -19,8 +19,15 @@ class OnboardFlagService(
     override val rootName: String = "OnboardFlag"
     override val destinations: Map<String, TenantlessDestinationService> = mapOf("onboardFlagWriter" to destination)
 
-    companion object {
-        fun create() = SpringUtil.applicationContext.getBean(OnboardFlagService::class.java)
+    companion object : ChannelConfiguration<OnboardFlagService>() {
+        override val channelClass = OnboardFlagService::class
+        override val id = "54c15c0b-2ab9-46af-b7db-278ba2c02bb8"
+        override val description =
+            "Reads Kafka events and sets a flag in the EHR marking the patient as having been onboarded in Ronin."
+        override val metadataColumns: Map<String, String> = mapOf(
+            "TENANT" to "tenantMnemonic",
+            "PATIENT_ID" to "fhirID"
+        )
     }
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> =

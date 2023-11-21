@@ -7,13 +7,13 @@ import com.projectronin.interop.backfill.client.generated.models.DiscoveryQueueS
 import com.projectronin.interop.backfill.client.generated.models.UpdateDiscoveryEntry
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.EHRFactory
+import com.projectronin.interop.mirth.channel.base.ChannelConfiguration
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.BackfillDiscoveryQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.util.serialize
 import com.projectronin.interop.mirth.models.MirthMessage
 import com.projectronin.interop.mirth.models.transformer.MirthTransformer
-import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
@@ -30,8 +30,16 @@ class BackfillDiscoveryQueue(
     override val rootName = "BackfillDiscoveryQueue"
     override val destinations = mapOf("queue" to writer)
 
-    companion object {
-        fun create() = SpringUtil.applicationContext.getBean(BackfillDiscoveryQueue::class.java)
+    companion object : ChannelConfiguration<BackfillDiscoveryQueue>() {
+        override val channelClass = BackfillDiscoveryQueue::class
+        override val id = "cf0088fe-c085-491f-a926-c498b68e2ef7"
+        override val description =
+            "Polls the backfill service for new discovery queue entries"
+        override val metadataColumns: Map<String, String> = mapOf(
+            "TENANT" to "tenantMnemonic",
+            "FHIRID" to "locationFhirID",
+            "BACKFILLID" to "backfillID"
+        )
     }
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {

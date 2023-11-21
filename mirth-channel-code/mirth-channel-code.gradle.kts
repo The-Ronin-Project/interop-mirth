@@ -125,3 +125,9 @@ dependencyCheck {
     skipTestGroups = true
     suppressionFile = "${project.projectDir}/conf/owasp-suppress.xml"
 }
+
+mirthGeneration {
+    monitoredPackage = "com.projectronin.interop.mirth"
+    resourceId = "206087b7-266c-464f-af3b-7477264b3b89"
+    outputDirectory = rootProject.layout.buildDirectory.dir("../generated")
+}

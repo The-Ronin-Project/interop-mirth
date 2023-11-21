@@ -2,11 +2,11 @@ package com.projectronin.interop.mirth.channel
 
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.kafka.KafkaRequestService
+import com.projectronin.interop.mirth.channel.base.ChannelConfiguration
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.ResourceRequestPublish
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.models.MirthMessage
-import com.projectronin.interop.mirth.spring.SpringUtil
 import org.springframework.stereotype.Component
 
 @Component
@@ -18,8 +18,17 @@ class ResourceRequest(
     val groupId = "interop-mirth-resource_request_group"
     override val rootName = "ResourceRequest"
 
-    companion object {
-        fun create() = SpringUtil.applicationContext.getBean(ResourceRequest::class.java)
+    companion object : ChannelConfiguration<ResourceRequest>() {
+        override val channelClass = ResourceRequest::class
+        override val id = "1c1cc5bc-bfca-4ff8-a7fd-099c3d8f4959"
+        override val description =
+            "Reads Kafka request events and writes to the appropriate load topic"
+        override val metadataColumns: Map<String, String> = mapOf(
+            "TENANT" to "tenantMnemonic",
+            "ID" to "fhirID",
+            "RESOURCE_TYPE" to "resourceType",
+            "SOURCE" to "kafkaEventSource"
+        )
     }
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
