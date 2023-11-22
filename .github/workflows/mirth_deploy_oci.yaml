@@ -36,7 +36,7 @@ jobs:
         run: echo "args=mirth deploy --env ${{inputs.env}} $DRY_RUN_FLAG ${{inputs.version}}" >> "$GITHUB_OUTPUT"
 
   ronin-ctl-container-action:
-    runs-on: [ oci-shared-oci ]
+    runs-on: [ self-hosted-oci ]
     needs: generate_command
     steps:
       - id: roninctl
