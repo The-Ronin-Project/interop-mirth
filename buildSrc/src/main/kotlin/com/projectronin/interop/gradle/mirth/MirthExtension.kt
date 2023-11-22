@@ -29,7 +29,8 @@ open class MirthExtension @Inject constructor(objectFactory: ObjectFactory) {
     /**
      * The [ChannelExtension] for this extension.
      */
-    internal val channel: com.projectronin.interop.gradle.mirth.ChannelExtension = objectFactory.newInstance(com.projectronin.interop.gradle.mirth.ChannelExtension::class.java)
+    internal val channel: com.projectronin.interop.gradle.mirth.ChannelExtension =
+        objectFactory.newInstance(com.projectronin.interop.gradle.mirth.ChannelExtension::class.java)
 
     /**
      * Sets up the [ChannelExtension] defining channel-specific configuration.
@@ -48,6 +49,8 @@ open class ChannelExtension @Inject constructor(objectFactory: ObjectFactory) {
      */
     lateinit var baseDirectory: Provider<Directory>
 
+    lateinit var generatedChannelDirectory: Provider<Directory>
+
     /**
      * The [TenantConfigExtension] for this extension.
      */
@@ -65,7 +68,8 @@ open class ChannelExtension @Inject constructor(objectFactory: ObjectFactory) {
     /**
      * The [AidboxExtension] for this extension.
      */
-    internal val aidBoxConfig: com.projectronin.interop.gradle.mirth.AidboxExtension = objectFactory.newInstance(com.projectronin.interop.gradle.mirth.AidboxExtension::class.java)
+    internal val aidBoxConfig: com.projectronin.interop.gradle.mirth.AidboxExtension =
+        objectFactory.newInstance(com.projectronin.interop.gradle.mirth.AidboxExtension::class.java)
 
     /**
      * Sets up the [AidboxExtension] defining aidbox configuration.
@@ -87,7 +91,8 @@ open class TenantConfigExtension @Inject constructor(objectFactory: ObjectFactor
     /**
      * The [TenantConfigAuthExtension] for this extension.
      */
-    internal val auth: com.projectronin.interop.gradle.mirth.TenantConfigAuthExtension = objectFactory.newInstance(com.projectronin.interop.gradle.mirth.TenantConfigAuthExtension::class.java)
+    internal val auth: com.projectronin.interop.gradle.mirth.TenantConfigAuthExtension =
+        objectFactory.newInstance(com.projectronin.interop.gradle.mirth.TenantConfigAuthExtension::class.java)
 
     /**
      * Sets up the [TenantConfigAuthExtension] defining tenant auth configuration.

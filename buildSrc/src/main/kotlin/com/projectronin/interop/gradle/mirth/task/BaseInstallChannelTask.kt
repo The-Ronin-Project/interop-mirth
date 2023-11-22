@@ -3,7 +3,6 @@ package com.projectronin.interop.gradle.mirth.task
 import com.projectronin.interop.gradle.mirth.mirth
 import com.projectronin.interop.gradle.mirth.rest.MirthRestClient.Companion.client
 import io.ktor.http.isSuccess
-import org.gradle.api.tasks.Internal
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathFactory
@@ -11,22 +10,6 @@ import javax.xml.xpath.XPathFactory
 abstract class BaseInstallChannelTask : BaseMirthTask() {
     private val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
     private val xPathExpression = XPathFactory.newInstance().newXPath().compile("/channel/id")
-
-    /**
-     * Retrieves the List of all directories that should contain channel XML files.
-     */
-    @Internal
-    protected fun getChannelDirectories(): List<File> {
-        val channelsDirectory = project.mirth().channel.baseDirectory.get()
-        logger.lifecycle("Looking at $channelsDirectory")
-        return channelsDirectory.asFile.listFiles()?.filter {
-            if (it.isDirectory) {
-                it.listFiles()?.any { c -> c.isDirectory && c.name == "channel" } ?: false
-            } else {
-                false
-            }
-        } ?: emptyList()
-    }
 
     /**
      * Installs the [channelName] channel. Note that this will result in 2 channels within Mirth, one representing the
@@ -37,10 +20,13 @@ abstract class BaseInstallChannelTask : BaseMirthTask() {
         logger.lifecycle("Installing channel $channelName")
         val channelExtension = project.mirth().channel
 
-        val channelDirectory = channelExtension.baseDirectory.get().dir("$channelName/channel")
+        val channelDirectory = channelExtension.generatedChannelDirectory.get()
         val channelFile = channelDirectory.file("$channelName.xml").asFile
-
-        installBaseChannel(channelName, channelFile)
+        if (channelFile.exists()) {
+            installBaseChannel(channelName, channelFile)
+        } else {
+            throw IllegalArgumentException("Provided channel is not a valid channel name in the current project")
+        }
     }
 
     /**

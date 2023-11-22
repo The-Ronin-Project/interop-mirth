@@ -148,8 +148,11 @@
       <waitForPrevious>true</waitForPrevious>
     </connector>
   </destinationConnectors>
+  <preprocessingScript>return message;</preprocessingScript>
+  <postprocessingScript>return;</postprocessingScript>
   <deployScript>var channelService = Packages.com.projectronin.interop.mirth.channel.MedicationAdministrationLoad.Companion.create();
 onDeploy(channelService)</deployScript>
+  <undeployScript>return;</undeployScript>
   <properties version="4.4.0">
     <clearGlobalChannelMap>true</clearGlobalChannelMap>
     <messageStorageMode>DEVELOPMENT</messageStorageMode>

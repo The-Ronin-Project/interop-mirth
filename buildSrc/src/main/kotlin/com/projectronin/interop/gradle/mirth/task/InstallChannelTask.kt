@@ -15,11 +15,6 @@ open class InstallChannelTask : BaseInstallChannelTask() {
             throw IllegalArgumentException("No channel was provided. Please use \"--channel [CHANNEL]\" to define the channel to install.")
         }
 
-        // Let's validate that the provided channel, is a channel
-        val channelDirectories = getChannelDirectories()
-        val requestedChannel = channelDirectories.find { it.name == channel }
-            ?: throw IllegalArgumentException("Provided channel is not a valid channel name in the current project")
-
-        installChannel(requestedChannel.name)
+        installChannel(channel)
     }
 }

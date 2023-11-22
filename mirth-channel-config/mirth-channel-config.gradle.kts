@@ -14,6 +14,7 @@ mirth {
 
     channel {
         baseDirectory = layout.buildDirectory.dir("../channels")
+        generatedChannelDirectory = rootProject.layout.buildDirectory.dir("../generated/channels")
 
         tenant {
             defaultMnemonic = "epicmock"
