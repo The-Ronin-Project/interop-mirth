@@ -79,7 +79,7 @@ object ChannelMap {
     }
 
     private fun installChannel(channelToInstall: String): String {
-        val channelFile = File("channels/$channelToInstall/channel/$channelToInstall.xml")
+        val channelFile = File("../generated/channels/$channelToInstall.xml")
         val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
         val document = documentBuilder.parse(channelFile)
 
