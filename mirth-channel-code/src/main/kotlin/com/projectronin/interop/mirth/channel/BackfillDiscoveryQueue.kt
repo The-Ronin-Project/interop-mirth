@@ -21,6 +21,7 @@ import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import kotlin.time.Duration.Companion.minutes
 
 @Component
 class BackfillDiscoveryQueue(
@@ -44,7 +45,7 @@ class BackfillDiscoveryQueue(
         )
 
         override val pollingConfig: PollingConfig = IntervalPollingConfig(
-            pollingFrequency = 1800000
+            pollingFrequency = 30.minutes
         )
         override val sourceThreads: Int = 2
     }

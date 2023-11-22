@@ -31,6 +31,7 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.OffsetTime
 import java.time.ZoneOffset
+import kotlin.time.Duration.Companion.minutes
 
 @Component
 class PatientDiscovery(
@@ -63,7 +64,7 @@ class PatientDiscovery(
 
         override val pollingConfig: PollingConfig =
             IntervalPollingConfig(
-                pollingFrequency = 1800000
+                pollingFrequency = 30.minutes
             )
     }
 

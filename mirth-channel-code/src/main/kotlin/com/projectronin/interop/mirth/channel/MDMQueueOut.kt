@@ -13,6 +13,7 @@ import com.projectronin.interop.mirth.models.polling.PollingConfig
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.queue.QueueService
 import org.springframework.stereotype.Component
+import kotlin.time.Duration.Companion.minutes
 
 @Component
 class MDMQueueOut(
@@ -30,7 +31,7 @@ class MDMQueueOut(
 
         override val datatype: Datatype = Datatype.HL7V2
         override val pollingConfig: PollingConfig = IntervalPollingConfig(
-            pollingFrequency = 300_000
+            pollingFrequency = 5.minutes
         )
         override val daysUntilPruned: Int = 60
         override val storeAttachments: Boolean = true
