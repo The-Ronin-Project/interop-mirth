@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channel
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.backfill.client.DiscoveryQueueClient
 import com.projectronin.interop.backfill.client.generated.models.DiscoveryQueueEntry
 import com.projectronin.interop.backfill.client.generated.models.DiscoveryQueueStatus
@@ -11,13 +10,13 @@ import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.destinations.BackfillDiscoveryQueueWriter
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.channel.util.serialize
+import com.projectronin.interop.mirth.channel.util.splitDateRange
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.ZoneOffset
 
 @Component
 class BackfillDiscoveryQueue(
@@ -47,24 +46,40 @@ class BackfillDiscoveryQueue(
                     if (queueEntries.isEmpty()) {
                         null
                     } else {
-                        queueEntries.map {
-                            val metadata = Metadata(
-                                runId = it.backfillId.toString(),
-                                runDateTime = OffsetDateTime.now(ZoneOffset.UTC)
-                            )
-                            MirthMessage(
-                                message = JacksonUtil.writeJsonValue(it),
-                                dataMap = mapOf(
-                                    MirthKey.TENANT_MNEMONIC.code to tenant.mnemonic,
-                                    MirthKey.EVENT_METADATA.code to serialize(metadata),
-                                    MirthKey.EVENT_RUN_ID.code to metadata.runId,
-                                    MirthKey.BACKFILL_ID.code to it.backfillId.toString()
+                        queueEntries
+                            // first split the date range on these, so appointment searches will be smaller chunks
+                            .map { queue ->
+                                val tenantTimezone = tenant.timezone.rules.getOffset(LocalDateTime.now())
+                                val offsetStartDate = OffsetDateTime.of(
+                                    queue.startDate.atStartOfDay(),
+                                    tenantTimezone
                                 )
-                            )
-                        }
+                                val offsetEndRangeDate = OffsetDateTime.of(
+                                    queue.endDate.atStartOfDay(),
+                                    tenantTimezone
+                                )
+                                val range = splitDateRange(offsetStartDate, offsetEndRangeDate, 90)
+                                range.map {
+                                    queue.copy(
+                                        startDate = it.first.toLocalDate(),
+                                        endDate = it.second.toLocalDate()
+                                    )
+                                }
+                            }
+                            .flatten()
+                            // now convert these entries to mirth messages
+                            .map {
+                                MirthMessage(
+                                    message = JacksonUtil.writeJsonValue(it),
+                                    dataMap = mapOf(
+                                        MirthKey.TENANT_MNEMONIC.code to tenant.mnemonic,
+                                        MirthKey.BACKFILL_ID.code to it.backfillId.toString()
+                                    )
+                                )
+                            }
                     }
                 } catch (e: Exception) {
-                    logger.error(e) { "Failed to find configured locations for ${tenant.mnemonic}" }
+                    logger.error(e) { "Failed to poll for backfill discovery queue for ${tenant.mnemonic}" }
                     null
                 }
             }.flatten()

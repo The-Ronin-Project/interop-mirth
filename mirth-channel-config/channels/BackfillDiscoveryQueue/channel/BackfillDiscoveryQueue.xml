@@ -192,11 +192,6 @@ return;</undeployScript>
         <mappingName>tenantMnemonic</mappingName>
       </metaDataColumn>
       <metaDataColumn>
-        <name>FHIRID</name>
-        <type>STRING</type>
-        <mappingName>locationFhirID</mappingName>
-      </metaDataColumn>
-      <metaDataColumn>
         <name>BACKFILLID</name>
         <type>STRING</type>
         <mappingName>backfillID</mappingName>

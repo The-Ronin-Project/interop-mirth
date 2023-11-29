@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.LocalDate
+import java.time.ZoneId
 import java.util.UUID
 
 class BackfillDiscoveryQueueTest {
@@ -47,9 +48,11 @@ class BackfillDiscoveryQueueTest {
     fun setup() {
         tenant = mockk {
             every { mnemonic } returns "ronin"
+            every { timezone } returns ZoneId.of("UTC")
         }
         tenant2 = mockk {
             every { mnemonic } returns "blah"
+            every { timezone } returns ZoneId.of("UTC")
         }
         discoveryQueueClient = mockk {
             coEvery { getDiscoveryQueueEntries("ronin", DiscoveryQueueStatus.UNDISCOVERED) } returns listOf(queueEntry1, queueEntry2)
@@ -82,22 +85,20 @@ class BackfillDiscoveryQueueTest {
     @Test
     fun `sourceReader works`() {
         val list = channel.channelSourceReader(emptyMap())
-        assertEquals(2, list.size)
-        assertEquals(JacksonUtil.writeJsonValue(queueEntry1), list.first().message)
+        assertEquals(8, list.size)
+        assertEquals(JacksonUtil.writeJsonValue(queueEntry1.copy(endDate = start.plusDays(90))), list.first().message)
         assertEquals("ronin", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
         assertEquals(backfillID.toString(), list.first().dataMap[MirthKey.BACKFILL_ID.code])
-        assertEquals(backfillID.toString(), list.first().dataMap[MirthKey.EVENT_RUN_ID.code])
     }
 
     @Test
     fun `sourceReader errors don't cause it to crash`() {
         coEvery { discoveryQueueClient.getDiscoveryQueueEntries("blah", DiscoveryQueueStatus.UNDISCOVERED) } throws IllegalArgumentException("oops")
         val list = channel.channelSourceReader(emptyMap())
-        assertEquals(2, list.size)
-        assertEquals(JacksonUtil.writeJsonValue(queueEntry1), list.first().message)
+        assertEquals(8, list.size)
+        assertEquals(JacksonUtil.writeJsonValue(queueEntry1.copy(endDate = start.plusDays(90))), list.first().message)
         assertEquals("ronin", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
         assertEquals(backfillID.toString(), list.first().dataMap[MirthKey.BACKFILL_ID.code])
-        assertEquals(backfillID.toString(), list.first().dataMap[MirthKey.EVENT_RUN_ID.code])
     }
 
     @Test
