@@ -53,7 +53,7 @@ services:
       SPRING_DATASOURCE_URL: "jdbc:mysql://ehrdauser:ThePassword@mockehrmysql:3306/dataauthority-db"
       AUTH0_AUDIENCE: "https://ehr.dev.projectronin.io"
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://mock-oauth2:8080/ehr"
-      OCI_INFX_REGISTRY_FILE: "DataNormalizationRegistry/v3/registry.json"
+      OCI_INFX_REGISTRY_FILE: "TheNormalizationRegistry.json"
       KAFKA_PUBLISH_SOURCE: "ehr-data-authority"
       KAFKA_RETRIEVE_GROUPID: "ehr-data-authority_group"
       KAFKA_RETRIEVE_SERVICEID: "ehr-data-authority"
