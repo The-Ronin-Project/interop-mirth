@@ -484,6 +484,54 @@
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceServiceRequestCategory",
           "registry_uuid": "29",
           "concept_map_name": "ServiceRequestCategoryRonin"
+        },
+        {
+          "resource_type": "Procedure",
+          "data_element": "Procedure.code",
+          "tenant_id": "cernmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "ProcedureCode.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceProcedureCode",
+          "registry_uuid": "30",
+          "concept_map_name": "ProcedureCodeRonin"
+        },
+        {
+          "resource_type": "Procedure",
+          "data_element": "Procedure.code",
+          "tenant_id": "epicmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "ProcedureCode.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceProcedureCode",
+          "registry_uuid": "31",
+          "concept_map_name": "ProcedureCodeRonin"
+        },
+        {
+          "resource_type": "Procedure",
+          "data_element": "Procedure.category",
+          "tenant_id": "cernmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "ProcedureCategory.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceProcedureCategory",
+          "registry_uuid": "32",
+          "concept_map_name": "ProcedureCategoryRonin"
+        },
+        {
+          "resource_type": "Procedure",
+          "data_element": "Procedure.category",
+          "tenant_id": "epicmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "ProcedureCategory.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceProcedureCategory",
+          "registry_uuid": "33",
+          "concept_map_name": "ProcedureCategoryRonin"
         }
       ]
     },
@@ -1112,6 +1160,175 @@
       }
     },
     "id": "GetRoninServiceRequestCategory",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/seki/session/validate"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "content-type": [
+          "application/json"
+        ]
+      },
+      "body": "{\"user\":{\"tenant_id\":\"epicmock\"},\"user_session\":{\"expires_at\":\"2030-03-14T21:16:05\"}}"
+    },
+    "id": "seki-mock",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "POST",
+      "path": "/oauth/token"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "content-type": [
+          "application/json"
+        ]
+      },
+      "body": "{\"access_token\": \"123\", \"expires_in\":999999, \"token_type\": \"garbagge and trash\"}"
+    },
+    "id": "oauthMock",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/ProcedureCode.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ConceptMap",
+        "title": "Ronin Procedure Codes to FHIR R4 ProcedureCode",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a2",
+        "name": "ProcedureCodeRonin",
+        "url": "http://projectronin.io/fhir/StructureDefinition/ConceptMap/4ffae118-778f-4df9-bd73-aece934b521b",
+        "purpose": "FHIR Interops Concept Map",
+        "publisher": "Project Ronin",
+        "experimental": false,
+        "date": "2022-12-02",
+        "version": 1,
+        "group": [
+          {
+            "source": "http://projectronin.io/fhir/CodeSystem/epicmock/ProcedureCode",
+            "sourceVersion": "1.0",
+            "target": "http://hl7.org/fhir/ValueSet/procedure-code",
+            "targetVersion": "4.0.1",
+            "element": [
+              {
+                "code": "1",
+                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.798268.30",
+                "display": "Procedures",
+                "target": [
+                  {
+                    "code": "completed",
+                    "display": "completed",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://projectronin.io/fhir/ronin.common-fhir-model.uscore-r4/StructureDefinition/Extension/ronin-ConceptMapSchema",
+            "valueString": "1.0.0"
+          }
+        ]
+      }
+    },
+    "id": "GetRoninProcedureCode",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/ProcedureCategory.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ConceptMap",
+        "title": "Ronin Procedure Category to FHIR R4 ProcedureCategory",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a2",
+        "name": "ProcedureCategoryRonin",
+        "url": "http://projectronin.io/fhir/StructureDefinition/ConceptMap/4ffae118-778f-4df9-bd73-aece934b521b",
+        "purpose": "FHIR Interops Concept Map",
+        "publisher": "Project Ronin",
+        "experimental": false,
+        "date": "2022-12-02",
+        "version": 1,
+        "group": [
+          {
+            "source": "http://projectronin.io/fhir/CodeSystem/epicmock/ProcedureCategory",
+            "sourceVersion": "1.0",
+            "target": "http://hl7.org/fhir/ValueSet/procedure-category",
+            "targetVersion": "4.0.1",
+            "element": [
+              {
+                "code": "1",
+                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.798268.30",
+                "display": "Procedures",
+                "target": [
+                  {
+                    "code": "completed",
+                    "display": "completed",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://projectronin.io/fhir/ronin.common-fhir-model.uscore-r4/StructureDefinition/Extension/ronin-ConceptMapSchema",
+            "valueString": "1.0.0"
+          }
+        ]
+      }
+    },
+    "id": "GetRoninProcedureCategory",
     "priority": 0,
     "timeToLive": {
       "unlimited": true

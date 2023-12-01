@@ -23,6 +23,7 @@ const val observationLoadChannelName = "ObservationLoad"
 const val patientLoadChannelName = "PatientLoad"
 const val patientDiscoverChannelName = "PatientDiscovery"
 const val practitionerLoadChannelName = "PractitionerLoad"
+const val procedureLoadChannelName = "ProcedureLoad"
 const val requestGroupLoadChannelName = "RequestGroupLoad"
 const val serviceRequestGroupLoadChannelName = "ServiceRequestLoad"
 const val diagnosticReportLoadChannelName = "DiagnosticReportLoad"
@@ -53,6 +54,7 @@ object ChannelMap {
         patientLoadChannelName,
         patientDiscoverChannelName,
         practitionerLoadChannelName,
+        procedureLoadChannelName,
         requestGroupLoadChannelName,
         serviceRequestGroupLoadChannelName,
         diagnosticReportLoadChannelName,

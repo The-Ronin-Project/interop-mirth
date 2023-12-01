@@ -1,7 +1,7 @@
 <channel version="4.4.0">
-  <id>4217863c-4c60-4432-9f42-1bb17dca62e9</id>
+  <id>652b547a-8d0c-4743-bc99-66afd8956274</id>
   <nextMetaDataId>5</nextMetaDataId>
-  <name>ServiceRequestLoad</name>
+  <name>ProcedureLoad</name>
   <description>Version 1.0.0.
 
 Reads Kafka events and finds appropriate appointment based on those events</description>
@@ -14,7 +14,7 @@ Reads Kafka events and finds appropriate appointment based on those events</desc
       <pollConnectorProperties version="4.4.0">
         <pollingType>INTERVAL</pollingType>
         <pollOnStart>true</pollOnStart>
-        <pollingFrequency>5000</pollingFrequency>
+        <pollingFrequency>1000</pollingFrequency>
         <pollingHour>0</pollingHour>
         <pollingMinute>0</pollingMinute>
         <cronJobs/>
@@ -84,7 +84,7 @@ Reads Kafka events and finds appropriate appointment based on those events</desc
   <destinationConnectors>
     <connector version="4.4.0">
       <metaDataId>1</metaDataId>
-      <name>Publish ServiceRequests</name>
+      <name>Publish Procedures</name>
       <properties class="com.mirth.connect.connectors.js.JavaScriptDispatcherProperties" version="4.4.0">
         <pluginProperties/>
         <destinationConnectorProperties version="4.4.0">
@@ -161,7 +161,7 @@ return message;</preprocessingScript>
 return;</postprocessingScript>
   <deployScript>// @apiinfo &quot;&quot;&quot;Get the channel configuration and services.&quot;&quot;&quot;
 
-var channelService = Packages.com.projectronin.interop.mirth.channel.ServiceRequestLoad.Companion.create();
+var channelService = Packages.com.projectronin.interop.mirth.channel.ProcedureLoad.Companion.create();
 onDeploy(channelService)
 </deployScript>
   <undeployScript>// This script executes once when the channel is undeployed
@@ -223,9 +223,9 @@ return;</undeployScript>
   </properties>
   <exportData>
     <metadata>
-      <enabled>false</enabled>
+      <enabled>true</enabled>
       <lastModified>
-        <time>1699574770029</time>
+        <time>1700180277438</time>
         <timezone>America/Los_Angeles</timezone>
       </lastModified>
       <pruningSettings>
