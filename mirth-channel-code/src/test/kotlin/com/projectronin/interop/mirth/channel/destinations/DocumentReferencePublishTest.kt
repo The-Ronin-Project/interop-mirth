@@ -364,4 +364,60 @@ class DocumentReferencePublishTest {
             url1.extension.find { it.url == RoninExtension.DATALAKE_DOCUMENT_REFERENCE_ATTACHMENT_URL.uri }?.value
         )
     }
+
+    @Test
+    fun `post transform handles binary lookup failures`() {
+        val fakeBinaryID1 = "12345"
+        val fakeBinaryID2 = "67890"
+
+        val fakeBinary1 = binary {
+            id of Id(fakeBinaryID1)
+        }
+
+        val vendorFactory = mockk<VendorFactory> {
+            every { binaryService } returns mockk {
+                every { getByID(any(), fakeBinaryID1) } returns fakeBinary1
+                every { getByID(any(), fakeBinaryID2) } throws IllegalStateException()
+            }
+        }
+        val docReference1 = documentReference {
+            content of listOf(
+                documentReferenceContent {
+                    attachment of attachment {
+                        url of "Binary/$fakeBinaryID1"
+                    }
+                }
+            )
+        }
+        val docReference2 = documentReference {
+            content of listOf(
+                documentReferenceContent {
+                    attachment of attachment {
+                        url of "Binary/$fakeBinaryID2"
+                    }
+                }
+            )
+        }
+
+        val key1 = mockk<ResourceRequestKey>()
+        val key2 = mockk<ResourceRequestKey>()
+        val result = documentReferencePublish.postTransform(
+            tenant,
+            mapOf(key1 to listOf(TransformResponse(docReference1)), key2 to listOf(TransformResponse(docReference2))),
+            vendorFactory
+        )
+
+        assertEquals(1, result.size)
+
+        val url1 = result[key1]!!.first().resource.content.first().attachment!!.url
+        assertEquals("https://ehr.local.projectronin.io/tenants/$tenantId/resources/Binary/tenant-12345", url1!!.value)
+        assertEquals(
+            DynamicValue(DynamicValueType.URL, docReference1.content.first().attachment!!.url),
+            url1.extension.find { it.url == RoninExtension.TENANT_SOURCE_DOCUMENT_REFERENCE_ATTACHMENT_URL.uri }?.value
+        )
+        assertEquals(
+            DynamicValue(DynamicValueType.URL, Url("datalake/path")),
+            url1.extension.find { it.url == RoninExtension.DATALAKE_DOCUMENT_REFERENCE_ATTACHMENT_URL.uri }?.value
+        )
+    }
 }

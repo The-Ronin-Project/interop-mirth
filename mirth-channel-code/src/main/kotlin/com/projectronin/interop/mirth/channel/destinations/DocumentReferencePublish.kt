@@ -241,12 +241,16 @@ class DocumentReferencePublish(
                     logger.info { "Document reference ${documentReference.id!!.value} is unchanged; skipping Binary load." }
                     return@mapNotNull null
                 }
-                val binaryList = binaryFHIRIDs.map {
-                    val binary = binaryService.getByID(tenant, it)
-                    binary.copy(
-                        id = binary.id!!.copy(value = it.localize(tenant))
-                    )
-                }
+
+                val binaryList = runCatching {
+                    binaryFHIRIDs.map {
+                        val binary = binaryService.getByID(tenant, it)
+                        binary.copy(
+                            id = binary.id!!.copy(value = it.localize(tenant))
+                        )
+                    }
+                }.getOrNull() ?: return@mapNotNull null
+
                 datalakeService.publishBinaryData(tenant.mnemonic, binaryList)
                 TransformResponse(newDocumentReference, transformedResponse.embeddedResources)
             }.ifEmpty { null }

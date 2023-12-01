@@ -137,18 +137,20 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 )
             }.ifEmpty { null }
         }
+        val totalResourcesCount = resourcesByKey.totalSize()
         if (transformedResourcesByKey.isEmpty()) {
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = resourcesByKey.truncateList(),
-                message = "Failed to transform ${resourcesByKey.totalSize()} resource(s)",
-                dataMap = newMap + mapOf(MirthKey.FAILURE_COUNT.code to resourcesByKey.totalSize())
+                message = "Failed to transform $totalResourcesCount resource(s)",
+                dataMap = newMap + mapOf(MirthKey.FAILURE_COUNT.code to totalResourcesCount)
             )
         }
         // if some of our uncachedResources failed to transform, we should alert, but publish the ones that worked
-        if (transformedResourcesByKey.totalSize() != resourcesByKey.totalSize()) {
+        val totalTransformedResourcesCount = transformedResourcesByKey.totalSize()
+        if (totalTransformedResourcesCount != totalResourcesCount) {
             logger.error {
-                "Received ${resourcesByKey.totalSize()} resources from EHR but only transformed ${transformedResourcesByKey.totalSize()} " +
+                "Received $totalResourcesCount resources from EHR but only transformed $totalTransformedResourcesCount " +
                     "for tenant: $tenantMnemonic.\n" +
                     "Resources received: ${resourcesByKey.ids()} \n" +
                     "Resources transformed: ${transformedResourcesByKey.resourceIds()}"
@@ -156,6 +158,14 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         }
 
         val postTransformedResourcesByKey = postTransform(tenant, transformedResourcesByKey, vendorFactory)
+        val totalPostTransformedResourcesCount = postTransformedResourcesByKey.totalSize()
+        if (totalPostTransformedResourcesCount != totalTransformedResourcesCount) {
+            logger.error {
+                "Post transform failed for ${totalTransformedResourcesCount - totalPostTransformedResourcesCount} resources for tenant $tenantMnemonic.\n" +
+                    "Resources received: ${transformedResourcesByKey.resourceIds()} \n+" +
+                    "Resources transformed: ${postTransformedResourcesByKey.resourceIds()}"
+            }
+        }
 
         val transformsToPublishByEvent = postTransformedResourcesByKey.map { (key, resource) ->
             resourceLoadRequest.eventsByRequestKey[key]!! to resource
@@ -225,7 +235,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 message = "Published ${successfullyPublishedTransforms.size} resource(s).$cachedMessage",
                 dataMap = newMap +
                     mapOf(
-                        MirthKey.FAILURE_COUNT.code to (resourcesByKey.totalSize() - successfullyPublishedTransforms.size),
+                        MirthKey.FAILURE_COUNT.code to (totalResourcesCount - successfullyPublishedTransforms.size),
                         MirthKey.RESOURCE_COUNT.code to successfullyPublishedTransforms.size
                     )
             )
