@@ -23,6 +23,7 @@ import com.projectronin.interop.fhir.generators.resources.binary
 import com.projectronin.interop.fhir.generators.resources.carePlan
 import com.projectronin.interop.fhir.generators.resources.carePlanActivity
 import com.projectronin.interop.fhir.generators.resources.condition
+import com.projectronin.interop.fhir.generators.resources.diagnosticReport
 import com.projectronin.interop.fhir.generators.resources.documentReference
 import com.projectronin.interop.fhir.generators.resources.documentReferenceContent
 import com.projectronin.interop.fhir.generators.resources.encounter
@@ -37,9 +38,14 @@ import com.projectronin.interop.fhir.generators.resources.observation
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.generators.resources.practitioner
 import com.projectronin.interop.fhir.generators.resources.requestGroup
+import com.projectronin.interop.fhir.generators.resources.serviceRequest
 import com.projectronin.interop.fhir.r4.CodeSystem
+import com.projectronin.interop.fhir.r4.datatype.CodeableConcept
+import com.projectronin.interop.fhir.r4.datatype.Coding
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
 import com.projectronin.interop.fhir.r4.datatype.primitive.DateTime
+import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
+import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
 import com.projectronin.interop.fhir.r4.datatype.primitive.Url
 import com.projectronin.interop.fhir.r4.resource.EncounterLocation
 import com.projectronin.interop.fhir.r4.resource.Resource
@@ -484,6 +490,63 @@ class ValidationTest(
                                 attachment of attachment {
                                     url of Url("Binary/$binaryID")
                                 }
+                            }
+                        )
+                    }
+                )
+                mockEHR.addResourceAndValidate(
+                    serviceRequest {
+                        identifier of listOf(
+                            identifier {
+                                system of "mockServiceRequestSystem"
+                                value of "ServiceRequest/2"
+                            }
+                        )
+                        category of listOf(
+                            CodeableConcept(
+                                coding = listOf(
+                                    Coding(
+                                        system = Uri("http://projectronin.io/fhir/CodeSystem/ServiceRequestCategory"),
+                                        code = Code("1"),
+                                        display = FHIRString("Procedures")
+                                    )
+                                )
+                            )
+                        )
+                        code of CodeableConcept(
+                            coding = listOf(
+                                Coding(
+                                    system = Uri("http://projectronin.io/fhir/CodeSystem/ServiceRequestCode"),
+                                    code = Code("1"),
+                                    display = FHIRString("Procedures")
+                                )
+                            )
+                        )
+                        subject of reference("Patient", patientID)
+                    }
+                )
+                mockEHR.addResourceAndValidate(
+                    diagnosticReport {
+                        subject of reference("Patient", patientID)
+                        status of "registered"
+                        code of codeableConcept {
+                            coding of listOf(
+                                coding {
+                                    system of "http://loinc.org"
+                                    code of "58410-2"
+                                    display of "Complete blood count (hemogram) panel - Blood by Automated count"
+                                }
+                            )
+                            text of "Complete Blood Count"
+                        }
+                        category of listOf(
+                            codeableConcept {
+                                coding of listOf(
+                                    coding {
+                                        system of "http://terminology.hl7.org/CodeSystem/v2-0074"
+                                        code of "LAB"
+                                    }
+                                )
                             }
                         )
                     }
