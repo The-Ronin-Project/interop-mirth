@@ -11,7 +11,6 @@ import com.projectronin.interop.fhir.generators.resources.procedure
 import com.projectronin.interop.fhir.r4.datatype.CodeableConcept
 import com.projectronin.interop.fhir.r4.datatype.Coding
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
-import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
 import com.projectronin.interop.fhir.ronin.generators.resource.observation.rcdmObservation
@@ -50,8 +49,7 @@ class ProcedureLoadTest : BaseChannelTest(
                 coding = listOf(
                     Coding(
                         system = Uri("http://projectronin.io/fhir/CodeSystem/ProcedureCategory"),
-                        code = Code("1"),
-                        display = FHIRString("Procedures")
+                        code = Code("1")
                     )
                 )
             )
@@ -59,8 +57,7 @@ class ProcedureLoadTest : BaseChannelTest(
                 coding = listOf(
                     Coding(
                         system = Uri("http://projectronin.io/fhir/CodeSystem/ProcedureCode"),
-                        code = Code("1"),
-                        display = FHIRString("Procedures")
+                        code = Code("1")
                     )
                 )
             )
@@ -79,8 +76,7 @@ class ProcedureLoadTest : BaseChannelTest(
                 coding = listOf(
                     Coding(
                         system = Uri("http://projectronin.io/fhir/CodeSystem/ProcedureCategory"),
-                        code = Code("1"),
-                        display = FHIRString("Procedures")
+                        code = Code("1")
                     )
                 )
             )
@@ -88,8 +84,7 @@ class ProcedureLoadTest : BaseChannelTest(
                 coding = listOf(
                     Coding(
                         system = Uri("http://projectronin.io/fhir/CodeSystem/ProcedureCode"),
-                        code = Code("1"),
-                        display = FHIRString("Procedures")
+                        code = Code("1")
                     )
                 )
             )
@@ -109,8 +104,7 @@ class ProcedureLoadTest : BaseChannelTest(
                 coding = listOf(
                     Coding(
                         system = Uri("http://projectronin.io/fhir/CodeSystem/ProcedureCategory"),
-                        code = Code("1"),
-                        display = FHIRString("Procedures")
+                        code = Code("1")
                     )
                 )
             )
@@ -118,8 +112,7 @@ class ProcedureLoadTest : BaseChannelTest(
                 coding = listOf(
                     Coding(
                         system = Uri("http://projectronin.io/fhir/CodeSystem/ProcedureCode"),
-                        code = Code("1"),
-                        display = FHIRString("Procedures")
+                        code = Code("1")
                     )
                 )
             )
@@ -149,7 +142,10 @@ class ProcedureLoadTest : BaseChannelTest(
                     actor of reference("Location", "locationId2")
                 }
             )
-            reasonReference of listOf(reference("Procedure", procedureFhirId2), reference("Procedure", procedureFhirId2))
+            reasonReference of listOf(
+                reference("Procedure", procedureFhirId2),
+                reference("Procedure", procedureFhirId2)
+            )
             start of 2.daysFromNow()
             end of 3.daysFromNow()
         }
@@ -202,8 +198,7 @@ class ProcedureLoadTest : BaseChannelTest(
                 coding = listOf(
                     Coding(
                         system = Uri("http://projectronin.io/fhir/CodeSystem/ProcedureCategory"),
-                        code = Code("1"),
-                        display = FHIRString("Procedures")
+                        code = Code("1")
                     )
                 )
             )
@@ -211,8 +206,7 @@ class ProcedureLoadTest : BaseChannelTest(
                 coding = listOf(
                     Coding(
                         system = Uri("http://projectronin.io/fhir/CodeSystem/ProcedureCode"),
-                        code = Code("1"),
-                        display = FHIRString("Procedures")
+                        code = Code("1")
                     )
                 )
             )

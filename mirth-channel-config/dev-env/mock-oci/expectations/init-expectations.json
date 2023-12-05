@@ -745,7 +745,7 @@
             "targetVersion": "4.0.1",
             "element": [
               {
-                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"1023001\", \"display\": \"Apnea\", \"system\": \"http://snomed.info/sct\"}]}}",
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"1023001\", \"display\": \"Apnea\", \"system\": \"http://snomed.info/sct\"}], \"text\": \"Apnea\"}}",
                 "display": "Apnea",
                 "target": [
                   {
@@ -887,7 +887,7 @@
             "targetVersion": "2023",
             "element": [
               {
-                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"29463-7\", \"display\": null, \"system\": \"http://loinc.org\"}]}}",
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"29463-7\", \"display\": \"Body Weight\", \"system\": \"http://loinc.org\"}], \"text\": \"Body Weight\"}}",
                 "display": "Body Weight",
                 "target": [
                   {
@@ -1073,8 +1073,7 @@
             "targetVersion": "4.0.1",
             "element": [
               {
-                "code": "1",
-                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.798268.30",
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"1\", \"display\": null, \"system\": \"http://projectronin.io/fhir/CodeSystem/ServiceRequestCode\"}]}}",
                 "display": "Procedures",
                 "target": [
                   {
@@ -1136,8 +1135,7 @@
             "targetVersion": "4.0.1",
             "element": [
               {
-                "code": "1",
-                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.798268.30",
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"1\", \"display\": null, \"system\": \"http://projectronin.io/fhir/CodeSystem/ServiceRequestCategory\"}]}}",
                 "display": "Procedures",
                 "target": [
                   {
@@ -1242,8 +1240,7 @@
             "targetVersion": "4.0.1",
             "element": [
               {
-                "code": "1",
-                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.798268.30",
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"1\", \"display\": null, \"system\": \"http://projectronin.io/fhir/CodeSystem/ProcedureCode\"}]}}",
                 "display": "Procedures",
                 "target": [
                   {
@@ -1305,8 +1302,7 @@
             "targetVersion": "4.0.1",
             "element": [
               {
-                "code": "1",
-                "system": "urn:oid:1.2.840.114350.1.13.0.1.7.10.798268.30",
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"1\", \"display\": null, \"system\": \"http://projectronin.io/fhir/CodeSystem/ProcedureCategory\"}]}}",
                 "display": "Procedures",
                 "target": [
                   {

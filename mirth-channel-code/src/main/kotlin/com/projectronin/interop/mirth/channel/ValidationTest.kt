@@ -434,7 +434,9 @@ class ValidationTest(
                         skipValidation = "MedicationRequest" in ignoreTypeList
                     )
 
-                    val dateTime = "${nowish.year}-${nowish.monthValue}-${nowish.dayOfMonth}T10:15:30.00Z"
+                    val dateTime = "${nowish.year}-${nowish.monthValue.toString().padStart(2, '0')}-${
+                    nowish.dayOfMonth.toString().padStart(2, '0')
+                    }T10:15:30.00Z"
                     val medAdminId = mockEHR.addResourceAndValidate(
                         medicationAdministration {
                             subject of reference("Patient", patientID)

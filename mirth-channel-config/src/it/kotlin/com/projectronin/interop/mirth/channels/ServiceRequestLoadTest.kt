@@ -11,7 +11,6 @@ import com.projectronin.interop.fhir.generators.resources.serviceRequest
 import com.projectronin.interop.fhir.r4.datatype.CodeableConcept
 import com.projectronin.interop.fhir.r4.datatype.Coding
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
-import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
 import com.projectronin.interop.fhir.ronin.generators.resource.observation.rcdmObservation
@@ -53,8 +52,7 @@ class ServiceRequestLoadTest : BaseChannelTest(
                     coding = listOf(
                         Coding(
                             system = Uri("http://projectronin.io/fhir/CodeSystem/ServiceRequestCategory"),
-                            code = Code("1"),
-                            display = FHIRString("Procedures")
+                            code = Code("1")
                         )
                     )
                 )
@@ -63,8 +61,7 @@ class ServiceRequestLoadTest : BaseChannelTest(
                 coding = listOf(
                     Coding(
                         system = Uri("http://projectronin.io/fhir/CodeSystem/ServiceRequestCode"),
-                        code = Code("1"),
-                        display = FHIRString("Procedures")
+                        code = Code("1")
                     )
                 )
             )
@@ -83,8 +80,7 @@ class ServiceRequestLoadTest : BaseChannelTest(
                     coding = listOf(
                         Coding(
                             system = Uri("http://projectronin.io/fhir/CodeSystem/ServiceRequestCategory"),
-                            code = Code("1"),
-                            display = FHIRString("Procedures")
+                            code = Code("1")
                         )
                     )
                 )
@@ -93,8 +89,7 @@ class ServiceRequestLoadTest : BaseChannelTest(
                 coding = listOf(
                     Coding(
                         system = Uri("http://projectronin.io/fhir/CodeSystem/ServiceRequestCode"),
-                        code = Code("1"),
-                        display = FHIRString("Procedures")
+                        code = Code("1")
                     )
                 )
             )
@@ -114,8 +109,7 @@ class ServiceRequestLoadTest : BaseChannelTest(
                     coding = listOf(
                         Coding(
                             system = Uri("http://projectronin.io/fhir/CodeSystem/ServiceRequestCategory"),
-                            code = Code("1"),
-                            display = FHIRString("Procedures")
+                            code = Code("1")
                         )
                     )
                 )
@@ -124,8 +118,7 @@ class ServiceRequestLoadTest : BaseChannelTest(
                 coding = listOf(
                     Coding(
                         system = Uri("http://projectronin.io/fhir/CodeSystem/ServiceRequestCode"),
-                        code = Code("1"),
-                        display = FHIRString("Procedures")
+                        code = Code("1")
                     )
                 )
             )
@@ -154,7 +147,10 @@ class ServiceRequestLoadTest : BaseChannelTest(
                     actor of reference("Location", "locationId2")
                 }
             )
-            basedOn of listOf(reference("ServiceRequest", serviceRequestFhirId2), reference("ServiceRequest", serviceRequestFhirId2))
+            basedOn of listOf(
+                reference("ServiceRequest", serviceRequestFhirId2),
+                reference("ServiceRequest", serviceRequestFhirId2)
+            )
             start of 2.daysFromNow()
             end of 3.daysFromNow()
         }
@@ -189,7 +185,13 @@ class ServiceRequestLoadTest : BaseChannelTest(
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(fakeAppointment1, fakeAppointment2, fakeMedicationRequest, fakeMedicationStatement, fakeObservation)
+            resources = listOf(
+                fakeAppointment1,
+                fakeAppointment2,
+                fakeMedicationRequest,
+                fakeMedicationStatement,
+                fakeObservation
+            )
         )
 
         waitForMessage(1)
@@ -212,8 +214,7 @@ class ServiceRequestLoadTest : BaseChannelTest(
                     coding = listOf(
                         Coding(
                             system = Uri("http://projectronin.io/fhir/CodeSystem/ServiceRequestCategory"),
-                            code = Code("1"),
-                            display = FHIRString("Procedures")
+                            code = Code("1")
                         )
                     )
                 )
@@ -222,8 +223,7 @@ class ServiceRequestLoadTest : BaseChannelTest(
                 coding = listOf(
                     Coding(
                         system = Uri("http://projectronin.io/fhir/CodeSystem/ServiceRequestCode"),
-                        code = Code("1"),
-                        display = FHIRString("Procedures")
+                        code = Code("1")
                     )
                 )
             )
