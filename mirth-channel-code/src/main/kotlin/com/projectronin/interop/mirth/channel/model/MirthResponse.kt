@@ -6,5 +6,5 @@ data class MirthResponse(
     val status: MirthResponseStatus,
     val detailedMessage: String? = "",
     val message: String? = "",
-    val dataMap: Map<String, Any> = emptyMap()
+    val dataMap: Map<String, Any> = emptyMap(),
 )

@@ -14,20 +14,21 @@ class ServiceRequestLoad(
     kafkaPublishService: KafkaPublishService,
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
-    defaultPublisher: ServiceRequestPublish
+    defaultPublisher: ServiceRequestPublish,
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "ServiceRequestLoad"
     override val channelGroupId = "interop-mirth-service-request_group"
-    override val publishedResourcesSubscriptions = listOf(
-        ResourceType.Patient,
-        ResourceType.MedicationRequest,
-        ResourceType.Encounter,
-        ResourceType.Appointment,
-        ResourceType.DiagnosticReport,
-        ResourceType.MedicationStatement,
-        ResourceType.Observation,
-        ResourceType.Procedure
-    )
+    override val publishedResourcesSubscriptions =
+        listOf(
+            ResourceType.Patient,
+            ResourceType.MedicationRequest,
+            ResourceType.Encounter,
+            ResourceType.Appointment,
+            ResourceType.DiagnosticReport,
+            ResourceType.MedicationStatement,
+            ResourceType.Observation,
+            ResourceType.Procedure,
+        )
     override val resource = ResourceType.ServiceRequest
 
     companion object {

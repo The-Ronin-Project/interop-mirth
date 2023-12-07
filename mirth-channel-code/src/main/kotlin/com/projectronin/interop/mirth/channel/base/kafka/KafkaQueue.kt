@@ -21,7 +21,7 @@ import com.projectronin.interop.tenant.config.model.Tenant
 abstract class KafkaQueue<K : DomainResource<K>>(
     private val tenantService: TenantService,
     private val queueService: KafkaQueueService,
-    queueWriter: TenantlessQueueWriter<K>
+    queueWriter: TenantlessQueueWriter<K>,
 ) : TenantlessSourceService() {
     protected val publishService = "publish"
     open val limit = 1
@@ -29,7 +29,7 @@ abstract class KafkaQueue<K : DomainResource<K>>(
 
     override val destinations by lazy {
         mapOf(
-            publishService to queueWriter
+            publishService to queueWriter,
         )
     }
 
@@ -39,8 +39,8 @@ abstract class KafkaQueue<K : DomainResource<K>>(
                 it.text,
                 mapOf(
                     MirthKey.TENANT_MNEMONIC.code to it.tenant,
-                    MirthKey.EVENT_METADATA.code to serialize(it.metadata)
-                )
+                    MirthKey.EVENT_METADATA.code to serialize(it.metadata),
+                ),
             )
         }
     }
@@ -49,22 +49,27 @@ abstract class KafkaQueue<K : DomainResource<K>>(
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage {
-        val tenant = tenantService.getTenantForMnemonic(tenantMnemonic)
-            ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
+        val tenant =
+            tenantService.getTenantForMnemonic(tenantMnemonic)
+                ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
         val transformed = deserializeAndTransform(msg, tenant).resource
         return MirthMessage(
             message = JacksonManager.objectMapper.writeValueAsString(transformed),
-            dataMap = mapOf(
-                MirthKey.FHIR_ID.code to (transformed.id?.value ?: ""),
-                MirthKey.TENANT_MNEMONIC.code to tenantMnemonic
-            )
+            dataMap =
+                mapOf(
+                    MirthKey.FHIR_ID.code to (transformed.id?.value ?: ""),
+                    MirthKey.TENANT_MNEMONIC.code to tenantMnemonic,
+                ),
         )
     }
 
     /**
      * Implementers should take a string from off the queue and then turn them into a DomainResource
      */
-    abstract fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<K>
+    abstract fun deserializeAndTransform(
+        string: String,
+        tenant: Tenant,
+    ): TransformResponse<K>
 }

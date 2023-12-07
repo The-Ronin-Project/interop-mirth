@@ -35,58 +35,63 @@ class TenantRestClient(private val httpClient: HttpClient) {
         /**
          * Creates a TenantRestClient for the [auth] settings.
          */
-        fun createClient(auth: TenantConfigAuthExtension) = TenantRestClient(
-            HttpClient(CIO) {
-                // Setup JSON
-                install(ContentNegotiation) {
-                    jackson {
-                        JacksonManager.setUpMapper(this)
+        fun createClient(auth: TenantConfigAuthExtension) =
+            TenantRestClient(
+                HttpClient(CIO) {
+                    // Setup JSON
+                    install(ContentNegotiation) {
+                        jackson {
+                            JacksonManager.setUpMapper(this)
+                        }
                     }
-                }
 
-                // Enable logging.
-                install(Logging) {
-                    level = LogLevel.ALL
-                }
+                    // Enable logging.
+                    install(Logging) {
+                        level = LogLevel.ALL
+                    }
 
-                // We probably should build a real Health Check, but this helps gracefully handle an edge-case where
-                // the Proxy Server isn't quite responding to requests yet.
-                install(HttpRequestRetry) {
-                    retryOnServerErrors(maxRetries = 5)
-                    exponentialDelay()
-                }
+                    // We probably should build a real Health Check, but this helps gracefully handle an edge-case where
+                    // the Proxy Server isn't quite responding to requests yet.
+                    install(HttpRequestRetry) {
+                        retryOnServerErrors(maxRetries = 5)
+                        exponentialDelay()
+                    }
 
-                auth0ClientCredentials {
-                    tokenUrl = auth.tokenUrl
-                    clientId = System.getenv(auth.clientIdKey)
-                        ?: throw IllegalStateException("Unable to find environment variable for ${auth.clientIdKey}")
-                    clientSecret = System.getenv(auth.clientSecretKey)
-                        ?: throw IllegalStateException("Unable to find environment variable for ${auth.clientSecretKey}")
-                    audience = auth.audience
-                }
-            }
-        )
+                    auth0ClientCredentials {
+                        tokenUrl = auth.tokenUrl
+                        clientId = System.getenv(auth.clientIdKey)
+                            ?: throw IllegalStateException("Unable to find environment variable for ${auth.clientIdKey}")
+                        clientSecret = System.getenv(auth.clientSecretKey)
+                            ?: throw IllegalStateException("Unable to find environment variable for ${auth.clientSecretKey}")
+                        audience = auth.audience
+                    }
+                },
+            )
     }
 
     /**
      * GETs the current [MirthTenantConfig] for the [tenantMnemonic]. Returns null if no config currently exists.
      */
-    fun getMirthTenantConfig(tenantMnemonic: String): MirthTenantConfig? = runBlocking {
-        val url = MIRTH_TENANT_CONFIG_FORMAT.format(tenantMnemonic)
-        val response = httpClient.get(url)
-        if (response.status.isSuccess()) {
-            response.body<MirthTenantConfig>()
-        } else if (response.status == HttpStatusCode.NotFound) {
-            null
-        } else {
-            throw RuntimeException(response.status.toString())
+    fun getMirthTenantConfig(tenantMnemonic: String): MirthTenantConfig? =
+        runBlocking {
+            val url = MIRTH_TENANT_CONFIG_FORMAT.format(tenantMnemonic)
+            val response = httpClient.get(url)
+            if (response.status.isSuccess()) {
+                response.body<MirthTenantConfig>()
+            } else if (response.status == HttpStatusCode.NotFound) {
+                null
+            } else {
+                throw RuntimeException(response.status.toString())
+            }
         }
-    }
 
     /**
      * POSTs the [mirthTenantConfig] for the [tenantMnemonic]. If this is an update to a current config, you should use [putMirthTenantConfig] instead.
      */
-    fun postMirthTenantConfig(tenantMnemonic: String, mirthTenantConfig: MirthTenantConfig): HttpStatusCode =
+    fun postMirthTenantConfig(
+        tenantMnemonic: String,
+        mirthTenantConfig: MirthTenantConfig,
+    ): HttpStatusCode =
         runBlocking {
             val url = MIRTH_TENANT_CONFIG_FORMAT.format(tenantMnemonic)
             httpClient.post(url) {
@@ -98,7 +103,10 @@ class TenantRestClient(private val httpClient: HttpClient) {
     /**
      * PUTs the [mirthTenantConfig] for the [tenantMnemonic]. If this is a new config for a tenant without one, you should use [postMirthTenantConfig] instead.
      */
-    fun putMirthTenantConfig(tenantMnemonic: String, mirthTenantConfig: MirthTenantConfig): HttpStatusCode =
+    fun putMirthTenantConfig(
+        tenantMnemonic: String,
+        mirthTenantConfig: MirthTenantConfig,
+    ): HttpStatusCode =
         runBlocking {
             val url = MIRTH_TENANT_CONFIG_FORMAT.format(tenantMnemonic)
             httpClient.put(url) {
@@ -107,22 +115,26 @@ class TenantRestClient(private val httpClient: HttpClient) {
             }.status
         }
 
-    fun getTenantServers(tenantMnemonic: String): List<TenantServer>? = runBlocking {
-        val url = TENANT_SERVER_FORMAT.format(tenantMnemonic)
-        val response = httpClient.get(url)
-        if (response.status.isSuccess()) {
-            response.body<List<TenantServer>>()
-        } else if (response.status == HttpStatusCode.NotFound) {
-            null
-        } else {
-            throw RuntimeException(response.status.toString())
+    fun getTenantServers(tenantMnemonic: String): List<TenantServer>? =
+        runBlocking {
+            val url = TENANT_SERVER_FORMAT.format(tenantMnemonic)
+            val response = httpClient.get(url)
+            if (response.status.isSuccess()) {
+                response.body<List<TenantServer>>()
+            } else if (response.status == HttpStatusCode.NotFound) {
+                null
+            } else {
+                throw RuntimeException(response.status.toString())
+            }
         }
-    }
 
     /**
      * POSTs the [mirthTenantConfig] for the [tenantMnemonic]. If this is an update to a current config, you should use [putMirthTenantConfig] instead.
      */
-    fun postTenantServer(tenantMnemonic: String, tenantServer: TenantServer): HttpStatusCode =
+    fun postTenantServer(
+        tenantMnemonic: String,
+        tenantServer: TenantServer,
+    ): HttpStatusCode =
         runBlocking {
             val url = TENANT_SERVER_FORMAT.format(tenantMnemonic)
             httpClient.post(url) {
@@ -134,7 +146,10 @@ class TenantRestClient(private val httpClient: HttpClient) {
     /**
      * PUTs the [mirthTenantConfig] for the [tenantMnemonic]. If this is a new config for a tenant without one, you should use [postMirthTenantConfig] instead.
      */
-    fun putTenantServer(tenantMnemonic: String, tenantServer: TenantServer): HttpStatusCode =
+    fun putTenantServer(
+        tenantMnemonic: String,
+        tenantServer: TenantServer,
+    ): HttpStatusCode =
         runBlocking {
             val url = TENANT_SERVER_FORMAT.format(tenantMnemonic)
             httpClient.put(url) {

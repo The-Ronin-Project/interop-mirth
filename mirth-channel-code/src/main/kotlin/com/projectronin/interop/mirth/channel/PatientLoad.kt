@@ -14,7 +14,7 @@ class PatientLoad(
     kafkaLoadService: KafkaLoadService,
     kafkaPublishService: KafkaPublishService,
     override val tenantConfigService: TenantConfigurationService,
-    defaultPublisher: PatientPublish
+    defaultPublisher: PatientPublish,
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "PatientLoad"
     override val channelGroupId = "interop-mirth-patient_group"

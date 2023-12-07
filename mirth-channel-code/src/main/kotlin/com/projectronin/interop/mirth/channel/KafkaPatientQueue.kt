@@ -24,7 +24,7 @@ class KafkaPatientQueue(
     queueService: KafkaQueueService,
     patientQueueWriter: PatientTenantlessQueueWriter,
     private val transformManager: TransformManager,
-    private val roninPatient: RoninPatient
+    private val roninPatient: RoninPatient,
 ) :
     KafkaQueue<Patient>(tenantService, queueService, patientQueueWriter) {
     companion object {
@@ -35,7 +35,10 @@ class KafkaPatientQueue(
     override val rootName = "KafkaPatientQueue"
     override val resourceType = ResourceType.PATIENT
 
-    override fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<Patient> {
+    override fun deserializeAndTransform(
+        string: String,
+        tenant: Tenant,
+    ): TransformResponse<Patient> {
         val patient = JacksonUtil.readJsonObject(string, Patient::class)
         return transformManager.transformResource(patient, roninPatient, tenant)
             ?: throw ResourcesNotTransformedException("Failed to transform Patient for tenant ${tenant.mnemonic}")

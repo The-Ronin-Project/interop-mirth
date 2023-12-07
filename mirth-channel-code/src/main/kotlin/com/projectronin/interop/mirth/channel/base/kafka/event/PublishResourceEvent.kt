@@ -12,7 +12,7 @@ import kotlin.reflect.KClass
  */
 abstract class PublishResourceEvent<S : Resource<S>>(
     override val sourceEvent: InteropResourcePublishV1,
-    sourceClass: KClass<S>
+    sourceClass: KClass<S>,
 ) : ResourceEvent<InteropResourcePublishV1> {
     override val metadata: Metadata by lazy { sourceEvent.metadata }
     override val processDownstreamReferences = true
@@ -21,15 +21,17 @@ abstract class PublishResourceEvent<S : Resource<S>>(
     // add the new reference to the end of the list
     final override fun getUpdatedMetadata(): Metadata =
         metadata.copy(
-            upstreamReferences = (metadata.upstreamReferences ?: emptyList()) +
-                listOf(getSourceReference())
+            upstreamReferences =
+                (metadata.upstreamReferences ?: emptyList()) +
+                    listOf(getSourceReference()),
         )
 
     // source reference is just the id and type of the source event
-    final override fun getSourceReference(): Metadata.UpstreamReference = Metadata.UpstreamReference(
-        id = sourceResource.id!!.value!!,
-        resourceType = sourceEvent.resourceType
-    )
+    final override fun getSourceReference(): Metadata.UpstreamReference =
+        Metadata.UpstreamReference(
+            id = sourceResource.id!!.value!!,
+            resourceType = sourceEvent.resourceType,
+        )
 
     internal val sourceResource: S by lazy { JacksonUtil.readJsonObject(sourceEvent.resourceJson, sourceClass) }
 }

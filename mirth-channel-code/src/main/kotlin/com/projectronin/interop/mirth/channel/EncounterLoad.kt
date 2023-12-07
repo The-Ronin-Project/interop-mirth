@@ -14,7 +14,7 @@ class EncounterLoad(
     kafkaPublishService: KafkaPublishService,
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
-    defaultPublisher: EncounterPublish
+    defaultPublisher: EncounterPublish,
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "EncounterLoad"
     override val channelGroupId = "interop-mirth-encounter_group"

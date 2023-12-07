@@ -7,7 +7,6 @@ import java.time.OffsetDateTime
 import java.time.ZoneOffset
 
 class DateUtilTest {
-
     @Test
     fun `date ranges are split`() {
         val start = OffsetDateTime.of(2023, 11, 1, 0, 0, 0, 0, ZoneOffset.UTC)

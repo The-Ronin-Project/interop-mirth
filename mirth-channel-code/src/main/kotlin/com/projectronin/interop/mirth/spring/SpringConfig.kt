@@ -37,13 +37,14 @@ class SpringConfig {
     fun queueDatabase(
         @Value("\${queue.db.url}") url: String,
         @Value("\${queue.db.username:null}") userName: String?,
-        @Value("\${queue.db.password:null}") password: String?
-    ): Database = Database.connect(
-        url = url,
-        user = userName,
-        password = password,
-        dialect = MySqlDialect()
-    )
+        @Value("\${queue.db.password:null}") password: String?,
+    ): Database =
+        Database.connect(
+            url = url,
+            user = userName,
+            password = password,
+            dialect = MySqlDialect(),
+        )
 
     /**
      * The returns [Database] for the interop-ehr.
@@ -54,19 +55,20 @@ class SpringConfig {
     fun ehrDatabase(
         @Value("\${tenant.db.url}") url: String,
         @Value("\${tenant.db.username:null}") userName: String?,
-        @Value("\${tenant.db.password:null}") password: String?
-    ): Database = Database.connect(
-        url = url,
-        user = userName,
-        password = password,
-        dialect = MySqlDialect()
-    )
+        @Value("\${tenant.db.password:null}") password: String?,
+    ): Database =
+        Database.connect(
+            url = url,
+            user = userName,
+            password = password,
+            dialect = MySqlDialect(),
+        )
 
     @Bean
     fun threadPoolTaskExecutor(
         @Value("\${task.executor.pool.core:8}") corePoolSize: Int,
         @Value("\${task.executor.pool.max:8}") maxPoolSize: Int,
-        @Value("\${task.executor.thread-prefix:interop-task-pool}") threadNamePrefix: String
+        @Value("\${task.executor.thread-prefix:interop-task-pool}") threadNamePrefix: String,
     ): ThreadPoolTaskExecutor =
         TaskExecutorBuilder().corePoolSize(corePoolSize).maxPoolSize(maxPoolSize).threadNamePrefix(threadNamePrefix)
             .build()

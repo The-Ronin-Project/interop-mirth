@@ -8,7 +8,7 @@ internal const val MIRTH_VERSION = "4.4.0"
  * Mirth transport layer for providing a List of resources.
  */
 data class MirthList<T>(
-    val list: T
+    val list: T,
 )
 
 /**
@@ -16,7 +16,7 @@ data class MirthList<T>(
  */
 data class DateTime(
     val time: Long,
-    val timezone: String
+    val timezone: String,
 )
 
 /**
@@ -24,5 +24,5 @@ data class DateTime(
  */
 data class StringElements(
     @JacksonXmlElementWrapper(useWrapping = false)
-    val string: List<String> = listOf()
+    val string: List<String> = listOf(),
 )

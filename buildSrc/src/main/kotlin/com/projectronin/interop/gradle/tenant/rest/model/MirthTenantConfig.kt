@@ -5,7 +5,7 @@ import java.time.OffsetDateTime
 
 data class MirthTenantConfig(
     val locationIds: List<String>,
-    val lastUpdated: OffsetDateTime? = null
+    val lastUpdated: OffsetDateTime? = null,
 )
 
 private val SUPPORTED_KEYS = setOf("locationIds")
@@ -20,7 +20,10 @@ fun createMirthTenantConfig(valuesByName: Map<String, String>): MirthTenantConfi
 /**
  * Merges the [tenantConfig] with the [valuesByName] to produce a new [MirthTenantConfig].
  */
-fun mergeMirthTenantConfig(valuesByName: Map<String, String>, tenantConfig: MirthTenantConfig?): MirthTenantConfig {
+fun mergeMirthTenantConfig(
+    valuesByName: Map<String, String>,
+    tenantConfig: MirthTenantConfig?,
+): MirthTenantConfig {
     valuesByName.keys.forEach {
         if (!SUPPORTED_KEYS.contains(it)) {
             throw IllegalStateException("Unsupported configuration key found: $it")
@@ -28,6 +31,6 @@ fun mergeMirthTenantConfig(valuesByName: Map<String, String>, tenantConfig: Mirt
     }
 
     return MirthTenantConfig(
-        locationIds = valuesByName["locationIds"]?.split(",") ?: tenantConfig?.locationIds ?: emptyList()
+        locationIds = valuesByName["locationIds"]?.split(",") ?: tenantConfig?.locationIds ?: emptyList(),
     )
 }

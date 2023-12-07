@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component
 @Component
 class ResourceRequest(
     private val kafkaRequestService: KafkaRequestService,
-    resourceRequestPublish: ResourceRequestPublish
+    resourceRequestPublish: ResourceRequestPublish,
 ) : TenantlessSourceService() {
     override val destinations = mapOf("publish" to resourceRequestPublish)
     val groupId = "interop-mirth-resource_request_group"
@@ -30,8 +30,8 @@ class ResourceRequest(
                 mapOf(
                     MirthKey.TENANT_MNEMONIC.code to it.tenantId,
                     MirthKey.FHIR_ID.code to it.resourceFHIRId,
-                    MirthKey.RESOURCE_TYPE.code to it.resourceType
-                )
+                    MirthKey.RESOURCE_TYPE.code to it.resourceType,
+                ),
             )
         }
     }

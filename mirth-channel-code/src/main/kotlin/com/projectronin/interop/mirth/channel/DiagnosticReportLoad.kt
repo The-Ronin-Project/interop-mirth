@@ -14,7 +14,7 @@ class DiagnosticReportLoad(
     kafkaPublishService: KafkaPublishService,
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
-    defaultPublisher: DiagnosticReportPublish
+    defaultPublisher: DiagnosticReportPublish,
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "DiagnosticReportLoad"
     override val channelGroupId = "interop-mirth-diagnostic-report_group"

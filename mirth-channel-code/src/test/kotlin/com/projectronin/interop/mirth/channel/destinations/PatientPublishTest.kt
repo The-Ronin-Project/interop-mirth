@@ -15,21 +15,23 @@ import org.junit.jupiter.api.assertThrows
 class PatientPublishTest {
     private val tenant = mockk<Tenant>(relaxed = true)
     private val patientService = mockk<PatientService>()
-    private val vendorFactory = mockk<VendorFactory> {
-        every { patientService } returns this@PatientPublishTest.patientService
-    }
+    private val vendorFactory =
+        mockk<VendorFactory> {
+            every { patientService } returns this@PatientPublishTest.patientService
+        }
     private val patientPublish = PatientPublish(mockk(), mockk(), mockk(), mockk(), mockk())
 
     @Test
     fun `publish events throw an exception`() {
         val publishEvent = mockk<InteropResourcePublishV1>()
-        val exception = assertThrows<IllegalStateException> {
-            patientPublish.convertPublishEventsToRequest(
-                listOf(publishEvent),
-                vendorFactory,
-                tenant
-            )
-        }
+        val exception =
+            assertThrows<IllegalStateException> {
+                patientPublish.convertPublishEventsToRequest(
+                    listOf(publishEvent),
+                    vendorFactory,
+                    tenant,
+                )
+            }
         assertEquals("Patient does not listen to Publish Events", exception.message)
     }
 

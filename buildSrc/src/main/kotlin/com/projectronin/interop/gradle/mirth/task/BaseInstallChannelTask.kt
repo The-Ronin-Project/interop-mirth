@@ -47,7 +47,10 @@ abstract class BaseInstallChannelTask : BaseMirthTask() {
      * Installs the base [channelName] channel as defined in [channelFile]. This Channel will be installed as-is and
      * will be disabled by default.
      */
-    private fun installBaseChannel(channelName: String, channelFile: File) {
+    private fun installBaseChannel(
+        channelName: String,
+        channelFile: File,
+    ) {
         val channelId = getChannelId(channelFile)
         val channelXml = channelFile.readLines().joinToString("\n")
 

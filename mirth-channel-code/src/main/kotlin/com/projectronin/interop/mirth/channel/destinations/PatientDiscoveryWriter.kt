@@ -16,7 +16,7 @@ class PatientDiscoveryWriter(val kafkaLoadService: KafkaLoadService) : Tenantles
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse {
         val references = JacksonUtil.readJsonList(msg, String::class)
         // no patients found for a given location, log an error and move on
@@ -24,38 +24,41 @@ class PatientDiscoveryWriter(val kafkaLoadService: KafkaLoadService) : Tenantles
             logger.warn { "No Patients found for tenant $tenantMnemonic" }
             return MirthResponse(
                 MirthResponseStatus.SENT,
-                "No Patients found for tenant $tenantMnemonic"
+                "No Patients found for tenant $tenantMnemonic",
             )
         }
         val metadata = getMetadata(sourceMap)
-        val dataTrigger = when (metadata.backfillRequest) {
-            null -> DataTrigger.NIGHTLY
-            else -> DataTrigger.BACKFILL
-        }
+        val dataTrigger =
+            when (metadata.backfillRequest) {
+                null -> DataTrigger.NIGHTLY
+                else -> DataTrigger.BACKFILL
+            }
 
         return try {
-            val result = kafkaLoadService.pushLoadEvent(
-                tenantMnemonic,
-                dataTrigger,
-                references.map { it.substringAfter("/") },
-                ResourceType.Patient,
-                metadata
-            )
-            val status = when (result.failures.isEmpty()) {
-                true -> MirthResponseStatus.SENT
-                false -> MirthResponseStatus.ERROR
-            }
+            val result =
+                kafkaLoadService.pushLoadEvent(
+                    tenantMnemonic,
+                    dataTrigger,
+                    references.map { it.substringAfter("/") },
+                    ResourceType.Patient,
+                    metadata,
+                )
+            val status =
+                when (result.failures.isEmpty()) {
+                    true -> MirthResponseStatus.SENT
+                    false -> MirthResponseStatus.ERROR
+                }
             MirthResponse(
                 status,
                 "Successes:  ${result.successful}\n" +
                     "Failures:  ${result.failures}",
-                "${result.successful.size} successes, ${result.failures.size} failures"
+                "${result.successful.size} successes, ${result.failures.size} failures",
             )
         } catch (e: Exception) {
             logger.error(e) { "Failed to publish to Kafka" }
             MirthResponse(
                 MirthResponseStatus.ERROR,
-                e.message
+                e.message,
             )
         }
     }

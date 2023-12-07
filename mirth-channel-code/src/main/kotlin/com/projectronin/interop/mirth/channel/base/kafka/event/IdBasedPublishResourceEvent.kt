@@ -12,7 +12,7 @@ import kotlin.reflect.KClass
 abstract class IdBasedPublishResourceEvent<S : Resource<S>>(
     sourceEvent: InteropResourcePublishV1,
     tenant: Tenant,
-    sourceClass: KClass<S>
+    sourceClass: KClass<S>,
 ) : PublishResourceEvent<S>(sourceEvent, sourceClass) {
     override val requestKeys: Set<ResourceRequestKey> by lazy {
         val datePair = sourceEvent.metadata.backfillRequest?.let { Pair(it.backfillStartDate, it.backfillEndDate) }
@@ -22,8 +22,8 @@ abstract class IdBasedPublishResourceEvent<S : Resource<S>>(
                 sourceEvent.resourceType,
                 tenant,
                 sourceResource.id!!.value!!,
-                datePair
-            )
+                datePair,
+            ),
         )
     }
 }

@@ -33,33 +33,35 @@ class CarePlanPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninCarePlan
+    profileTransformer: RoninCarePlan,
 ) : KafkaEventResourcePublisher<CarePlan>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override val cacheAndCompareResults: Boolean = true
 
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<CarePlan> {
         return when (val resourceType = events.first().resourceType) {
-            ResourceType.Patient -> PatientPublishCarePlanRequest(
-                events,
-                vendorFactory.carePlanService,
-                tenant
-            )
+            ResourceType.Patient ->
+                PatientPublishCarePlanRequest(
+                    events,
+                    vendorFactory.carePlanService,
+                    tenant,
+                )
 
-            ResourceType.CarePlan -> CarePlanPublishCarePlanRequest(
-                events,
-                vendorFactory.carePlanService,
-                tenant
-            )
+            ResourceType.CarePlan ->
+                CarePlanPublishCarePlanRequest(
+                    events,
+                    vendorFactory.carePlanService,
+                    tenant,
+                )
 
             else -> throw IllegalStateException("Received resource type ($resourceType) that cannot be used to load care plans")
         }
@@ -68,7 +70,7 @@ class CarePlanPublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<CarePlan> {
         return LoadCarePlanRequest(events, vendorFactory.carePlanService, tenant)
     }
@@ -76,7 +78,7 @@ class CarePlanPublish(
     internal class PatientPublishCarePlanRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: CarePlanService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishResourceRequest<CarePlan>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { PatientPublishEvent(it, tenant) }
@@ -84,14 +86,14 @@ class CarePlanPublish(
         override fun loadResourcesForIds(
             requestFhirIds: List<String>,
             startDate: OffsetDateTime?,
-            endDate: OffsetDateTime?
+            endDate: OffsetDateTime?,
         ): Map<String, List<CarePlan>> {
             return requestFhirIds.associateWith {
                 fhirService.findPatientCarePlans(
                     tenant,
                     it,
                     startDate = startDate?.toLocalDate() ?: LocalDate.now().minusMonths(1),
-                    endDate = endDate?.toLocalDate() ?: LocalDate.now().plusMonths(1)
+                    endDate = endDate?.toLocalDate() ?: LocalDate.now().plusMonths(1),
                 )
             }
         }
@@ -103,7 +105,7 @@ class CarePlanPublish(
     internal class CarePlanPublishCarePlanRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: CarePlanService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<CarePlan>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { CarePlanPublishEvent(it, tenant) }
@@ -111,36 +113,37 @@ class CarePlanPublish(
         private class CarePlanPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
             PublishResourceEvent<CarePlan>(publishEvent, CarePlan::class) {
             private val epicCycleExtension = "http://open.epic.com/FHIR/StructureDefinition/extension/cycle"
-            override val requestKeys: Set<ResourceRequestKey> = sourceResource.activity.map { activity ->
-                activity.extension.mapNotNull { extension ->
-                    if (extension.url?.value != epicCycleExtension) {
-                        null
-                    } else {
-                        extension.value?.let { extensionValue ->
-                            if (extensionValue.type == DynamicValueType.REFERENCE) {
-                                (extensionValue.value as? Reference).let {
-                                    if (it?.decomposedType() == "CarePlan") it.decomposedId() else null
+            override val requestKeys: Set<ResourceRequestKey> =
+                sourceResource.activity.map { activity ->
+                    activity.extension.mapNotNull { extension ->
+                        if (extension.url?.value != epicCycleExtension) {
+                            null
+                        } else {
+                            extension.value?.let { extensionValue ->
+                                if (extensionValue.type == DynamicValueType.REFERENCE) {
+                                    (extensionValue.value as? Reference).let {
+                                        if (it?.decomposedType() == "CarePlan") it.decomposedId() else null
+                                    }
+                                } else {
+                                    null
                                 }
-                            } else {
-                                null
                             }
                         }
                     }
-                }
-            }.flatten().map {
-                ResourceRequestKey(
-                    metadata.runId,
-                    ResourceType.CarePlan,
-                    tenant,
-                    it
-                )
-            }.toSet()
+                }.flatten().map {
+                    ResourceRequestKey(
+                        metadata.runId,
+                        ResourceType.CarePlan,
+                        tenant,
+                        it,
+                    )
+                }.toSet()
         }
     }
 
     internal class LoadCarePlanRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: CarePlanService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<CarePlan>(loadEvents, tenant)
 }

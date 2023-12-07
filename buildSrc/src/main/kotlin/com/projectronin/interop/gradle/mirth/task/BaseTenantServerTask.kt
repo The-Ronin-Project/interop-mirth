@@ -27,7 +27,11 @@ abstract class BaseTenantServerTask : BaseMirthTask() {
         }
     }
 
-    abstract fun updateConfig(tenantMnemonic: String, client: TenantRestClient, config: Map<String, String>)
+    abstract fun updateConfig(
+        tenantMnemonic: String,
+        client: TenantRestClient,
+        config: Map<String, String>,
+    )
 
     /**
      * Loads the tenant configs from all the channels.
@@ -54,7 +58,10 @@ abstract class BaseTenantServerTask : BaseMirthTask() {
      * Merges the current [configs] with those found in the [file].
      * @throws RuntimeException if any duplicate keys are found.
      */
-    private fun mergeConfigFromFile(file: File, configs: MutableMap<String, String>) {
+    private fun mergeConfigFromFile(
+        file: File,
+        configs: MutableMap<String, String>,
+    ) {
         val properties = Properties()
         FileInputStream(file).use { properties.load(it) }
 
@@ -74,14 +81,15 @@ abstract class BaseTenantServerTask : BaseMirthTask() {
         val channelsDirectory = project.mirth().channel.baseDirectory.get()
         logger.lifecycle("Looking at $channelsDirectory")
 
-        val configDirectories = channelsDirectory.asFile.listFiles()?.mapNotNull {
-            if (it.isDirectory) {
-                it.listFiles()?.find { c -> c.isDirectory && c.name == "tenant-server" }
-                    ?.listFiles()?.find { c -> c.isDirectory && c.name == subfolder }
-            } else {
-                null
-            }
-        } ?: emptyList()
+        val configDirectories =
+            channelsDirectory.asFile.listFiles()?.mapNotNull {
+                if (it.isDirectory) {
+                    it.listFiles()?.find { c -> c.isDirectory && c.name == "tenant-server" }
+                        ?.listFiles()?.find { c -> c.isDirectory && c.name == subfolder }
+                } else {
+                    null
+                }
+            } ?: emptyList()
         return configDirectories.flatMap { it.listFiles().toList() }.filter { it.extension == "properties" }
     }
 }

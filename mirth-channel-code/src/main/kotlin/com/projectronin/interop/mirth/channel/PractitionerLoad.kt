@@ -14,7 +14,7 @@ class PractitionerLoad(
     kafkaPublishService: KafkaPublishService,
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
-    defaultPublisher: PractitionerPublish
+    defaultPublisher: PractitionerPublish,
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "PractitionerLoad"
     override val channelGroupId = "interop-mirth-practitioner_group"

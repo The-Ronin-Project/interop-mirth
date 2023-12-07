@@ -27,18 +27,18 @@ class EncounterPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninEncounter
+    profileTransformer: RoninEncounter,
 ) : KafkaEventResourcePublisher<Encounter>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<Encounter> {
         return PatientPublishEncounterRequest(events, vendorFactory.encounterService, tenant)
     }
@@ -46,7 +46,7 @@ class EncounterPublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<Encounter> {
         return LoadEncounterRequest(events, vendorFactory.encounterService, tenant)
     }
@@ -54,7 +54,7 @@ class EncounterPublish(
     internal class PatientPublishEncounterRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: EncounterService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishResourceRequest<Encounter>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { PatientPublishEvent(it, tenant) }
@@ -62,14 +62,14 @@ class EncounterPublish(
         override fun loadResourcesForIds(
             requestFhirIds: List<String>,
             startDate: OffsetDateTime?,
-            endDate: OffsetDateTime?
+            endDate: OffsetDateTime?,
         ): Map<String, List<Encounter>> {
             return requestFhirIds.associateWith {
                 fhirService.findPatientEncounters(
                     tenant,
                     it,
                     startDate = startDate?.toLocalDate() ?: LocalDate.now().minusMonths(1),
-                    endDate = endDate?.toLocalDate() ?: LocalDate.now().plusMonths(1)
+                    endDate = endDate?.toLocalDate() ?: LocalDate.now().plusMonths(1),
                 )
             }
         }
@@ -81,6 +81,6 @@ class EncounterPublish(
     internal class LoadEncounterRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: EncounterService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<Encounter>(loadEvents, tenant)
 }

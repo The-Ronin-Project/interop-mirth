@@ -17,41 +17,43 @@ import org.springframework.stereotype.Component
 @Component
 class ResourceRequestPublish(
     private val kafkaLoadService: KafkaLoadService,
-    private val tenantService: TenantService
+    private val tenantService: TenantService,
 ) : TenantlessDestinationService() {
     override fun channelDestinationWriter(
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse {
         // just ensure the tenant ID we got was valid
-        val tenant = tenantService.getTenantForMnemonic(tenantMnemonic)
-            ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
+        val tenant =
+            tenantService.getTenantForMnemonic(tenantMnemonic)
+                ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
 
         val requestEvent = JacksonUtil.readJsonObject(msg, InteropResourceRequestV1::class)
 
         val resourceType = ResourceType.valueOf(requestEvent.resourceType)
-        val result = kafkaLoadService.pushLoadEvent(
-            tenantId = tenant.mnemonic,
-            resourceType = resourceType,
-            resourceFHIRIds = listOf(requestEvent.resourceFHIRId.unlocalize(tenant)),
-            trigger = DataTrigger.AD_HOC,
-            metadata = generateMetadata(),
-            flowOptions = requestEvent.flowOptions?.forLoad()
-        )
+        val result =
+            kafkaLoadService.pushLoadEvent(
+                tenantId = tenant.mnemonic,
+                resourceType = resourceType,
+                resourceFHIRIds = listOf(requestEvent.resourceFHIRId.unlocalize(tenant)),
+                trigger = DataTrigger.AD_HOC,
+                metadata = generateMetadata(),
+                flowOptions = requestEvent.flowOptions?.forLoad(),
+            )
 
         return if (result.failures.isNotEmpty()) {
             MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 JacksonUtil.writeJsonValue(result.failures),
-                "Failed to publish to Load Topic"
+                "Failed to publish to Load Topic",
             )
         } else {
             MirthResponse(
                 status = MirthResponseStatus.SENT,
                 JacksonUtil.writeJsonValue(result.successful),
-                "Published to Load Topic"
+                "Published to Load Topic",
             )
         }
     }
@@ -59,6 +61,6 @@ class ResourceRequestPublish(
     private fun InteropResourceRequestV1.FlowOptions.forLoad() =
         InteropResourceLoadV1.FlowOptions(
             disableDownstreamResources = this.disableDownstreamResources,
-            normalizationRegistryMinimumTime = this.normalizationRegistryMinimumTime
+            normalizationRegistryMinimumTime = this.normalizationRegistryMinimumTime,
         )
 }

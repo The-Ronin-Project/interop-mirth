@@ -15,7 +15,7 @@ fun generateMetadata(backfillInfo: Metadata.BackfillRequest? = null): Metadata =
     Metadata(
         runId = UUID.randomUUID().toString(),
         runDateTime = OffsetDateTime.now(ZoneOffset.UTC),
-        backfillRequest = backfillInfo
+        backfillRequest = backfillInfo,
     )
 
 /**
@@ -33,11 +33,9 @@ fun serialize(metadata: Metadata): String = JacksonManager.objectMapper.writeVal
 /**
  * Deserializes the [metadataString] into a [Metadata]
  */
-fun deserialize(metadataString: String): Metadata =
-    JacksonManager.objectMapper.readValue(metadataString)
+fun deserialize(metadataString: String): Metadata = JacksonManager.objectMapper.readValue(metadataString)
 
 /**
  * Gets the [Metadata] from the [sourceMap].
  */
-fun getMetadata(sourceMap: Map<String, Any>): Metadata =
-    deserialize(sourceMap[MirthKey.EVENT_METADATA.code] as String)
+fun getMetadata(sourceMap: Map<String, Any>): Metadata = deserialize(sourceMap[MirthKey.EVENT_METADATA.code] as String)

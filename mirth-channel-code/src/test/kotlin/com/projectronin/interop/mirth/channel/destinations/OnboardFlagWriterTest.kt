@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class OnboardFlagWriterTest {
-
     private lateinit var channel: OnboardFlagWriter
     private val ehrFactory: EHRFactory = mockk()
     private val tenantService: TenantService = mockk()
@@ -31,12 +30,14 @@ class OnboardFlagWriterTest {
     @Test
     fun `destination writer works`() {
         every { tenantService.getTenantForMnemonic(any()) } returns mockk()
-        every { ehrFactory.getVendorFactory(any()) } returns mockk {
-            every { onboardFlagService } returns mockk {
-                every { vendorType } returns VendorType.EPIC
-                coEvery { setOnboardedFlag(any(), any()) } returns true
+        every { ehrFactory.getVendorFactory(any()) } returns
+            mockk {
+                every { onboardFlagService } returns
+                    mockk {
+                        every { vendorType } returns VendorType.EPIC
+                        coEvery { setOnboardedFlag(any(), any()) } returns true
+                    }
             }
-        }
         val result =
             channel.channelDestinationWriter("tenant", "12345", mapOf(MirthKey.FHIR_ID.code to "12345"), emptyMap())
         assertEquals(result.status, MirthResponseStatus.SENT)
@@ -45,12 +46,14 @@ class OnboardFlagWriterTest {
     @Test
     fun `destination writer errors`() {
         every { tenantService.getTenantForMnemonic(any()) } returns mockk()
-        every { ehrFactory.getVendorFactory(any()) } returns mockk {
-            every { vendorType } returns VendorType.EPIC
-            every { onboardFlagService } returns mockk {
-                coEvery { setOnboardedFlag(any(), any()) } throws Exception("bad!")
+        every { ehrFactory.getVendorFactory(any()) } returns
+            mockk {
+                every { vendorType } returns VendorType.EPIC
+                every { onboardFlagService } returns
+                    mockk {
+                        coEvery { setOnboardedFlag(any(), any()) } throws Exception("bad!")
+                    }
             }
-        }
         val result =
             channel.channelDestinationWriter("tenant", "12345", mapOf(MirthKey.FHIR_ID.code to "12345"), emptyMap())
         assertEquals(result.status, MirthResponseStatus.ERROR)
@@ -58,9 +61,10 @@ class OnboardFlagWriterTest {
 
     @Test
     fun `destination filter works`() {
-        every { tenantConfigService.getConfiguration(any()) } returns mockk {
-            every { blockedResources } returns "PatientOnboardFlag,MedicationStatement"
-        }
+        every { tenantConfigService.getConfiguration(any()) } returns
+            mockk {
+                every { blockedResources } returns "PatientOnboardFlag,MedicationStatement"
+            }
         val result =
             channel.channelDestinationFilter("tenant", "12345", mapOf(MirthKey.FHIR_ID.code to "12345"), emptyMap())
         assertFalse(result.result)
@@ -68,9 +72,10 @@ class OnboardFlagWriterTest {
 
     @Test
     fun `destination filter works - no blocked resources`() {
-        every { tenantConfigService.getConfiguration(any()) } returns mockk {
-            every { blockedResources } returns null
-        }
+        every { tenantConfigService.getConfiguration(any()) } returns
+            mockk {
+                every { blockedResources } returns null
+            }
         val result =
             channel.channelDestinationFilter("tenant", "12345", mapOf(MirthKey.FHIR_ID.code to "12345"), emptyMap())
         assertTrue(result.result)
@@ -84,7 +89,7 @@ class OnboardFlagWriterTest {
                 "tenant",
                 "12345",
                 emptyMap(),
-                emptyMap()
+                emptyMap(),
             )
         }
     }

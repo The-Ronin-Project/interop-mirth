@@ -26,18 +26,18 @@ class DiagnosticReportPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninDiagnosticReports
+    profileTransformer: RoninDiagnosticReports,
 ) : KafkaEventResourcePublisher<DiagnosticReport>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<DiagnosticReport> {
         return PatientPublishDiagnosticReportRequest(events, vendorFactory.diagnosticReportService, tenant)
     }
@@ -45,7 +45,7 @@ class DiagnosticReportPublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<DiagnosticReport> {
         return LoadDiagnosticReportRequest(events, vendorFactory.diagnosticReportService, tenant)
     }
@@ -53,7 +53,7 @@ class DiagnosticReportPublish(
     internal class PatientPublishDiagnosticReportRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: DiagnosticReportService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishResourceRequest<DiagnosticReport>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { PatientPublishEvent(it, tenant) }
@@ -61,14 +61,14 @@ class DiagnosticReportPublish(
         override fun loadResourcesForIds(
             requestFhirIds: List<String>,
             startDate: OffsetDateTime?,
-            endDate: OffsetDateTime?
+            endDate: OffsetDateTime?,
         ): Map<String, List<DiagnosticReport>> {
             return requestFhirIds.associateWith {
                 fhirService.getDiagnosticReportByPatient(
                     tenant,
                     it,
                     startDate?.toLocalDate(),
-                    endDate?.toLocalDate()
+                    endDate?.toLocalDate(),
                 )
             }
         }
@@ -80,6 +80,6 @@ class DiagnosticReportPublish(
     internal class LoadDiagnosticReportRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: DiagnosticReportService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<DiagnosticReport>(loadEvents, tenant)
 }

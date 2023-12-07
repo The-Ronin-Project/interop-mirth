@@ -11,7 +11,7 @@ abstract class PublishReferenceResourceRequest<T : Resource<T>> : PublishResourc
     override fun loadResourcesForIds(
         requestFhirIds: List<String>,
         startDate: OffsetDateTime?,
-        endDate: OffsetDateTime?
+        endDate: OffsetDateTime?,
     ): Map<String, List<T>> {
         return fhirService.getByIDs(tenant, requestFhirIds).mapListValues()
     }

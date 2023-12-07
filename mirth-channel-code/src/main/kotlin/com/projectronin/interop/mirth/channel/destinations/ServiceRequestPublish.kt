@@ -37,68 +37,76 @@ class ServiceRequestPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninServiceRequest
+    profileTransformer: RoninServiceRequest,
 ) : KafkaEventResourcePublisher<ServiceRequest>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<ServiceRequest> {
         // Only events for the same resource type are grouped, so just peek at the first one
         return when (val resourceType = events.first().resourceType) {
-            ResourceType.Patient -> PatientPublishServiceRequestRequest(
-                events,
-                vendorFactory.serviceRequestService,
-                tenant
-            )
+            ResourceType.Patient ->
+                PatientPublishServiceRequestRequest(
+                    events,
+                    vendorFactory.serviceRequestService,
+                    tenant,
+                )
 
-            ResourceType.MedicationRequest -> MedicationRequestPublishServiceRequestRequest(
-                events,
-                vendorFactory.serviceRequestService,
-                tenant
-            )
+            ResourceType.MedicationRequest ->
+                MedicationRequestPublishServiceRequestRequest(
+                    events,
+                    vendorFactory.serviceRequestService,
+                    tenant,
+                )
 
-            ResourceType.Encounter -> EncounterPublishServiceRequestRequest(
-                events,
-                vendorFactory.serviceRequestService,
-                tenant
-            )
+            ResourceType.Encounter ->
+                EncounterPublishServiceRequestRequest(
+                    events,
+                    vendorFactory.serviceRequestService,
+                    tenant,
+                )
 
-            ResourceType.Appointment -> AppointmentPublishServiceRequestRequest(
-                events,
-                vendorFactory.serviceRequestService,
-                tenant
-            )
+            ResourceType.Appointment ->
+                AppointmentPublishServiceRequestRequest(
+                    events,
+                    vendorFactory.serviceRequestService,
+                    tenant,
+                )
 
-            ResourceType.DiagnosticReport -> DiagnosticReportPublishServiceRequestRequest(
-                events,
-                vendorFactory.serviceRequestService,
-                tenant
-            )
+            ResourceType.DiagnosticReport ->
+                DiagnosticReportPublishServiceRequestRequest(
+                    events,
+                    vendorFactory.serviceRequestService,
+                    tenant,
+                )
 
-            ResourceType.MedicationStatement -> MedicationStatementPublishServiceRequestRequest(
-                events,
-                vendorFactory.serviceRequestService,
-                tenant
-            )
+            ResourceType.MedicationStatement ->
+                MedicationStatementPublishServiceRequestRequest(
+                    events,
+                    vendorFactory.serviceRequestService,
+                    tenant,
+                )
 
-            ResourceType.Observation -> ObservationPublishServiceRequestRequest(
-                events,
-                vendorFactory.serviceRequestService,
-                tenant
-            )
+            ResourceType.Observation ->
+                ObservationPublishServiceRequestRequest(
+                    events,
+                    vendorFactory.serviceRequestService,
+                    tenant,
+                )
 
-            ResourceType.Procedure -> ProcedurePublishServiceRequestRequest(
-                events,
-                vendorFactory.serviceRequestService,
-                tenant
-            )
+            ResourceType.Procedure ->
+                ProcedurePublishServiceRequestRequest(
+                    events,
+                    vendorFactory.serviceRequestService,
+                    tenant,
+                )
 
             else -> throw IllegalStateException("Received resource type ($resourceType) that cannot be used to load service requests")
         }
@@ -107,7 +115,7 @@ class ServiceRequestPublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<ServiceRequest> {
         return LoadServiceRequestRequest(events, vendorFactory.serviceRequestService, tenant)
     }
@@ -115,7 +123,7 @@ class ServiceRequestPublish(
     internal class PatientPublishServiceRequestRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ServiceRequestService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishResourceRequest<ServiceRequest>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { PatientPublishEvent(it, tenant) }
@@ -123,12 +131,12 @@ class ServiceRequestPublish(
         override fun loadResourcesForIds(
             requestFhirIds: List<String>,
             startDate: OffsetDateTime?,
-            endDate: OffsetDateTime?
+            endDate: OffsetDateTime?,
         ): Map<String, List<ServiceRequest>> {
             return requestFhirIds.associateWith {
                 fhirService.getServiceRequestsForPatient(
                     tenant,
-                    it
+                    it,
                 )
             }
         }
@@ -140,7 +148,7 @@ class ServiceRequestPublish(
     internal class MedicationRequestPublishServiceRequestRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ServiceRequestService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<ServiceRequest>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { MedicationRequestPublishEvent(it, tenant) }
@@ -158,7 +166,7 @@ class ServiceRequestPublish(
     internal class EncounterPublishServiceRequestRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ServiceRequestService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<ServiceRequest>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { EncounterPublishEvent(it, tenant) }
@@ -176,7 +184,7 @@ class ServiceRequestPublish(
     internal class AppointmentPublishServiceRequestRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ServiceRequestService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<ServiceRequest>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { AppointmentPublishEvent(it, tenant) }
@@ -194,7 +202,7 @@ class ServiceRequestPublish(
     internal class DiagnosticReportPublishServiceRequestRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ServiceRequestService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<ServiceRequest>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { DiagnosticReportPublishEvent(it, tenant) }
@@ -212,7 +220,7 @@ class ServiceRequestPublish(
     internal class MedicationStatementPublishServiceRequestRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ServiceRequestService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<ServiceRequest>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { MedicationStatementPublishEvent(it, tenant) }
@@ -230,7 +238,7 @@ class ServiceRequestPublish(
     internal class ObservationPublishServiceRequestRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ServiceRequestService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<ServiceRequest>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { ObservationPublishEvent(it, tenant) }
@@ -248,7 +256,7 @@ class ServiceRequestPublish(
     internal class ProcedurePublishServiceRequestRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ServiceRequestService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<ServiceRequest>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { ProcedurePublishEvent(it, tenant) }
@@ -266,6 +274,6 @@ class ServiceRequestPublish(
     internal class LoadServiceRequestRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: ServiceRequestService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<ServiceRequest>(loadEvents, tenant)
 }

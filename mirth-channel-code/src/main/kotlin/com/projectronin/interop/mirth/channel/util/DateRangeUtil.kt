@@ -9,7 +9,7 @@ import kotlin.math.min
 fun splitDateRange(
     startDate: OffsetDateTime,
     endDate: OffsetDateTime,
-    maxDayRange: Int
+    maxDayRange: Int,
 ): List<Pair<OffsetDateTime, OffsetDateTime>> {
     // add one, since this function technically returns the number of days BETWEEN two days
     // don't need to add 2 tho, because the range function we use later has an inclusive end

@@ -6,7 +6,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class DocumentReferenceLoadTest {
-
     private lateinit var channel: DocumentReferenceLoad
 
     @BeforeEach

@@ -18,20 +18,22 @@ import java.time.OffsetDateTime
 
 class LoadResourceRequestTest {
     private val fhirService = mockk<FHIRService<Location>>()
-    private val tenant = mockk<Tenant> {
-        every { mnemonic } returns "tenant"
-    }
+    private val tenant =
+        mockk<Tenant> {
+            every { mnemonic } returns "tenant"
+        }
     private val metadata = Metadata(runId = "run", runDateTime = OffsetDateTime.now())
 
     @Test
     fun `creates sourceEvents from single load event`() {
-        val loadEvent = InteropResourceLoadV1(
-            tenantId = "tenant",
-            resourceFHIRId = "12345",
-            resourceType = ResourceType.Location,
-            dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
-            metadata = metadata
-        )
+        val loadEvent =
+            InteropResourceLoadV1(
+                tenantId = "tenant",
+                resourceFHIRId = "12345",
+                resourceType = ResourceType.Location,
+                dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
+                metadata = metadata,
+            )
         val request = TestLoadResourceRequest(listOf(loadEvent), tenant, fhirService)
         val sourceEvents = request.sourceEvents
         assertEquals(1, sourceEvents.size)
@@ -39,20 +41,22 @@ class LoadResourceRequestTest {
 
     @Test
     fun `creates sourceEvents from multiple load events`() {
-        val loadEvent1 = InteropResourceLoadV1(
-            tenantId = "tenant",
-            resourceFHIRId = "12345",
-            resourceType = ResourceType.Location,
-            dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
-            metadata = metadata
-        )
-        val loadEvent2 = InteropResourceLoadV1(
-            tenantId = "tenant",
-            resourceFHIRId = "67890",
-            resourceType = ResourceType.Location,
-            dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
-            metadata = metadata
-        )
+        val loadEvent1 =
+            InteropResourceLoadV1(
+                tenantId = "tenant",
+                resourceFHIRId = "12345",
+                resourceType = ResourceType.Location,
+                dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
+                metadata = metadata,
+            )
+        val loadEvent2 =
+            InteropResourceLoadV1(
+                tenantId = "tenant",
+                resourceFHIRId = "67890",
+                resourceType = ResourceType.Location,
+                dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
+                metadata = metadata,
+            )
         val request = TestLoadResourceRequest(listOf(loadEvent1, loadEvent2), tenant, fhirService)
         val sourceEvents = request.sourceEvents
         assertEquals(2, sourceEvents.size)
@@ -60,57 +64,61 @@ class LoadResourceRequestTest {
 
     @Test
     fun `sets dataTrigger for ad-hoc events`() {
-        val loadEvent = InteropResourceLoadV1(
-            tenantId = "tenant",
-            resourceFHIRId = "12345",
-            resourceType = ResourceType.Location,
-            dataTrigger = InteropResourceLoadV1.DataTrigger.adhoc,
-            metadata = metadata
-        )
+        val loadEvent =
+            InteropResourceLoadV1(
+                tenantId = "tenant",
+                resourceFHIRId = "12345",
+                resourceType = ResourceType.Location,
+                dataTrigger = InteropResourceLoadV1.DataTrigger.adhoc,
+                metadata = metadata,
+            )
         val request = TestLoadResourceRequest(listOf(loadEvent), tenant, fhirService)
         assertEquals(DataTrigger.AD_HOC, request.dataTrigger)
     }
 
     @Test
     fun `sets dataTrigger for nightly events`() {
-        val loadEvent = InteropResourceLoadV1(
-            tenantId = "tenant",
-            resourceFHIRId = "12345",
-            resourceType = ResourceType.Location,
-            dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
-            metadata = metadata
-        )
+        val loadEvent =
+            InteropResourceLoadV1(
+                tenantId = "tenant",
+                resourceFHIRId = "12345",
+                resourceType = ResourceType.Location,
+                dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
+                metadata = metadata,
+            )
         val request = TestLoadResourceRequest(listOf(loadEvent), tenant, fhirService)
         assertEquals(DataTrigger.NIGHTLY, request.dataTrigger)
     }
 
     @Test
     fun `sets dataTrigger for backfill events`() {
-        val loadEvent = InteropResourceLoadV1(
-            tenantId = "tenant",
-            resourceFHIRId = "12345",
-            resourceType = ResourceType.Location,
-            dataTrigger = InteropResourceLoadV1.DataTrigger.backfill,
-            metadata = metadata
-        )
+        val loadEvent =
+            InteropResourceLoadV1(
+                tenantId = "tenant",
+                resourceFHIRId = "12345",
+                resourceType = ResourceType.Location,
+                dataTrigger = InteropResourceLoadV1.DataTrigger.backfill,
+                metadata = metadata,
+            )
         val request = TestLoadResourceRequest(listOf(loadEvent), tenant, fhirService)
         assertEquals(DataTrigger.BACKFILL, request.dataTrigger)
     }
 
     @Test
     fun `throws exception for unknown data trigger`() {
-        val loadEvent = InteropResourceLoadV1(
-            tenantId = "tenant",
-            resourceFHIRId = "12345",
-            resourceType = ResourceType.Location,
-            dataTrigger = null,
-            metadata = metadata
-        )
+        val loadEvent =
+            InteropResourceLoadV1(
+                tenantId = "tenant",
+                resourceFHIRId = "12345",
+                resourceType = ResourceType.Location,
+                dataTrigger = null,
+                metadata = metadata,
+            )
         val exception =
             assertThrows<IllegalStateException> { TestLoadResourceRequest(listOf(loadEvent), tenant, fhirService) }
         assertEquals(
             "Received a null data trigger which cannot be transformed to a known value",
-            exception.message
+            exception.message,
         )
     }
 
@@ -119,13 +127,14 @@ class LoadResourceRequestTest {
         val location = Location(id = Id("12345"))
         every { fhirService.getByIDs(tenant, listOf("12345")) } returns mapOf("12345" to location)
 
-        val loadEvent = InteropResourceLoadV1(
-            tenantId = "tenant",
-            resourceFHIRId = "12345",
-            resourceType = ResourceType.Location,
-            dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
-            metadata = metadata
-        )
+        val loadEvent =
+            InteropResourceLoadV1(
+                tenantId = "tenant",
+                resourceFHIRId = "12345",
+                resourceType = ResourceType.Location,
+                dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
+                metadata = metadata,
+            )
         val request = TestLoadResourceRequest(listOf(loadEvent), tenant, fhirService)
         val resources = request.loadResourcesForIds(listOf("12345"), endDate = null)
         assertEquals(1, resources.size)
@@ -137,7 +146,7 @@ class LoadResourceRequestTest {
     class TestLoadResourceRequest(
         loadEvents: List<InteropResourceLoadV1>,
         tenant: Tenant,
-        override val fhirService: FHIRService<Location>
+        override val fhirService: FHIRService<Location>,
     ) :
         LoadResourceRequest<Location>(loadEvents, tenant)
 }

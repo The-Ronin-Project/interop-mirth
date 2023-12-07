@@ -8,11 +8,12 @@ import mu.KotlinLogging
 
 abstract class TenantlessDestinationService : MirthDestination {
     protected val logger = KotlinLogging.logger(this::class.java.name)
+
     override fun destinationFilter(
         unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthFilterResponse {
         val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
 
@@ -21,7 +22,7 @@ abstract class TenantlessDestinationService : MirthDestination {
                 tenantMnemonic,
                 msg,
                 sourceMap,
-                channelMap
+                channelMap,
             )
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during destinationFilter: ${e.message}" }
@@ -44,7 +45,7 @@ abstract class TenantlessDestinationService : MirthDestination {
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthFilterResponse {
         return MirthFilterResponse(true)
     }
@@ -53,7 +54,7 @@ abstract class TenantlessDestinationService : MirthDestination {
         unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage {
         val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
         try {
@@ -61,7 +62,7 @@ abstract class TenantlessDestinationService : MirthDestination {
                 tenantMnemonic,
                 msg,
                 sourceMap,
-                channelMap
+                channelMap,
             )
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during destinationTransformer: ${e.message}" }
@@ -83,7 +84,7 @@ abstract class TenantlessDestinationService : MirthDestination {
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage {
         return MirthMessage(msg)
     }
@@ -92,7 +93,7 @@ abstract class TenantlessDestinationService : MirthDestination {
         unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse {
         val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
         try {
@@ -100,7 +101,7 @@ abstract class TenantlessDestinationService : MirthDestination {
                 tenantMnemonic,
                 msg,
                 sourceMap,
-                channelMap
+                channelMap,
             )
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during destinationWriter: ${e.message}" }
@@ -122,6 +123,6 @@ abstract class TenantlessDestinationService : MirthDestination {
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse
 }

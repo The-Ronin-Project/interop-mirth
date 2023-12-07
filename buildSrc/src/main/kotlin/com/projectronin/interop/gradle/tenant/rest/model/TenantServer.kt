@@ -5,12 +5,15 @@ data class TenantServer(
     val messageType: String = "MDM",
     val address: String,
     val port: Int,
-    val serverType: String = "N"
+    val serverType: String = "N",
 )
 
 private val SUPPORTED_KEYS = setOf("address", "port")
 
-fun createTenantServer(valuesByName: Map<String, String>, messageType: String): TenantServer {
+fun createTenantServer(
+    valuesByName: Map<String, String>,
+    messageType: String,
+): TenantServer {
     return mergeTenantServer(valuesByName, messageType, null)
 }
 
@@ -20,7 +23,7 @@ fun createTenantServer(valuesByName: Map<String, String>, messageType: String): 
 fun mergeTenantServer(
     valuesByName: Map<String, String>,
     messageType: String,
-    tenantServer: TenantServer?
+    tenantServer: TenantServer?,
 ): TenantServer {
     valuesByName.keys.forEach {
         if (!SUPPORTED_KEYS.contains(it.substringAfter("$messageType."))) {
@@ -32,6 +35,6 @@ fun mergeTenantServer(
         id = tenantServer?.id,
         messageType = tenantServer?.messageType ?: messageType,
         address = valuesByName["$messageType.address"] ?: tenantServer?.address ?: "",
-        port = valuesByName["$messageType.port"]?.toInt() ?: tenantServer?.port ?: 1
+        port = valuesByName["$messageType.port"]?.toInt() ?: tenantServer?.port ?: 1,
     )
 }

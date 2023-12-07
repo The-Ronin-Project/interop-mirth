@@ -7,5 +7,5 @@ enum class MirthResponseStatus {
     ERROR,
     PENDING,
     QUEUED,
-    SENT
+    SENT,
 }

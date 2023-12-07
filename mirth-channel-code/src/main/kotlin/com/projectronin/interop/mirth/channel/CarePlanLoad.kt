@@ -14,14 +14,15 @@ class CarePlanLoad(
     kafkaPublishService: KafkaPublishService,
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
-    defaultPublisher: CarePlanPublish
+    defaultPublisher: CarePlanPublish,
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "CarePlanLoad"
     override val channelGroupId = "interop-mirth-care_plan_group"
-    override val publishedResourcesSubscriptions = listOf(
-        ResourceType.Patient,
-        ResourceType.CarePlan
-    )
+    override val publishedResourcesSubscriptions =
+        listOf(
+            ResourceType.Patient,
+            ResourceType.CarePlan,
+        )
     override val resource = ResourceType.CarePlan
     override val maxBackfillDays = 30
 

@@ -24,7 +24,7 @@ class KafkaConditionQueue(
     queueService: KafkaQueueService,
     conditionQueueWriter: ConditionTenantlessQueueWriter,
     private val transformManager: TransformManager,
-    private val roninCondition: RoninConditions
+    private val roninCondition: RoninConditions,
 ) :
     KafkaQueue<Condition>(tenantService, queueService, conditionQueueWriter) {
     companion object {
@@ -35,7 +35,10 @@ class KafkaConditionQueue(
     override val rootName = "KafkaConditionQueue"
     override val resourceType = ResourceType.CONDITION
 
-    override fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<Condition> {
+    override fun deserializeAndTransform(
+        string: String,
+        tenant: Tenant,
+    ): TransformResponse<Condition> {
         val condition = JacksonUtil.readJsonObject(string, Condition::class)
         return transformManager.transformResource(condition, roninCondition, tenant)
             ?: throw ResourcesNotTransformedException("Failed to transform Condition for tenant ${tenant.mnemonic}")

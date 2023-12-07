@@ -32,6 +32,7 @@ class TenantlessSourceServiceTest {
         class BasicSource : TenantlessSourceService() {
             override val rootName = CHANNEL_ROOT_NAME
             override val destinations = emptyMap<String, TenantlessDestinationService>()
+
             override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
                 return emptyList()
             }
@@ -44,7 +45,7 @@ class TenantlessSourceServiceTest {
                 "blah",
                 "test",
                 mapOf(MirthKey.TENANT_MNEMONIC.code to "present"),
-                emptyMap()
+                emptyMap(),
             )
         }
         assertDoesNotThrow {
@@ -52,7 +53,7 @@ class TenantlessSourceServiceTest {
                 "blah",
                 "test",
                 mapOf(MirthKey.TENANT_MNEMONIC.code to "present"),
-                emptyMap()
+                emptyMap(),
             )
         }
     }
@@ -71,7 +72,7 @@ class TenantlessSourceServiceTest {
                 "blah",
                 "error",
                 mapOf("Error" to true, MirthKey.TENANT_MNEMONIC.code to "present"),
-                emptyMap()
+                emptyMap(),
             )
         }
         assertThrows<Exception> {
@@ -79,7 +80,7 @@ class TenantlessSourceServiceTest {
                 "blah",
                 "error",
                 mapOf("Error" to true, MirthKey.TENANT_MNEMONIC.code to "present"),
-                emptyMap()
+                emptyMap(),
             )
         }
     }
@@ -92,7 +93,7 @@ class TenantlessSourceServiceTest {
                 "blah",
                 "error",
                 emptyMap(),
-                emptyMap()
+                emptyMap(),
             )
         }
 
@@ -101,15 +102,17 @@ class TenantlessSourceServiceTest {
                 "blah",
                 "error",
                 emptyMap(),
-                emptyMap()
+                emptyMap(),
             )
         }
 
         assertThrows<MapVariableMissing> { channel.sourceReader("test", mapOf("Bad Message" to true)) }
     }
+
     class TestChannelService : TenantlessSourceService() {
         override val rootName = CHANNEL_ROOT_NAME
         override val destinations = emptyMap<String, TenantlessDestinationService>()
+
         override fun channelOnDeploy(serviceMap: Map<String, Any>): Map<String, Any> {
             if (serviceMap.containsKey("Error")) {
                 throw Exception("Everything died")
@@ -117,6 +120,7 @@ class TenantlessSourceServiceTest {
 
             return super.channelOnDeploy(serviceMap)
         }
+
         override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
             if (serviceMap.containsKey("Error")) {
                 throw Exception("Everything died")
@@ -131,7 +135,7 @@ class TenantlessSourceServiceTest {
             tenantMnemonic: String,
             msg: String,
             sourceMap: Map<String, Any>,
-            channelMap: Map<String, Any>
+            channelMap: Map<String, Any>,
         ): MirthFilterResponse {
             if (sourceMap.containsKey("Error")) {
                 throw Exception("Everything died")
@@ -143,7 +147,7 @@ class TenantlessSourceServiceTest {
             tenantMnemonic: String,
             msg: String,
             sourceMap: Map<String, Any>,
-            channelMap: Map<String, Any>
+            channelMap: Map<String, Any>,
         ): MirthMessage {
             if (sourceMap.containsKey("Error")) {
                 throw Exception("Everything died")
@@ -155,6 +159,7 @@ class TenantlessSourceServiceTest {
     class BadTestChannelService : TenantlessSourceService() {
         override val rootName = "thisnameiscompletelyandutterlymcuhtoolongohno"
         override val destinations = emptyMap<String, TenantlessDestinationService>()
+
         override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
             return emptyList()
         }

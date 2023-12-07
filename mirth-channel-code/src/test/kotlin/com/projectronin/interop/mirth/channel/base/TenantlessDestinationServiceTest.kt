@@ -15,7 +15,7 @@ class TenantlessDestinationServiceTest {
             tenantMnemonic: String,
             msg: String,
             sourceMap: Map<String, Any>,
-            channelMap: Map<String, Any>
+            channelMap: Map<String, Any>,
         ): MirthResponse {
             if (sourceMap.containsKey("Error")) {
                 throw Exception("Everything died")
@@ -27,7 +27,7 @@ class TenantlessDestinationServiceTest {
             tenantMnemonic: String,
             msg: String,
             sourceMap: Map<String, Any>,
-            channelMap: Map<String, Any>
+            channelMap: Map<String, Any>,
         ): MirthFilterResponse {
             if (sourceMap.containsKey("Error")) {
                 throw Exception("Everything died")
@@ -39,7 +39,7 @@ class TenantlessDestinationServiceTest {
             unusedValue: String,
             msg: String,
             sourceMap: Map<String, Any>,
-            channelMap: Map<String, Any>
+            channelMap: Map<String, Any>,
         ): MirthMessage {
             if (sourceMap.containsKey("Error")) {
                 throw Exception("Everything died")
@@ -55,7 +55,7 @@ class TenantlessDestinationServiceTest {
                 tenantMnemonic: String,
                 msg: String,
                 sourceMap: Map<String, Any>,
-                channelMap: Map<String, Any>
+                channelMap: Map<String, Any>,
             ): MirthResponse {
                 return MirthResponse(MirthResponseStatus.SENT)
             }
@@ -66,7 +66,7 @@ class TenantlessDestinationServiceTest {
                 "blah",
                 "test",
                 mapOf(MirthKey.TENANT_MNEMONIC.code to "present"),
-                emptyMap()
+                emptyMap(),
             )
         }
         assertDoesNotThrow {
@@ -74,7 +74,7 @@ class TenantlessDestinationServiceTest {
                 "blah",
                 "test",
                 mapOf(MirthKey.TENANT_MNEMONIC.code to "present"),
-                emptyMap()
+                emptyMap(),
             )
         }
         assertDoesNotThrow {
@@ -82,7 +82,7 @@ class TenantlessDestinationServiceTest {
                 "blah",
                 "test",
                 mapOf(MirthKey.TENANT_MNEMONIC.code to "present"),
-                emptyMap()
+                emptyMap(),
             )
         }
     }
@@ -95,7 +95,7 @@ class TenantlessDestinationServiceTest {
                 "blah",
                 "error",
                 mapOf("Error" to true, MirthKey.TENANT_MNEMONIC.code to "present"),
-                emptyMap()
+                emptyMap(),
             )
         }
         assertThrows<Exception> {
@@ -103,7 +103,7 @@ class TenantlessDestinationServiceTest {
                 "blah",
                 "error",
                 mapOf("Error" to true, MirthKey.TENANT_MNEMONIC.code to "present"),
-                emptyMap()
+                emptyMap(),
             )
         }
         assertThrows<Exception> {
@@ -111,7 +111,7 @@ class TenantlessDestinationServiceTest {
                 "blah",
                 "error",
                 mapOf("Error" to true, MirthKey.TENANT_MNEMONIC.code to "present"),
-                emptyMap()
+                emptyMap(),
             )
         }
     }
@@ -124,7 +124,7 @@ class TenantlessDestinationServiceTest {
                 "blah",
                 "error",
                 emptyMap(),
-                emptyMap()
+                emptyMap(),
             )
         }
 
@@ -133,7 +133,7 @@ class TenantlessDestinationServiceTest {
                 "blah",
                 "error",
                 emptyMap(),
-                emptyMap()
+                emptyMap(),
             )
         }
 
@@ -142,7 +142,7 @@ class TenantlessDestinationServiceTest {
                 "blah",
                 "error",
                 emptyMap(),
-                emptyMap()
+                emptyMap(),
             )
         }
     }

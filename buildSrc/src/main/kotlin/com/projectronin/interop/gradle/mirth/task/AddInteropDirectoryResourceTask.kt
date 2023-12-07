@@ -13,23 +13,25 @@ import org.gradle.api.tasks.TaskAction
  * Task for adding the necessary Interop DirectoryResource to Mirth.
  */
 open class AddInteropDirectoryResourceTask : BaseMirthTask() {
-    private val defaultResource = DirectoryResource(
-        id = "Default Resource",
-        name = "[Default Resource]",
-        description = "Loads libraries from the custom-lib folder in the Mirth Connect home directory.",
-        includeWithGlobalScripts = true,
-        directory = "custom-lib",
-        directoryRecursion = true
-    )
-    private val interopResource = DirectoryResource(
-        id = INTEROP_RESOURCE_ID,
-        name = "Interop",
-        description = "Interop resources",
-        includeWithGlobalScripts = false,
-        directory = INTEROP_DIRECTORY,
-        directoryRecursion = true,
-        loadParentFirst = true
-    )
+    private val defaultResource =
+        DirectoryResource(
+            id = "Default Resource",
+            name = "[Default Resource]",
+            description = "Loads libraries from the custom-lib folder in the Mirth Connect home directory.",
+            includeWithGlobalScripts = true,
+            directory = "custom-lib",
+            directoryRecursion = true,
+        )
+    private val interopResource =
+        DirectoryResource(
+            id = INTEROP_RESOURCE_ID,
+            name = "Interop",
+            description = "Interop resources",
+            includeWithGlobalScripts = false,
+            directory = INTEROP_DIRECTORY,
+            directoryRecursion = true,
+            loadParentFirst = true,
+        )
 
     @TaskAction
     fun addInteropResources() {

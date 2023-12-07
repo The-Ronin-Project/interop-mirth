@@ -8,12 +8,13 @@ import org.junit.jupiter.api.Test
 class MirthResponseTest {
     @Test
     fun `full object can be created`() {
-        val message = MirthResponse(
-            message = "abc",
-            dataMap = mapOf("def" to "ghi"),
-            detailedMessage = "jkl",
-            status = MirthResponseStatus.SENT
-        )
+        val message =
+            MirthResponse(
+                message = "abc",
+                dataMap = mapOf("def" to "ghi"),
+                detailedMessage = "jkl",
+                status = MirthResponseStatus.SENT,
+            )
         assertEquals("abc", message.message)
         assertEquals("ghi", message.dataMap["def"])
         assertEquals("jkl", message.detailedMessage)
@@ -22,11 +23,12 @@ class MirthResponseTest {
 
     @Test
     fun `object can have empty dataMap`() {
-        val message = MirthResponse(
-            message = "abc",
-            detailedMessage = "jkl",
-            status = MirthResponseStatus.SENT
-        )
+        val message =
+            MirthResponse(
+                message = "abc",
+                detailedMessage = "jkl",
+                status = MirthResponseStatus.SENT,
+            )
         assertEquals("abc", message.message)
         assertNull(message.dataMap["def"])
         assertEquals(emptyMap<String, Any>(), message.dataMap)

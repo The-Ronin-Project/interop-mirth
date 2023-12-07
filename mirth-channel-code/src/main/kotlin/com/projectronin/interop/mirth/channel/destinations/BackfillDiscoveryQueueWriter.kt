@@ -13,12 +13,11 @@ import java.util.UUID
 
 @Component
 class BackfillDiscoveryQueueWriter(val backfillQueueClient: QueueClient) : TenantlessDestinationService() {
-
     override fun channelDestinationWriter(
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse {
         val references = JacksonUtil.readJsonList(msg, String::class)
         // no patients found for a given location, log an error and move on
@@ -26,29 +25,31 @@ class BackfillDiscoveryQueueWriter(val backfillQueueClient: QueueClient) : Tenan
             logger.warn { "No Patients found for tenant $tenantMnemonic" }
             return MirthResponse(
                 MirthResponseStatus.SENT,
-                "No Patients found for tenant $tenantMnemonic"
+                "No Patients found for tenant $tenantMnemonic",
             )
         }
 
         return try {
             val backFillUUID = UUID.fromString(sourceMap[MirthKey.BACKFILL_ID.code] as String)
-            val newQueueEntries = references.map {
-                NewQueueEntry(backFillUUID, it.substringAfter("/"))
-            }
-            val response = runBlocking {
-                backfillQueueClient.postQueueEntry(backFillUUID, newQueueEntries)
-            }
+            val newQueueEntries =
+                references.map {
+                    NewQueueEntry(backFillUUID, it.substringAfter("/"))
+                }
+            val response =
+                runBlocking {
+                    backfillQueueClient.postQueueEntry(backFillUUID, newQueueEntries)
+                }
             MirthResponse(
                 MirthResponseStatus.SENT,
                 JacksonUtil.writeJsonValue(response),
-                "Queue entries successfully created"
+                "Queue entries successfully created",
             )
         } catch (e: Exception) {
             logger.error(e) { "Failed to create new queue entries" }
             MirthResponse(
                 MirthResponseStatus.ERROR,
                 e.stackTraceToString(),
-                e.message
+                e.message,
             )
         }
     }

@@ -16,17 +16,19 @@ import java.time.OffsetDateTime
 class PublishResourceEventTest {
     private val metadata = Metadata(runId = "run", runDateTime = OffsetDateTime.now())
     private val location = Location(id = Id("tenant-1234"))
-    private val sourceEvent = InteropResourcePublishV1(
-        tenantId = "tenant",
-        resourceType = ResourceType.Location,
-        dataTrigger = InteropResourcePublishV1.DataTrigger.nightly,
-        resourceJson = JacksonManager.objectMapper.writeValueAsString(location),
-        metadata = metadata
-    )
-    private val publishResourceEvent = object : PublishResourceEvent<Location>(sourceEvent, Location::class) {
-        override val requestKeys: Set<ResourceRequestKey>
-            get() = TODO("Not yet implemented")
-    }
+    private val sourceEvent =
+        InteropResourcePublishV1(
+            tenantId = "tenant",
+            resourceType = ResourceType.Location,
+            dataTrigger = InteropResourcePublishV1.DataTrigger.nightly,
+            resourceJson = JacksonManager.objectMapper.writeValueAsString(location),
+            metadata = metadata,
+        )
+    private val publishResourceEvent =
+        object : PublishResourceEvent<Location>(sourceEvent, Location::class) {
+            override val requestKeys: Set<ResourceRequestKey>
+                get() = TODO("Not yet implemented")
+        }
 
     @Test
     fun `returns metadata`() {
@@ -60,10 +62,11 @@ class PublishResourceEventTest {
         val testMetadata = metadata.copy(upstreamReferences = listOf(patientReference, appointmentReference))
         val testSourceEvent = sourceEvent.copy(metadata = testMetadata)
 
-        val publishResourceEvent = object : PublishResourceEvent<Location>(testSourceEvent, Location::class) {
-            override val requestKeys: Set<ResourceRequestKey>
-                get() = TODO("Not yet implemented")
-        }
+        val publishResourceEvent =
+            object : PublishResourceEvent<Location>(testSourceEvent, Location::class) {
+                override val requestKeys: Set<ResourceRequestKey>
+                    get() = TODO("Not yet implemented")
+            }
 
         val updatedMetadata = publishResourceEvent.getUpdatedMetadata()
         assertEquals(testMetadata.runId, updatedMetadata.runId)
@@ -72,7 +75,7 @@ class PublishResourceEventTest {
         val sourceReference = Metadata.UpstreamReference(ResourceType.Location, "tenant-1234")
         assertEquals(
             listOf(patientReference, appointmentReference, sourceReference),
-            updatedMetadata.upstreamReferences
+            updatedMetadata.upstreamReferences,
         )
     }
 

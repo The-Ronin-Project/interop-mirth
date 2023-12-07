@@ -53,7 +53,10 @@ interface MirthSource {
      * @return a map of values to be used during later channel stages.
      *      Map keys: For conventions and a few reserved values see [BaseService].
      */
-    fun onDeploy(deployedChannelName: String, serviceMap: Map<String, Any>): Map<String, Any>
+    fun onDeploy(
+        deployedChannelName: String,
+        serviceMap: Map<String, Any>,
+    ): Map<String, Any>
 
     /**
      * Required: Mirth channels call sourceReader() from the Source Reader script.
@@ -63,7 +66,10 @@ interface MirthSource {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a list of Mirth message data to pass to the next channel stage.
      */
-    fun sourceReader(deployedChannelName: String, serviceMap: Map<String, Any>): List<MirthMessage>
+    fun sourceReader(
+        deployedChannelName: String,
+        serviceMap: Map<String, Any>,
+    ): List<MirthMessage>
 
     /**
      * Mirth channels call sourceFilter() from the Source Filter script.
@@ -78,7 +84,7 @@ interface MirthSource {
         deployedChannelName: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthFilterResponse
 
     /**
@@ -94,6 +100,6 @@ interface MirthSource {
         deployedChannelName: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage
 }

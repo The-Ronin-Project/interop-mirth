@@ -14,7 +14,7 @@ class RequestGroupLoad(
     kafkaPublishService: KafkaPublishService,
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
-    defaultPublisher: RequestGroupPublish
+    defaultPublisher: RequestGroupPublish,
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "RequestGroupLoad"
     override val channelGroupId = "interop-mirth-request_group_group"

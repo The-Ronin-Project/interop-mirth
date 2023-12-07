@@ -28,9 +28,10 @@ class AppointmentTenantlessQueueWriterTest {
     @BeforeEach
     fun setup() {
         mockPublishService = mockk()
-        mockTenantService = mockk {
-            every { getTenantForMnemonic(tenantId) } returns mockTenant
-        }
+        mockTenantService =
+            mockk {
+                every { getTenantForMnemonic(tenantId) } returns mockTenant
+            }
         writer = AppointmentTenantlessQueueWriter(mockPublishService)
     }
 
@@ -41,7 +42,8 @@ class AppointmentTenantlessQueueWriterTest {
 
     @Test
     fun `destinationWriter - works`() {
-        val mockSerialized = """{
+        val mockSerialized =
+            """{
         |  "id": "12345",
         |  "resourceType": "Appointment",
         |  "status": "arrived",
@@ -49,7 +51,7 @@ class AppointmentTenantlessQueueWriterTest {
         |    "reference": "Patient/1234"
         |  }
         |}
-        """.trimMargin()
+            """.trimMargin()
         val mockAppointment = mockk<Appointment>()
 
         mockkObject(JacksonUtil)
@@ -61,12 +63,13 @@ class AppointmentTenantlessQueueWriterTest {
         val metadata = generateMetadata()
         every { mockPublishService.publishFHIRResources(tenantId, any<List<Appointment>>(), metadata) } returns true
 
-        val response = writer.destinationWriter(
-            "",
-            mockSerialized,
-            mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId, MirthKey.EVENT_METADATA.code to serialize(metadata)),
-            channelMap
-        )
+        val response =
+            writer.destinationWriter(
+                "",
+                mockSerialized,
+                mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId, MirthKey.EVENT_METADATA.code to serialize(metadata)),
+                channelMap,
+            )
         assertEquals("Published 1 Appointment(s)", response.message)
         assertEquals(MirthResponseStatus.SENT, response.status)
         assertEquals(mockSerialized, response.detailedMessage)

@@ -14,15 +14,14 @@ import org.springframework.stereotype.Component
 class OnboardFlagWriter(
     private val ehrFactory: EHRFactory,
     private val tenantService: TenantService,
-    private val tenantConfigurationService: TenantConfigurationService
+    private val tenantConfigurationService: TenantConfigurationService,
 ) :
     TenantlessDestinationService() {
-
     override fun channelDestinationFilter(
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthFilterResponse {
         val blockedResourceList =
             tenantConfigurationService.getConfiguration(tenantMnemonic).blockedResources?.split(",")
@@ -34,10 +33,11 @@ class OnboardFlagWriter(
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse {
-        val tenant = tenantService.getTenantForMnemonic(tenantMnemonic)
-            ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
+        val tenant =
+            tenantService.getTenantForMnemonic(tenantMnemonic)
+                ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
         val vendorFactory = ehrFactory.getVendorFactory(tenant)
         val onboardService = vendorFactory.onboardFlagService
         return try {

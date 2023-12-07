@@ -14,7 +14,7 @@ class MedicationRequestLoad(
     kafkaPublishService: KafkaPublishService,
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
-    defaultPublisher: MedicationRequestPublish
+    defaultPublisher: MedicationRequestPublish,
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "MedicationRequestLoad"
     override val channelGroupId = "interop-mirth-medication-request_group"

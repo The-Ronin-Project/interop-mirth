@@ -17,7 +17,7 @@ private val logger = KotlinLogging.logger { }
 fun filterBlockedLoadEvents(
     channelResourceType: ResourceType,
     events: List<InteropResourceLoadV1>,
-    tenantConfigService: TenantConfigurationService
+    tenantConfigService: TenantConfigurationService,
 ): List<InteropResourceLoadV1> {
     val resources = mutableListOf<InteropResourceLoadV1>()
     events.forEach {
@@ -34,7 +34,7 @@ fun filterBlockedLoadEvents(
 fun filterBlockedPublishedEvents(
     channelResourceType: ResourceType,
     events: List<InteropResourcePublishV1>,
-    tenantConfigService: TenantConfigurationService
+    tenantConfigService: TenantConfigurationService,
 ): List<InteropResourcePublishV1> {
     val resources = mutableListOf<InteropResourcePublishV1>()
     events.forEach {

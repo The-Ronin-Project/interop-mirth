@@ -9,7 +9,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class OnboardFlagServiceTest {
-
     private lateinit var channel: OnboardFlagService
     private val patientOnboardService: KafkaPatientOnboardService = mockk()
 
@@ -26,16 +25,17 @@ class OnboardFlagServiceTest {
 
     @Test
     fun `source reader works`() {
-        every { patientOnboardService.retrieveOnboardEvents(any()) } returns listOf(
-            mockk(relaxed = true) {
-                every { action } returns PatientOnboardingStatus.OnboardAction.ONBOARD
-                every { patientId } returns "12345"
-                every { tenantId } returns "tenant"
-            },
-            mockk {
-                every { action } returns PatientOnboardingStatus.OnboardAction.OFFBOARD
-            }
-        )
+        every { patientOnboardService.retrieveOnboardEvents(any()) } returns
+            listOf(
+                mockk(relaxed = true) {
+                    every { action } returns PatientOnboardingStatus.OnboardAction.ONBOARD
+                    every { patientId } returns "12345"
+                    every { tenantId } returns "tenant"
+                },
+                mockk {
+                    every { action } returns PatientOnboardingStatus.OnboardAction.OFFBOARD
+                },
+            )
         val result = channel.channelSourceReader(emptyMap())
         assertEquals("{\"patientId\":\"12345\",\"tenantId\":\"tenant\",\"action\":\"ONBOARD\"}", result.first().message)
     }

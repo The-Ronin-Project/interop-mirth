@@ -28,20 +28,20 @@ class RequestGroupPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninRequestGroup
+    profileTransformer: RoninRequestGroup,
 ) : KafkaEventResourcePublisher<RequestGroup>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override val cacheAndCompareResults: Boolean = true
 
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<RequestGroup> {
         return CarePlanPublishRequestGroupRequest(events, vendorFactory.requestGroupService, tenant)
     }
@@ -49,7 +49,7 @@ class RequestGroupPublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<RequestGroup> {
         return LoadRequestGroupRequest(events, vendorFactory.requestGroupService, tenant)
     }
@@ -57,32 +57,33 @@ class RequestGroupPublish(
     internal class CarePlanPublishRequestGroupRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: RequestGroupService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<RequestGroup>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { CarePlanPublishEvent(it, tenant) }
 
         private class CarePlanPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
             PublishResourceEvent<CarePlan>(publishEvent, CarePlan::class) {
-            override val requestKeys: Set<ResourceRequestKey> = sourceResource.activity
-                .asSequence()
-                .filter { it.reference?.decomposedType()?.startsWith("RequestGroup") == true }
-                .mapNotNull { it.reference?.decomposedId() }
-                .distinct().map {
-                    ResourceRequestKey(
-                        metadata.runId,
-                        ResourceType.RequestGroup,
-                        tenant,
-                        it
-                    )
-                }
-                .toSet()
+            override val requestKeys: Set<ResourceRequestKey> =
+                sourceResource.activity
+                    .asSequence()
+                    .filter { it.reference?.decomposedType()?.startsWith("RequestGroup") == true }
+                    .mapNotNull { it.reference?.decomposedId() }
+                    .distinct().map {
+                        ResourceRequestKey(
+                            metadata.runId,
+                            ResourceType.RequestGroup,
+                            tenant,
+                            it,
+                        )
+                    }
+                    .toSet()
         }
     }
 
     internal class LoadRequestGroupRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: RequestGroupService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<RequestGroup>(loadEvents, tenant)
 }

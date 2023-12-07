@@ -45,9 +45,10 @@ class KafkaQueueTest {
     fun setup() {
         mockQueueService = mockk()
         mockTransformManager = mockk()
-        mockTenantService = mockk {
-            every { getTenantForMnemonic(tenantId) } returns mockTenant
-        }
+        mockTenantService =
+            mockk {
+                every { getTenantForMnemonic(tenantId) } returns mockTenant
+            }
         mockQueueWriter = mockk()
         channel = KafkaTestQueue(mockTenantService, mockTransformManager, mockQueueService, mockQueueWriter)
         mockkObject(JacksonManager)
@@ -57,11 +58,12 @@ class KafkaQueueTest {
     fun `sourceReader - works`() {
         val queueMessage = "testing!!"
         val metaData = generateMetadata()
-        val mockMessage = mockk<ApiMessage> {
-            every { text } returns queueMessage
-            every { tenant } returns tenantId
-            every { metadata } returns metaData
-        }
+        val mockMessage =
+            mockk<ApiMessage> {
+                every { text } returns queueMessage
+                every { tenant } returns tenantId
+                every { metadata } returns metaData
+            }
         every { mockQueueService.dequeueApiMessages("", ResourceType.BUNDLE, 5) } returns listOf(mockMessage)
 
         val messages = channel.sourceReader("name", mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId))
@@ -74,18 +76,20 @@ class KafkaQueueTest {
     fun `sourceReader - continues reading from queue if response is full`() {
         val queueMessage = "testing!!"
         val metaData = generateMetadata()
-        val mockMessage = mockk<ApiMessage> {
-            every { tenant } returns tenantId
-            every { text } returns queueMessage
-            every { metadata } returns metaData
-        }
-        every { mockQueueService.dequeueApiMessages("", ResourceType.BUNDLE, 5) } returns listOf(
-            mockMessage,
-            mockMessage,
-            mockMessage,
-            mockMessage,
-            mockMessage
-        ) andThen emptyList()
+        val mockMessage =
+            mockk<ApiMessage> {
+                every { tenant } returns tenantId
+                every { text } returns queueMessage
+                every { metadata } returns metaData
+            }
+        every { mockQueueService.dequeueApiMessages("", ResourceType.BUNDLE, 5) } returns
+            listOf(
+                mockMessage,
+                mockMessage,
+                mockMessage,
+                mockMessage,
+                mockMessage,
+            ) andThen emptyList()
 
         val messages = channel.sourceReader("name", mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId))
         assertEquals(5, messages.size)
@@ -97,22 +101,24 @@ class KafkaQueueTest {
     fun `sourceTransformer - works`() {
         val fhirID = "I'm a fhir ID!"
         val message = "testing!!"
-        val transformedResource = """{
+        val transformedResource =
+            """{
         |  "real": "message"
         |}
-        """.trimMargin()
+            """.trimMargin()
         every { mockRoninDomainResource.id?.value } returns fhirID
 
         mockkObject(JacksonManager)
         every { JacksonManager.objectMapper.writeValueAsString(mockRoninDomainResource) } returns transformedResource
 
-        val channel = KafkaTestQueue(
-            mockTenantService,
-            mockTransformManager,
-            mockQueueService,
-            mockQueueWriter,
-            mockRoninDomainResource
-        )
+        val channel =
+            KafkaTestQueue(
+                mockTenantService,
+                mockTransformManager,
+                mockQueueService,
+                mockQueueWriter,
+                mockRoninDomainResource,
+            )
         val transformedMessage =
             channel.sourceTransformer("name", message, mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId), emptyMap())
         assertEquals(fhirID, transformedMessage.dataMap[MirthKey.FHIR_ID.code])
@@ -125,23 +131,25 @@ class KafkaQueueTest {
     fun `sourceTransformer - no fhir id resource works`() {
         val fhirID = ""
         val message = "testing!!"
-        val transformedResource = """{
+        val transformedResource =
+            """{
         |  "real": "message",
         |}
-        """.trimMargin()
+            """.trimMargin()
         every { mockRoninDomainResource.id } returns null
         every { mockRoninDomainResource.resourceType } returns "TestResourceType"
 
         mockkObject(JacksonManager)
         every { JacksonManager.objectMapper.writeValueAsString(mockRoninDomainResource) } returns transformedResource
 
-        val channel = KafkaTestQueue(
-            mockTenantService,
-            mockTransformManager,
-            mockQueueService,
-            mockQueueWriter,
-            mockRoninDomainResource
-        )
+        val channel =
+            KafkaTestQueue(
+                mockTenantService,
+                mockTransformManager,
+                mockQueueService,
+                mockQueueWriter,
+                mockRoninDomainResource,
+            )
         val transformedMessage =
             channel.sourceTransformer("name", message, mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId), emptyMap())
         assertEquals(fhirID, transformedMessage.dataMap[MirthKey.FHIR_ID.code])
@@ -156,13 +164,16 @@ class KafkaTestQueue(
     transformManager: TransformManager,
     queueService: KafkaQueueService,
     queueWriter: TenantlessQueueWriter<TestResource>,
-    private val mockRoninDomainResource: TestResource = mockk()
+    private val mockRoninDomainResource: TestResource = mockk(),
 ) : KafkaQueue<TestResource>(tenantService, queueService, queueWriter) {
     override val resourceType: ResourceType = ResourceType.BUNDLE
     override val rootName: String = "Test"
     override val limit: Int = 5
-    override fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<TestResource> =
-        TransformResponse(mockRoninDomainResource)
+
+    override fun deserializeAndTransform(
+        string: String,
+        tenant: Tenant,
+    ): TransformResponse<TestResource> = TransformResponse(mockRoninDomainResource)
 }
 
 class KafkaTestQueueBad(
@@ -170,13 +181,16 @@ class KafkaTestQueueBad(
     transformManager: TransformManager,
     queueService: KafkaQueueService,
     queueWriter: TenantlessQueueWriter<TestResource>,
-    private val mockRoninDomainResource: TestResource = mockk()
+    private val mockRoninDomainResource: TestResource = mockk(),
 ) : KafkaQueue<TestResource>(tenantService, queueService, queueWriter) {
     override val resourceType: ResourceType = ResourceType.BUNDLE
     override val rootName: String = "thisnameiscompletelyandutterlymcuhtoolongohno"
     override val limit: Int = 5
-    override fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<TestResource> =
-        TransformResponse(mockRoninDomainResource)
+
+    override fun deserializeAndTransform(
+        string: String,
+        tenant: Tenant,
+    ): TransformResponse<TestResource> = TransformResponse(mockRoninDomainResource)
 }
 
 class TestResource(
@@ -188,5 +202,5 @@ class TestResource(
     override val implicitRules: Uri?,
     override val language: Code?,
     override var meta: Meta?,
-    override val resourceType: String = "TestResourceType"
+    override val resourceType: String = "TestResourceType",
 ) : DomainResource<TestResource>

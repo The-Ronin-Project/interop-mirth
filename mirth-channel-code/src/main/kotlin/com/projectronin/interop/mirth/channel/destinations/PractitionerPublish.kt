@@ -28,20 +28,20 @@ class PractitionerPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninPractitioner
+    profileTransformer: RoninPractitioner,
 ) : KafkaEventResourcePublisher<Practitioner>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override val cacheAndCompareResults: Boolean = true
 
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<Practitioner> {
         return AppointmentPublishPractitionerRequest(events, vendorFactory.practitionerService, tenant)
     }
@@ -49,7 +49,7 @@ class PractitionerPublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<Practitioner> {
         return LoadPractitionerRequest(events, vendorFactory.practitionerService, tenant)
     }
@@ -57,32 +57,33 @@ class PractitionerPublish(
     internal class AppointmentPublishPractitionerRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: PractitionerService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<Practitioner>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { AppointmentPublishEvent(it, tenant) }
 
         private class AppointmentPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
             PublishResourceEvent<Appointment>(publishEvent, Appointment::class) {
-            override val requestKeys: Set<ResourceRequestKey> = sourceResource.participant
-                .asSequence()
-                .filter { it.actor?.decomposedType()?.startsWith("Practitioner") == true }
-                .mapNotNull { it.actor?.decomposedId() }
-                .distinct().map {
-                    ResourceRequestKey(
-                        metadata.runId,
-                        ResourceType.Practitioner,
-                        tenant,
-                        it
-                    )
-                }
-                .toSet()
+            override val requestKeys: Set<ResourceRequestKey> =
+                sourceResource.participant
+                    .asSequence()
+                    .filter { it.actor?.decomposedType()?.startsWith("Practitioner") == true }
+                    .mapNotNull { it.actor?.decomposedId() }
+                    .distinct().map {
+                        ResourceRequestKey(
+                            metadata.runId,
+                            ResourceType.Practitioner,
+                            tenant,
+                            it,
+                        )
+                    }
+                    .toSet()
         }
     }
 
     internal class LoadPractitionerRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: PractitionerService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<Practitioner>(loadEvents, tenant)
 }

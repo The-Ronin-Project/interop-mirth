@@ -25,14 +25,13 @@ class ValidationTestDestination(
     val httpClient: HttpClient,
     @Value("\${aidbox.url}")
     val aidboxURLRest: String,
-    val authenticationBroker: AidboxAuthenticationBroker
+    val authenticationBroker: AidboxAuthenticationBroker,
 ) : TenantlessDestinationService() {
-
     override fun channelDestinationWriter(
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse {
         val aidbox = AidboxUtil(httpClient, aidboxURLRest, authenticationBroker)
         val mockEHR = ValidationTest.MockEHRUtil(httpClient, sourceMap["MockEHRURL"].toString())
@@ -45,10 +44,20 @@ class ValidationTestDestination(
             for (retryCount in 1..maxRetries) {
                 delay(20000) // Wait for 20 seconds before retrying
                 val resourcesToCheck =
-                    if (failed.isNotEmpty()) failed.toList() else initialResources.filterNot { it.contains("Binary") } // Only check the failed resources, if any
+                    if (failed.isNotEmpty()) {
+                        failed.toList()
+                    } else {
+                        initialResources.filterNot {
+                            it.contains("Binary")
+                        } // Only check the failed resources, if any
+                    }
                 failed.clear()
                 resourcesToCheck.forEach { resource ->
-                    if (aidbox.doesResourceExist(resource, tenantMnemonic)) { success.add(resource) } else failed.add(resource)
+                    if (aidbox.doesResourceExist(resource, tenantMnemonic)) {
+                        success.add(resource)
+                    } else {
+                        failed.add(resource)
+                    }
                 }
                 if (failed.isEmpty()) {
                     break // Exit the loop if all resources have been deleted successfully
@@ -68,12 +77,12 @@ class ValidationTestDestination(
         return if (failed.isNotEmpty()) {
             MirthResponse(
                 MirthResponseStatus.ERROR,
-                "Some resources were not found in Aidbox: $failed. \nSuccessful resources: $success"
+                "Some resources were not found in Aidbox: $failed. \nSuccessful resources: $success",
             )
         } else {
             MirthResponse(
                 MirthResponseStatus.SENT,
-                "Successful resources: $success"
+                "Successful resources: $success",
             )
         }
     }
@@ -81,20 +90,23 @@ class ValidationTestDestination(
     class AidboxUtil(
         private val httpClient: HttpClient,
         url: String,
-        private val authenticationBroker: AidboxAuthenticationBroker
+        private val authenticationBroker: AidboxAuthenticationBroker,
     ) {
-        private val BASE_URL = url
+        private val baseUrl = url
 
-        private val FHIR_URL = "$BASE_URL/fhir"
-        val RESOURCES_FORMAT = "$FHIR_URL/%s"
+        private val fhirUrl = "$baseUrl/fhir"
+        val resourcesFormat = "$fhirUrl/%s"
 
         private fun getAuthorizationHeader(): String {
             val authentication = authenticationBroker.getAuthentication()
             return "${authentication.tokenType} ${authentication.accessToken}"
         }
 
-        fun deleteResource(resourceReference: String, tenantMnemonic: String) = runBlocking {
-            val url = RESOURCES_FORMAT.format(createAidboxResourceReference(resourceReference, tenantMnemonic))
+        fun deleteResource(
+            resourceReference: String,
+            tenantMnemonic: String,
+        ) = runBlocking {
+            val url = resourcesFormat.format(createAidboxResourceReference(resourceReference, tenantMnemonic))
             httpClient.delete(url) {
                 headers {
                     append(HttpHeaders.Authorization, getAuthorizationHeader())
@@ -102,22 +114,29 @@ class ValidationTestDestination(
             }
         }
 
-        fun doesResourceExist(resourceReference: String, tenantMnemonic: String): Boolean = runBlocking {
-            val url = RESOURCES_FORMAT.format(createAidboxResourceReference(resourceReference, tenantMnemonic))
-            try {
-                httpClient.get(url) {
-                    headers {
-                        append(HttpHeaders.Authorization, getAuthorizationHeader())
-                    }
-                    contentType(ContentType.Application.Json)
-                    accept(ContentType.Application.Json)
-                }.status.isSuccess()
-            } catch (e: Exception) {
-                false
+        fun doesResourceExist(
+            resourceReference: String,
+            tenantMnemonic: String,
+        ): Boolean =
+            runBlocking {
+                val url = resourcesFormat.format(createAidboxResourceReference(resourceReference, tenantMnemonic))
+                try {
+                    httpClient.get(url) {
+                        headers {
+                            append(HttpHeaders.Authorization, getAuthorizationHeader())
+                        }
+                        contentType(ContentType.Application.Json)
+                        accept(ContentType.Application.Json)
+                    }.status.isSuccess()
+                } catch (e: Exception) {
+                    false
+                }
             }
-        }
 
-        private fun createAidboxResourceReference(resourceReference: String, tenantMnemonic: String): String {
+        private fun createAidboxResourceReference(
+            resourceReference: String,
+            tenantMnemonic: String,
+        ): String {
             val split = resourceReference.split("/")
             return "${split.first()}/$tenantMnemonic-${split.last()}"
         }

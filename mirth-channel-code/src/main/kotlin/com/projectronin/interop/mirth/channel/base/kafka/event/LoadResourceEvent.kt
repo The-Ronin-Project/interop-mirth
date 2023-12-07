@@ -11,7 +11,7 @@ import java.time.OffsetDateTime
  */
 class LoadResourceEvent(
     override val sourceEvent: InteropResourceLoadV1,
-    tenant: Tenant
+    tenant: Tenant,
 ) : ResourceEvent<InteropResourceLoadV1> {
     override val metadata: Metadata = sourceEvent.metadata
     override val processDownstreamReferences: Boolean = !(sourceEvent.flowOptions?.disableDownstreamResources ?: false)
@@ -23,8 +23,8 @@ class LoadResourceEvent(
                 metadata.runId,
                 sourceEvent.resourceType,
                 tenant,
-                sourceEvent.resourceFHIRId
-            )
+                sourceEvent.resourceFHIRId,
+            ),
         )
 
     // A load event is the start of the run, so its metadata doesn't need to change

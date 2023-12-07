@@ -34,7 +34,10 @@ abstract class TenantlessSourceService : MirthSource {
 
     abstract override val destinations: Map<String, TenantlessDestinationService>
 
-    override fun onDeploy(deployedChannelName: String, serviceMap: Map<String, Any>): Map<String, Any> {
+    override fun onDeploy(
+        deployedChannelName: String,
+        serviceMap: Map<String, Any>,
+    ): Map<String, Any> {
         require(rootName.length <= 31) { "Channel root name length is over the limit of 31" }
         require(deployedChannelName.length <= 40) { "Deployed channel name length is over the limit of 40" }
         try {
@@ -54,7 +57,10 @@ abstract class TenantlessSourceService : MirthSource {
      */
     open fun channelOnDeploy(serviceMap: Map<String, Any>): Map<String, Any> = serviceMap
 
-    override fun sourceReader(deployedChannelName: String, serviceMap: Map<String, Any>): List<MirthMessage> {
+    override fun sourceReader(
+        deployedChannelName: String,
+        serviceMap: Map<String, Any>,
+    ): List<MirthMessage> {
         try {
             val messages = channelSourceReader(serviceMap)
             messages.checkTenant()
@@ -79,7 +85,7 @@ abstract class TenantlessSourceService : MirthSource {
         deployedChannelName: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthFilterResponse {
         val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
         try {
@@ -104,7 +110,7 @@ abstract class TenantlessSourceService : MirthSource {
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthFilterResponse {
         return MirthFilterResponse(true)
     }
@@ -113,7 +119,7 @@ abstract class TenantlessSourceService : MirthSource {
         deployedChannelName: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage {
         val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
         try {
@@ -121,7 +127,7 @@ abstract class TenantlessSourceService : MirthSource {
                 tenantMnemonic,
                 msg,
                 sourceMap,
-                channelMap
+                channelMap,
             )
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during sourceTransformer: ${e.message}" }
@@ -143,7 +149,7 @@ abstract class TenantlessSourceService : MirthSource {
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage {
         return MirthMessage(msg)
     }

@@ -24,22 +24,25 @@ import java.time.OffsetDateTime
 
 class ConditionPublishTest {
     private val tenantId = "tenant"
-    private val tenant = mockk<Tenant> {
-        every { mnemonic } returns tenantId
-    }
+    private val tenant =
+        mockk<Tenant> {
+            every { mnemonic } returns tenantId
+        }
     private val conditionService = mockk<ConditionService>()
-    private val vendorFactory = mockk<VendorFactory> {
-        every { conditionService } returns this@ConditionPublishTest.conditionService
-    }
+    private val vendorFactory =
+        mockk<VendorFactory> {
+            every { conditionService } returns this@ConditionPublishTest.conditionService
+        }
     private val conditionPublish = ConditionPublish(mockk(), mockk(), mockk(), mockk(), mockk())
 
     private val patient1 = Patient(id = Id("$tenantId-1234"))
     private val patient2 = Patient(id = Id("$tenantId-5678"))
     private val patient3 = Patient(id = Id("$tenantId-9012"))
-    private val metadata = mockk<Metadata>(relaxed = true) {
-        every { runId } returns "run"
-        every { backfillRequest } returns null
-    }
+    private val metadata =
+        mockk<Metadata>(relaxed = true) {
+            every { runId } returns "run"
+            every { backfillRequest } returns null
+        }
 
     @Test
     fun `publish events create a PatientPublishConditionRequest`() {
@@ -57,59 +60,66 @@ class ConditionPublishTest {
 
     @Test
     fun `PatientPublishConditionRequest supports loads resources`() {
-        val categories = listOf(
-            FHIRSearchToken(CodeSystem.CONDITION_CATEGORY.uri.value, ConditionCategoryCodes.PROBLEM_LIST_ITEM.code),
-            FHIRSearchToken(
-                CodeSystem.CONDITION_CATEGORY_HEALTH_CONCERN.uri.value,
-                ConditionCategoryCodes.HEALTH_CONCERN.code
-            ),
-            FHIRSearchToken(CodeSystem.CONDITION_CATEGORY.uri.value, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code)
-        )
+        val categories =
+            listOf(
+                FHIRSearchToken(CodeSystem.CONDITION_CATEGORY.uri.value, ConditionCategoryCodes.PROBLEM_LIST_ITEM.code),
+                FHIRSearchToken(
+                    CodeSystem.CONDITION_CATEGORY_HEALTH_CONCERN.uri.value,
+                    ConditionCategoryCodes.HEALTH_CONCERN.code,
+                ),
+                FHIRSearchToken(CodeSystem.CONDITION_CATEGORY.uri.value, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code),
+            )
 
         val condition1 = mockk<Condition>()
         val condition2 = mockk<Condition>()
         val condition3 = mockk<Condition>()
         val startDate = OffsetDateTime.now()
         val endDate = OffsetDateTime.now()
-        every { conditionService.findConditionsByCodes(tenant, "1234", categories) } returns listOf(
-            condition1,
-            condition2
-        )
+        every { conditionService.findConditionsByCodes(tenant, "1234", categories) } returns
+            listOf(
+                condition1,
+                condition2,
+            )
         every { conditionService.findConditionsByCodes(tenant, "5678", categories) } returns listOf(condition3)
         every { conditionService.findConditionsByCodes(tenant, "9012", categories) } returns emptyList()
 
-        val event1 = InteropResourcePublishV1(
-            tenantId = tenantId,
-            resourceType = ResourceType.Patient,
-            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient1),
-            metadata = metadata
-        )
-        val event2 = InteropResourcePublishV1(
-            tenantId = tenantId,
-            resourceType = ResourceType.Patient,
-            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient2),
-            metadata = metadata
-        )
-        val event3 = InteropResourcePublishV1(
-            tenantId = tenantId,
-            resourceType = ResourceType.Patient,
-            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
-            metadata = Metadata(
-                runId = "run",
-                runDateTime = OffsetDateTime.now(),
-                upstreamReferences = null,
-                backfillRequest = Metadata.BackfillRequest(
-                    backfillId = "123",
-                    backfillStartDate = startDate,
-                    backfillEndDate = endDate
-                )
+        val event1 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(patient1),
+                metadata = metadata,
             )
-        )
+        val event2 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(patient2),
+                metadata = metadata,
+            )
+        val event3 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
+                metadata =
+                    Metadata(
+                        runId = "run",
+                        runDateTime = OffsetDateTime.now(),
+                        upstreamReferences = null,
+                        backfillRequest =
+                            Metadata.BackfillRequest(
+                                backfillId = "123",
+                                backfillStartDate = startDate,
+                                backfillEndDate = endDate,
+                            ),
+                    ),
+            )
         val request =
             ConditionPublish.PatientPublishConditionRequest(
                 listOf(event1, event2, event3),
                 conditionService,
-                tenant
+                tenant,
             )
         val resourcesByKeys = request.loadResources(request.requestKeys.toList())
         assertEquals(3, resourcesByKeys.size)

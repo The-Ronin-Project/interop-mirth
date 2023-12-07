@@ -58,7 +58,7 @@ class Auth0ClientCredentialsConfig {
 internal data class Auth0ClientCredentialsResponse(
     val accessToken: String,
     val expiresIn: Int,
-    val tokenType: String
+    val tokenType: String,
 )
 
 internal fun Auth0ClientCredentialsConfig.validateConfig() {
@@ -78,34 +78,37 @@ fun HttpClientConfig<*>.auth0ClientCredentials(block: Auth0ClientCredentialsConf
 
     config.validateConfig()
 
-    val auth0Client = HttpClient(CIO) {
-        install(ContentNegotiation) {
-            jackson {
-                propertyNamingStrategy = PropertyNamingStrategies.SNAKE_CASE
-                configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    val auth0Client =
+        HttpClient(CIO) {
+            install(ContentNegotiation) {
+                jackson {
+                    propertyNamingStrategy = PropertyNamingStrategies.SNAKE_CASE
+                    configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                }
             }
         }
-    }
 
-    val getToken = suspend {
-        val token = auth0Client.post(config.tokenUrl!!) {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-            setBody(
-                mapOf(
-                    "client_id" to config.clientId,
-                    "client_secret" to config.clientSecret,
-                    "audience" to config.audience,
-                    "grant_type" to "client_credentials"
-                )
+    val getToken =
+        suspend {
+            val token =
+                auth0Client.post(config.tokenUrl!!) {
+                    contentType(ContentType.Application.Json)
+                    accept(ContentType.Application.Json)
+                    setBody(
+                        mapOf(
+                            "client_id" to config.clientId,
+                            "client_secret" to config.clientSecret,
+                            "audience" to config.audience,
+                            "grant_type" to "client_credentials",
+                        ),
+                    )
+                }.body<Auth0ClientCredentialsResponse>()
+
+            BearerTokens(
+                accessToken = token.accessToken,
+                refreshToken = "NO_REFRESH_TOKEN",
             )
-        }.body<Auth0ClientCredentialsResponse>()
-
-        BearerTokens(
-            accessToken = token.accessToken,
-            refreshToken = "NO_REFRESH_TOKEN"
-        )
-    }
+        }
 
     install(Auth) {
         bearer {

@@ -29,34 +29,36 @@ class LocationPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninLocation
+    profileTransformer: RoninLocation,
 ) : KafkaEventResourcePublisher<Location>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override val cacheAndCompareResults: Boolean = true
 
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<Location> {
         // Only events for the same resource type are grouped, so just peek at the first one
         return when (val resourceType = events.first().resourceType) {
-            ResourceType.Appointment -> AppointmentPublishLocationRequest(
-                events,
-                vendorFactory.locationService,
-                tenant
-            )
+            ResourceType.Appointment ->
+                AppointmentPublishLocationRequest(
+                    events,
+                    vendorFactory.locationService,
+                    tenant,
+                )
 
-            ResourceType.Encounter -> EncounterPublishLocationRequest(
-                events,
-                vendorFactory.locationService,
-                tenant
-            )
+            ResourceType.Encounter ->
+                EncounterPublishLocationRequest(
+                    events,
+                    vendorFactory.locationService,
+                    tenant,
+                )
 
             else -> throw IllegalStateException("Received resource type ($resourceType) that cannot be used to load locations")
         }
@@ -65,7 +67,7 @@ class LocationPublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<Location> {
         return LoadLocationRequest(events, vendorFactory.locationService, tenant)
     }
@@ -73,7 +75,7 @@ class LocationPublish(
     internal class AppointmentPublishLocationRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: LocationService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<Location>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { AppointmentPublishEvent(it, tenant) }
@@ -89,7 +91,7 @@ class LocationPublish(
                             metadata.runId,
                             ResourceType.Location,
                             tenant,
-                            it
+                            it,
                         )
                     }.toSet()
         }
@@ -98,7 +100,7 @@ class LocationPublish(
     internal class EncounterPublishLocationRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: LocationService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<Location>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { EncounterPublishEvent(it, tenant) }
@@ -114,6 +116,6 @@ class LocationPublish(
     internal class LoadLocationRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: LocationService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<Location>(loadEvents, tenant)
 }

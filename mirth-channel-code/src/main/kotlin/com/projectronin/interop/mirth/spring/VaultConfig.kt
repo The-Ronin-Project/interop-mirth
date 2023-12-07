@@ -10,7 +10,6 @@ import java.net.URI
 
 @Configuration
 class VaultConfig : AbstractVaultConfiguration() {
-
     override fun vaultEndpoint(): VaultEndpoint {
         val url = URI(environment.getRequiredProperty("VAULT_URL"))
         return VaultEndpoint.from(url)

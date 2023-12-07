@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder
     "description",
     "includeWithGlobalScripts",
     "directory",
-    "directoryRecursion"
+    "directoryRecursion",
 )
 data class DirectoryResource(
     val id: String,
@@ -24,7 +24,7 @@ data class DirectoryResource(
     val includeWithGlobalScripts: Boolean,
     val directory: String,
     val directoryRecursion: Boolean = true,
-    val loadParentFirst: Boolean = false
+    val loadParentFirst: Boolean = false,
 ) {
     @JsonProperty("@version")
     val version: String = MIRTH_VERSION
@@ -36,7 +36,8 @@ data class DirectoryResource(
  * Model for a List of [DirectoryResource]s.
  */
 data class DirectoryResourceList(
-    @JsonProperty("com.mirth.connect.plugins.directoryresource.DirectoryResourceProperties") val directoryResources: List<DirectoryResource>
+    @JsonProperty("com.mirth.connect.plugins.directoryresource.DirectoryResourceProperties")
+    val directoryResources: List<DirectoryResource>,
 )
 
 const val INTEROP_RESOURCE_ID = "206087b7-266c-464f-af3b-7477264b3b89"

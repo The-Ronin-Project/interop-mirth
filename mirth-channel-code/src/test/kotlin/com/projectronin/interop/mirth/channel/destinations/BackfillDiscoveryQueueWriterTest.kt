@@ -31,17 +31,18 @@ class BackfillDiscoveryQueueWriterTest {
                 backfillID,
                 listOf(
                     NewQueueEntry(backfillID, "123"),
-                    NewQueueEntry(backfillID, "456")
-                )
+                    NewQueueEntry(backfillID, "456"),
+                ),
             )
         } returns response
 
-        val result = writer.channelDestinationWriter(
-            "ronin",
-            "[\"Patient/123\",\"Patient/456\"]",
-            mapOf(MirthKey.BACKFILL_ID.code to backfillID.toString()),
-            emptyMap()
-        )
+        val result =
+            writer.channelDestinationWriter(
+                "ronin",
+                "[\"Patient/123\",\"Patient/456\"]",
+                mapOf(MirthKey.BACKFILL_ID.code to backfillID.toString()),
+                emptyMap(),
+            )
         assertEquals(MirthResponseStatus.SENT, result.status)
     }
 
@@ -52,16 +53,17 @@ class BackfillDiscoveryQueueWriterTest {
                 backfillID,
                 listOf(
                     NewQueueEntry(backfillID, "123"),
-                    NewQueueEntry(backfillID, "456")
-                )
+                    NewQueueEntry(backfillID, "456"),
+                ),
             )
         } throws Exception("bad")
-        val result = writer.channelDestinationWriter(
-            "ronin",
-            "[\"Patient/123\",\"Patient/456\"]",
-            mapOf(MirthKey.BACKFILL_ID.code to backfillID.toString()),
-            emptyMap()
-        )
+        val result =
+            writer.channelDestinationWriter(
+                "ronin",
+                "[\"Patient/123\",\"Patient/456\"]",
+                mapOf(MirthKey.BACKFILL_ID.code to backfillID.toString()),
+                emptyMap(),
+            )
         assertEquals(MirthResponseStatus.ERROR, result.status)
         assertEquals("bad", result.message)
         assertEquals("java.lang.Exception: bad", result.detailedMessage?.substring(0, 24))
@@ -69,12 +71,13 @@ class BackfillDiscoveryQueueWriterTest {
 
     @Test
     fun `channelDestinationWriter -  handles no patients with error`() {
-        val result = writer.channelDestinationWriter(
-            "ronin",
-            "[]",
-            emptyMap(),
-            emptyMap()
-        )
+        val result =
+            writer.channelDestinationWriter(
+                "ronin",
+                "[]",
+                emptyMap(),
+                emptyMap(),
+            )
         assertEquals(MirthResponseStatus.SENT, result.status)
         assertEquals("No Patients found for tenant ronin", result.detailedMessage)
     }

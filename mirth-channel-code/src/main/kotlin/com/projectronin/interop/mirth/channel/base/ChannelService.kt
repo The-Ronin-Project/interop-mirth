@@ -94,7 +94,10 @@ abstract class ChannelService {
      * @return a map of values to be used during later channel stages.
      *      Map keys: For conventions and a few reserved values see [BaseService].
      */
-    fun onDeploy(deployedChannelName: String, serviceMap: Map<String, Any>): Map<String, Any> {
+    fun onDeploy(
+        deployedChannelName: String,
+        serviceMap: Map<String, Any>,
+    ): Map<String, Any> {
         require(rootName.length <= 31) { "Channel root name length is over the limit of 31" }
         require(deployedChannelName.length <= 40) { "Deployed channel name length is over the limit of 40" }
         val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
@@ -118,7 +121,10 @@ abstract class ChannelService {
      * @return a map of values to be used during later channel stages.
      *      Map keys: For conventions and a few reserved values see [BaseService].
      */
-    open fun channelOnDeploy(tenantMnemonic: String, serviceMap: Map<String, Any>): Map<String, Any> = serviceMap
+    open fun channelOnDeploy(
+        tenantMnemonic: String,
+        serviceMap: Map<String, Any>,
+    ): Map<String, Any> = serviceMap
 
     /**
      * Mirth channels must call onUndeploy() from the Undeploy script, if there is an Undeploy script on the channel.
@@ -143,7 +149,10 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a map of values.
      */
-    fun onUndeploy(deployedChannelName: String, serviceMap: Map<String, Any>): Map<String, Any> {
+    fun onUndeploy(
+        deployedChannelName: String,
+        serviceMap: Map<String, Any>,
+    ): Map<String, Any> {
         val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
         val tenantMnemonic = tenantMap[MirthKey.TENANT_MNEMONIC.code] as String
         try {
@@ -167,7 +176,10 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a map of values.
      */
-    open fun channelOnUndeploy(tenantMnemonic: String, serviceMap: Map<String, Any>): Map<String, Any> {
+    open fun channelOnUndeploy(
+        tenantMnemonic: String,
+        serviceMap: Map<String, Any>,
+    ): Map<String, Any> {
         return emptyMap()
     }
 
@@ -183,7 +195,10 @@ abstract class ChannelService {
      * @return a map of values to be used during later channel stages.
      *      Map keys: For conventions and a few reserved values see [BaseService].
      */
-    fun onPreprocessor(deployedChannelName: String, serviceMap: Map<String, Any>): Map<String, Any> {
+    fun onPreprocessor(
+        deployedChannelName: String,
+        serviceMap: Map<String, Any>,
+    ): Map<String, Any> {
         val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
         try {
             return channelOnPreprocessor(tenantMap[MirthKey.TENANT_MNEMONIC.code] as String, tenantMap)
@@ -206,7 +221,10 @@ abstract class ChannelService {
      * @return a map of values to be used during later channel stages.
      *      Map keys: For conventions and a few reserved values see [BaseService].
      */
-    open fun channelOnPreprocessor(tenantMnemonic: String, serviceMap: Map<String, Any>): Map<String, Any> {
+    open fun channelOnPreprocessor(
+        tenantMnemonic: String,
+        serviceMap: Map<String, Any>,
+    ): Map<String, Any> {
         return emptyMap()
     }
 
@@ -222,7 +240,10 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a map of values.
      */
-    fun onPostprocessor(deployedChannelName: String, serviceMap: Map<String, Any>): Map<String, Any> {
+    fun onPostprocessor(
+        deployedChannelName: String,
+        serviceMap: Map<String, Any>,
+    ): Map<String, Any> {
         val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
         try {
             return channelOnPostprocessor(tenantMap[MirthKey.TENANT_MNEMONIC.code] as String, tenantMap)
@@ -245,7 +266,10 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a map of values.
      */
-    open fun channelOnPostprocessor(tenantMnemonic: String, serviceMap: Map<String, Any>): Map<String, Any> {
+    open fun channelOnPostprocessor(
+        tenantMnemonic: String,
+        serviceMap: Map<String, Any>,
+    ): Map<String, Any> {
         return emptyMap()
     }
 
@@ -261,7 +285,10 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a list of Mirth message data to pass to the next channel stage.
      */
-    fun sourceReader(deployedChannelName: String, serviceMap: Map<String, Any>): List<MirthMessage> {
+    fun sourceReader(
+        deployedChannelName: String,
+        serviceMap: Map<String, Any>,
+    ): List<MirthMessage> {
         val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
         val tenantId = tenantMap[MirthKey.TENANT_MNEMONIC.code] as String
         try {
@@ -284,7 +311,10 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a list of Mirth message data to pass to the next channel stage.
      */
-    abstract fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage>
+    abstract fun channelSourceReader(
+        tenantMnemonic: String,
+        serviceMap: Map<String, Any>,
+    ): List<MirthMessage>
 
     /**
      * Mirth channels call sourceFilter() from the Source Filter script, if the channel has a Source Filter.
@@ -302,7 +332,7 @@ abstract class ChannelService {
         deployedChannelName: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthFilterResponse {
         val tenantMap = addTenantToServiceMap(deployedChannelName, channelMap)
         try {
@@ -330,7 +360,7 @@ abstract class ChannelService {
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthFilterResponse {
         return MirthFilterResponse(true)
     }
@@ -351,7 +381,7 @@ abstract class ChannelService {
         deployedChannelName: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage {
         val tenantMap = addTenantToServiceMap(deployedChannelName, channelMap)
         try {
@@ -359,7 +389,7 @@ abstract class ChannelService {
                 tenantMap[MirthKey.TENANT_MNEMONIC.code] as String,
                 msg,
                 sourceMap,
-                tenantMap
+                tenantMap,
             )
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during sourceTransformer: ${e.message}" }
@@ -384,7 +414,7 @@ abstract class ChannelService {
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage {
         return MirthMessage(msg)
     }
@@ -396,7 +426,10 @@ abstract class ChannelService {
      * @return copy of serviceMap with the tenant mnemonic value at the key "tenantMnemonic".
      * @throws TenantMissingException if no tenant mnemonic can be found.
      */
-    protected fun addTenantToServiceMap(deployedChannelName: String, serviceMap: Map<String, Any>): Map<String, Any> {
+    protected fun addTenantToServiceMap(
+        deployedChannelName: String,
+        serviceMap: Map<String, Any>,
+    ): Map<String, Any> {
         return if (serviceMap.containsKey(MirthKey.TENANT_MNEMONIC.code)) {
             serviceMap
         } else {

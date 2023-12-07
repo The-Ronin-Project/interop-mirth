@@ -11,9 +11,10 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ResourceRequestKeyTest {
-    private val tenant = mockk<Tenant> {
-        every { mnemonic } returns "tenant"
-    }
+    private val tenant =
+        mockk<Tenant> {
+            every { mnemonic } returns "tenant"
+        }
 
     @Test
     fun `creates unlocalized resource ID`() {
@@ -65,15 +66,17 @@ class ResourceRequestKeyTest {
         val sameTenant = ResourceRequestKey("run1", ResourceType.Location, tenant, "tenant-1234")
         assertTrue(key.equals(sameTenant))
 
-        val tenant2 = mockk<Tenant> {
-            every { mnemonic } returns "different"
-        }
+        val tenant2 =
+            mockk<Tenant> {
+                every { mnemonic } returns "different"
+            }
         val differentTenant = ResourceRequestKey("run1", ResourceType.Location, tenant2, "tenant-1234")
         assertFalse(key.equals(differentTenant))
 
-        val tenant3 = mockk<Tenant> {
-            every { mnemonic } returns tenant.mnemonic
-        }
+        val tenant3 =
+            mockk<Tenant> {
+                every { mnemonic } returns tenant.mnemonic
+            }
         val differentTenantWithSameMnemonic = ResourceRequestKey("run1", ResourceType.Location, tenant3, "tenant-1234")
         assertTrue(key.equals(differentTenantWithSameMnemonic))
     }
@@ -97,15 +100,17 @@ class ResourceRequestKeyTest {
         val sameTenant = ResourceRequestKey("run1", ResourceType.Location, tenant, "tenant-1234")
         assertEquals(key.hashCode(), sameTenant.hashCode())
 
-        val tenant2 = mockk<Tenant> {
-            every { mnemonic } returns "different"
-        }
+        val tenant2 =
+            mockk<Tenant> {
+                every { mnemonic } returns "different"
+            }
         val differentTenant = ResourceRequestKey("run1", ResourceType.Location, tenant2, "tenant-1234")
         assertNotEquals(key.hashCode(), differentTenant.hashCode())
 
-        val tenant3 = mockk<Tenant> {
-            every { mnemonic } returns tenant.mnemonic
-        }
+        val tenant3 =
+            mockk<Tenant> {
+                every { mnemonic } returns tenant.mnemonic
+            }
         val differentTenantWithSameMnemonic = ResourceRequestKey("run1", ResourceType.Location, tenant3, "tenant-1234")
         assertEquals(key.hashCode(), differentTenantWithSameMnemonic.hashCode())
     }

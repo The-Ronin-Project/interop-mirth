@@ -7,7 +7,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class MedicationAdministrationLoadTest {
-
     private lateinit var channel: MedicationAdministrationLoad
 
     @BeforeEach
@@ -22,7 +21,7 @@ class MedicationAdministrationLoadTest {
         assertEquals(1, channel.destinations.size)
         assertEquals(
             listOf(ResourceType.Patient, ResourceType.MedicationRequest),
-            channel.publishedResourcesSubscriptions
+            channel.publishedResourcesSubscriptions,
         )
     }
 }

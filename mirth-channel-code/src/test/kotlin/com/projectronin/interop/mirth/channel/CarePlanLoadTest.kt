@@ -6,7 +6,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class CarePlanLoadTest {
-
     private lateinit var channel: CarePlanLoad
 
     @BeforeEach

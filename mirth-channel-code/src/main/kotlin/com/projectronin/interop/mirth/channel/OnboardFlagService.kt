@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component
 @Component
 class OnboardFlagService(
     private val kafkaPatientOnboardService: KafkaPatientOnboardService,
-    destination: OnboardFlagWriter
+    destination: OnboardFlagWriter,
 ) : TenantlessSourceService() {
     override val rootName: String = "OnboardFlag"
     override val destinations: Map<String, TenantlessDestinationService> = mapOf("onboardFlagWriter" to destination)
@@ -25,12 +25,12 @@ class OnboardFlagService(
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> =
         kafkaPatientOnboardService.retrieveOnboardEvents(
-            "interop-mirth-onboard_group"
+            "interop-mirth-onboard_group",
         ).filter { it.action == PatientOnboardingStatus.OnboardAction.ONBOARD }
             .map {
                 MirthMessage(
                     JacksonUtil.writeJsonValue(it),
-                    mapOf(MirthKey.TENANT_MNEMONIC.code to it.tenantId, MirthKey.FHIR_ID.code to it.patientId)
+                    mapOf(MirthKey.TENANT_MNEMONIC.code to it.tenantId, MirthKey.FHIR_ID.code to it.patientId),
                 )
             }
 }

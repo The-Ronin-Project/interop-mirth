@@ -21,42 +21,47 @@ import java.time.OffsetDateTime
 
 class DiagnosticReportPublishTest {
     private val tenantId = "tenant"
-    private val tenant = mockk<Tenant> {
-        every { mnemonic } returns tenantId
-    }
+    private val tenant =
+        mockk<Tenant> {
+            every { mnemonic } returns tenantId
+        }
     private val diagnosticReportService = mockk<DiagnosticReportService>()
-    private val vendorFactory = mockk<VendorFactory> {
-        every { diagnosticReportService } returns this@DiagnosticReportPublishTest.diagnosticReportService
-    }
+    private val vendorFactory =
+        mockk<VendorFactory> {
+            every { diagnosticReportService } returns this@DiagnosticReportPublishTest.diagnosticReportService
+        }
     private val diagnosticReportPublish = DiagnosticReportPublish(mockk(), mockk(), mockk(), mockk(), mockk())
 
     private val patient1 = Patient(id = Id("$tenantId-12345678"))
     private val patient2 = Patient(id = Id("$tenantId-89101112"))
     private val patient3 = Patient(id = Id("$tenantId-87654321"))
-    private val metadata = mockk<Metadata>(relaxed = true) {
-        every { runId } returns "run"
-        every { backfillRequest } returns null
-    }
+    private val metadata =
+        mockk<Metadata>(relaxed = true) {
+            every { runId } returns "run"
+            every { backfillRequest } returns null
+        }
 
     @Test
     fun `publish events creates a PatientPublishDiagnosticReportRequest`() {
         val publishEvent = mockk<InteropResourcePublishV1>()
-        val request = diagnosticReportPublish.convertPublishEventsToRequest(
-            listOf(publishEvent),
-            vendorFactory,
-            tenant
-        )
+        val request =
+            diagnosticReportPublish.convertPublishEventsToRequest(
+                listOf(publishEvent),
+                vendorFactory,
+                tenant,
+            )
         assertInstanceOf(DiagnosticReportPublish.PatientPublishDiagnosticReportRequest::class.java, request)
     }
 
     @Test
     fun `load events creates a LoadDiagnosticReportRequest`() {
         val loadEvent = mockk<InteropResourceLoadV1>(relaxed = true)
-        val request = diagnosticReportPublish.convertLoadEventsToRequest(
-            listOf(loadEvent),
-            vendorFactory,
-            tenant
-        )
+        val request =
+            diagnosticReportPublish.convertLoadEventsToRequest(
+                listOf(loadEvent),
+                vendorFactory,
+                tenant,
+            )
         assertInstanceOf(DiagnosticReportPublish.LoadDiagnosticReportRequest::class.java, request)
     }
 
@@ -70,13 +75,13 @@ class DiagnosticReportPublishTest {
         every {
             diagnosticReportService.getDiagnosticReportByPatient(
                 tenant,
-                "12345678"
+                "12345678",
             )
         } returns listOf(diagnosticReport1, diagnosticReport2)
         every {
             diagnosticReportService.getDiagnosticReportByPatient(
                 tenant,
-                "89101112"
+                "89101112",
             )
         } returns listOf(diagnosticReport3)
         every {
@@ -84,42 +89,48 @@ class DiagnosticReportPublishTest {
                 tenant,
                 "87654321",
                 startDate.toLocalDate(),
-                endDate.toLocalDate()
+                endDate.toLocalDate(),
             )
         } returns emptyList()
 
-        val event1 = InteropResourcePublishV1(
-            tenantId = tenantId,
-            resourceType = ResourceType.Patient,
-            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient1),
-            metadata = metadata
-        )
-        val event2 = InteropResourcePublishV1(
-            tenantId = tenantId,
-            resourceType = ResourceType.Patient,
-            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient2),
-            metadata = metadata
-        )
-        val event3 = InteropResourcePublishV1(
-            tenantId = tenantId,
-            resourceType = ResourceType.Patient,
-            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
-            metadata = Metadata(
-                runId = "run",
-                runDateTime = OffsetDateTime.now(),
-                upstreamReferences = null,
-                backfillRequest = Metadata.BackfillRequest(
-                    backfillId = "123",
-                    backfillStartDate = startDate,
-                    backfillEndDate = endDate
-                )
+        val event1 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(patient1),
+                metadata = metadata,
             )
-        )
-        val request = DiagnosticReportPublish.PatientPublishDiagnosticReportRequest(
-            listOf(event1, event2, event3),
-            diagnosticReportService,
-            tenant
-        )
+        val event2 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(patient2),
+                metadata = metadata,
+            )
+        val event3 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
+                metadata =
+                    Metadata(
+                        runId = "run",
+                        runDateTime = OffsetDateTime.now(),
+                        upstreamReferences = null,
+                        backfillRequest =
+                            Metadata.BackfillRequest(
+                                backfillId = "123",
+                                backfillStartDate = startDate,
+                                backfillEndDate = endDate,
+                            ),
+                    ),
+            )
+        val request =
+            DiagnosticReportPublish.PatientPublishDiagnosticReportRequest(
+                listOf(event1, event2, event3),
+                diagnosticReportService,
+                tenant,
+            )
         val resourcesByKeys = request.loadResources(request.requestKeys.toList())
         assertEquals(3, resourcesByKeys.size)
 

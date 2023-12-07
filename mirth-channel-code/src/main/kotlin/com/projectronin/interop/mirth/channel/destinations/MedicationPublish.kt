@@ -37,44 +37,48 @@ class MedicationPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninMedication
+    profileTransformer: RoninMedication,
 ) : KafkaEventResourcePublisher<Medication>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<Medication> {
         // Only events for the same resource type are grouped, so just peek at the first one
         return when (val resourceType = events.first().resourceType) {
-            ResourceType.MedicationRequest -> MedicationRequestPublishMedicationRequest(
-                events,
-                vendorFactory.medicationService,
-                tenant
-            )
+            ResourceType.MedicationRequest ->
+                MedicationRequestPublishMedicationRequest(
+                    events,
+                    vendorFactory.medicationService,
+                    tenant,
+                )
 
-            ResourceType.MedicationStatement -> MedicationStatementPublishMedicationRequest(
-                events,
-                vendorFactory.medicationService,
-                tenant
-            )
+            ResourceType.MedicationStatement ->
+                MedicationStatementPublishMedicationRequest(
+                    events,
+                    vendorFactory.medicationService,
+                    tenant,
+                )
 
-            ResourceType.Medication -> MedicationPublishMedicationRequest(
-                events,
-                vendorFactory.medicationService,
-                tenant
-            )
+            ResourceType.Medication ->
+                MedicationPublishMedicationRequest(
+                    events,
+                    vendorFactory.medicationService,
+                    tenant,
+                )
 
-            ResourceType.MedicationAdministration -> MedicationAdministrationPublishMedicationRequest(
-                events,
-                vendorFactory.medicationService,
-                tenant
-            )
+            ResourceType.MedicationAdministration ->
+                MedicationAdministrationPublishMedicationRequest(
+                    events,
+                    vendorFactory.medicationService,
+                    tenant,
+                )
 
             else -> throw IllegalStateException("Received resource type ($resourceType) that cannot be used to load medications")
         }
@@ -83,7 +87,7 @@ class MedicationPublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<Medication> {
         return LoadMedicationRequest(events, vendorFactory.medicationService, tenant)
     }
@@ -91,7 +95,7 @@ class MedicationPublish(
     internal class MedicationPublishMedicationRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: MedicationService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<Medication>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { MedicationPublishEvent(it, tenant) }
@@ -99,21 +103,22 @@ class MedicationPublish(
         private class MedicationPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
             PublishResourceEvent<Medication>(publishEvent, Medication::class) {
             override val requestKeys: Set<ResourceRequestKey> by lazy {
-                val medicationIds = sourceResource.ingredient
-                    .filter { it.item?.type == DynamicValueType.REFERENCE }
-                    .mapNotNull {
-                        val reference = it.item?.value as Reference
-                        when (reference.decomposedType()) {
-                            ResourceType.Medication.name -> reference.decomposedId()!!
-                            else -> null
+                val medicationIds =
+                    sourceResource.ingredient
+                        .filter { it.item?.type == DynamicValueType.REFERENCE }
+                        .mapNotNull {
+                            val reference = it.item?.value as Reference
+                            when (reference.decomposedType()) {
+                                ResourceType.Medication.name -> reference.decomposedId()!!
+                                else -> null
+                            }
                         }
-                    }
                 medicationIds.map {
                     ResourceRequestKey(
                         metadata.runId,
                         ResourceType.Medication,
                         tenant,
-                        it
+                        it,
                     )
                 }.toSet()
             }
@@ -129,29 +134,33 @@ class MedicationPublish(
         override fun loadResourcesForIds(
             requestFhirIds: List<String>,
             startDate: OffsetDateTime?,
-            endDate: OffsetDateTime?
+            endDate: OffsetDateTime?,
         ): Map<String, List<Medication>> {
             // Look for any FHIR IDs that are associated to embedded resources, and load those.
-            val fhirIdsForEmbedded = requestFhirIds.filter { id ->
-                embeddedReferenceIndicators.any { id.startsWith("$it-") }
-            }
-            val embeddedResourcesByFhirId = if (fhirIdsForEmbedded.isNotEmpty()) {
-                val allEmbeddedResources = sourceEvents.flatMap { it.sourceEvent.embeddedResources ?: emptyList() }
-                    .filter { it.resourceType == ResourceType.Medication }
-                    .map { JacksonManager.objectMapper.readValue<Medication>(it.resourceJson) }
-                fhirIdsForEmbedded.associateWith { fhirId ->
-                    allEmbeddedResources.firstOrNull { it.id?.value == fhirId }?.let { listOf(it) } ?: emptyList()
+            val fhirIdsForEmbedded =
+                requestFhirIds.filter { id ->
+                    embeddedReferenceIndicators.any { id.startsWith("$it-") }
                 }
-            } else {
-                emptyMap()
-            }
+            val embeddedResourcesByFhirId =
+                if (fhirIdsForEmbedded.isNotEmpty()) {
+                    val allEmbeddedResources =
+                        sourceEvents.flatMap { it.sourceEvent.embeddedResources ?: emptyList() }
+                            .filter { it.resourceType == ResourceType.Medication }
+                            .map { JacksonManager.objectMapper.readValue<Medication>(it.resourceJson) }
+                    fhirIdsForEmbedded.associateWith { fhirId ->
+                        allEmbeddedResources.firstOrNull { it.id?.value == fhirId }?.let { listOf(it) } ?: emptyList()
+                    }
+                } else {
+                    emptyMap()
+                }
 
             val nonEmbeddedFhirIds = requestFhirIds - fhirIdsForEmbedded.toSet()
-            val nonEmbeddedResourcesByFhirId = if (nonEmbeddedFhirIds.isNotEmpty()) {
-                fhirService.getByIDs(tenant, nonEmbeddedFhirIds).mapListValues()
-            } else {
-                emptyMap()
-            }
+            val nonEmbeddedResourcesByFhirId =
+                if (nonEmbeddedFhirIds.isNotEmpty()) {
+                    fhirService.getByIDs(tenant, nonEmbeddedFhirIds).mapListValues()
+                } else {
+                    emptyMap()
+                }
 
             return embeddedResourcesByFhirId + nonEmbeddedResourcesByFhirId
         }
@@ -160,7 +169,7 @@ class MedicationPublish(
     internal class MedicationRequestPublishMedicationRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: MedicationService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : EmbeddedMedicationResourceRequest() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { MedicationRequestPublishEvent(it, tenant) }
@@ -169,22 +178,23 @@ class MedicationPublish(
             PublishResourceEvent<MedicationRequest>(publishEvent, MedicationRequest::class) {
             override val requestKeys: Set<ResourceRequestKey> by lazy {
                 val medication = sourceResource.medication!!
-                val medicationId = medication.let {
-                    if (medication.type == DynamicValueType.REFERENCE) {
-                        val medicationReference = (medication.value as Reference)
-                        if (medicationReference.isForType(ResourceType.Medication)) {
-                            return@let medicationReference.decomposedId()!!
+                val medicationId =
+                    medication.let {
+                        if (medication.type == DynamicValueType.REFERENCE) {
+                            val medicationReference = (medication.value as Reference)
+                            if (medicationReference.isForType(ResourceType.Medication)) {
+                                return@let medicationReference.decomposedId()!!
+                            }
                         }
+                        return@lazy emptySet()
                     }
-                    return@lazy emptySet()
-                }
                 setOf(
                     ResourceRequestKey(
                         metadata.runId,
                         ResourceType.Medication,
                         tenant,
-                        medicationId
-                    )
+                        medicationId,
+                    ),
                 )
             }
         }
@@ -193,7 +203,7 @@ class MedicationPublish(
     internal class MedicationStatementPublishMedicationRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: MedicationService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : EmbeddedMedicationResourceRequest() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { MedicationStatementPublishEvent(it, tenant) }
@@ -202,22 +212,23 @@ class MedicationPublish(
             PublishResourceEvent<MedicationStatement>(publishEvent, MedicationStatement::class) {
             override val requestKeys: Set<ResourceRequestKey> by lazy {
                 val medication = sourceResource.medication!!
-                val medicationId = medication.let {
-                    if (medication.type == DynamicValueType.REFERENCE) {
-                        val medicationReference = (medication.value as Reference)
-                        if (medicationReference.isForType(ResourceType.Medication)) {
-                            return@let medicationReference.decomposedId()!!
+                val medicationId =
+                    medication.let {
+                        if (medication.type == DynamicValueType.REFERENCE) {
+                            val medicationReference = (medication.value as Reference)
+                            if (medicationReference.isForType(ResourceType.Medication)) {
+                                return@let medicationReference.decomposedId()!!
+                            }
                         }
+                        return@lazy emptySet()
                     }
-                    return@lazy emptySet()
-                }
                 setOf(
                     ResourceRequestKey(
                         metadata.runId,
                         ResourceType.Medication,
                         tenant,
-                        medicationId
-                    )
+                        medicationId,
+                    ),
                 )
             }
         }
@@ -226,7 +237,7 @@ class MedicationPublish(
     internal class MedicationAdministrationPublishMedicationRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: MedicationService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : EmbeddedMedicationResourceRequest() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { MedicationAdministrationPublishEvent(it, tenant) }
@@ -235,22 +246,23 @@ class MedicationPublish(
             PublishResourceEvent<MedicationAdministration>(publishEvent, MedicationAdministration::class) {
             override val requestKeys: Set<ResourceRequestKey> by lazy {
                 val medication = sourceResource.medication!!
-                val medicationId = medication.let {
-                    if (medication.type == DynamicValueType.REFERENCE) {
-                        val medicationReference = (medication.value as Reference)
-                        if (medicationReference.isForType(ResourceType.Medication)) {
-                            return@let medicationReference.decomposedId()!!
+                val medicationId =
+                    medication.let {
+                        if (medication.type == DynamicValueType.REFERENCE) {
+                            val medicationReference = (medication.value as Reference)
+                            if (medicationReference.isForType(ResourceType.Medication)) {
+                                return@let medicationReference.decomposedId()!!
+                            }
                         }
+                        return@lazy emptySet()
                     }
-                    return@lazy emptySet()
-                }
                 setOf(
                     ResourceRequestKey(
                         metadata.runId,
                         ResourceType.Medication,
                         tenant,
-                        medicationId
-                    )
+                        medicationId,
+                    ),
                 )
             }
         }
@@ -259,6 +271,6 @@ class MedicationPublish(
     internal class LoadMedicationRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: MedicationService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<Medication>(loadEvents, tenant)
 }

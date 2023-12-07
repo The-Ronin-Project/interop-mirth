@@ -21,22 +21,25 @@ import java.time.OffsetDateTime
 
 class EncounterPublishTest {
     private val tenantId = "tenant"
-    private val tenant = mockk<Tenant> {
-        every { mnemonic } returns tenantId
-    }
+    private val tenant =
+        mockk<Tenant> {
+            every { mnemonic } returns tenantId
+        }
     private val encounterService = mockk<EncounterService>()
-    private val vendorFactory = mockk<VendorFactory> {
-        every { encounterService } returns this@EncounterPublishTest.encounterService
-    }
+    private val vendorFactory =
+        mockk<VendorFactory> {
+            every { encounterService } returns this@EncounterPublishTest.encounterService
+        }
     private val encounterPublish = EncounterPublish(mockk(), mockk(), mockk(), mockk(), mockk())
 
     private val patient1 = Patient(id = Id("$tenantId-1234"))
     private val patient2 = Patient(id = Id("$tenantId-5678"))
     private val patient3 = Patient(id = Id("$tenantId-9012"))
-    private val metadata = mockk<Metadata>(relaxed = true) {
-        every { runId } returns "run"
-        every { backfillRequest } returns null
-    }
+    private val metadata =
+        mockk<Metadata>(relaxed = true) {
+            every { runId } returns "run"
+            every { backfillRequest } returns null
+        }
 
     @Test
     fun `publish events create a PatientPublishEncounterRequest`() {
@@ -59,45 +62,51 @@ class EncounterPublishTest {
         val encounter3 = mockk<Encounter>()
         val startDate = OffsetDateTime.now()
         val endDate = OffsetDateTime.now()
-        every { encounterService.findPatientEncounters(tenant, "1234", any(), any()) } returns listOf(
-            encounter1,
-            encounter2
-        )
+        every { encounterService.findPatientEncounters(tenant, "1234", any(), any()) } returns
+            listOf(
+                encounter1,
+                encounter2,
+            )
         every { encounterService.findPatientEncounters(tenant, "5678", any(), any()) } returns listOf(encounter3)
         every { encounterService.findPatientEncounters(tenant, "9012", startDate.toLocalDate(), endDate.toLocalDate()) } returns emptyList()
 
-        val event1 = InteropResourcePublishV1(
-            tenantId = tenantId,
-            resourceType = ResourceType.Patient,
-            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient1),
-            metadata = metadata
-        )
-        val event2 = InteropResourcePublishV1(
-            tenantId = tenantId,
-            resourceType = ResourceType.Patient,
-            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient2),
-            metadata = metadata
-        )
-        val event3 = InteropResourcePublishV1(
-            tenantId = tenantId,
-            resourceType = ResourceType.Patient,
-            resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
-            metadata = Metadata(
-                runId = "run",
-                runDateTime = OffsetDateTime.now(),
-                upstreamReferences = null,
-                backfillRequest = Metadata.BackfillRequest(
-                    backfillId = "123",
-                    backfillStartDate = startDate,
-                    backfillEndDate = endDate
-                )
+        val event1 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(patient1),
+                metadata = metadata,
             )
-        )
+        val event2 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(patient2),
+                metadata = metadata,
+            )
+        val event3 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
+                metadata =
+                    Metadata(
+                        runId = "run",
+                        runDateTime = OffsetDateTime.now(),
+                        upstreamReferences = null,
+                        backfillRequest =
+                            Metadata.BackfillRequest(
+                                backfillId = "123",
+                                backfillStartDate = startDate,
+                                backfillEndDate = endDate,
+                            ),
+                    ),
+            )
         val request =
             EncounterPublish.PatientPublishEncounterRequest(
                 listOf(event1, event2, event3),
                 encounterService,
-                tenant
+                tenant,
             )
         val resourcesByKeys = request.loadResources(request.requestKeys.toList())
         assertEquals(3, resourcesByKeys.size)

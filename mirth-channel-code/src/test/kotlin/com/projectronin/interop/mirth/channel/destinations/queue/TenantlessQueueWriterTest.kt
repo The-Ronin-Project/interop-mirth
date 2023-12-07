@@ -32,9 +32,10 @@ class TenantlessQueueWriterTest {
     fun setup() {
         mockPublishService = mockk()
         mockTransformManager = mockk()
-        mockTenantService = mockk {
-            every { getTenantForMnemonic(tenantId) } returns mockTenant
-        }
+        mockTenantService =
+            mockk {
+                every { getTenantForMnemonic(tenantId) } returns mockTenant
+            }
         writer = object : TenantlessQueueWriter<TestResource>(mockPublishService, TestResource::class) {}
     }
 
@@ -45,11 +46,12 @@ class TenantlessQueueWriterTest {
 
     @Test
     fun `destinationWriter - works`() {
-        val mockSerialized = """{
+        val mockSerialized =
+            """{
         |  "id": "12345",
         |  "resourceType": "TestResource"
         |}
-        """.trimMargin()
+            """.trimMargin()
         val mockRoninDomainResource = mockk<TestResource>()
 
         mockkObject(JacksonUtil)
@@ -61,12 +63,13 @@ class TenantlessQueueWriterTest {
         val metadata = generateMetadata()
         every { mockPublishService.publishFHIRResources(tenantId, any<List<TestResource>>(), metadata) } returns true
 
-        val response = writer.destinationWriter(
-            "name",
-            mockSerialized,
-            mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId, MirthKey.EVENT_METADATA.code to serialize(metadata)),
-            channelMap
-        )
+        val response =
+            writer.destinationWriter(
+                "name",
+                mockSerialized,
+                mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId, MirthKey.EVENT_METADATA.code to serialize(metadata)),
+                channelMap,
+            )
         assertEquals("Published 1 TestResource(s)", response.message)
         assertEquals(MirthResponseStatus.SENT, response.status)
         assertEquals(mockSerialized, response.detailedMessage)
@@ -80,11 +83,12 @@ class TenantlessQueueWriterTest {
 
     @Test
     fun `destinationWriter - has resource but publish fails`() {
-        val mockSerialized = """{
+        val mockSerialized =
+            """{
         |  "id": "12345",
         |  "resourceType": "TestResource"
         |}
-        """.trimMargin()
+            """.trimMargin()
         val mockRoninDomainResource = mockk<TestResource>()
 
         mockkObject(JacksonUtil)
@@ -96,12 +100,13 @@ class TenantlessQueueWriterTest {
         val metadata = generateMetadata()
         every { mockPublishService.publishFHIRResources(tenantId, any<List<TestResource>>(), metadata) } returns false
 
-        val response = writer.destinationWriter(
-            tenantId,
-            mockSerialized,
-            mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId, MirthKey.EVENT_METADATA.code to serialize(metadata)),
-            channelMap
-        )
+        val response =
+            writer.destinationWriter(
+                tenantId,
+                mockSerialized,
+                mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId, MirthKey.EVENT_METADATA.code to serialize(metadata)),
+                channelMap,
+            )
         assertEquals(MirthResponseStatus.ERROR, response.status)
         assertEquals(mockSerialized, response.detailedMessage)
         assertEquals("Failed to publish TestResource(s)", response.message)

@@ -63,78 +63,89 @@ class PatientDiscoveryTest {
     lateinit var queueClient: QueueClient
     lateinit var clinicalTrialClient: ClinicalTrialClient
     lateinit var tenantConfigurationService: TenantConfigurationService
-    val backfillEventString = "{" +
-        "\"id\":\"67d28e26-ae11-4afb-968b-0991aa11c80b\"," +
-        "\"backfill_id\":\"be3eddd1-e31b-4140-8e41-88aeb4b394c8\"," +
-        "\"tenant_id\":\"blah\"," +
-        "\"start_date\":\"2008-11-15\"," +
-        "\"end_date\":\"2023-11-15\"," +
-        "\"patient_id\":\"pattythepatient\"," +
-        "\"status\":\"NOT_STARTED\"" +
-        "}"
+    val backfillEventString =
+        "{" +
+            "\"id\":\"67d28e26-ae11-4afb-968b-0991aa11c80b\"," +
+            "\"backfill_id\":\"be3eddd1-e31b-4140-8e41-88aeb4b394c8\"," +
+            "\"tenant_id\":\"blah\"," +
+            "\"start_date\":\"2008-11-15\"," +
+            "\"end_date\":\"2023-11-15\"," +
+            "\"patient_id\":\"pattythepatient\"," +
+            "\"status\":\"NOT_STARTED\"" +
+            "}"
 
     @BeforeEach
     fun setup() {
-        tenant = mockk {
-            every { mnemonic } returns "ronin"
-            every { batchConfig } returns mockk {
-                every { availableEnd } returns LocalTime.MAX
-                every { availableStart } returns LocalTime.MIN
+        tenant =
+            mockk {
+                every { mnemonic } returns "ronin"
+                every { batchConfig } returns
+                    mockk {
+                        every { availableEnd } returns LocalTime.MAX
+                        every { availableStart } returns LocalTime.MIN
+                    }
+                every { timezone } returns ZoneId.of("Etc/UTC")
             }
-            every { timezone } returns ZoneId.of("Etc/UTC")
-        }
-        tenant2 = mockk {
-            every { mnemonic } returns "blah"
-            every { batchConfig } returns mockk {
-                every { availableEnd } returns LocalTime.MAX
-                every { availableStart } returns LocalTime.MIN
+        tenant2 =
+            mockk {
+                every { mnemonic } returns "blah"
+                every { batchConfig } returns
+                    mockk {
+                        every { availableEnd } returns LocalTime.MAX
+                        every { availableStart } returns LocalTime.MIN
+                    }
+                every { timezone } returns ZoneId.of("Etc/UTC")
             }
-            every { timezone } returns ZoneId.of("Etc/UTC")
-        }
         vendorFactory = mockk()
         patientService = mockk()
 
-        tenantService = mockk {
-            every { getTenantForMnemonic("ronin") } returns tenant
-            every { getMonitoredTenants() } returns listOf(tenant, tenant2)
-            every { getAllTenants() } returns listOf(tenant, tenant2)
-        }
-        val ehrFactory = mockk<EHRFactory> {
-            every { getVendorFactory(tenant) } returns vendorFactory
-        }
-        val configDO = mockk<MirthTenantConfigDO> {
-            every { lastUpdated } returns OffsetDateTime.now().minusDays(2)
-            every { lastUpdated = any() } returns mockk()
-        }
-        tenantConfigurationService = mockk() {
-            every { getLocationIDsByTenant("ronin") } returns listOf("123", "456")
-            every { getConfiguration("ronin") } returns configDO
-            every { getLocationIDsByTenant("blah") } returns emptyList()
-            every { getConfiguration("blah") } returns configDO
-            every { updateConfiguration(any()) } just Runs
-        }
+        tenantService =
+            mockk {
+                every { getTenantForMnemonic("ronin") } returns tenant
+                every { getMonitoredTenants() } returns listOf(tenant, tenant2)
+                every { getAllTenants() } returns listOf(tenant, tenant2)
+            }
+        val ehrFactory =
+            mockk<EHRFactory> {
+                every { getVendorFactory(tenant) } returns vendorFactory
+            }
+        val configDO =
+            mockk<MirthTenantConfigDO> {
+                every { lastUpdated } returns OffsetDateTime.now().minusDays(2)
+                every { lastUpdated = any() } returns mockk()
+            }
+        tenantConfigurationService =
+            mockk {
+                every { getLocationIDsByTenant("ronin") } returns listOf("123", "456")
+                every { getConfiguration("ronin") } returns configDO
+                every { getLocationIDsByTenant("blah") } returns emptyList()
+                every { getConfiguration("blah") } returns configDO
+                every { updateConfiguration(any()) } just Runs
+            }
         clinicalTrialClient = mockk()
 
         val writer = mockk<PatientDiscoveryWriter>()
-        channel = PatientDiscovery(
-            tenantService,
-            writer,
-            ehrFactory,
-            tenantConfigurationService,
-            "",
-            mockk {},
-            clinicalTrialClient
-        )
+        channel =
+            PatientDiscovery(
+                tenantService,
+                writer,
+                ehrFactory,
+                tenantConfigurationService,
+                "",
+                mockk {},
+                clinicalTrialClient,
+            )
         queueClient = mockk {}
-        backfillVersionChannel = PatientDiscovery(
-            tenantService,
-            writer,
-            ehrFactory,
-            tenantConfigurationService,
-            "yes",
-            queueClient,
-            clinicalTrialClient
-        )
+        backfillVersionChannel =
+            PatientDiscovery(
+                tenantService,
+                writer,
+                ehrFactory,
+                tenantConfigurationService,
+                "yes",
+                queueClient,
+                clinicalTrialClient,
+            )
     }
 
     @Test
@@ -154,9 +165,10 @@ class PatientDiscoveryTest {
 
     @Test
     fun `tenants that already ran shouldn't run again`() {
-        every { tenantConfigurationService.getConfiguration(any()) } returns mockk {
-            every { lastUpdated } returns OffsetDateTime.now().plusHours(2)
-        }
+        every { tenantConfigurationService.getConfiguration(any()) } returns
+            mockk {
+                every { lastUpdated } returns OffsetDateTime.now().plusHours(2)
+            }
         val list = channel.channelSourceReader(emptyMap())
         assertEquals(0, list.size)
     }
@@ -170,10 +182,11 @@ class PatientDiscoveryTest {
 
     @Test
     fun `AvailableWindow inits correctly with blank values`() {
-        val tenant = mockk<Tenant> {
-            every { timezone } returns ZoneId.of("America/Los_Angeles")
-            every { batchConfig } returns null
-        }
+        val tenant =
+            mockk<Tenant> {
+                every { timezone } returns ZoneId.of("America/Los_Angeles")
+                every { batchConfig } returns null
+            }
         val availableWindow = PatientDiscovery.AvailableWindow(tenant)
         val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
         assertEquals(OffsetTime.of(0, 0, 0, 0, zone), availableWindow.windowStartTime)
@@ -183,13 +196,15 @@ class PatientDiscoveryTest {
 
     @Test
     fun `AvailableWindow inits correctly with passed values`() {
-        val tenant = mockk<Tenant> {
-            every { timezone } returns ZoneId.of("America/Los_Angeles")
-            every { batchConfig } returns mockk {
-                every { availableStart } returns LocalTime.of(20, 0)
-                every { availableEnd } returns LocalTime.of(3, 0)
+        val tenant =
+            mockk<Tenant> {
+                every { timezone } returns ZoneId.of("America/Los_Angeles")
+                every { batchConfig } returns
+                    mockk {
+                        every { availableStart } returns LocalTime.of(20, 0)
+                        every { availableEnd } returns LocalTime.of(3, 0)
+                    }
             }
-        }
         val availableWindow = PatientDiscovery.AvailableWindow(tenant)
         val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
         assertEquals(OffsetTime.of(20, 0, 0, 0, zone), availableWindow.windowStartTime)
@@ -199,13 +214,15 @@ class PatientDiscoveryTest {
 
     @Test
     fun `AvailableWindow can correctly determine the right window`() {
-        val tenant = mockk<Tenant> {
-            every { timezone } returns ZoneId.of("America/Los_Angeles")
-            every { batchConfig } returns mockk {
-                every { availableStart } returns LocalTime.of(1, 30)
-                every { availableEnd } returns LocalTime.of(7, 0)
+        val tenant =
+            mockk<Tenant> {
+                every { timezone } returns ZoneId.of("America/Los_Angeles")
+                every { batchConfig } returns
+                    mockk {
+                        every { availableStart } returns LocalTime.of(1, 30)
+                        every { availableEnd } returns LocalTime.of(7, 0)
+                    }
             }
-        }
         val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
         val availableWindow = PatientDiscovery.AvailableWindow(tenant)
         val oneAm = OffsetDateTime.of(2023, 4, 1, 1, 0, 0, 0, zone)
@@ -223,13 +240,15 @@ class PatientDiscoveryTest {
 
     @Test
     fun `AvailableWindow can correctly determine the right window for spanning midnight`() {
-        val tenant = mockk<Tenant> {
-            every { timezone } returns ZoneId.of("America/Los_Angeles")
-            every { batchConfig } returns mockk {
-                every { availableStart } returns LocalTime.of(21, 0)
-                every { availableEnd } returns LocalTime.of(3, 0)
+        val tenant =
+            mockk<Tenant> {
+                every { timezone } returns ZoneId.of("America/Los_Angeles")
+                every { batchConfig } returns
+                    mockk {
+                        every { availableStart } returns LocalTime.of(21, 0)
+                        every { availableEnd } returns LocalTime.of(3, 0)
+                    }
             }
-        }
         val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
         val availableWindow = PatientDiscovery.AvailableWindow(tenant)
         val oneAm = OffsetDateTime.of(2023, 4, 1, 1, 0, 0, 0, zone)
@@ -249,30 +268,35 @@ class PatientDiscoveryTest {
 
     @Test
     fun `AvailableWindow can correctly determine when UTC is a different day`() {
-        val tenant = mockk<Tenant> {
-            every { timezone } returns ZoneId.of("America/Los_Angeles")
-            every { batchConfig } returns mockk {
-                every { availableStart } returns LocalTime.of(21, 0)
-                every { availableEnd } returns LocalTime.of(23, 0)
+        val tenant =
+            mockk<Tenant> {
+                every { timezone } returns ZoneId.of("America/Los_Angeles")
+                every { batchConfig } returns
+                    mockk {
+                        every { availableStart } returns LocalTime.of(21, 0)
+                        every { availableEnd } returns LocalTime.of(23, 0)
+                    }
             }
-        }
         val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
         val availableWindow = PatientDiscovery.AvailableWindow(tenant)
         val utcZone = ZoneId.of("Etc/UTC").rules.getOffset(Instant.now())
-        val currentTime = OffsetDateTime.of(2023, 4, 9, 21, 30, 0, 0, zone)
-            .withOffsetSameInstant(utcZone)
+        val currentTime =
+            OffsetDateTime.of(2023, 4, 9, 21, 30, 0, 0, zone)
+                .withOffsetSameInstant(utcZone)
         assertTrue(availableWindow.isInWindow(currentTime))
     }
 
     @Test
     fun `AvailableWindow can correctly determine if something ran when spans midnight`() {
-        val spansMidnightTenant = mockk<Tenant> {
-            every { timezone } returns ZoneId.of("America/Los_Angeles")
-            every { batchConfig } returns mockk {
-                every { availableStart } returns LocalTime.of(20, 0)
-                every { availableEnd } returns LocalTime.of(3, 0)
+        val spansMidnightTenant =
+            mockk<Tenant> {
+                every { timezone } returns ZoneId.of("America/Los_Angeles")
+                every { batchConfig } returns
+                    mockk {
+                        every { availableStart } returns LocalTime.of(20, 0)
+                        every { availableEnd } returns LocalTime.of(3, 0)
+                    }
             }
-        }
         val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
         val spansMidnightAvailableWindow = PatientDiscovery.AvailableWindow(spansMidnightTenant)
         val earlyMorningRunToday = OffsetDateTime.of(2023, 4, 8, 0, 30, 0, 0, zone)
@@ -310,13 +334,15 @@ class PatientDiscoveryTest {
 
     @Test
     fun `AvailableWindow can correctly determine if something ran `() {
-        val spansMidnightTenant = mockk<Tenant> {
-            every { timezone } returns ZoneId.of("America/Los_Angeles")
-            every { batchConfig } returns mockk {
-                every { availableStart } returns LocalTime.of(0, 30)
-                every { availableEnd } returns LocalTime.of(7, 0)
+        val spansMidnightTenant =
+            mockk<Tenant> {
+                every { timezone } returns ZoneId.of("America/Los_Angeles")
+                every { batchConfig } returns
+                    mockk {
+                        every { availableStart } returns LocalTime.of(0, 30)
+                        every { availableEnd } returns LocalTime.of(7, 0)
+                    }
             }
-        }
         val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
         val spansMidnightAvailableWindow = PatientDiscovery.AvailableWindow(spansMidnightTenant)
         val earlyMorningRunToday = OffsetDateTime.of(2023, 4, 8, 1, 30, 0, 0, zone)
@@ -348,13 +374,15 @@ class PatientDiscoveryTest {
 
     @Test
     fun `AvailableWindow can correctly determine if something ran when passed UTC`() {
-        val spansMidnightTenant = mockk<Tenant> {
-            every { timezone } returns ZoneId.of("America/Los_Angeles")
-            every { batchConfig } returns mockk {
-                every { availableStart } returns LocalTime.of(0, 30)
-                every { availableEnd } returns LocalTime.of(7, 0)
+        val spansMidnightTenant =
+            mockk<Tenant> {
+                every { timezone } returns ZoneId.of("America/Los_Angeles")
+                every { batchConfig } returns
+                    mockk {
+                        every { availableStart } returns LocalTime.of(0, 30)
+                        every { availableEnd } returns LocalTime.of(7, 0)
+                    }
             }
-        }
         val utcZone = ZoneId.of("Etc/UTC").rules.getOffset(Instant.now())
         val clientTimeZone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
         val spansMidnightAvailableWindow = PatientDiscovery.AvailableWindow(spansMidnightTenant)
@@ -391,18 +419,21 @@ class PatientDiscoveryTest {
 
     @Test
     fun `AvailableWindow can correctly determine when last run time is in UTC on a different day`() {
-        val tenant = mockk<Tenant> {
-            every { timezone } returns ZoneId.of("America/Los_Angeles")
-            every { batchConfig } returns mockk {
-                every { availableStart } returns LocalTime.of(21, 0)
-                every { availableEnd } returns LocalTime.of(23, 0)
+        val tenant =
+            mockk<Tenant> {
+                every { timezone } returns ZoneId.of("America/Los_Angeles")
+                every { batchConfig } returns
+                    mockk {
+                        every { availableStart } returns LocalTime.of(21, 0)
+                        every { availableEnd } returns LocalTime.of(23, 0)
+                    }
             }
-        }
         val zone = ZoneId.of("America/Los_Angeles").rules.getOffset(Instant.now())
         val availableWindow = PatientDiscovery.AvailableWindow(tenant)
         val utcZone = ZoneId.of("Etc/UTC").rules.getOffset(Instant.now())
-        val currentTime = OffsetDateTime.of(2023, 4, 9, 21, 30, 0, 0, zone)
-            .withOffsetSameInstant(utcZone)
+        val currentTime =
+            OffsetDateTime.of(2023, 4, 9, 21, 30, 0, 0, zone)
+                .withOffsetSameInstant(utcZone)
         val lastRunTime = OffsetDateTime.of(2023, 4, 9, 21, 0, 0, 0, zone).withOffsetSameInstant(utcZone)
         assertTrue(availableWindow.ranTodayAlready(currentTime, lastRunTime))
     }
@@ -426,19 +457,20 @@ class PatientDiscoveryTest {
         val backfillId = UUID.fromString("be3eddd1-e31b-4140-8e41-88aeb4b394c8")
         every { tenantConfigurationService.getLocationIDsByTenant(any()) } returns emptyList()
         coEvery { queueClient.getQueueEntries("ronin") } returns emptyList()
-        coEvery { queueClient.getQueueEntries("blah") } returns listOf(
-            QueueEntry(
-                id = entryId,
-                backfillId = backfillId,
-                tenantId = "blah",
-                startDate = LocalDate.of(2008, 11, 15),
-                endDate = LocalDate.of(2023, 11, 15),
-                patientId = "pattythepatient",
-                status = BackfillStatus.NOT_STARTED
-            ),
-            // this should be found but discarded because we're only taking one
-            mockk {}
-        )
+        coEvery { queueClient.getQueueEntries("blah") } returns
+            listOf(
+                QueueEntry(
+                    id = entryId,
+                    backfillId = backfillId,
+                    tenantId = "blah",
+                    startDate = LocalDate.of(2008, 11, 15),
+                    endDate = LocalDate.of(2023, 11, 15),
+                    patientId = "pattythepatient",
+                    status = BackfillStatus.NOT_STARTED,
+                ),
+                // this should be found but discarded because we're only taking one
+                mockk {},
+            )
 
         val list = backfillVersionChannel.channelSourceReader(emptyMap())
         assertEquals(1, list.size)
@@ -459,125 +491,143 @@ class PatientDiscoveryTest {
 
     @Test
     fun `sourceTransform - works`() {
-        val patient1 = Participant(
-            status = ParticipationStatus.ACCEPTED.asCode(),
-            actor = Reference(
-                reference = "Patient/patFhirID".asFHIR(),
-                identifier = Identifier(value = "patientID".asFHIR(), system = Uri("system"))
+        val patient1 =
+            Participant(
+                status = ParticipationStatus.ACCEPTED.asCode(),
+                actor =
+                    Reference(
+                        reference = "Patient/patFhirID".asFHIR(),
+                        identifier = Identifier(value = "patientID".asFHIR(), system = Uri("system")),
+                    ),
             )
-        )
         val location =
             Participant(
                 status = ParticipationStatus.ACCEPTED.asCode(),
-                actor = Reference(reference = "Location".asFHIR())
+                actor = Reference(reference = "Location".asFHIR()),
             )
-        val appt1 = Appointment(
-            id = Id("1"),
-            participant = listOf(location, patient1),
-            status = AppointmentStatus.BOOKED.asCode()
-        )
-        val appt2 = Appointment(
-            id = Id("2"),
-            participant = listOf(location, patient1),
-            status = AppointmentStatus.BOOKED.asCode()
-        )
+        val appt1 =
+            Appointment(
+                id = Id("1"),
+                participant = listOf(location, patient1),
+                status = AppointmentStatus.BOOKED.asCode(),
+            )
+        val appt2 =
+            Appointment(
+                id = Id("2"),
+                participant = listOf(location, patient1),
+                status = AppointmentStatus.BOOKED.asCode(),
+            )
         val appointments = listOf(appt1, appt2)
         val findPractitionersResponse = AppointmentsWithNewPatients(appointments)
 
-        val mockAppointmentService = mockk<AppointmentService> {
-            every { findLocationAppointments(tenant, listOf("123"), any(), any()) } returns findPractitionersResponse
-        }
+        val mockAppointmentService =
+            mockk<AppointmentService> {
+                every { findLocationAppointments(tenant, listOf("123"), any(), any()) } returns findPractitionersResponse
+            }
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
 
-        val message = channel.channelSourceTransformer(
-            "ronin",
-            "[\"123\"]",
-            mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
-            emptyMap()
-        )
+        val message =
+            channel.channelSourceTransformer(
+                "ronin",
+                "[\"123\"]",
+                mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
+                emptyMap(),
+            )
         assertEquals("[\"Patient/patFhirID\"]", message.message)
     }
 
     @Test
     fun `sourceTransform works with only clinical trial location`() {
-        val subject1 = mockk<Subject> {
-            every { roninFhirId } returns "ronin-patFhirID"
-        }
+        val subject1 =
+            mockk<Subject> {
+                every { roninFhirId } returns "ronin-patFhirID"
+            }
         coEvery { clinicalTrialClient.getSubjects(true) } returns listOf(subject1)
 
-        val message = channel.channelSourceTransformer(
-            "ronin",
-            "[\"ClinicalTrialLoadLocation\"]",
-            mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
-            emptyMap()
-        )
+        val message =
+            channel.channelSourceTransformer(
+                "ronin",
+                "[\"ClinicalTrialLoadLocation\"]",
+                mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
+                emptyMap(),
+            )
         assertEquals("[\"Patient/patFhirID\"]", message.message)
     }
 
     @Test
     fun `sourceTransform works with clinical trial location when only subjects for other tenants exist`() {
-        val subject1 = mockk<Subject> {
-            every { roninFhirId } returns "tenant1-patFhirID"
-        }
-        val subject2 = mockk<Subject> {
-            every { roninFhirId } returns "tenant2-patFhirID"
-        }
+        val subject1 =
+            mockk<Subject> {
+                every { roninFhirId } returns "tenant1-patFhirID"
+            }
+        val subject2 =
+            mockk<Subject> {
+                every { roninFhirId } returns "tenant2-patFhirID"
+            }
         coEvery { clinicalTrialClient.getSubjects(true) } returns listOf(subject1, subject2)
 
-        val message = channel.channelSourceTransformer(
-            "ronin",
-            "[\"ClinicalTrialLoadLocation\"]",
-            mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
-            emptyMap()
-        )
+        val message =
+            channel.channelSourceTransformer(
+                "ronin",
+                "[\"ClinicalTrialLoadLocation\"]",
+                mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
+                emptyMap(),
+            )
         assertEquals("[]", message.message)
     }
 
     @Test
     fun `sourceTransform works with regular location and clinical trial location`() {
-        val patient1 = Participant(
-            status = ParticipationStatus.ACCEPTED.asCode(),
-            actor = Reference(
-                reference = "Patient/patFhirID".asFHIR(),
-                identifier = Identifier(value = "patientID".asFHIR(), system = Uri("system"))
+        val patient1 =
+            Participant(
+                status = ParticipationStatus.ACCEPTED.asCode(),
+                actor =
+                    Reference(
+                        reference = "Patient/patFhirID".asFHIR(),
+                        identifier = Identifier(value = "patientID".asFHIR(), system = Uri("system")),
+                    ),
             )
-        )
         val location =
             Participant(
                 status = ParticipationStatus.ACCEPTED.asCode(),
-                actor = Reference(reference = "Location".asFHIR())
+                actor = Reference(reference = "Location".asFHIR()),
             )
-        val appt1 = Appointment(
-            id = Id("1"),
-            participant = listOf(location, patient1),
-            status = AppointmentStatus.BOOKED.asCode()
-        )
-        val appt2 = Appointment(
-            id = Id("2"),
-            participant = listOf(location, patient1),
-            status = AppointmentStatus.BOOKED.asCode()
-        )
+        val appt1 =
+            Appointment(
+                id = Id("1"),
+                participant = listOf(location, patient1),
+                status = AppointmentStatus.BOOKED.asCode(),
+            )
+        val appt2 =
+            Appointment(
+                id = Id("2"),
+                participant = listOf(location, patient1),
+                status = AppointmentStatus.BOOKED.asCode(),
+            )
         val appointments = listOf(appt1, appt2)
         val findPractitionersResponse = AppointmentsWithNewPatients(appointments)
 
-        val mockAppointmentService = mockk<AppointmentService> {
-            every { findLocationAppointments(tenant, listOf("123"), any(), any()) } returns findPractitionersResponse
-        }
+        val mockAppointmentService =
+            mockk<AppointmentService> {
+                every { findLocationAppointments(tenant, listOf("123"), any(), any()) } returns findPractitionersResponse
+            }
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
 
-        val subject1 = mockk<Subject> {
-            every { roninFhirId } returns "ronin-patFhirID2"
-        }
+        val subject1 =
+            mockk<Subject> {
+                every { roninFhirId } returns "ronin-patFhirID2"
+            }
         coEvery { clinicalTrialClient.getSubjects(true) } returns listOf(subject1)
 
-        val message = channel.channelSourceTransformer(
-            "ronin",
-            "[\"123\",\"ClinicalTrialLoadLocation\"]",
-            mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
-            emptyMap()
-        )
+        val message =
+            channel.channelSourceTransformer(
+                "ronin",
+                "[\"123\",\"ClinicalTrialLoadLocation\"]",
+                mapOf(MirthKey.EVENT_METADATA.code to serialize(generateMetadata())),
+                emptyMap(),
+            )
         assertEquals("[\"Patient/patFhirID2\",\"Patient/patFhirID\"]", message.message)
     }
 
@@ -585,22 +635,25 @@ class PatientDiscoveryTest {
     fun `sourceTransform - backfill - works`() {
         val entryId = UUID.fromString("67d28e26-ae11-4afb-968b-0991aa11c80b")
         coEvery { queueClient.updateQueueEntryByID(entryId, UpdateQueueEntry(BackfillStatus.STARTED)) } returns true
-        val message = backfillVersionChannel.channelSourceTransformer(
-            "blah",
-            backfillEventString,
-            mapOf(
-                MirthKey.EVENT_METADATA.code to serialize(
-                    generateMetadata(
-                        backfillInfo = Metadata.BackfillRequest(
-                            backfillId = "123",
-                            backfillStartDate = OffsetDateTime.now(),
-                            backfillEndDate = OffsetDateTime.now()
-                        )
-                    )
-                )
-            ),
-            emptyMap()
-        )
+        val message =
+            backfillVersionChannel.channelSourceTransformer(
+                "blah",
+                backfillEventString,
+                mapOf(
+                    MirthKey.EVENT_METADATA.code to
+                        serialize(
+                            generateMetadata(
+                                backfillInfo =
+                                    Metadata.BackfillRequest(
+                                        backfillId = "123",
+                                        backfillStartDate = OffsetDateTime.now(),
+                                        backfillEndDate = OffsetDateTime.now(),
+                                    ),
+                            ),
+                        ),
+                ),
+                emptyMap(),
+            )
         assertEquals("[\"pattythepatient\"]", message.message)
     }
 
@@ -610,24 +663,27 @@ class PatientDiscoveryTest {
         coEvery {
             queueClient.updateQueueEntryByID(entryId, UpdateQueueEntry(BackfillStatus.STARTED))
         } throws ClientFailureException(HttpStatusCode.BadGateway, "SERVER", "SERVICE")
-        val failure = assertThrows<ClientFailureException> {
-            backfillVersionChannel.channelSourceTransformer(
-                "blah",
-                backfillEventString,
-                mapOf(
-                    MirthKey.EVENT_METADATA.code to serialize(
-                        generateMetadata(
-                            backfillInfo = Metadata.BackfillRequest(
-                                backfillId = "123",
-                                backfillStartDate = OffsetDateTime.now(),
-                                backfillEndDate = OffsetDateTime.now()
-                            )
-                        )
-                    )
-                ),
-                emptyMap()
-            )
-        }
+        val failure =
+            assertThrows<ClientFailureException> {
+                backfillVersionChannel.channelSourceTransformer(
+                    "blah",
+                    backfillEventString,
+                    mapOf(
+                        MirthKey.EVENT_METADATA.code to
+                            serialize(
+                                generateMetadata(
+                                    backfillInfo =
+                                        Metadata.BackfillRequest(
+                                            backfillId = "123",
+                                            backfillStartDate = OffsetDateTime.now(),
+                                            backfillEndDate = OffsetDateTime.now(),
+                                        ),
+                                ),
+                            ),
+                    ),
+                    emptyMap(),
+                )
+            }
         assertEquals("Received 502 Bad Gateway when calling SERVER for SERVICE", failure.message)
     }
 

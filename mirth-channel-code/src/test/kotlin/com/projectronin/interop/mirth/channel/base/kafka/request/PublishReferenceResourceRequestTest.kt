@@ -13,9 +13,10 @@ import org.junit.jupiter.api.Test
 
 class PublishReferenceResourceRequestTest {
     private val fhirService = mockk<FHIRService<Location>>()
-    private val tenant = mockk<Tenant> {
-        every { mnemonic } returns "tenant"
-    }
+    private val tenant =
+        mockk<Tenant> {
+            every { mnemonic } returns "tenant"
+        }
 
     @Test
     fun `loadResourcesForIds requests from fhirService`() {
@@ -33,6 +34,6 @@ class PublishReferenceResourceRequestTest {
     class TestPublishReferenceResourceRequest(
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>>,
         override val fhirService: FHIRService<Location>,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<Location>()
 }

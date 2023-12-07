@@ -50,14 +50,14 @@ abstract class DestinationService {
         unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthFilterResponse {
         try {
             return channelDestinationFilter(
                 sourceMap[MirthKey.TENANT_MNEMONIC.code] as String,
                 msg,
                 sourceMap,
-                channelMap
+                channelMap,
             )
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during destinationFilter: ${e.message}" }
@@ -83,7 +83,7 @@ abstract class DestinationService {
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthFilterResponse {
         return MirthFilterResponse(true)
     }
@@ -107,14 +107,14 @@ abstract class DestinationService {
         unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage {
         try {
             return channelDestinationTransformer(
                 sourceMap[MirthKey.TENANT_MNEMONIC.code] as String,
                 msg,
                 sourceMap,
-                channelMap
+                channelMap,
             )
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during destinationTransformer: ${e.message}" }
@@ -140,7 +140,7 @@ abstract class DestinationService {
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage {
         return MirthMessage(msg)
     }
@@ -163,14 +163,14 @@ abstract class DestinationService {
         unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse {
         try {
             return channelDestinationWriter(
                 sourceMap[MirthKey.TENANT_MNEMONIC.code] as String,
                 msg,
                 sourceMap,
-                channelMap
+                channelMap,
             )
         } catch (e: Throwable) {
             logger.error(e) { "Exception encountered during destinationWriter: ${e.message}" }
@@ -195,6 +195,6 @@ abstract class DestinationService {
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse
 }

@@ -29,41 +29,45 @@ class MedicationAdministrationPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninMedicationAdministration
+    profileTransformer: RoninMedicationAdministration,
 ) : KafkaEventResourcePublisher<MedicationAdministration>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<MedicationAdministration> {
         // Only events for the same resource type are grouped, so just peek at the first one
         return when (val resourceType = events.first().resourceType) {
-            ResourceType.Patient -> PatientPublishMedicationAdministrationRequest(
-                events,
-                vendorFactory.medicationAdministrationService,
-                tenant
-            )
+            ResourceType.Patient ->
+                PatientPublishMedicationAdministrationRequest(
+                    events,
+                    vendorFactory.medicationAdministrationService,
+                    tenant,
+                )
 
-            ResourceType.MedicationRequest -> MedicationRequestPublishMedicationAdministrationRequest(
-                events,
-                vendorFactory.medicationAdministrationService,
-                tenant
-            )
+            ResourceType.MedicationRequest ->
+                MedicationRequestPublishMedicationAdministrationRequest(
+                    events,
+                    vendorFactory.medicationAdministrationService,
+                    tenant,
+                )
 
-            else -> throw IllegalStateException("Received resource type ($resourceType) that cannot be used to load medication administrations")
+            else -> throw IllegalStateException(
+                "Received resource type ($resourceType) that cannot be used to load medication administrations",
+            )
         }
     }
 
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<MedicationAdministration> {
         return LoadMedicationAdministrationRequest(events, vendorFactory.medicationAdministrationService, tenant)
     }
@@ -71,7 +75,7 @@ class MedicationAdministrationPublish(
     internal class PatientPublishMedicationAdministrationRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: MedicationAdministrationService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishResourceRequest<MedicationAdministration>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { PatientPublishEvent(it, tenant) }
@@ -79,14 +83,14 @@ class MedicationAdministrationPublish(
         override fun loadResourcesForIds(
             requestFhirIds: List<String>,
             startDate: OffsetDateTime?,
-            endDate: OffsetDateTime?
+            endDate: OffsetDateTime?,
         ): Map<String, List<MedicationAdministration>> {
             return requestFhirIds.associateWith {
                 fhirService.findMedicationAdministrationsByPatient(
                     tenant = tenant,
                     patientFHIRId = it,
                     startDate = startDate?.toLocalDate() ?: LocalDate.now().minusMonths(2),
-                    endDate = endDate?.toLocalDate() ?: LocalDate.now()
+                    endDate = endDate?.toLocalDate() ?: LocalDate.now(),
                 )
             }
         }
@@ -98,7 +102,7 @@ class MedicationAdministrationPublish(
     internal class MedicationRequestPublishMedicationAdministrationRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: MedicationAdministrationService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishResourceRequest<MedicationAdministration>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { MedicationRequestPublishEvent(it, tenant) }
@@ -112,7 +116,7 @@ class MedicationAdministrationPublish(
         override fun loadResourcesForIds(
             requestFhirIds: List<String>,
             startDate: OffsetDateTime?,
-            endDate: OffsetDateTime?
+            endDate: OffsetDateTime?,
         ): Map<String, List<MedicationAdministration>> {
             return requestFhirIds.associateWith {
                 val medicationRequest = medicationRequestById[it]!!
@@ -127,6 +131,6 @@ class MedicationAdministrationPublish(
     internal class LoadMedicationAdministrationRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: MedicationAdministrationService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<MedicationAdministration>(loadEvents, tenant)
 }

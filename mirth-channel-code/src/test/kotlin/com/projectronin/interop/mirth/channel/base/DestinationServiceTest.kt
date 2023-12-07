@@ -26,16 +26,17 @@ private const val VALID_TENANT_ID = "mdaoc"
 class DestinationServiceTest {
     @Test
     fun `destinationFilter - non-empty map`() {
-        val serviceMap = mapOf<String, Any>(
-            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
-        )
+        val serviceMap =
+            mapOf<String, Any>(
+                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+            )
         assertTrue(
             TestDestinationService().destinationFilter(
                 "unused",
                 "",
                 serviceMap,
-                serviceMap
-            ).result
+                serviceMap,
+            ).result,
         )
     }
 
@@ -49,40 +50,42 @@ class DestinationServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : DestinationService() {
-            override fun channelDestinationFilter(
-                tenantMnemonic: String,
-                msg: String,
-                sourceMap: Map<String, Any>,
-                channelMap: Map<String, Any>
-            ): MirthFilterResponse {
-                throw IllegalStateException("channelDestinationFilter exception")
+        val service =
+            object : DestinationService() {
+                override fun channelDestinationFilter(
+                    tenantMnemonic: String,
+                    msg: String,
+                    sourceMap: Map<String, Any>,
+                    channelMap: Map<String, Any>,
+                ): MirthFilterResponse {
+                    throw IllegalStateException("channelDestinationFilter exception")
+                }
+
+                override fun channelDestinationWriter(
+                    tenantMnemonic: String,
+                    msg: String,
+                    sourceMap: Map<String, Any>,
+                    channelMap: Map<String, Any>,
+                ): MirthResponse {
+                    TODO("Not yet implemented")
+                }
             }
 
-            override fun channelDestinationWriter(
-                tenantMnemonic: String,
-                msg: String,
-                sourceMap: Map<String, Any>,
-                channelMap: Map<String, Any>
-            ): MirthResponse {
-                TODO("Not yet implemented")
+        val ex =
+            assertThrows<IllegalStateException> {
+                service.destinationFilter(
+                    "unused",
+                    "",
+                    mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID),
+                    emptyMap(),
+                )
             }
-        }
-
-        val ex = assertThrows<IllegalStateException> {
-            service.destinationFilter(
-                "unused",
-                "",
-                mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID),
-                emptyMap()
-            )
-        }
         assertEquals("channelDestinationFilter exception", ex.message)
 
         assertEquals(IllegalStateException::class, loggedException.captured.javaClass.kotlin)
         assertEquals(
             "Exception encountered during destinationFilter: channelDestinationFilter exception",
-            loggedMessage.captured.invoke()
+            loggedMessage.captured.invoke(),
         )
 
         clearAllMocks()
@@ -90,15 +93,17 @@ class DestinationServiceTest {
 
     @Test
     fun `destinationTransformer - non-empty map`() {
-        val serviceMap = mapOf<String, Any>(
-            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
-        )
-        val actualMessage = TestDestinationService().destinationTransformer(
-            "unused",
-            "",
-            serviceMap,
-            serviceMap
-        )
+        val serviceMap =
+            mapOf<String, Any>(
+                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+            )
+        val actualMessage =
+            TestDestinationService().destinationTransformer(
+                "unused",
+                "",
+                serviceMap,
+                serviceMap,
+            )
         assertEquals(emptyMirthMessage(), actualMessage)
     }
 
@@ -112,40 +117,42 @@ class DestinationServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : DestinationService() {
-            override fun channelDestinationTransformer(
-                tenantMnemonic: String,
-                msg: String,
-                sourceMap: Map<String, Any>,
-                channelMap: Map<String, Any>
-            ): MirthMessage {
-                throw IllegalStateException("channelDestinationTransformer exception")
+        val service =
+            object : DestinationService() {
+                override fun channelDestinationTransformer(
+                    tenantMnemonic: String,
+                    msg: String,
+                    sourceMap: Map<String, Any>,
+                    channelMap: Map<String, Any>,
+                ): MirthMessage {
+                    throw IllegalStateException("channelDestinationTransformer exception")
+                }
+
+                override fun channelDestinationWriter(
+                    tenantMnemonic: String,
+                    msg: String,
+                    sourceMap: Map<String, Any>,
+                    channelMap: Map<String, Any>,
+                ): MirthResponse {
+                    TODO("Not yet implemented")
+                }
             }
 
-            override fun channelDestinationWriter(
-                tenantMnemonic: String,
-                msg: String,
-                sourceMap: Map<String, Any>,
-                channelMap: Map<String, Any>
-            ): MirthResponse {
-                TODO("Not yet implemented")
+        val ex =
+            assertThrows<IllegalStateException> {
+                service.destinationTransformer(
+                    "unused",
+                    "",
+                    mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID),
+                    emptyMap(),
+                )
             }
-        }
-
-        val ex = assertThrows<IllegalStateException> {
-            service.destinationTransformer(
-                "unused",
-                "",
-                mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID),
-                emptyMap()
-            )
-        }
         assertEquals("channelDestinationTransformer exception", ex.message)
 
         assertEquals(IllegalStateException::class, loggedException.captured.javaClass.kotlin)
         assertEquals(
             "Exception encountered during destinationTransformer: channelDestinationTransformer exception",
-            loggedMessage.captured.invoke()
+            loggedMessage.captured.invoke(),
         )
 
         clearAllMocks()
@@ -153,15 +160,17 @@ class DestinationServiceTest {
 
     @Test
     fun `destinationWriter - non-empty map`() {
-        val serviceMap = mapOf<String, Any>(
-            MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID
-        )
-        val actualMessage = TestDestinationService().destinationWriter(
-            "unused",
-            "",
-            serviceMap,
-            serviceMap
-        )
+        val serviceMap =
+            mapOf<String, Any>(
+                MirthKey.TENANT_MNEMONIC.code to VALID_TENANT_ID,
+            )
+        val actualMessage =
+            TestDestinationService().destinationWriter(
+                "unused",
+                "",
+                serviceMap,
+                serviceMap,
+            )
         val expectedResponse = (MirthResponse(MirthResponseStatus.SENT, "", ""))
         assertEquals(expectedResponse, actualMessage)
     }
@@ -176,31 +185,33 @@ class DestinationServiceTest {
         mockkObject(KotlinLogging)
         every { KotlinLogging.logger(any<String>()) } returns logger
 
-        val service = object : DestinationService() {
-            override fun channelDestinationWriter(
-                tenantMnemonic: String,
-                msg: String,
-                sourceMap: Map<String, Any>,
-                channelMap: Map<String, Any>
-            ): MirthResponse {
-                throw IllegalStateException("channelDestinationWriter exception")
+        val service =
+            object : DestinationService() {
+                override fun channelDestinationWriter(
+                    tenantMnemonic: String,
+                    msg: String,
+                    sourceMap: Map<String, Any>,
+                    channelMap: Map<String, Any>,
+                ): MirthResponse {
+                    throw IllegalStateException("channelDestinationWriter exception")
+                }
             }
-        }
 
-        val ex = assertThrows<IllegalStateException> {
-            service.destinationWriter(
-                "unused",
-                "",
-                mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID),
-                emptyMap()
-            )
-        }
+        val ex =
+            assertThrows<IllegalStateException> {
+                service.destinationWriter(
+                    "unused",
+                    "",
+                    mapOf<String, Any>("tenantMnemonic" to VALID_TENANT_ID),
+                    emptyMap(),
+                )
+            }
         assertEquals("channelDestinationWriter exception", ex.message)
 
         assertEquals(IllegalStateException::class, loggedException.captured.javaClass.kotlin)
         assertEquals(
             "Exception encountered during destinationWriter: channelDestinationWriter exception",
-            loggedMessage.captured.invoke()
+            loggedMessage.captured.invoke(),
         )
 
         clearAllMocks()
@@ -212,7 +223,7 @@ class TestDestinationService : DestinationService() {
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse {
         return MirthResponse(MirthResponseStatus.SENT)
     }

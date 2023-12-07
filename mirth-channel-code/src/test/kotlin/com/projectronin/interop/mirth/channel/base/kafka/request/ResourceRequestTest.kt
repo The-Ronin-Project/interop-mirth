@@ -20,15 +20,17 @@ import java.time.ZoneOffset
 
 class ResourceRequestTest {
     private val fhirService = mockk<FHIRService<Location>>()
-    private val tenant = mockk<Tenant> {
-        every { mnemonic } returns "tenant"
-    }
+    private val tenant =
+        mockk<Tenant> {
+            every { mnemonic } returns "tenant"
+        }
 
     @Test
     fun `returns runId`() {
-        val event = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { metadata.runId } returns "run1234"
-        }
+        val event =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { metadata.runId } returns "run1234"
+            }
 
         val request = TestResourceRequest(listOf(event), fhirService, tenant)
         assertEquals("run1234", request.runId)
@@ -39,9 +41,10 @@ class ResourceRequestTest {
         val key1 = mockk<ResourceRequestKey>()
         val key2 = mockk<ResourceRequestKey>()
 
-        val event = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { requestKeys } returns setOf(key1, key2)
-        }
+        val event =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { requestKeys } returns setOf(key1, key2)
+            }
 
         val request = TestResourceRequest(listOf(event), fhirService, tenant)
         val eventsByRequestKey = request.eventsByRequestKey
@@ -56,12 +59,14 @@ class ResourceRequestTest {
         val key2 = mockk<ResourceRequestKey>()
         val key3 = mockk<ResourceRequestKey>()
 
-        val event1 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { requestKeys } returns setOf(key1, key2)
-        }
-        val event2 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { requestKeys } returns setOf(key3)
-        }
+        val event1 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { requestKeys } returns setOf(key1, key2)
+            }
+        val event2 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { requestKeys } returns setOf(key3)
+            }
 
         val request = TestResourceRequest(listOf(event1, event2), fhirService, tenant)
         val eventsByRequestKey = request.eventsByRequestKey
@@ -76,9 +81,10 @@ class ResourceRequestTest {
         val key1 = mockk<ResourceRequestKey>()
         val key2 = mockk<ResourceRequestKey>()
 
-        val event = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { requestKeys } returns setOf(key1, key2)
-        }
+        val event =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { requestKeys } returns setOf(key1, key2)
+            }
 
         val request = TestResourceRequest(listOf(event), fhirService, tenant)
         assertEquals(setOf(key1, key2), request.requestKeys)
@@ -90,12 +96,14 @@ class ResourceRequestTest {
         val key2 = mockk<ResourceRequestKey>()
         val key3 = mockk<ResourceRequestKey>()
 
-        val event1 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { requestKeys } returns setOf(key1, key2)
-        }
-        val event2 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { requestKeys } returns setOf(key3)
-        }
+        val event1 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { requestKeys } returns setOf(key1, key2)
+            }
+        val event2 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { requestKeys } returns setOf(key3)
+            }
 
         val request = TestResourceRequest(listOf(event1, event2), fhirService, tenant)
         assertEquals(setOf(key1, key2, key3), request.requestKeys)
@@ -105,9 +113,10 @@ class ResourceRequestTest {
     fun `returns source references for single event`() {
         val reference1 = mockk<Metadata.UpstreamReference>()
 
-        val event = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { getSourceReference() } returns reference1
-        }
+        val event =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { getSourceReference() } returns reference1
+            }
 
         val request = TestResourceRequest(listOf(event), fhirService, tenant)
         assertEquals(listOf(reference1), request.sourceReferences)
@@ -118,12 +127,14 @@ class ResourceRequestTest {
         val reference1 = mockk<Metadata.UpstreamReference>()
         val reference2 = mockk<Metadata.UpstreamReference>()
 
-        val event1 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { getSourceReference() } returns reference1
-        }
-        val event2 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { getSourceReference() } returns reference2
-        }
+        val event1 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { getSourceReference() } returns reference1
+            }
+        val event2 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { getSourceReference() } returns reference2
+            }
 
         val request = TestResourceRequest(listOf(event1, event2), fhirService, tenant)
         assertEquals(listOf(reference1, reference2), request.sourceReferences)
@@ -134,15 +145,18 @@ class ResourceRequestTest {
         val reference1 = mockk<Metadata.UpstreamReference>()
         val reference2 = mockk<Metadata.UpstreamReference>()
 
-        val event1 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { getSourceReference() } returns reference1
-        }
-        val event2 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { getSourceReference() } returns reference2
-        }
-        val event3 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { getSourceReference() } returns null
-        }
+        val event1 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { getSourceReference() } returns reference1
+            }
+        val event2 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { getSourceReference() } returns reference2
+            }
+        val event3 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { getSourceReference() } returns null
+            }
 
         val request = TestResourceRequest(listOf(event1, event2, event3), fhirService, tenant)
         assertEquals(listOf(reference1, reference2), request.sourceReferences)
@@ -153,22 +167,25 @@ class ResourceRequestTest {
         val location1 = mockk<Location>()
         val location2 = mockk<Location>()
 
-        every { fhirService.getByIDs(tenant, listOf("fhirId1", "fhirId2")) } returns mapOf(
-            "fhirId1" to location1,
-            "fhirId2" to location2
-        )
+        every { fhirService.getByIDs(tenant, listOf("fhirId1", "fhirId2")) } returns
+            mapOf(
+                "fhirId1" to location1,
+                "fhirId2" to location2,
+            )
 
         val event = mockk<ResourceEvent<InteropResourcePublishV1>>()
         val request = TestResourceRequest(listOf(event), fhirService, tenant)
 
-        val key1 = mockk<ResourceRequestKey> {
-            every { unlocalizedResourceId } returns "fhirId1"
-            every { dateRange } returns null
-        }
-        val key2 = mockk<ResourceRequestKey> {
-            every { unlocalizedResourceId } returns "fhirId2"
-            every { dateRange } returns null
-        }
+        val key1 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId1"
+                every { dateRange } returns null
+            }
+        val key2 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId2"
+                every { dateRange } returns null
+            }
 
         val resources = request.loadResources(listOf(key1, key2))
         assertEquals(2, resources.size)
@@ -180,21 +197,24 @@ class ResourceRequestTest {
     fun `loads resources for request keys where some are found`() {
         val location1 = mockk<Location>()
 
-        every { fhirService.getByIDs(tenant, listOf("fhirId1", "fhirId2")) } returns mapOf(
-            "fhirId1" to location1
-        )
+        every { fhirService.getByIDs(tenant, listOf("fhirId1", "fhirId2")) } returns
+            mapOf(
+                "fhirId1" to location1,
+            )
 
         val event = mockk<ResourceEvent<InteropResourcePublishV1>>()
         val request = TestResourceRequest(listOf(event), fhirService, tenant)
 
-        val key1 = mockk<ResourceRequestKey> {
-            every { unlocalizedResourceId } returns "fhirId1"
-            every { dateRange } returns null
-        }
-        val key2 = mockk<ResourceRequestKey> {
-            every { unlocalizedResourceId } returns "fhirId2"
-            every { dateRange } returns null
-        }
+        val key1 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId1"
+                every { dateRange } returns null
+            }
+        val key2 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId2"
+                every { dateRange } returns null
+            }
 
         val resources = request.loadResources(listOf(key1, key2))
         assertEquals(1, resources.size)
@@ -208,14 +228,16 @@ class ResourceRequestTest {
         val event = mockk<ResourceEvent<InteropResourcePublishV1>>()
         val request = TestResourceRequest(listOf(event), fhirService, tenant)
 
-        val key1 = mockk<ResourceRequestKey> {
-            every { unlocalizedResourceId } returns "fhirId1"
-            every { dateRange } returns null
-        }
-        val key2 = mockk<ResourceRequestKey> {
-            every { unlocalizedResourceId } returns "fhirId2"
-            every { dateRange } returns null
-        }
+        val key1 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId1"
+                every { dateRange } returns null
+            }
+        val key2 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId2"
+                every { dateRange } returns null
+            }
 
         val resources = request.loadResources(listOf(key1, key2))
         assertEquals(0, resources.size)
@@ -229,10 +251,11 @@ class ResourceRequestTest {
 
         every { fhirService.getByIDs(tenant, listOf("fhirId1")) } returns mapOf("fhirId1" to location1)
         every { fhirService.getByIDs(tenant, listOf("fhirId2")) } returns mapOf("fhirId2" to location2)
-        every { fhirService.getByIDs(tenant, listOf("fhirId2", "fhirId3")) } returns mapOf(
-            "fhirId2" to location2,
-            "fhirId3" to location3
-        )
+        every { fhirService.getByIDs(tenant, listOf("fhirId2", "fhirId3")) } returns
+            mapOf(
+                "fhirId2" to location2,
+                "fhirId3" to location3,
+            )
 
         val event = mockk<ResourceEvent<InteropResourcePublishV1>>()
         val request = TestResourceRequest(listOf(event), fhirService, tenant)
@@ -240,22 +263,26 @@ class ResourceRequestTest {
         val date2 = OffsetDateTime.of(2023, 10, 25, 12, 0, 0, 0, ZoneOffset.UTC)
         val date3 = OffsetDateTime.of(2023, 10, 26, 12, 0, 0, 0, ZoneOffset.UTC)
 
-        val key1 = mockk<ResourceRequestKey> {
-            every { unlocalizedResourceId } returns "fhirId1"
-            every { dateRange } returns null
-        }
-        val key2 = mockk<ResourceRequestKey> {
-            every { unlocalizedResourceId } returns "fhirId2"
-            every { dateRange } returns Pair(date1, date2)
-        }
-        val key3 = mockk<ResourceRequestKey> {
-            every { unlocalizedResourceId } returns "fhirId3"
-            every { dateRange } returns Pair(date1, date2)
-        }
-        val key4 = mockk<ResourceRequestKey> {
-            every { unlocalizedResourceId } returns "fhirId2"
-            every { dateRange } returns Pair(date2, date3)
-        }
+        val key1 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId1"
+                every { dateRange } returns null
+            }
+        val key2 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId2"
+                every { dateRange } returns Pair(date1, date2)
+            }
+        val key3 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId3"
+                every { dateRange } returns Pair(date1, date2)
+            }
+        val key4 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId2"
+                every { dateRange } returns Pair(date2, date3)
+            }
 
         val resources = request.loadResources(listOf(key1, key2, key3, key4))
         verify(exactly = 3) { fhirService.getByIDs(tenant, any()) }
@@ -285,15 +312,18 @@ class ResourceRequestTest {
 
     @Test
     fun `returns no minimum registry cache time if no events have one`() {
-        val event1 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { minimumRegistryCacheTime } returns null
-        }
-        val event2 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { minimumRegistryCacheTime } returns null
-        }
-        val event3 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { minimumRegistryCacheTime } returns null
-        }
+        val event1 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { minimumRegistryCacheTime } returns null
+            }
+        val event2 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { minimumRegistryCacheTime } returns null
+            }
+        val event3 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { minimumRegistryCacheTime } returns null
+            }
 
         val request = TestResourceRequest(listOf(event1, event2, event3), fhirService, tenant)
         assertNull(request.minimumRegistryCacheTime)
@@ -302,15 +332,18 @@ class ResourceRequestTest {
     @Test
     fun `returns minimum registry cache time if one event has one`() {
         val offsetDateTime1 = OffsetDateTime.now()
-        val event1 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { minimumRegistryCacheTime } returns offsetDateTime1
-        }
-        val event2 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { minimumRegistryCacheTime } returns null
-        }
-        val event3 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { minimumRegistryCacheTime } returns null
-        }
+        val event1 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { minimumRegistryCacheTime } returns offsetDateTime1
+            }
+        val event2 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { minimumRegistryCacheTime } returns null
+            }
+        val event3 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { minimumRegistryCacheTime } returns null
+            }
 
         val request = TestResourceRequest(listOf(event1, event2, event3), fhirService, tenant)
         assertEquals(offsetDateTime1, request.minimumRegistryCacheTime)
@@ -319,17 +352,20 @@ class ResourceRequestTest {
     @Test
     fun `returns latest minimum registry cache time if multiple events have one`() {
         val offsetDateTime1 = OffsetDateTime.of(2022, 7, 24, 11, 24, 0, 0, ZoneOffset.UTC)
-        val event1 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { minimumRegistryCacheTime } returns offsetDateTime1
-        }
+        val event1 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { minimumRegistryCacheTime } returns offsetDateTime1
+            }
         val offsetDateTime2 = OffsetDateTime.of(2023, 7, 24, 11, 24, 0, 0, ZoneOffset.UTC)
-        val event2 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { minimumRegistryCacheTime } returns offsetDateTime2
-        }
+        val event2 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { minimumRegistryCacheTime } returns offsetDateTime2
+            }
         val offsetDateTime3 = OffsetDateTime.of(2020, 7, 24, 11, 24, 0, 0, ZoneOffset.UTC)
-        val event3 = mockk<ResourceEvent<InteropResourcePublishV1>> {
-            every { minimumRegistryCacheTime } returns offsetDateTime3
-        }
+        val event3 =
+            mockk<ResourceEvent<InteropResourcePublishV1>> {
+                every { minimumRegistryCacheTime } returns offsetDateTime3
+            }
 
         val request = TestResourceRequest(listOf(event1, event2, event3), fhirService, tenant)
         assertEquals(offsetDateTime2, request.minimumRegistryCacheTime)
@@ -338,7 +374,7 @@ class ResourceRequestTest {
     class TestResourceRequest(
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>>,
         override val fhirService: FHIRService<Location>,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : ResourceRequest<Location, InteropResourcePublishV1>() {
         override val dataTrigger: DataTrigger
             get() = TODO("Not yet implemented")
@@ -346,7 +382,7 @@ class ResourceRequestTest {
         override fun loadResourcesForIds(
             requestFhirIds: List<String>,
             startDate: OffsetDateTime?,
-            endDate: OffsetDateTime?
+            endDate: OffsetDateTime?,
         ): Map<String, List<Location>> {
             return fhirService.getByIDs(tenant, requestFhirIds).mapListValues()
         }

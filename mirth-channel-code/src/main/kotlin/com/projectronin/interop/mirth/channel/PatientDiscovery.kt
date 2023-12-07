@@ -38,7 +38,7 @@ class PatientDiscovery(
     @Value("\${backfill.enabled:no}")
     private val backfillEnabledString: String,
     private val backfillQueueClient: QueueClient,
-    private val clinicalTrialClient: ClinicalTrialClient
+    private val clinicalTrialClient: ClinicalTrialClient,
 ) : TenantlessSourceService() {
     override val rootName = "PatientDiscovery"
     override val destinations = mapOf("Kafka" to patientDiscoveryWriter)
@@ -52,71 +52,81 @@ class PatientDiscovery(
     }
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
-        val nightlyMessages = tenantService.getMonitoredTenants()
-            .filter { needsLoad(it) }
-            .mapNotNull { tenant ->
-                try {
-                    val locations = tenantConfigurationService.getLocationIDsByTenant(tenant.mnemonic)
-                    if (locations.isEmpty()) {
-                        null
-                    } else {
-                        val metadata = generateMetadata()
-                        MirthMessage(
-                            message = JacksonUtil.writeJsonValue(locations),
-                            dataMap = mapOf(
-                                MirthKey.TENANT_MNEMONIC.code to tenant.mnemonic,
-                                MirthKey.EVENT_METADATA.code to serialize(metadata),
-                                MirthKey.EVENT_RUN_ID.code to metadata.runId
+        val nightlyMessages =
+            tenantService.getMonitoredTenants()
+                .filter { needsLoad(it) }
+                .mapNotNull { tenant ->
+                    try {
+                        val locations = tenantConfigurationService.getLocationIDsByTenant(tenant.mnemonic)
+                        if (locations.isEmpty()) {
+                            null
+                        } else {
+                            val metadata = generateMetadata()
+                            MirthMessage(
+                                message = JacksonUtil.writeJsonValue(locations),
+                                dataMap =
+                                    mapOf(
+                                        MirthKey.TENANT_MNEMONIC.code to tenant.mnemonic,
+                                        MirthKey.EVENT_METADATA.code to serialize(metadata),
+                                        MirthKey.EVENT_RUN_ID.code to metadata.runId,
+                                    ),
                             )
-                        )
+                        }
+                    } catch (e: Exception) {
+                        logger.error(e) { "Failed to find configured locations for ${tenant.mnemonic}" }
+                        null
                     }
-                } catch (e: Exception) {
-                    logger.error(e) { "Failed to find configured locations for ${tenant.mnemonic}" }
-                    null
                 }
-            }
         if (nightlyMessages.isNotEmpty()) {
             return nightlyMessages
         } else if (backfillEnabled) {
             val now = OffsetDateTime.now(ZoneOffset.UTC)
-            val tenantsOkToRun = tenantService
-                .getAllTenants()
-                // we should be in a tenant's window to poll
-                .filter { AvailableWindow(it).isInWindow(now) }
+            val tenantsOkToRun =
+                tenantService
+                    .getAllTenants()
+                    // we should be in a tenant's window to poll
+                    .filter { AvailableWindow(it).isInWindow(now) }
             // loop through the tenants and take the first tenant we find with a backfill entry
-            val backfillQueueEntry = tenantsOkToRun
-                .asSequence()
-                .map { runBlocking { backfillQueueClient.getQueueEntries(it.mnemonic).firstOrNull() } }
-                .firstNotNullOfOrNull { it }
+            val backfillQueueEntry =
+                tenantsOkToRun
+                    .asSequence()
+                    .map { runBlocking { backfillQueueClient.getQueueEntries(it.mnemonic).firstOrNull() } }
+                    .firstNotNullOfOrNull { it }
 
             backfillQueueEntry?.let { queueEntry ->
-                val tenantTimezone = tenantsOkToRun
-                    .single { it.mnemonic == queueEntry.tenantId }
-                    .timezone.rules.getOffset(LocalDateTime.now())
-                val metadata = generateMetadata(
-                    backfillInfo = Metadata.BackfillRequest(
-                        backfillId = queueEntry.backfillId.toString(),
-                        // these are offset date times, but backfill provides localdate time
-                        // offsetdatetime is more precise than we probably care about
-                        backfillStartDate = OffsetDateTime.of(
-                            queueEntry.startDate.atStartOfDay(),
-                            tenantTimezone
-                        ),
-                        backfillEndDate = OffsetDateTime.of(
-                            queueEntry.endDate.atStartOfDay(),
-                            tenantTimezone
-                        )
+                val tenantTimezone =
+                    tenantsOkToRun
+                        .single { it.mnemonic == queueEntry.tenantId }
+                        .timezone.rules.getOffset(LocalDateTime.now())
+                val metadata =
+                    generateMetadata(
+                        backfillInfo =
+                            Metadata.BackfillRequest(
+                                backfillId = queueEntry.backfillId.toString(),
+                                // these are offset date times, but backfill provides localdate time
+                                // offsetdatetime is more precise than we probably care about
+                                backfillStartDate =
+                                    OffsetDateTime.of(
+                                        queueEntry.startDate.atStartOfDay(),
+                                        tenantTimezone,
+                                    ),
+                                backfillEndDate =
+                                    OffsetDateTime.of(
+                                        queueEntry.endDate.atStartOfDay(),
+                                        tenantTimezone,
+                                    ),
+                            ),
                     )
-                )
                 return listOf(
                     MirthMessage(
                         message = JacksonUtil.writeJsonValue(queueEntry),
-                        dataMap = mapOf(
-                            MirthKey.TENANT_MNEMONIC.code to queueEntry.tenantId,
-                            MirthKey.EVENT_METADATA.code to serialize(metadata),
-                            MirthKey.EVENT_RUN_ID.code to metadata.runId
-                        )
-                    )
+                        dataMap =
+                            mapOf(
+                                MirthKey.TENANT_MNEMONIC.code to queueEntry.tenantId,
+                                MirthKey.EVENT_METADATA.code to serialize(metadata),
+                                MirthKey.EVENT_RUN_ID.code to metadata.runId,
+                            ),
+                    ),
                 )
             }
         }
@@ -129,7 +139,7 @@ class PatientDiscovery(
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage {
         val metadata = getMetadata(sourceMap)
 
@@ -151,8 +161,9 @@ class PatientDiscovery(
         // Clinical trial patient discovery
         if (locations.contains(clinicalTrialLocation)) {
             val clinicalTrialSubjects = runBlocking { clinicalTrialClient.getSubjects(true) }
-            val clinicalTrialPatients = clinicalTrialSubjects.filter { it.roninFhirId.startsWith("$tenantMnemonic-") }
-                .map { "Patient/${it.roninFhirId.unlocalize(tenant)}" }
+            val clinicalTrialPatients =
+                clinicalTrialSubjects.filter { it.roninFhirId.startsWith("$tenantMnemonic-") }
+                    .map { "Patient/${it.roninFhirId.unlocalize(tenant)}" }
             patientIds.addAll(clinicalTrialPatients)
 
             locations.remove(clinicalTrialLocation)
@@ -167,18 +178,22 @@ class PatientDiscovery(
         return MirthMessage(message = JacksonUtil.writeJsonValue(patientIds))
     }
 
-    private fun getPatientIdsFromLocations(locations: List<String>, tenant: Tenant): List<String> {
+    private fun getPatientIdsFromLocations(
+        locations: List<String>,
+        tenant: Tenant,
+    ): List<String> {
         val currentDate = LocalDate.now()
         val endDate = currentDate.plusDays(futureDateRange)
         val startDate = currentDate.minusDays(pastDateRange)
 
         val vendorFactory = ehrFactory.getVendorFactory(tenant)
-        val fullAppointments = vendorFactory.appointmentService.findLocationAppointments(
-            tenant,
-            locations,
-            startDate,
-            endDate
-        )
+        val fullAppointments =
+            vendorFactory.appointmentService.findLocationAppointments(
+                tenant,
+                locations,
+                startDate,
+                endDate,
+            )
 
         return fullAppointments.appointments.flatMap { appointment ->
             appointment.participant.mapNotNull { it.actor?.reference?.value }
@@ -189,12 +204,13 @@ class PatientDiscovery(
     // Given a tenantDO, should we run for tonight's nightly load?
     fun needsLoad(tenant: Tenant): Boolean {
         val now = OffsetDateTime.now(ZoneOffset.UTC)
-        val config = try {
-            tenantConfigurationService.getConfiguration(tenant.mnemonic)
-        } catch (e: IllegalArgumentException) {
-            logger.warn { "No Mirth Tenant Config found for tenant: ${tenant.mnemonic}" }
-            return false // don't attempt to load a tenant with no config
-        }
+        val config =
+            try {
+                tenantConfigurationService.getConfiguration(tenant.mnemonic)
+            } catch (e: IllegalArgumentException) {
+                logger.warn { "No Mirth Tenant Config found for tenant: ${tenant.mnemonic}" }
+                return false // don't attempt to load a tenant with no config
+            }
 
         val shouldRun = AvailableWindow(tenant).shouldRun(now, config.lastUpdated)
         return if (shouldRun) {
@@ -215,10 +231,12 @@ class PatientDiscovery(
         private val tenantTimeZone = tenant.timezone.rules.getOffset(LocalDateTime.now())
 
         // These are public mostly to make testing easier
-        val windowStartTime: OffsetTime = tenant.batchConfig?.availableStart?.atOffset(tenantTimeZone)
-            ?: OffsetTime.MIN.withOffsetSameLocal(tenantTimeZone)
-        val windowEndTime: OffsetTime = tenant.batchConfig?.availableEnd?.atOffset(tenantTimeZone)
-            ?: OffsetTime.MAX.withOffsetSameLocal(tenantTimeZone)
+        val windowStartTime: OffsetTime =
+            tenant.batchConfig?.availableStart?.atOffset(tenantTimeZone)
+                ?: OffsetTime.MIN.withOffsetSameLocal(tenantTimeZone)
+        val windowEndTime: OffsetTime =
+            tenant.batchConfig?.availableEnd?.atOffset(tenantTimeZone)
+                ?: OffsetTime.MAX.withOffsetSameLocal(tenantTimeZone)
         val spansMidnight: Boolean = windowStartTime > windowEndTime
 
         // Is right now in the current window?
@@ -252,7 +270,10 @@ class PatientDiscovery(
             }
         }
 
-        fun ranTodayAlready(now: OffsetDateTime, lastRunTime: OffsetDateTime?): Boolean {
+        fun ranTodayAlready(
+            now: OffsetDateTime,
+            lastRunTime: OffsetDateTime?,
+        ): Boolean {
             val nowInTenantTimeZone = now.withOffsetSameInstant(tenantTimeZone)
             val lastRunTimeInTenantTimeZone = lastRunTime?.withOffsetSameInstant(tenantTimeZone)
             return if (lastRunTimeInTenantTimeZone == null) {
@@ -266,7 +287,10 @@ class PatientDiscovery(
             }
         }
 
-        fun shouldRun(now: OffsetDateTime, lastRunTime: OffsetDateTime?): Boolean {
+        fun shouldRun(
+            now: OffsetDateTime,
+            lastRunTime: OffsetDateTime?,
+        ): Boolean {
             return isInWindow(now) && !ranTodayAlready(now, lastRunTime)
         }
     }

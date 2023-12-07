@@ -33,7 +33,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
     private val ehrFactory: EHRFactory,
     private val transformManager: TransformManager,
     private val publishService: PublishService,
-    private val profileTransformer: BaseProfile<T>
+    private val profileTransformer: BaseProfile<T>,
 ) : TenantlessDestinationService() {
     /**
      * If true, we cache and compare the retrieved resources against the cache. By default, this is false, but if a
@@ -48,21 +48,23 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse {
-        val tenant = tenantService.getTenantForMnemonic(tenantMnemonic)
-            ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
+        val tenant =
+            tenantService.getTenantForMnemonic(tenantMnemonic)
+                ?: throw IllegalArgumentException("Unknown tenant: $tenantMnemonic")
         val vendorFactory = ehrFactory.getVendorFactory(tenant)
         val eventClassName = sourceMap[MirthKey.KAFKA_EVENT.code] ?: throw MapVariableMissing("Missing Event Name")
         val resourceLoadRequest = convertEventToRequest(msg, eventClassName as String, vendorFactory, tenant)
 
         // if the resource request had upstream resources, add a String-representation to the metadata.
         val sourceReferences = resourceLoadRequest.sourceReferences
-        val newMap = if (sourceReferences.isEmpty()) {
-            emptyMap()
-        } else {
-            mapOf(MirthKey.EVENT_METADATA_SOURCE.code to sourceReferences.joinToString(", ") { "${it.resourceType}/${it.id}" })
-        }
+        val newMap =
+            if (sourceReferences.isEmpty()) {
+                emptyMap()
+            } else {
+                mapOf(MirthKey.EVENT_METADATA_SOURCE.code to sourceReferences.joinToString(", ") { "${it.resourceType}/${it.id}" })
+            }
 
         val allRequestKeys = resourceLoadRequest.requestKeys
         if (allRequestKeys.isEmpty()) {
@@ -70,7 +72,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 status = MirthResponseStatus.SENT,
                 detailedMessage = "No request keys exist prior to checking the cache",
                 message = "No request keys exist prior to checking the cache",
-                dataMap = newMap
+                dataMap = newMap,
             )
         }
         val requestKeysToProcess = filterRequestKeys(allRequestKeys)
@@ -79,12 +81,12 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
             return MirthResponse(
                 status = MirthResponseStatus.SENT,
                 detailedMessage = "All requested resources have already been processed this run: ${
-                allRequestKeys.joinToString(
-                    ", "
-                )
+                    allRequestKeys.joinToString(
+                        ", ",
+                    )
                 }",
                 message = "Already processed",
-                dataMap = newMap
+                dataMap = newMap,
             )
         }
 
@@ -101,16 +103,16 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                         status = MirthResponseStatus.ERROR,
                         detailedMessage = it.message,
                         message = "Failed EHR Call",
-                        dataMap = newMap
+                        dataMap = newMap,
                     )
-                }
+                },
             )
         if (resourceLoadRequest.skipAllPublishing) {
             return MirthResponse(
                 status = MirthResponseStatus.SENT,
                 detailedMessage = resourcesByKey.truncateList(),
                 message = "This message is meant only for internal processing.",
-                dataMap = newMap
+                dataMap = newMap,
             )
         }
         val cachedResourcesCount = allRequestKeys.size - requestKeysToProcess.size + previouslyCachedCount
@@ -122,28 +124,29 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 status = MirthResponseStatus.SENT,
                 detailedMessage = "No new resources retrieved from EHR.$cachedMessage",
                 message = "No resources",
-                dataMap = newMap
+                dataMap = newMap,
             )
         }
 
         val minimumRegistryTime = resourceLoadRequest.minimumRegistryCacheTime?.toLocalDateTime()
-        val transformedResourcesByKey = resourcesByKey.mapValuesNotNull { (_, resources) ->
-            resources.mapNotNull { resource ->
-                transformManager.transformResource(
-                    resource,
-                    profileTransformer,
-                    tenant,
-                    forceCacheReloadTS = minimumRegistryTime
-                )
-            }.ifEmpty { null }
-        }
+        val transformedResourcesByKey =
+            resourcesByKey.mapValuesNotNull { (_, resources) ->
+                resources.mapNotNull { resource ->
+                    transformManager.transformResource(
+                        resource,
+                        profileTransformer,
+                        tenant,
+                        forceCacheReloadTS = minimumRegistryTime,
+                    )
+                }.ifEmpty { null }
+            }
         val totalResourcesCount = resourcesByKey.totalSize()
         if (transformedResourcesByKey.isEmpty()) {
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = resourcesByKey.truncateList(),
                 message = "Failed to transform $totalResourcesCount resource(s)",
-                dataMap = newMap + mapOf(MirthKey.FAILURE_COUNT.code to totalResourcesCount)
+                dataMap = newMap + mapOf(MirthKey.FAILURE_COUNT.code to totalResourcesCount),
             )
         }
         // if some of our uncachedResources failed to transform, we should alert, but publish the ones that worked
@@ -161,43 +164,47 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         val totalPostTransformedResourcesCount = postTransformedResourcesByKey.totalSize()
         if (totalPostTransformedResourcesCount != totalTransformedResourcesCount) {
             logger.error {
-                "Post transform failed for ${totalTransformedResourcesCount - totalPostTransformedResourcesCount} resources for tenant $tenantMnemonic.\n" +
+                "Post transform failed for ${totalTransformedResourcesCount - totalPostTransformedResourcesCount} " +
+                    "resources for tenant $tenantMnemonic.\n" +
                     "Resources received: ${transformedResourcesByKey.resourceIds()} \n+" +
                     "Resources transformed: ${postTransformedResourcesByKey.resourceIds()}"
             }
         }
 
-        val transformsToPublishByEvent = postTransformedResourcesByKey.map { (key, resource) ->
-            resourceLoadRequest.eventsByRequestKey[key]!! to resource
-        }.groupBy { it.first }.mapValues { e -> e.value.flatMap { v -> v.second } }
+        val transformsToPublishByEvent =
+            postTransformedResourcesByKey.map { (key, resource) ->
+                resourceLoadRequest.eventsByRequestKey[key]!! to resource
+            }.groupBy { it.first }.mapValues { e -> e.value.flatMap { v -> v.second } }
 
         // publish says it returns a boolean, but actually throws an error if there was a problem
         val publishResultsByEvent =
             transformsToPublishByEvent.map { (event, transform) ->
-                val dataTrigger = if (event.processDownstreamReferences && !resourceLoadRequest.skipKafkaPublishing) {
-                    resourceLoadRequest.dataTrigger
-                } else {
-                    null
-                }
+                val dataTrigger =
+                    if (event.processDownstreamReferences && !resourceLoadRequest.skipKafkaPublishing) {
+                        resourceLoadRequest.dataTrigger
+                    } else {
+                        null
+                    }
 
                 runCatching {
                     publishService.publishResourceWrappers(
                         tenantMnemonic,
                         transform.map { it.toResourceWrapper() },
                         event.getUpdatedMetadata(),
-                        dataTrigger
+                        dataTrigger,
                     )
                 }.fold(
                     onSuccess = { event to it },
                     onFailure = {
                         logger.error(it) { "Failed to publish by event" }
                         event to false
-                    }
+                    },
                 )
             }
 
-        val successfullyPublishedTransforms = publishResultsByEvent.filter { it.second }
-            .flatMap { transformsToPublishByEvent[it.first] ?: emptyList() }
+        val successfullyPublishedTransforms =
+            publishResultsByEvent.filter { it.second }
+                .flatMap { transformsToPublishByEvent[it.first] ?: emptyList() }
 
         val failedPublishEvents = publishResultsByEvent.filterNot { it.second }
         val failedPublishTransforms =
@@ -208,36 +215,42 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         if (failedPublishTransforms.isNotEmpty()) {
             // in the event of a failure to publish we want to invalidate the keys we put in during loadResources
             // some of these keys were successes, so we're only operating on the failures here. But we do need the successes for informational data
-            val keys = failedPublishTransforms.map { transform ->
-                val resource = transform.resource
-                ResourceRequestKey(
-                    resourceLoadRequest.runId,
-                    ResourceType.valueOf(resource.resourceType),
-                    resourceLoadRequest.tenant,
-                    resource.id!!.value!!.unlocalize(tenant)
-                )
-            } + failedPublishKeys
+            val keys =
+                failedPublishTransforms.map { transform ->
+                    val resource = transform.resource
+                    ResourceRequestKey(
+                        resourceLoadRequest.runId,
+                        ResourceType.valueOf(resource.resourceType),
+                        resourceLoadRequest.tenant,
+                        resource.id!!.value!!.unlocalize(tenant),
+                    )
+                } + failedPublishKeys
             logger.debug { "Invalidating ${keys.size} keys" }
             processedResourcesCache.invalidateAll(keys)
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = failedPublishTransforms.truncateResourceList(),
-                message = "Successfully published ${successfullyPublishedTransforms.size}, but failed to publish ${failedPublishTransforms.size} resource(s)",
-                dataMap = newMap + mapOf(
-                    MirthKey.FAILURE_COUNT.code to failedPublishTransforms.size,
-                    MirthKey.RESOURCE_COUNT.code to successfullyPublishedTransforms.size
-                )
+                message =
+                    "Successfully published ${successfullyPublishedTransforms.size}, " +
+                        "but failed to publish ${failedPublishTransforms.size} resource(s)",
+                dataMap =
+                    newMap +
+                        mapOf(
+                            MirthKey.FAILURE_COUNT.code to failedPublishTransforms.size,
+                            MirthKey.RESOURCE_COUNT.code to successfullyPublishedTransforms.size,
+                        ),
             )
         } else {
             return MirthResponse(
                 status = MirthResponseStatus.SENT,
                 detailedMessage = successfullyPublishedTransforms.truncateResourceList(),
                 message = "Published ${successfullyPublishedTransforms.size} resource(s).$cachedMessage",
-                dataMap = newMap +
-                    mapOf(
-                        MirthKey.FAILURE_COUNT.code to (totalResourcesCount - successfullyPublishedTransforms.size),
-                        MirthKey.RESOURCE_COUNT.code to successfullyPublishedTransforms.size
-                    )
+                dataMap =
+                    newMap +
+                        mapOf(
+                            MirthKey.FAILURE_COUNT.code to (totalResourcesCount - successfullyPublishedTransforms.size),
+                            MirthKey.RESOURCE_COUNT.code to successfullyPublishedTransforms.size,
+                        ),
             )
         }
     }
@@ -263,39 +276,42 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
      */
     private fun loadResources(
         resourceRequest: ResourceRequest<T, *>,
-        requestKeys: List<ResourceRequestKey>
+        requestKeys: List<ResourceRequestKey>,
     ): Pair<Map<ResourceRequestKey, List<T>>, Int> {
         // Load the resources, and remove any cases with empty Lists so we can easily know when values exist or not
-        val resourcesByKey = resourceRequest.loadResources(requestKeys).filterNot { (_, values) ->
-            values.isEmpty()
-        }
+        val resourcesByKey =
+            resourceRequest.loadResources(requestKeys).filterNot { (_, values) ->
+                values.isEmpty()
+            }
 
         // If this publisher has requested that we cache and compare results, we need to determine if we've previously
         // processed the reply or not. If we have, we will filter out the value now. If we have not, we will add it to
         // the cache and continue processing.
-        val uncachedResources = if (cacheAndCompareResults) {
-            resourcesByKey.mapValuesNotNull { (_, resources) ->
-                resources.mapNotNull { resource ->
-                    val responseKey = ResourceRequestKey(
-                        resourceRequest.runId,
-                        ResourceType.valueOf(resource.resourceType),
-                        resourceRequest.tenant,
-                        resource.id!!.value!!
-                    )
-                    if (processedResourcesCache.getIfPresent(responseKey) == null) {
-                        logger.info { "Caching $responseKey" }
-                        processedResourcesCache.put(responseKey, true)
-                        resource
-                    } else {
-                        logger.info { "$responseKey was already cached, so not returning for processing" }
-                        null
-                    }
-                }.ifEmpty { null }
+        val uncachedResources =
+            if (cacheAndCompareResults) {
+                resourcesByKey.mapValuesNotNull { (_, resources) ->
+                    resources.mapNotNull { resource ->
+                        val responseKey =
+                            ResourceRequestKey(
+                                resourceRequest.runId,
+                                ResourceType.valueOf(resource.resourceType),
+                                resourceRequest.tenant,
+                                resource.id!!.value!!,
+                            )
+                        if (processedResourcesCache.getIfPresent(responseKey) == null) {
+                            logger.info { "Caching $responseKey" }
+                            processedResourcesCache.put(responseKey, true)
+                            resource
+                        } else {
+                            logger.info { "$responseKey was already cached, so not returning for processing" }
+                            null
+                        }
+                    }.ifEmpty { null }
+                }
+            } else {
+                // Since the publisher did not want to cache and compare results, we just use the original resources.
+                resourcesByKey
             }
-        } else {
-            // Since the publisher did not want to cache and compare results, we just use the original resources.
-            resourcesByKey
-        }
 
         // Regardless of whether we got a response or not, we need to cache the request keys we just used
         logger.debug { "Caching searched keys: ${requestKeys.joinToString(", ")}" }
@@ -325,18 +341,20 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
     }
 
     private fun Collection<Resource<*>>.truncateList(): String {
-        val list = when {
-            this.size > 5 -> this.map { it.id?.value }
-            else -> this
-        }
+        val list =
+            when {
+                this.size > 5 -> this.map { it.id?.value }
+                else -> this
+            }
         return JacksonUtil.writeJsonValue(list)
     }
 
     private fun Collection<TransformResponse<*>>.truncateResourceList(): String {
-        val list = when {
-            this.size > 5 -> this.map { it.resource.id?.value }
-            else -> this
-        }
+        val list =
+            when {
+                this.size > 5 -> this.map { it.resource.id?.value }
+                else -> this
+            }
         return JacksonUtil.writeJsonValue(list)
     }
 
@@ -350,7 +368,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         serializedEvent: String,
         eventClassName: String,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): ResourceRequest<T, *> {
         logger.info { "Processing event for $eventClassName: $serializedEvent" }
         return when (eventClassName) {
@@ -371,13 +389,13 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
     abstract fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<T>
 
     abstract fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<T>
 
     /**
@@ -386,7 +404,6 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
     open fun postTransform(
         tenant: Tenant,
         transformedResourcesByKey: Map<ResourceRequestKey, List<TransformResponse<T>>>,
-        vendorFactory: VendorFactory
-    ): Map<ResourceRequestKey, List<TransformResponse<T>>> =
-        transformedResourcesByKey
+        vendorFactory: VendorFactory,
+    ): Map<ResourceRequestKey, List<TransformResponse<T>>> = transformedResourcesByKey
 }

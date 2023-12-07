@@ -9,11 +9,12 @@ import org.gradle.api.tasks.TaskAction
  * Task for setting up the user in Mirth.
  */
 open class SetupUserTask : BaseMirthTask() {
-    private val preferences = listOf(
-        Preference("firstlogin", "false"),
-        Preference("checkForNotifications", "false"),
-        Preference("showNotificationPopoup", "false")
-    )
+    private val preferences =
+        listOf(
+            Preference("firstlogin", "false"),
+            Preference("checkForNotifications", "false"),
+            Preference("showNotificationPopoup", "false"),
+        )
 
     @TaskAction
     fun setupUser() {

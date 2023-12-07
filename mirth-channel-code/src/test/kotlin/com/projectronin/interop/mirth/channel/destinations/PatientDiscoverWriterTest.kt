@@ -24,10 +24,11 @@ class PatientDiscoverWriterTest {
     @BeforeEach
     fun setup() {
         kafkaLoadService = mockk()
-        kafkaPushResponse = mockk() {
-            every { successful } returns listOf("yes")
-            every { failures } returns emptyList()
-        }
+        kafkaPushResponse =
+            mockk {
+                every { successful } returns listOf("yes")
+                every { failures } returns emptyList()
+            }
         writer = PatientDiscoveryWriter(kafkaLoadService)
     }
 
@@ -40,44 +41,48 @@ class PatientDiscoverWriterTest {
                 DataTrigger.NIGHTLY,
                 listOf("123", "456"),
                 ResourceType.Patient,
-                metadata
+                metadata,
             )
         } returns kafkaPushResponse
 
-        val result = writer.channelDestinationWriter(
-            "ronin",
-            "[\"Patient/123\",\"Patient/456\"]",
-            mapOf(MirthKey.EVENT_METADATA.code to serialize(metadata)),
-            emptyMap()
-        )
+        val result =
+            writer.channelDestinationWriter(
+                "ronin",
+                "[\"Patient/123\",\"Patient/456\"]",
+                mapOf(MirthKey.EVENT_METADATA.code to serialize(metadata)),
+                emptyMap(),
+            )
         assertEquals(MirthResponseStatus.SENT, result.status)
     }
 
     @Test
     fun `channelDestinationWriter  - backfill - works`() {
-        val metadata = generateMetadata(
-            backfillInfo = Metadata.BackfillRequest(
-                backfillId = "123",
-                backfillStartDate = OffsetDateTime.now(),
-                backfillEndDate = OffsetDateTime.now()
+        val metadata =
+            generateMetadata(
+                backfillInfo =
+                    Metadata.BackfillRequest(
+                        backfillId = "123",
+                        backfillStartDate = OffsetDateTime.now(),
+                        backfillEndDate = OffsetDateTime.now(),
+                    ),
             )
-        )
         every {
             kafkaLoadService.pushLoadEvent(
                 "ronin",
                 DataTrigger.BACKFILL,
                 listOf("123"),
                 ResourceType.Patient,
-                any()
+                any(),
             )
         } returns kafkaPushResponse
 
-        val result = writer.channelDestinationWriter(
-            "ronin",
-            "[\"123\"]",
-            mapOf(MirthKey.EVENT_METADATA.code to serialize(metadata)),
-            emptyMap()
-        )
+        val result =
+            writer.channelDestinationWriter(
+                "ronin",
+                "[\"123\"]",
+                mapOf(MirthKey.EVENT_METADATA.code to serialize(metadata)),
+                emptyMap(),
+            )
         assertEquals(MirthResponseStatus.SENT, result.status)
     }
 
@@ -90,27 +95,29 @@ class PatientDiscoverWriterTest {
                 DataTrigger.NIGHTLY,
                 listOf("123", "456"),
                 ResourceType.Patient,
-                metadata
+                metadata,
             )
         } throws Exception("bad")
-        val result = writer.channelDestinationWriter(
-            "ronin",
-            "[\"Patient/123\",\"Patient/456\"]",
-            mapOf(MirthKey.EVENT_METADATA.code to serialize(metadata)),
-            emptyMap()
-        )
+        val result =
+            writer.channelDestinationWriter(
+                "ronin",
+                "[\"Patient/123\",\"Patient/456\"]",
+                mapOf(MirthKey.EVENT_METADATA.code to serialize(metadata)),
+                emptyMap(),
+            )
         assertEquals(MirthResponseStatus.ERROR, result.status)
         assertEquals("bad", result.detailedMessage)
     }
 
     @Test
     fun `channelDestinationWriter -  handles no patients with error`() {
-        val result = writer.channelDestinationWriter(
-            "ronin",
-            "[]",
-            emptyMap(),
-            emptyMap()
-        )
+        val result =
+            writer.channelDestinationWriter(
+                "ronin",
+                "[]",
+                emptyMap(),
+                emptyMap(),
+            )
         assertEquals(MirthResponseStatus.SENT, result.status)
         assertEquals("No Patients found for tenant ronin", result.detailedMessage)
     }
@@ -126,15 +133,16 @@ class PatientDiscoverWriterTest {
                 DataTrigger.NIGHTLY,
                 listOf("123"),
                 ResourceType.Patient,
-                metadata
+                metadata,
             )
         } returns kafkaPushResponse
-        val result = writer.channelDestinationWriter(
-            "ronin",
-            "[\"Patient/123\"]",
-            mapOf(MirthKey.EVENT_METADATA.code to serialize(metadata)),
-            emptyMap()
-        )
+        val result =
+            writer.channelDestinationWriter(
+                "ronin",
+                "[\"Patient/123\"]",
+                mapOf(MirthKey.EVENT_METADATA.code to serialize(metadata)),
+                emptyMap(),
+            )
         assertEquals(MirthResponseStatus.ERROR, result.status)
         assertEquals("0 successes, 1 failures", result.message)
     }

@@ -78,7 +78,7 @@ abstract class ResourceRequest<T : Resource<T>, E> {
     abstract fun loadResourcesForIds(
         requestFhirIds: List<String>,
         startDate: OffsetDateTime? = null,
-        endDate: OffsetDateTime? = null
+        endDate: OffsetDateTime? = null,
     ): Map<String, List<T>>
 
     /**
@@ -101,12 +101,14 @@ abstract class ResourceRequest<T : Resource<T>, E> {
         val backfillRequests = partition.second
         logger.debug { "backfillRequests $backfillRequests " }
 
-        val backfillMap = backfillRequests.groupBy { it.dateRange!! }.flatMap { datedRequestKeyGroup ->
-            val requestsByFhirID = datedRequestKeyGroup.value.associateBy { it.unlocalizedResourceId }
-            logger.debug { "backfillMap $requestsByFhirID " }
-            val resourcesByFhirID = loadResourcesForIds(requestsByFhirID.keys.toList(), datedRequestKeyGroup.key.first, datedRequestKeyGroup.key.second)
-            resourcesByFhirID.mapKeys { (fhirId, _) -> requestsByFhirID[fhirId]!! }.toList()
-        }.toMap()
+        val backfillMap =
+            backfillRequests.groupBy { it.dateRange!! }.flatMap { datedRequestKeyGroup ->
+                val requestsByFhirID = datedRequestKeyGroup.value.associateBy { it.unlocalizedResourceId }
+                logger.debug { "backfillMap $requestsByFhirID " }
+                val resourcesByFhirID =
+                    loadResourcesForIds(requestsByFhirID.keys.toList(), datedRequestKeyGroup.key.first, datedRequestKeyGroup.key.second)
+                resourcesByFhirID.mapKeys { (fhirId, _) -> requestsByFhirID[fhirId]!! }.toList()
+            }.toMap()
         return undatedResourceMap + backfillMap
     }
 }

@@ -29,9 +29,10 @@ class ConditionTenantlessQueueWriterTest {
     @BeforeEach
     fun setup() {
         mockPublishService = mockk()
-        mockTenantService = mockk {
-            every { getTenantForMnemonic(tenantId) } returns mockTenant
-        }
+        mockTenantService =
+            mockk {
+                every { getTenantForMnemonic(tenantId) } returns mockTenant
+            }
         writer = ConditionTenantlessQueueWriter(mockPublishService)
     }
 
@@ -42,14 +43,15 @@ class ConditionTenantlessQueueWriterTest {
 
     @Test
     fun `destinationWriter - works`() {
-        val mockSerialized = """{
+        val mockSerialized =
+            """{
         |  "id": "12345",
         |  "resourceType": "Condition",
         |  "subject": {
         |    "reference": "Patient/1234"
         |  }
         |}
-        """.trimMargin()
+            """.trimMargin()
         val mockCondition = mockk<Condition>()
 
         mockkObject(JacksonUtil)
@@ -61,12 +63,13 @@ class ConditionTenantlessQueueWriterTest {
         val metadata = generateMetadata()
         every { mockPublishService.publishFHIRResources(tenantId, any<List<Condition>>(), metadata) } returns true
 
-        val response = writer.destinationWriter(
-            "",
-            mockSerialized,
-            mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId, MirthKey.EVENT_METADATA.code to serialize(metadata)),
-            channelMap
-        )
+        val response =
+            writer.destinationWriter(
+                "",
+                mockSerialized,
+                mapOf(MirthKey.TENANT_MNEMONIC.code to tenantId, MirthKey.EVENT_METADATA.code to serialize(metadata)),
+                channelMap,
+            )
         assertEquals("Published 1 Condition(s)", response.message)
         assertEquals(MirthResponseStatus.SENT, response.status)
         assertEquals(mockSerialized, response.detailedMessage)

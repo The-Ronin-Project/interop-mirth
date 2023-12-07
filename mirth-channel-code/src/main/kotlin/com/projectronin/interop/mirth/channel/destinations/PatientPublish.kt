@@ -22,18 +22,18 @@ class PatientPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninPatient
+    profileTransformer: RoninPatient,
 ) : KafkaEventResourcePublisher<Patient>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<Patient> {
         throw IllegalStateException("Patient does not listen to Publish Events")
     }
@@ -41,7 +41,7 @@ class PatientPublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<Patient> {
         return LoadPatientRequest(events, vendorFactory.patientService, tenant)
     }
@@ -49,6 +49,6 @@ class PatientPublish(
     internal class LoadPatientRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: PatientService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<Patient>(loadEvents, tenant)
 }

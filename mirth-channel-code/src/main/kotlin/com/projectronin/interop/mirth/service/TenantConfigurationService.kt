@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component
 @Component
 class TenantConfigurationService(
     private val mirthTenantConfigDAO: MirthTenantConfigDAO,
-    private val tenantServerDAO: TenantServerDAO
+    private val tenantServerDAO: TenantServerDAO,
 ) {
     fun getLocationIDsByTenant(tenantMnemonic: String): List<String> {
         val locationIds = getConfiguration(tenantMnemonic).locationIds

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper
  * Wrapper List for [CodeTemplateLibraries][CodeTemplateLibrary]
  */
 data class CodeTemplateLibraryList(
-    val codeTemplateLibrary: List<CodeTemplateLibrary>
+    val codeTemplateLibrary: List<CodeTemplateLibrary>,
 )
 
 /**
@@ -24,7 +24,7 @@ data class CodeTemplateLibraryList(
     "includeNewChannels",
     "enabledChannelIds",
     "disabledChannelIds",
-    "codeTemplates"
+    "codeTemplates",
 )
 data class CodeTemplateLibrary(
     val id: String,
@@ -35,7 +35,7 @@ data class CodeTemplateLibrary(
     val includeNewChannels: Boolean,
     val enabledChannelIds: StringElements?,
     val disabledChannelIds: StringElements?,
-    val codeTemplates: CodeTemplateList
+    val codeTemplates: CodeTemplateList,
 ) {
     @JsonProperty("@version")
     val version: String = MIRTH_VERSION
@@ -46,7 +46,7 @@ data class CodeTemplateLibrary(
  */
 data class CodeTemplateList(
     @JacksonXmlElementWrapper(useWrapping = false)
-    val codeTemplate: List<CodeTemplate>
+    val codeTemplate: List<CodeTemplate>,
 )
 
 /**
@@ -59,7 +59,7 @@ data class CodeTemplateList(
     "revision",
     "lastModified",
     "contextSet",
-    "properties"
+    "properties",
 )
 data class CodeTemplate(
     val id: String,
@@ -67,7 +67,7 @@ data class CodeTemplate(
     val revision: Int,
     val lastModified: DateTime,
     val contextSet: ContextSet,
-    val properties: CodeTemplateProperties
+    val properties: CodeTemplateProperties,
 ) {
     @JsonProperty("@version")
     val version: String = MIRTH_VERSION
@@ -79,11 +79,11 @@ data class CodeTemplate(
 @JsonPropertyOrder(
     "@class",
     "type",
-    "code"
+    "code",
 )
 data class CodeTemplateProperties(
     val type: String,
-    val code: String
+    val code: String,
 ) {
     @JsonProperty("@class")
     val clazz: String = "com.mirth.connect.model.codetemplates.BasicCodeTemplateProperties"
@@ -93,7 +93,7 @@ data class CodeTemplateProperties(
  * Model for a Context Set in Mirth.
  */
 data class ContextSet(
-    val delegate: ContextSetDelegate
+    val delegate: ContextSetDelegate,
 )
 
 /**
@@ -101,5 +101,5 @@ data class ContextSet(
  */
 data class ContextSetDelegate(
     @JacksonXmlElementWrapper(useWrapping = false)
-    val contextType: List<String> = listOf()
+    val contextType: List<String> = listOf(),
 )

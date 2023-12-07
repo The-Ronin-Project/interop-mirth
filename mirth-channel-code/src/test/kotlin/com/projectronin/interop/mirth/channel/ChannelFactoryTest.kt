@@ -60,7 +60,10 @@ class TestChannelService :
     override val rootName: String = "test"
     override val destinations: Map<String, DestinationService> = emptyMap()
 
-    override fun channelSourceReader(tenantMnemonic: String, serviceMap: Map<String, Any>): List<MirthMessage> {
+    override fun channelSourceReader(
+        tenantMnemonic: String,
+        serviceMap: Map<String, Any>,
+    ): List<MirthMessage> {
         TODO("Not yet implemented")
     }
 }

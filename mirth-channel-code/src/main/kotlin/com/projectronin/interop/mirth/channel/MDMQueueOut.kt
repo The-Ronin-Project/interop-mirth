@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component
 @Component
 class MDMQueueOut(
     private val queueService: QueueService,
-    private val tenantConfigurationService: TenantConfigurationService
+    private val tenantConfigurationService: TenantConfigurationService,
 ) : ChannelService() {
     companion object : ChannelFactory<MDMQueueOut>()
 
@@ -21,7 +21,7 @@ class MDMQueueOut(
 
     override fun channelSourceReader(
         tenantMnemonic: String,
-        serviceMap: Map<String, Any>
+        serviceMap: Map<String, Any>,
     ): List<MirthMessage> {
         val messages = queueService.dequeueHL7Messages(tenantMnemonic, MessageType.MDM, null, limit)
         return messages.map {
@@ -29,13 +29,16 @@ class MDMQueueOut(
         }
     }
 
-    override fun channelOnDeploy(tenantMnemonic: String, serviceMap: Map<String, Any>): Map<String, Any> {
+    override fun channelOnDeploy(
+        tenantMnemonic: String,
+        serviceMap: Map<String, Any>,
+    ): Map<String, Any> {
         val pair = tenantConfigurationService.getMDMInfo(tenantMnemonic)
         val address = pair?.first.toString()
         val port = pair?.second.toString()
         return mapOf(
             "PORT" to port,
-            "ADDRESS" to address
+            "ADDRESS" to address,
         ) + serviceMap
     }
 }

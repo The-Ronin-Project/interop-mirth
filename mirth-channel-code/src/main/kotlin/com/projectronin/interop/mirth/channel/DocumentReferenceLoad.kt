@@ -14,14 +14,15 @@ class DocumentReferenceLoad(
     kafkaPublishService: KafkaPublishService,
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
-    defaultPublisher: DocumentReferencePublish
+    defaultPublisher: DocumentReferencePublish,
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "DocumentReferenceLoad"
     override val channelGroupId = "interop-mirth-document_group"
-    override val publishedResourcesSubscriptions = listOf(
-        ResourceType.Patient,
-        ResourceType.DocumentReference
-    )
+    override val publishedResourcesSubscriptions =
+        listOf(
+            ResourceType.Patient,
+            ResourceType.DocumentReference,
+        )
     override val resource = ResourceType.DocumentReference
 
     companion object {

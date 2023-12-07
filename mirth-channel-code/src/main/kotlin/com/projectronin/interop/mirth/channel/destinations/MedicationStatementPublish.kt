@@ -26,18 +26,18 @@ class MedicationStatementPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninMedicationStatement
+    profileTransformer: RoninMedicationStatement,
 ) : KafkaEventResourcePublisher<MedicationStatement>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<MedicationStatement> {
         return PatientPublishMedicationStatementRequest(events, vendorFactory.medicationStatementService, tenant)
     }
@@ -45,7 +45,7 @@ class MedicationStatementPublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<MedicationStatement> {
         return LoadMedicationStatementRequest(events, vendorFactory.medicationStatementService, tenant)
     }
@@ -53,7 +53,7 @@ class MedicationStatementPublish(
     internal class PatientPublishMedicationStatementRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: MedicationStatementService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishResourceRequest<MedicationStatement>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { PatientPublishEvent(it, tenant) }
@@ -61,7 +61,7 @@ class MedicationStatementPublish(
         override fun loadResourcesForIds(
             requestFhirIds: List<String>,
             startDate: OffsetDateTime?,
-            endDate: OffsetDateTime?
+            endDate: OffsetDateTime?,
         ): Map<String, List<MedicationStatement>> {
             return requestFhirIds.associateWith { fhirService.getMedicationStatementsByPatientFHIRId(tenant, it) }
         }
@@ -73,6 +73,6 @@ class MedicationStatementPublish(
     internal class LoadMedicationStatementRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: MedicationStatementService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<MedicationStatement>(loadEvents, tenant)
 }

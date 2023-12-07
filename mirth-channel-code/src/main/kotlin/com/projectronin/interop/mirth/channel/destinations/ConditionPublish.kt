@@ -29,18 +29,18 @@ class ConditionPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninConditions
+    profileTransformer: RoninConditions,
 ) : KafkaEventResourcePublisher<Condition>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<Condition> {
         return PatientPublishConditionRequest(events, vendorFactory.conditionService, tenant)
     }
@@ -48,7 +48,7 @@ class ConditionPublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<Condition> {
         return LoadConditionRequest(events, vendorFactory.conditionService, tenant)
     }
@@ -56,17 +56,18 @@ class ConditionPublish(
     internal class PatientPublishConditionRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ConditionService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishResourceRequest<Condition>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { PatientPublishEvent(it, tenant) }
 
         private val categorySystem = CodeSystem.CONDITION_CATEGORY.uri.value
         private val categoryHealthConcernSystem = CodeSystem.CONDITION_CATEGORY_HEALTH_CONCERN.uri.value
+
         override fun loadResourcesForIds(
             requestFhirIds: List<String>,
             startDate: OffsetDateTime?,
-            endDate: OffsetDateTime?
+            endDate: OffsetDateTime?,
         ): Map<String, List<Condition>> {
             return requestFhirIds.associateWith {
                 fhirService.findConditionsByCodes(
@@ -75,8 +76,8 @@ class ConditionPublish(
                     listOf(
                         FHIRSearchToken(categorySystem, ConditionCategoryCodes.PROBLEM_LIST_ITEM.code),
                         FHIRSearchToken(categoryHealthConcernSystem, ConditionCategoryCodes.HEALTH_CONCERN.code),
-                        FHIRSearchToken(categorySystem, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code)
-                    )
+                        FHIRSearchToken(categorySystem, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code),
+                    ),
                 )
             }
         }
@@ -88,6 +89,6 @@ class ConditionPublish(
     internal class LoadConditionRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: ConditionService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<Condition>(loadEvents, tenant)
 }

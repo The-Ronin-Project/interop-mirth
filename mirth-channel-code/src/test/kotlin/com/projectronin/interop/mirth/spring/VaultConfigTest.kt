@@ -12,13 +12,14 @@ internal class VaultConfigTest {
     @Test
     fun endpoint() {
         val config = VaultConfig()
-        val env = mockk<Environment> {
-            every { getRequiredProperty("VAULT_URL") } returns "http://vault:8200"
-        }
+        val env =
+            mockk<Environment> {
+                every { getRequiredProperty("VAULT_URL") } returns "http://vault:8200"
+            }
         config.setApplicationContext(
             mockk {
                 every { environment } returns env
-            }
+            },
         )
         val endpoint = config.vaultEndpoint()
         assertEquals("http", endpoint.scheme)
@@ -29,16 +30,17 @@ internal class VaultConfigTest {
     @Test
     fun token() {
         val config = VaultConfig()
-        val env = mockk<Environment> {
-            every { getRequiredProperty("VAULT_ROLE_ID") } returns "role"
-            every { getRequiredProperty("VAULT_SECRET_ID") } returns "secret"
-            every { getRequiredProperty("ENVIRONMENT") } returns "dev"
-        }
+        val env =
+            mockk<Environment> {
+                every { getRequiredProperty("VAULT_ROLE_ID") } returns "role"
+                every { getRequiredProperty("VAULT_SECRET_ID") } returns "secret"
+                every { getRequiredProperty("ENVIRONMENT") } returns "dev"
+            }
         config.setApplicationContext(
             mockk {
                 every { environment } returns env
                 every { getBean(RestTemplateFactory::class.java).create() } returns mockk()
-            }
+            },
         )
         assertNotNull(config.clientAuthentication())
     }

@@ -41,39 +41,67 @@ class BackfillDiscoveryQueueTest {
     val backfillID = UUID.randomUUID()
     val start = LocalDate.now().minusMonths(10)
     val end = LocalDate.now()
-    val queueEntry1 = DiscoveryQueueEntry(UUID.randomUUID(), "ronin", "123", start, end, backfillID, DiscoveryQueueStatus.UNDISCOVERED)
-    val queueEntry2 = DiscoveryQueueEntry(UUID.randomUUID(), "ronin", "456", start, end, backfillID, DiscoveryQueueStatus.UNDISCOVERED)
+    val queueEntry1 =
+        DiscoveryQueueEntry(
+            UUID.randomUUID(),
+            "ronin",
+            "123",
+            start,
+            end,
+            backfillID,
+            DiscoveryQueueStatus.UNDISCOVERED,
+        )
+    val queueEntry2 =
+        DiscoveryQueueEntry(
+            UUID.randomUUID(),
+            "ronin",
+            "456",
+            start,
+            end,
+            backfillID,
+            DiscoveryQueueStatus.UNDISCOVERED,
+        )
 
     @BeforeEach
     fun setup() {
-        tenant = mockk {
-            every { mnemonic } returns "ronin"
-            every { timezone } returns ZoneId.of("UTC")
-        }
-        tenant2 = mockk {
-            every { mnemonic } returns "blah"
-            every { timezone } returns ZoneId.of("UTC")
-        }
-        discoveryQueueClient = mockk {
-            coEvery { getDiscoveryQueueEntries("ronin", DiscoveryQueueStatus.UNDISCOVERED) } returns listOf(queueEntry1, queueEntry2)
-            coEvery { getDiscoveryQueueEntries("blah", DiscoveryQueueStatus.UNDISCOVERED) } returns emptyList()
-        }
+        tenant =
+            mockk {
+                every { mnemonic } returns "ronin"
+                every { timezone } returns ZoneId.of("UTC")
+            }
+        tenant2 =
+            mockk {
+                every { mnemonic } returns "blah"
+                every { timezone } returns ZoneId.of("UTC")
+            }
+        discoveryQueueClient =
+            mockk {
+                coEvery { getDiscoveryQueueEntries("ronin", DiscoveryQueueStatus.UNDISCOVERED) } returns
+                    listOf(
+                        queueEntry1,
+                        queueEntry2,
+                    )
+                coEvery { getDiscoveryQueueEntries("blah", DiscoveryQueueStatus.UNDISCOVERED) } returns emptyList()
+            }
         vendorFactory = mockk()
 
-        tenantService = mockk {
-            every { getTenantForMnemonic("ronin") } returns tenant
-            every { getMonitoredTenants() } returns listOf(tenant, tenant2)
-        }
-        val ehrFactory = mockk<EHRFactory> {
-            every { getVendorFactory(tenant) } returns vendorFactory
-        }
+        tenantService =
+            mockk {
+                every { getTenantForMnemonic("ronin") } returns tenant
+                every { getMonitoredTenants() } returns listOf(tenant, tenant2)
+            }
+        val ehrFactory =
+            mockk<EHRFactory> {
+                every { getVendorFactory(tenant) } returns vendorFactory
+            }
         val writer = mockk<BackfillDiscoveryQueueWriter>()
-        channel = BackfillDiscoveryQueue(
-            tenantService,
-            ehrFactory,
-            discoveryQueueClient,
-            writer
-        )
+        channel =
+            BackfillDiscoveryQueue(
+                tenantService,
+                ehrFactory,
+                discoveryQueueClient,
+                writer,
+            )
     }
 
     @Test
@@ -93,7 +121,9 @@ class BackfillDiscoveryQueueTest {
 
     @Test
     fun `sourceReader errors don't cause it to crash`() {
-        coEvery { discoveryQueueClient.getDiscoveryQueueEntries("blah", DiscoveryQueueStatus.UNDISCOVERED) } throws IllegalArgumentException("oops")
+        coEvery {
+            discoveryQueueClient.getDiscoveryQueueEntries("blah", DiscoveryQueueStatus.UNDISCOVERED)
+        } throws IllegalArgumentException("oops")
         val list = channel.channelSourceReader(emptyMap())
         assertEquals(8, list.size)
         assertEquals(JacksonUtil.writeJsonValue(queueEntry1.copy(endDate = start.plusDays(90))), list.first().message)
@@ -103,39 +133,45 @@ class BackfillDiscoveryQueueTest {
 
     @Test
     fun `sourceTransform - works`() {
-        val patient1 = Participant(
-            status = com.projectronin.interop.fhir.r4.valueset.ParticipationStatus.ACCEPTED.asCode(),
-            actor = Reference(
-                reference = "Patient/patFhirID".asFHIR(),
-                identifier = Identifier(value = "patientID".asFHIR(), system = Uri("system"))
+        val patient1 =
+            Participant(
+                status = com.projectronin.interop.fhir.r4.valueset.ParticipationStatus.ACCEPTED.asCode(),
+                actor =
+                    Reference(
+                        reference = "Patient/patFhirID".asFHIR(),
+                        identifier = Identifier(value = "patientID".asFHIR(), system = Uri("system")),
+                    ),
             )
-        )
         val location =
             Participant(
                 status = com.projectronin.interop.fhir.r4.valueset.ParticipationStatus.ACCEPTED.asCode(),
-                actor = Reference(reference = "Location".asFHIR())
+                actor = Reference(reference = "Location".asFHIR()),
             )
-        val appt1 = Appointment(
-            id = Id("1"),
-            participant = listOf(location, patient1),
-            status = com.projectronin.interop.fhir.r4.valueset.AppointmentStatus.BOOKED.asCode()
-        )
-        val appt2 = Appointment(
-            id = Id("2"),
-            participant = listOf(location, patient1),
-            status = com.projectronin.interop.fhir.r4.valueset.AppointmentStatus.BOOKED.asCode()
-        )
+        val appt1 =
+            Appointment(
+                id = Id("1"),
+                participant = listOf(location, patient1),
+                status = com.projectronin.interop.fhir.r4.valueset.AppointmentStatus.BOOKED.asCode(),
+            )
+        val appt2 =
+            Appointment(
+                id = Id("2"),
+                participant = listOf(location, patient1),
+                status = com.projectronin.interop.fhir.r4.valueset.AppointmentStatus.BOOKED.asCode(),
+            )
         val appointments = listOf(appt1, appt2)
         val findPractitionersResponse = AppointmentsWithNewPatients(appointments)
 
-        val mockAppointmentService = mockk<AppointmentService> {
-            every { findLocationAppointments(tenant, listOf("123"), start, end) } returns findPractitionersResponse
-        }
+        val mockAppointmentService =
+            mockk<AppointmentService> {
+                every { findLocationAppointments(tenant, listOf("123"), start, end) } returns findPractitionersResponse
+            }
         coEvery { discoveryQueueClient.updateDiscoveryQueueEntryByID(queueEntry1.id, any()) } returns true
 
         every { vendorFactory.appointmentService } returns mockAppointmentService
 
-        val message = channel.channelSourceTransformer("ronin", JacksonUtil.writeJsonValue(queueEntry1), emptyMap(), emptyMap())
+        val message =
+            channel.channelSourceTransformer("ronin", JacksonUtil.writeJsonValue(queueEntry1), emptyMap(), emptyMap())
         assertEquals("[\"Patient/patFhirID\"]", message.message)
     }
 
@@ -143,9 +179,10 @@ class BackfillDiscoveryQueueTest {
     fun `sourceTransform -  bad tenant throws exception`() {
         coEvery { discoveryQueueClient.updateDiscoveryQueueEntryByID(queueEntry1.id, any()) } returns true
         every { tenantService.getTenantForMnemonic("no") } returns null
-        val exception = assertThrows<Exception> {
-            channel.channelSourceTransformer("no", JacksonUtil.writeJsonValue(queueEntry1), emptyMap(), emptyMap())
-        }
+        val exception =
+            assertThrows<Exception> {
+                channel.channelSourceTransformer("no", JacksonUtil.writeJsonValue(queueEntry1), emptyMap(), emptyMap())
+            }
         assertEquals("No Tenant Found", exception.message)
     }
 }

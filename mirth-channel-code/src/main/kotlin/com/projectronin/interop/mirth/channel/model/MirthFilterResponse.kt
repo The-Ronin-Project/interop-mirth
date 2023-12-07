@@ -6,5 +6,5 @@ package com.projectronin.interop.mirth.channel.model
  */
 data class MirthFilterResponse(
     val result: Boolean,
-    val dataMap: Map<String, Any> = emptyMap()
+    val dataMap: Map<String, Any> = emptyMap(),
 )

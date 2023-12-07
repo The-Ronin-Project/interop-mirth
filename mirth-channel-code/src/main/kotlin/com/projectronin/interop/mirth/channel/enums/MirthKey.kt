@@ -68,5 +68,5 @@ enum class MirthKey(val code: String) {
     /**
      * The ID for the backfill event
      */
-    BACKFILL_ID("backfillId")
+    BACKFILL_ID("backfillId"),
 }

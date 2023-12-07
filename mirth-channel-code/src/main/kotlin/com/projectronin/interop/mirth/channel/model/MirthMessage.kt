@@ -5,7 +5,7 @@ package com.projectronin.interop.mirth.channel.model
  */
 data class MirthMessage(
     val message: String = "",
-    val dataMap: Map<String, Any> = emptyMap()
+    val dataMap: Map<String, Any> = emptyMap(),
 )
 
 fun emptyMirthMessage(): MirthMessage {

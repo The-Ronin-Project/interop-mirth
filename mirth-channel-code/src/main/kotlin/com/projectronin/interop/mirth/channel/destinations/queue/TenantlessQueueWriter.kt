@@ -16,14 +16,13 @@ import kotlin.reflect.KClass
  */
 abstract class TenantlessQueueWriter<T : DomainResource<T>>(
     private val publishService: PublishService,
-    private val type: KClass<out T>
+    private val type: KClass<out T>,
 ) : TenantlessDestinationService() {
-
     override fun channelDestinationWriter(
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse {
         val resource = JacksonManager.objectMapper.readValue(msg, type.java)
         val resourceList = listOf(resource)
@@ -32,14 +31,14 @@ abstract class TenantlessQueueWriter<T : DomainResource<T>>(
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = JacksonUtil.writeJsonValue(resourceList),
-                message = "Failed to publish $resourceType(s)"
+                message = "Failed to publish $resourceType(s)",
             )
         }
         return MirthResponse(
             status = MirthResponseStatus.SENT,
             detailedMessage = JacksonUtil.writeJsonValue(resourceList),
             message = "Published ${resourceList.size} $resourceType(s)",
-            dataMap = emptyMap()
+            dataMap = emptyMap(),
         )
     }
 }

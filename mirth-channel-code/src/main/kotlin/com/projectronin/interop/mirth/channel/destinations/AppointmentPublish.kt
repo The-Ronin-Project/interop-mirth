@@ -27,18 +27,18 @@ class AppointmentPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninAppointment
+    profileTransformer: RoninAppointment,
 ) : KafkaEventResourcePublisher<Appointment>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<Appointment> {
         return PatientPublishAppointmentRequest(events, vendorFactory.appointmentService, tenant)
     }
@@ -46,7 +46,7 @@ class AppointmentPublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<Appointment> {
         return LoadAppointmentRequest(events, vendorFactory.appointmentService, tenant)
     }
@@ -54,7 +54,7 @@ class AppointmentPublish(
     internal class PatientPublishAppointmentRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: AppointmentService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishResourceRequest<Appointment>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { PatientPublishEvent(it, tenant) }
@@ -62,14 +62,14 @@ class AppointmentPublish(
         override fun loadResourcesForIds(
             requestFhirIds: List<String>,
             startDate: OffsetDateTime?,
-            endDate: OffsetDateTime?
+            endDate: OffsetDateTime?,
         ): Map<String, List<Appointment>> {
             return requestFhirIds.associateWith {
                 fhirService.findPatientAppointments(
                     tenant,
                     it,
                     startDate = startDate?.toLocalDate() ?: LocalDate.now().minusMonths(1),
-                    endDate = endDate?.toLocalDate() ?: LocalDate.now().plusMonths(1)
+                    endDate = endDate?.toLocalDate() ?: LocalDate.now().plusMonths(1),
                 )
             }
         }
@@ -81,6 +81,6 @@ class AppointmentPublish(
     internal class LoadAppointmentRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: AppointmentService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<Appointment>(loadEvents, tenant)
 }

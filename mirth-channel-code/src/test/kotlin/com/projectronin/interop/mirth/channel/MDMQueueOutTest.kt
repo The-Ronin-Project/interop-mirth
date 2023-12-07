@@ -12,9 +12,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class MDMQueueOutTest {
-    private val mockTenant = mockk<Tenant> {
-        every { mnemonic } returns "tenant"
-    }
+    private val mockTenant =
+        mockk<Tenant> {
+            every { mnemonic } returns "tenant"
+        }
     private lateinit var mockTenantConfigurationService: TenantConfigurationService
     private lateinit var mockQueueService: QueueService
 
@@ -47,11 +48,13 @@ class MDMQueueOutTest {
 
     @Test
     fun `sourceReader - works`() {
-        val mockHL7 = "MSH|^~\\&|RONIN|RONIN||HOSPITAL|20200524130600||MDM^T02|1|P|2.5.1|||NE||\n" +
-            "EVN|T02|20200524130600|"
-        val mockMessage = mockk<HL7Message> {
-            every { text } returns mockHL7
-        }
+        val mockHL7 =
+            "MSH|^~\\&|RONIN|RONIN||HOSPITAL|20200524130600||MDM^T02|1|P|2.5.1|||NE||\n" +
+                "EVN|T02|20200524130600|"
+        val mockMessage =
+            mockk<HL7Message> {
+                every { text } returns mockHL7
+            }
         every { mockQueueService.dequeueHL7Messages("tenant", MessageType.MDM, null, 5) } returns listOf(mockMessage)
         val mirthMessageList = channel.channelSourceReader(mockTenant.mnemonic, emptyMap())
         assertEquals(1, mirthMessageList.size)

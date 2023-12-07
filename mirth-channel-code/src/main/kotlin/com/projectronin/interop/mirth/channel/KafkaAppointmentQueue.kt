@@ -24,7 +24,7 @@ class KafkaAppointmentQueue(
     queueService: KafkaQueueService,
     appointmentQueueWriter: AppointmentTenantlessQueueWriter,
     private val transformManager: TransformManager,
-    private val roninAppointment: RoninAppointment
+    private val roninAppointment: RoninAppointment,
 ) :
     KafkaQueue<Appointment>(tenantService, queueService, appointmentQueueWriter) {
     companion object {
@@ -35,7 +35,10 @@ class KafkaAppointmentQueue(
     override val rootName = "KafkaAppointmentQueue"
     override val resourceType = ResourceType.APPOINTMENT
 
-    override fun deserializeAndTransform(string: String, tenant: Tenant): TransformResponse<Appointment> {
+    override fun deserializeAndTransform(
+        string: String,
+        tenant: Tenant,
+    ): TransformResponse<Appointment> {
         val condition = JacksonUtil.readJsonObject(string, Appointment::class)
         return transformManager.transformResource(condition, roninAppointment, tenant)
             ?: throw ResourcesNotTransformedException("Failed to transform Appointment for tenant ${tenant.mnemonic}")

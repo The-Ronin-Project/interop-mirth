@@ -18,16 +18,18 @@ class IdBasedPublishResourceEventTest {
     fun `creates the requestKeys off the source ID`() {
         val location = Location(id = Id("tenant-1234"))
         val metadata = Metadata(runId = "run", runDateTime = OffsetDateTime.now())
-        val event = InteropResourcePublishV1(
-            tenantId = "tenant",
-            resourceType = ResourceType.Location,
-            dataTrigger = InteropResourcePublishV1.DataTrigger.nightly,
-            resourceJson = JacksonManager.objectMapper.writeValueAsString(location),
-            metadata = metadata
-        )
-        val tenant = mockk<Tenant> {
-            every { mnemonic } returns "tenant"
-        }
+        val event =
+            InteropResourcePublishV1(
+                tenantId = "tenant",
+                resourceType = ResourceType.Location,
+                dataTrigger = InteropResourcePublishV1.DataTrigger.nightly,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(location),
+                metadata = metadata,
+            )
+        val tenant =
+            mockk<Tenant> {
+                every { mnemonic } returns "tenant"
+            }
 
         val resourceEvent = object : IdBasedPublishResourceEvent<Location>(event, tenant, Location::class) {}
         val requestKeys = resourceEvent.requestKeys

@@ -22,9 +22,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class KafkaPractitionerQueueTest {
-    private val mockTenant = mockk<Tenant> {
-        every { mnemonic } returns "testmnemonic"
-    }
+    private val mockTenant =
+        mockk<Tenant> {
+            every { mnemonic } returns "testmnemonic"
+        }
     private lateinit var mockTransformManager: TransformManager
     private lateinit var mockRoninPractitioner: RoninPractitioner
     private lateinit var channel: KafkaPractitionerQueue
@@ -38,19 +39,21 @@ class KafkaPractitionerQueueTest {
     fun setup() {
         mockTransformManager = mockk()
         mockRoninPractitioner = mockk()
-        val tenantService = mockk<TenantService> {
-            every { getTenantForMnemonic("testmnemonic") } returns mockTenant
-        }
+        val tenantService =
+            mockk<TenantService> {
+                every { getTenantForMnemonic("testmnemonic") } returns mockTenant
+            }
         val queueService = mockk<KafkaQueueService>()
         val queueWriter = mockk<PractitionerTenantlessQueueWriter>()
 
-        channel = KafkaPractitionerQueue(
-            tenantService,
-            queueService,
-            queueWriter,
-            mockTransformManager,
-            mockRoninPractitioner
-        )
+        channel =
+            KafkaPractitionerQueue(
+                tenantService,
+                queueService,
+                queueWriter,
+                mockTransformManager,
+                mockRoninPractitioner,
+            )
     }
 
     @Test
@@ -72,7 +75,7 @@ class KafkaPractitionerQueueTest {
             mockTransformManager.transformResource(
                 mockPractitioner,
                 mockRoninPractitioner,
-                mockTenant
+                mockTenant,
             )
         } returns transformResponse
 
@@ -91,14 +94,14 @@ class KafkaPractitionerQueueTest {
             mockTransformManager.transformResource(
                 mockPractitioner,
                 mockRoninPractitioner,
-                mockTenant
+                mockTenant,
             )
         } returns null
 
         assertThrows<ResourcesNotTransformedException> {
             channel.deserializeAndTransform(
                 "practitionerString",
-                mockTenant
+                mockTenant,
             )
         }
     }

@@ -14,7 +14,7 @@ class ObservationLoad(
     kafkaPublishService: KafkaPublishService,
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
-    defaultPublisher: ObservationPublish
+    defaultPublisher: ObservationPublish,
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "ObservationLoad"
     override val channelGroupId = "interop-mirth-observation_group"

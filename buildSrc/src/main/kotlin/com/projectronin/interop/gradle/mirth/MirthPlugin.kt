@@ -31,47 +31,55 @@ class MirthPlugin : Plugin<Project> {
     private fun setupMirthTasks(project: Project) {
         val dockerComposeTask = project.tasks.register<DockerComposeTask>("dockerUp")
 
-        val setupUserTask = project.tasks.register<SetupUserTask>("setupUser") {
-            dependsOn(dockerComposeTask)
-        }
+        val setupUserTask =
+            project.tasks.register<SetupUserTask>("setupUser") {
+                dependsOn(dockerComposeTask)
+            }
 
         val addInteropDirectoryResourceTask =
             project.tasks.register<AddInteropDirectoryResourceTask>("addInteropDirectoryResource") {
                 dependsOn(dockerComposeTask)
             }
 
-        val reloadMirthResourceTask = project.tasks.register<ReloadMirthResourceTask>("reloadMirthResource") {
-            dependsOn(addInteropDirectoryResourceTask)
-        }
+        val reloadMirthResourceTask =
+            project.tasks.register<ReloadMirthResourceTask>("reloadMirthResource") {
+                dependsOn(addInteropDirectoryResourceTask)
+            }
 
-        val copyMirthChannelCodeTask = project.tasks.register<CopyMirthChannelCodeTask>("copyChannelCode") {
-            dependsOn(":mirth-channel-code:jar")
-            finalizedBy(reloadMirthResourceTask)
-        }
+        val copyMirthChannelCodeTask =
+            project.tasks.register<CopyMirthChannelCodeTask>("copyChannelCode") {
+                dependsOn(":mirth-channel-code:jar")
+                finalizedBy(reloadMirthResourceTask)
+            }
 
-        val addCodeTemplatesTask = project.tasks.register<AddCodeTemplatesTask>("addCodeTemplates") {
-            dependsOn(dockerComposeTask)
-        }
+        val addCodeTemplatesTask =
+            project.tasks.register<AddCodeTemplatesTask>("addCodeTemplates") {
+                dependsOn(dockerComposeTask)
+            }
 
-        val installAllChannelsTask = project.tasks.register<InstallAllChannelsTask>("installAllChannels") {
-            dependsOn(addCodeTemplatesTask)
-        }
+        val installAllChannelsTask =
+            project.tasks.register<InstallAllChannelsTask>("installAllChannels") {
+                dependsOn(addCodeTemplatesTask)
+            }
 
         project.tasks.register<InstallChannelTask>("installChannel") {
             dependsOn(addCodeTemplatesTask)
         }
 
-        val updateTenantConfig = project.tasks.register<UpdateTenantConfigTask>("updateTenantConfig") {
-            dependsOn(dockerComposeTask)
-        }
+        val updateTenantConfig =
+            project.tasks.register<UpdateTenantConfigTask>("updateTenantConfig") {
+                dependsOn(dockerComposeTask)
+            }
 
-        val updateTenantServer = project.tasks.register<UpdateTenantServerTask>("updateTenantServer") {
-            dependsOn(dockerComposeTask)
-        }
+        val updateTenantServer =
+            project.tasks.register<UpdateTenantServerTask>("updateTenantServer") {
+                dependsOn(dockerComposeTask)
+            }
 
-        val installAidboxResources = project.tasks.register<InstallAidboxResources>("installAidboxResources") {
-            dependsOn(dockerComposeTask)
-        }
+        val installAidboxResources =
+            project.tasks.register<InstallAidboxResources>("installAidboxResources") {
+                dependsOn(dockerComposeTask)
+            }
 
         project.tasks.register("mirth") {
             dependsOn(dockerComposeTask)
@@ -91,4 +99,7 @@ class MirthPlugin : Plugin<Project> {
 /**
  * Helper method for accessing the [MirthExtension] throughout this project.
  */
-internal fun Project.mirth(): com.projectronin.interop.gradle.mirth.MirthExtension = extensions.getByName(EXTENSION_NAME) as com.projectronin.interop.gradle.mirth.MirthExtension
+internal fun Project.mirth(): com.projectronin.interop.gradle.mirth.MirthExtension =
+    extensions.getByName(
+        EXTENSION_NAME,
+    ) as com.projectronin.interop.gradle.mirth.MirthExtension

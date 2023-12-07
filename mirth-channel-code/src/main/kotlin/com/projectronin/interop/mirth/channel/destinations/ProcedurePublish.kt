@@ -31,50 +31,55 @@ class ProcedurePublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninProcedure
+    profileTransformer: RoninProcedure,
 ) : KafkaEventResourcePublisher<Procedure>(
-    tenantService,
-    ehrFactory,
-    transformManager,
-    publishService,
-    profileTransformer
-) {
+        tenantService,
+        ehrFactory,
+        transformManager,
+        publishService,
+        profileTransformer,
+    ) {
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): PublishResourceRequest<Procedure> {
         // Only events for the same resource type are grouped, so just peek at the first one
         return when (val resourceType = events.first().resourceType) {
-            ResourceType.Appointment -> AppointmentPublishProcedureRequest(
-                events,
-                vendorFactory.procedureService,
-                tenant
-            )
+            ResourceType.Appointment ->
+                AppointmentPublishProcedureRequest(
+                    events,
+                    vendorFactory.procedureService,
+                    tenant,
+                )
 
-            ResourceType.Encounter -> EncounterPublishProcedureRequest(
-                events,
-                vendorFactory.procedureService,
-                tenant
-            )
+            ResourceType.Encounter ->
+                EncounterPublishProcedureRequest(
+                    events,
+                    vendorFactory.procedureService,
+                    tenant,
+                )
 
-            ResourceType.MedicationStatement -> MedicationStatementPublishProcedureRequest(
-                events,
-                vendorFactory.procedureService,
-                tenant
-            )
+            ResourceType.MedicationStatement ->
+                MedicationStatementPublishProcedureRequest(
+                    events,
+                    vendorFactory.procedureService,
+                    tenant,
+                )
 
-            ResourceType.Observation -> ObservationPublishProcedureRequest(
-                events,
-                vendorFactory.procedureService,
-                tenant
-            )
+            ResourceType.Observation ->
+                ObservationPublishProcedureRequest(
+                    events,
+                    vendorFactory.procedureService,
+                    tenant,
+                )
 
-            ResourceType.Procedure -> ProcedurePublishProcedureRequest(
-                events,
-                vendorFactory.procedureService,
-                tenant
-            )
+            ResourceType.Procedure ->
+                ProcedurePublishProcedureRequest(
+                    events,
+                    vendorFactory.procedureService,
+                    tenant,
+                )
 
             else -> throw IllegalStateException("Received resource type ($resourceType) that cannot be used to load procedures")
         }
@@ -83,7 +88,7 @@ class ProcedurePublish(
     override fun convertLoadEventsToRequest(
         events: List<InteropResourceLoadV1>,
         vendorFactory: VendorFactory,
-        tenant: Tenant
+        tenant: Tenant,
     ): LoadResourceRequest<Procedure> {
         return LoadProcedureRequest(events, vendorFactory.procedureService, tenant)
     }
@@ -91,7 +96,7 @@ class ProcedurePublish(
     internal class AppointmentPublishProcedureRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ProcedureService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<Procedure>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { AppointmentPublishEvent(it, tenant) }
@@ -109,21 +114,23 @@ class ProcedurePublish(
     internal class EncounterPublishProcedureRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ProcedureService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<Procedure>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { EncounterPublishEvent(it, tenant) }
 
         private class EncounterPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
             PublishResourceEvent<Encounter>(publishEvent, Encounter::class) {
-            private val reasonReferenceKeys = sourceResource.reasonReference.asSequence()
-                .filter { it.isForType("Procedure") }
-                .mapNotNull { it.decomposedId() }.distinct()
-                .map { ResourceRequestKey(metadata.runId, ResourceType.Procedure, tenant, it) }.toSet()
-            private val diagnosisKeys = sourceResource.diagnosis.asSequence()
-                .filter { it.condition?.decomposedType()?.startsWith("Procedure") == true }
-                .mapNotNull { it.condition?.decomposedId() }.distinct()
-                .map { ResourceRequestKey(metadata.runId, ResourceType.Procedure, tenant, it) }.toSet()
+            private val reasonReferenceKeys =
+                sourceResource.reasonReference.asSequence()
+                    .filter { it.isForType("Procedure") }
+                    .mapNotNull { it.decomposedId() }.distinct()
+                    .map { ResourceRequestKey(metadata.runId, ResourceType.Procedure, tenant, it) }.toSet()
+            private val diagnosisKeys =
+                sourceResource.diagnosis.asSequence()
+                    .filter { it.condition?.decomposedType()?.startsWith("Procedure") == true }
+                    .mapNotNull { it.condition?.decomposedId() }.distinct()
+                    .map { ResourceRequestKey(metadata.runId, ResourceType.Procedure, tenant, it) }.toSet()
             override val requestKeys = reasonReferenceKeys + diagnosisKeys
         }
     }
@@ -131,7 +138,7 @@ class ProcedurePublish(
     internal class MedicationStatementPublishProcedureRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ProcedureService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<Procedure>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { MedicationStatementPublishEvent(it, tenant) }
@@ -149,7 +156,7 @@ class ProcedurePublish(
     internal class ObservationPublishProcedureRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ProcedureService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<Procedure>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { ObservationPublishEvent(it, tenant) }
@@ -167,21 +174,23 @@ class ProcedurePublish(
     internal class ProcedurePublishProcedureRequest(
         publishEvents: List<InteropResourcePublishV1>,
         override val fhirService: ProcedureService,
-        override val tenant: Tenant
+        override val tenant: Tenant,
     ) : PublishReferenceResourceRequest<Procedure>() {
         override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
             publishEvents.map { ProcedurePublishEvent(it, tenant) }
 
         private class ProcedurePublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
             PublishResourceEvent<Procedure>(publishEvent, Procedure::class) {
-            private val partOfKeys = sourceResource.partOf.asSequence()
-                .filter { it.isForType("Procedure") }
-                .mapNotNull { it.decomposedId() }.distinct()
-                .map { ResourceRequestKey(metadata.runId, ResourceType.Procedure, tenant, it) }.toSet()
-            private val reasonReferenceKeys = sourceResource.reasonReference.asSequence()
-                .filter { it.isForType("Procedure") }
-                .mapNotNull { it.decomposedId() }.distinct()
-                .map { ResourceRequestKey(metadata.runId, ResourceType.Procedure, tenant, it) }.toSet()
+            private val partOfKeys =
+                sourceResource.partOf.asSequence()
+                    .filter { it.isForType("Procedure") }
+                    .mapNotNull { it.decomposedId() }.distinct()
+                    .map { ResourceRequestKey(metadata.runId, ResourceType.Procedure, tenant, it) }.toSet()
+            private val reasonReferenceKeys =
+                sourceResource.reasonReference.asSequence()
+                    .filter { it.isForType("Procedure") }
+                    .mapNotNull { it.decomposedId() }.distinct()
+                    .map { ResourceRequestKey(metadata.runId, ResourceType.Procedure, tenant, it) }.toSet()
             override val requestKeys = partOfKeys + reasonReferenceKeys
         }
     }
@@ -189,6 +198,6 @@ class ProcedurePublish(
     internal class LoadProcedureRequest(
         loadEvents: List<InteropResourceLoadV1>,
         override val fhirService: ProcedureService,
-        tenant: Tenant
+        tenant: Tenant,
     ) : LoadResourceRequest<Procedure>(loadEvents, tenant)
 }

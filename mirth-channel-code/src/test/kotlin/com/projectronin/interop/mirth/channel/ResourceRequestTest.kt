@@ -33,14 +33,16 @@ class ResourceRequestTest {
     @Test
     fun `channel sourceReader works`() {
         mockkObject(JacksonUtil)
-        val mockEvent = mockk<InteropResourceRequestV1> {
-            every { tenantId } returns "no way dude"
-            every { resourceFHIRId } returns "123"
-            every { resourceType } returns "Patient"
-        }
-        every { kafkaRequestService.retrieveRequestEvents("interop-mirth-resource_request_group") } returns listOf(
-            mockEvent
-        )
+        val mockEvent =
+            mockk<InteropResourceRequestV1> {
+                every { tenantId } returns "no way dude"
+                every { resourceFHIRId } returns "123"
+                every { resourceType } returns "Patient"
+            }
+        every { kafkaRequestService.retrieveRequestEvents("interop-mirth-resource_request_group") } returns
+            listOf(
+                mockEvent,
+            )
         every { JacksonUtil.writeJsonValue(mockEvent) } returns "mockEvent"
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)

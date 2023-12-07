@@ -18,7 +18,7 @@ import com.projectronin.interop.mirth.service.TenantConfigurationService
 abstract class KafkaTopicReader(
     private val kafkaPublishService: KafkaPublishService,
     private val kafkaLoadService: KafkaLoadService,
-    defaultPublisher: KafkaEventResourcePublisher<*>
+    defaultPublisher: KafkaEventResourcePublisher<*>,
 ) : TenantlessSourceService() {
     abstract val publishedResourcesSubscriptions: List<ResourceType>
     abstract val resource: ResourceType
@@ -39,14 +39,15 @@ abstract class KafkaTopicReader(
         }
 
         // wrapping retrieveLoadEvents with function to filter out blocked resources
-        val loadEvents = filterBlockedLoadEvents(
-            resource,
-            kafkaLoadService.retrieveLoadEvents(
-                resourceType = resource,
-                groupId = channelGroupId
-            ),
-            tenantConfigService
-        )
+        val loadEvents =
+            filterBlockedLoadEvents(
+                resource,
+                kafkaLoadService.retrieveLoadEvents(
+                    resourceType = resource,
+                    groupId = channelGroupId,
+                ),
+                tenantConfigService,
+            )
         if (loadEvents.isNotEmpty()) {
             return loadEvents.toLoadMirthMessages()
         }
@@ -62,12 +63,13 @@ abstract class KafkaTopicReader(
             val adHocEvents = groupedEvents[InteropResourcePublishV1.DataTrigger.adhoc] ?: emptyList()
 
             // if we've got any backfill events we can split them here based on date range
-            val splitBackfillEvents = if (backfillEvents.isNotEmpty()) {
-                val splitBackfillEvents = backfillEvents.splitDateRange()
-                splitBackfillEvents.toPublishMirthMessages()
-            } else {
-                emptyList()
-            }
+            val splitBackfillEvents =
+                if (backfillEvents.isNotEmpty()) {
+                    val splitBackfillEvents = backfillEvents.splitDateRange()
+                    splitBackfillEvents.toPublishMirthMessages()
+                } else {
+                    emptyList()
+                }
 
             return adHocEvents.toPublishMirthMessages() + splitBackfillEvents
         }
@@ -82,7 +84,7 @@ abstract class KafkaTopicReader(
                 kafkaPublishService.retrievePublishEvents(
                     resourceType = it,
                     dataTrigger = dataTrigger,
-                    groupId = channelGroupId
+                    groupId = channelGroupId,
                 )
             }
     }
@@ -95,8 +97,8 @@ abstract class KafkaTopicReader(
                     mapOf(
                         MirthKey.TENANT_MNEMONIC.code to key.first,
                         MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!,
-                        MirthKey.EVENT_RUN_ID.code to key.second
-                    )
+                        MirthKey.EVENT_RUN_ID.code to key.second,
+                    ),
                 )
             }
         }
@@ -110,8 +112,8 @@ abstract class KafkaTopicReader(
                     mapOf(
                         MirthKey.TENANT_MNEMONIC.code to key.first,
                         MirthKey.KAFKA_EVENT.code to InteropResourceLoadV1::class.simpleName!!,
-                        MirthKey.EVENT_RUN_ID.code to key.second
-                    )
+                        MirthKey.EVENT_RUN_ID.code to key.second,
+                    ),
                 )
             }
         }
@@ -130,10 +132,11 @@ abstract class KafkaTopicReader(
         val endDate = oldBackfillInfo.backfillEndDate
         val dayPairs = splitDateRange(startDate, endDate, maxBackfillDays!!)
         return dayPairs.map {
-            val backfillModified = oldBackfillInfo.copy(
-                backfillStartDate = it.first,
-                backfillEndDate = it.second
-            )
+            val backfillModified =
+                oldBackfillInfo.copy(
+                    backfillStartDate = it.first,
+                    backfillEndDate = it.second,
+                )
             val modifiedMetadata = oldMetadata.copy(backfillRequest = backfillModified)
             this.copy(metadata = modifiedMetadata)
         }

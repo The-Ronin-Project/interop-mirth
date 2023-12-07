@@ -19,7 +19,7 @@ interface MirthDestination {
         unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthFilterResponse
 
     /**
@@ -36,7 +36,7 @@ interface MirthDestination {
         unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage
 
     /**
@@ -53,6 +53,6 @@ interface MirthDestination {
         unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthResponse
 }

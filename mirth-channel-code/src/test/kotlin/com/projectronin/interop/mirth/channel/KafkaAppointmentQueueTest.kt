@@ -22,9 +22,10 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class KafkaAppointmentQueueTest {
-    private val mockTenant = mockk<Tenant> {
-        every { mnemonic } returns "testmnemonic"
-    }
+    private val mockTenant =
+        mockk<Tenant> {
+            every { mnemonic } returns "testmnemonic"
+        }
     private lateinit var mockTransformManager: TransformManager
     private lateinit var mockRoninAppointment: RoninAppointment
     private lateinit var channel: KafkaAppointmentQueue
@@ -38,9 +39,10 @@ class KafkaAppointmentQueueTest {
     fun setup() {
         mockTransformManager = mockk()
         mockRoninAppointment = mockk()
-        val tenantService = mockk<TenantService> {
-            every { getTenantForMnemonic("testmnemonic") } returns mockTenant
-        }
+        val tenantService =
+            mockk<TenantService> {
+                every { getTenantForMnemonic("testmnemonic") } returns mockTenant
+            }
         val queueService = mockk<KafkaQueueService>()
         val queueWriter = mockk<AppointmentTenantlessQueueWriter>()
 
@@ -67,7 +69,7 @@ class KafkaAppointmentQueueTest {
             mockTransformManager.transformResource(
                 mockAppointment,
                 mockRoninAppointment,
-                mockTenant
+                mockTenant,
             )
         } returns transformResponse
 
@@ -87,7 +89,7 @@ class KafkaAppointmentQueueTest {
         assertThrows<ResourcesNotTransformedException> {
             channel.deserializeAndTransform(
                 "conditionString",
-                mockTenant
+                mockTenant,
             )
         }
     }

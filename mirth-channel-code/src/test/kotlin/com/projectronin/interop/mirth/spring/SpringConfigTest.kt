@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 internal class SpringConfigTest {
-
     @Test
     fun codeCov() {
         val config = SpringConfig()

@@ -24,17 +24,19 @@ class ResourceRequestPublishTest {
     lateinit var destination: ResourceRequestPublish
     lateinit var tenantService: TenantService
     lateinit var kafkaLoadService: KafkaLoadService
-    val mockTenant = mockk<Tenant> {
-        every { mnemonic } returns "tenny"
-    }
+    val mockTenant =
+        mockk<Tenant> {
+            every { mnemonic } returns "tenny"
+        }
 
     @BeforeEach
     fun setup() {
         kafkaLoadService = mockk()
-        tenantService = mockk {
-            every { getTenantForMnemonic("fake") } returns null
-            every { getTenantForMnemonic("tenny") } returns mockTenant
-        }
+        tenantService =
+            mockk {
+                every { getTenantForMnemonic("fake") } returns null
+                every { getTenantForMnemonic("tenny") } returns mockTenant
+            }
         destination = ResourceRequestPublish(kafkaLoadService, tenantService)
         mockkObject(JacksonUtil)
     }
@@ -53,11 +55,12 @@ class ResourceRequestPublishTest {
 
     @Test
     fun `channel works`() {
-        val mockEvent = mockk<InteropResourceRequestV1> {
-            every { resourceType } returns "Patient"
-            every { resourceFHIRId } returns "anything"
-            every { flowOptions } returns null
-        }
+        val mockEvent =
+            mockk<InteropResourceRequestV1> {
+                every { resourceType } returns "Patient"
+                every { resourceFHIRId } returns "anything"
+                every { flowOptions } returns null
+            }
         every { JacksonUtil.readJsonObject("event", InteropResourceRequestV1::class) } returns mockEvent
         every {
             kafkaLoadService.pushLoadEvent(
@@ -65,12 +68,13 @@ class ResourceRequestPublishTest {
                 resourceType = ResourceType.Patient,
                 resourceFHIRIds = listOf("anything"),
                 trigger = DataTrigger.AD_HOC,
-                metadata = any()
+                metadata = any(),
             )
-        } returns mockk {
-            every { failures } returns emptyList()
-            every { successful } returns listOf("Success")
-        }
+        } returns
+            mockk {
+                every { failures } returns emptyList()
+                every { successful } returns listOf("Success")
+            }
         val results =
             destination.channelDestinationWriter("tenny", "event", emptyMap(), emptyMap())
         assertEquals(MirthResponseStatus.SENT, results.status)
@@ -80,20 +84,23 @@ class ResourceRequestPublishTest {
     @Test
     fun `channel works with flow options on request`() {
         val registryMinimum = OffsetDateTime.now()
-        val mockEvent = mockk<InteropResourceRequestV1> {
-            every { resourceType } returns "Patient"
-            every { resourceFHIRId } returns "anything"
-            every { flowOptions } returns InteropResourceRequestV1.FlowOptions(
-                disableDownstreamResources = true,
-                normalizationRegistryMinimumTime = registryMinimum
-            )
-        }
+        val mockEvent =
+            mockk<InteropResourceRequestV1> {
+                every { resourceType } returns "Patient"
+                every { resourceFHIRId } returns "anything"
+                every { flowOptions } returns
+                    InteropResourceRequestV1.FlowOptions(
+                        disableDownstreamResources = true,
+                        normalizationRegistryMinimumTime = registryMinimum,
+                    )
+            }
         every { JacksonUtil.readJsonObject("event", InteropResourceRequestV1::class) } returns mockEvent
 
-        val loadFlowOptions = InteropResourceLoadV1.FlowOptions(
-            disableDownstreamResources = true,
-            normalizationRegistryMinimumTime = registryMinimum
-        )
+        val loadFlowOptions =
+            InteropResourceLoadV1.FlowOptions(
+                disableDownstreamResources = true,
+                normalizationRegistryMinimumTime = registryMinimum,
+            )
         every {
             kafkaLoadService.pushLoadEvent(
                 tenantId = "tenny",
@@ -101,12 +108,13 @@ class ResourceRequestPublishTest {
                 resourceFHIRIds = listOf("anything"),
                 trigger = DataTrigger.AD_HOC,
                 metadata = any(),
-                flowOptions = loadFlowOptions
+                flowOptions = loadFlowOptions,
             )
-        } returns mockk {
-            every { failures } returns emptyList()
-            every { successful } returns listOf("Success")
-        }
+        } returns
+            mockk {
+                every { failures } returns emptyList()
+                every { successful } returns listOf("Success")
+            }
         val results =
             destination.channelDestinationWriter("tenny", "event", emptyMap(), emptyMap())
         assertEquals(MirthResponseStatus.SENT, results.status)
@@ -115,11 +123,12 @@ class ResourceRequestPublishTest {
 
     @Test
     fun `channel handles errors`() {
-        val mockEvent = mockk<InteropResourceRequestV1> {
-            every { resourceType } returns "Patient"
-            every { resourceFHIRId } returns "anything"
-            every { flowOptions } returns null
-        }
+        val mockEvent =
+            mockk<InteropResourceRequestV1> {
+                every { resourceType } returns "Patient"
+                every { resourceFHIRId } returns "anything"
+                every { flowOptions } returns null
+            }
         every { JacksonUtil.readJsonObject("event", InteropResourceRequestV1::class) } returns mockEvent
         every { JacksonUtil.writeJsonValue(any()) } returns "failed"
         every {
@@ -128,12 +137,13 @@ class ResourceRequestPublishTest {
                 resourceType = ResourceType.Patient,
                 resourceFHIRIds = listOf("anything"),
                 trigger = DataTrigger.AD_HOC,
-                metadata = any()
+                metadata = any(),
             )
-        } returns mockk {
-            every { failures } returns listOf(mockk {})
-            every { successful } returns emptyList()
-        }
+        } returns
+            mockk {
+                every { failures } returns listOf(mockk {})
+                every { successful } returns emptyList()
+            }
         val results =
             destination.channelDestinationWriter("tenny", "event", emptyMap(), emptyMap())
         assertEquals(MirthResponseStatus.ERROR, results.status)

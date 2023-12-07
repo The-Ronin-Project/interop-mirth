@@ -14,16 +14,17 @@ class MedicationLoad(
     kafkaPublishService: KafkaPublishService,
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
-    defaultPublisher: MedicationPublish
+    defaultPublisher: MedicationPublish,
 ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
     override val rootName = "MedicationLoad"
     override val channelGroupId = "interop-mirth-medication_group"
-    override val publishedResourcesSubscriptions = listOf(
-        ResourceType.Medication,
-        ResourceType.MedicationRequest,
-        ResourceType.MedicationStatement,
-        ResourceType.MedicationAdministration
-    )
+    override val publishedResourcesSubscriptions =
+        listOf(
+            ResourceType.Medication,
+            ResourceType.MedicationRequest,
+            ResourceType.MedicationStatement,
+            ResourceType.MedicationAdministration,
+        )
     override val resource = ResourceType.Medication
 
     companion object {

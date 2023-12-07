@@ -18,7 +18,7 @@ data class User(
     val lastLogin: DateTime?,
     val gracePeriodStart: DateTime?,
     val strikeCount: Int?,
-    val lastStrikeTime: DateTime?
+    val lastStrikeTime: DateTime?,
 )
 
 /**
@@ -31,7 +31,7 @@ data class UserWrapper(val user: User)
  */
 data class PreferenceWrapper(
     @JsonProperty("properties")
-    val preferences: Preferences?
+    val preferences: Preferences?,
 )
 
 /**
@@ -39,7 +39,7 @@ data class PreferenceWrapper(
  */
 data class Preferences(
     @JsonProperty("property")
-    val preferences: List<Preference>
+    val preferences: List<Preference>,
 )
 
 /**
@@ -49,5 +49,5 @@ data class Preference(
     @JsonProperty("@name")
     val name: String,
     @JsonProperty("$")
-    val value: String?
+    val value: String?,
 )

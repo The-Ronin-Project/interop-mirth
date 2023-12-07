@@ -24,18 +24,20 @@ class TenantConfigurationServiceTest {
 
     @Test
     fun `can find values when they exist`() {
-        every { mirthTenantConfigDAO.getByTenantMnemonic("mdaoc") } returns mockk {
-            every { locationIds } returns "12,12312"
-        }
+        every { mirthTenantConfigDAO.getByTenantMnemonic("mdaoc") } returns
+            mockk {
+                every { locationIds } returns "12,12312"
+            }
         val locations = service.getLocationIDsByTenant("mdaoc")
         assertEquals(2, locations.size)
     }
 
     @Test
     fun `can empty list for empty string`() {
-        every { mirthTenantConfigDAO.getByTenantMnemonic("mdaoc") } returns mockk {
-            every { locationIds } returns ""
-        }
+        every { mirthTenantConfigDAO.getByTenantMnemonic("mdaoc") } returns
+            mockk {
+                every { locationIds } returns ""
+            }
         val locations = service.getLocationIDsByTenant("mdaoc")
         assertEquals(0, locations.size)
     }
@@ -50,12 +52,13 @@ class TenantConfigurationServiceTest {
 
     @Test
     fun `can find mdm info`() {
-        every { tenantServerDAO.getTenantServers("mdaoc", MessageType.MDM) } returns listOf(
-            mockk {
-                every { address } returns "ProjectRonin.biz.gov.co.uk.com"
-                every { port } returns 10
-            }
-        )
+        every { tenantServerDAO.getTenantServers("mdaoc", MessageType.MDM) } returns
+            listOf(
+                mockk {
+                    every { address } returns "ProjectRonin.biz.gov.co.uk.com"
+                    every { port } returns 10
+                },
+            )
         val mdmInfo = service.getMDMInfo("mdaoc")
         assertEquals("ProjectRonin.biz.gov.co.uk.com", mdmInfo?.first)
         assertEquals(10, mdmInfo?.second)

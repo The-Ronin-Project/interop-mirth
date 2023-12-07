@@ -23,7 +23,7 @@ class BackfillDiscoveryQueue(
     val tenantService: TenantService,
     private val ehrFactory: EHRFactory,
     private val discoveryQueueClient: DiscoveryQueueClient,
-    writer: BackfillDiscoveryQueueWriter
+    writer: BackfillDiscoveryQueueWriter,
 ) : TenantlessSourceService() {
     override val rootName = "BackfillDiscoveryQueue"
     override val destinations = mapOf("queue" to writer)
@@ -40,7 +40,7 @@ class BackfillDiscoveryQueue(
                         runBlocking {
                             discoveryQueueClient.getDiscoveryQueueEntries(
                                 tenant.mnemonic,
-                                DiscoveryQueueStatus.UNDISCOVERED
+                                DiscoveryQueueStatus.UNDISCOVERED,
                             )
                         }
                     if (queueEntries.isEmpty()) {
@@ -50,19 +50,21 @@ class BackfillDiscoveryQueue(
                             // first split the date range on these, so appointment searches will be smaller chunks
                             .map { queue ->
                                 val tenantTimezone = tenant.timezone.rules.getOffset(LocalDateTime.now())
-                                val offsetStartDate = OffsetDateTime.of(
-                                    queue.startDate.atStartOfDay(),
-                                    tenantTimezone
-                                )
-                                val offsetEndRangeDate = OffsetDateTime.of(
-                                    queue.endDate.atStartOfDay(),
-                                    tenantTimezone
-                                )
+                                val offsetStartDate =
+                                    OffsetDateTime.of(
+                                        queue.startDate.atStartOfDay(),
+                                        tenantTimezone,
+                                    )
+                                val offsetEndRangeDate =
+                                    OffsetDateTime.of(
+                                        queue.endDate.atStartOfDay(),
+                                        tenantTimezone,
+                                    )
                                 val range = splitDateRange(offsetStartDate, offsetEndRangeDate, 90)
                                 range.map {
                                     queue.copy(
                                         startDate = it.first.toLocalDate(),
-                                        endDate = it.second.toLocalDate()
+                                        endDate = it.second.toLocalDate(),
                                     )
                                 }
                             }
@@ -71,10 +73,11 @@ class BackfillDiscoveryQueue(
                             .map {
                                 MirthMessage(
                                     message = JacksonUtil.writeJsonValue(it),
-                                    dataMap = mapOf(
-                                        MirthKey.TENANT_MNEMONIC.code to tenant.mnemonic,
-                                        MirthKey.BACKFILL_ID.code to it.backfillId.toString()
-                                    )
+                                    dataMap =
+                                        mapOf(
+                                            MirthKey.TENANT_MNEMONIC.code to tenant.mnemonic,
+                                            MirthKey.BACKFILL_ID.code to it.backfillId.toString(),
+                                        ),
                                 )
                             }
                     }
@@ -89,30 +92,32 @@ class BackfillDiscoveryQueue(
         tenantMnemonic: String,
         msg: String,
         sourceMap: Map<String, Any>,
-        channelMap: Map<String, Any>
+        channelMap: Map<String, Any>,
     ): MirthMessage {
         val queueEntry = JacksonUtil.readJsonObject(msg, DiscoveryQueueEntry::class)
         runBlocking {
             discoveryQueueClient.updateDiscoveryQueueEntryByID(
                 queueEntry.id,
-                UpdateDiscoveryEntry(DiscoveryQueueStatus.DISCOVERED)
+                UpdateDiscoveryEntry(DiscoveryQueueStatus.DISCOVERED),
             )
         }
         val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: throw Exception("No Tenant Found")
 
         val vendorFactory = ehrFactory.getVendorFactory(tenant)
         val location = queueEntry.locationId
-        val fullAppointments = vendorFactory.appointmentService.findLocationAppointments(
-            tenant,
-            listOf(location),
-            queueEntry.startDate,
-            queueEntry.endDate
-        )
+        val fullAppointments =
+            vendorFactory.appointmentService.findLocationAppointments(
+                tenant,
+                listOf(location),
+                queueEntry.startDate,
+                queueEntry.endDate,
+            )
 
-        val patients = fullAppointments.appointments.flatMap { appointment ->
-            appointment.participant.mapNotNull { it.actor?.reference?.value }
-                .filter { it.contains("Patient") }
-        }.distinct()
+        val patients =
+            fullAppointments.appointments.flatMap { appointment ->
+                appointment.participant.mapNotNull { it.actor?.reference?.value }
+                    .filter { it.contains("Patient") }
+            }.distinct()
 
         return MirthMessage(message = JacksonUtil.writeJsonValue(patients))
     }
