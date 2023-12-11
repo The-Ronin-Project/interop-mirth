@@ -6,7 +6,7 @@ import com.projectronin.interop.gradle.tenant.rest.model.MirthTenantConfig
 import com.projectronin.interop.gradle.tenant.rest.model.TenantServer
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
@@ -37,7 +37,7 @@ class TenantRestClient(private val httpClient: HttpClient) {
          */
         fun createClient(auth: TenantConfigAuthExtension) =
             TenantRestClient(
-                HttpClient(CIO) {
+                HttpClient(OkHttp) {
                     // Setup JSON
                     install(ContentNegotiation) {
                         jackson {

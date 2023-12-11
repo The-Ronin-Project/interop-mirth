@@ -17,6 +17,7 @@ dependencies {
             force(libs.woodstox.core)
             force(libs.kotlin.stdlib)
             force(libs.interop.kafka)
+            force(libs.interop.datalake)
         }
     }
     implementation(libs.ehr.data.authority.client)
@@ -42,6 +43,8 @@ dependencies {
 
     implementation(libs.clinical.trial.client)
 
+    implementation(enforcedPlatform(libs.spring.boot.parent))
+    implementation(enforcedPlatform(libs.jersey.bom))
     implementation(libs.spring.vault.core)
     implementation("org.springframework:spring-context")
     implementation(libs.spring.boot.autoconfigure)
@@ -49,7 +52,7 @@ dependencies {
     implementation(libs.jakarta.ws)
     implementation(libs.kotlin.stdlib)
     implementation(libs.mysql.connector.java)
-    implementation(libs.jersey.glassfish.client)
+    implementation("org.glassfish.jersey.core:jersey-client")
     implementation(libs.ronin.test.data.generator)
     implementation(libs.interop.fhirGenerators)
     implementation(libs.jackson.module.kotlin)
@@ -103,6 +106,7 @@ tasks.jar {
 
 tasks.shadowJar {
     relocate("javax.ws.rs", "interop.javax.ws.rs")
+    relocate("jakarta.ws.rs", "interop.jakarta.ws.rs")
     relocate("org.glassfish.jersey", "interop.org.glassfish.jersey")
     relocate("org.glassfish.hk2", "interop.org.glassfish.hk2")
     relocate("org.jvnet.hk2", "interop.org.jvnet.hk2")

@@ -5,7 +5,7 @@ import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.jackson.JacksonUtil
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BasicAuthCredentials
@@ -28,12 +28,14 @@ import io.ktor.serialization.jackson.jackson
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import okhttp3.OkHttpClient
 import java.security.cert.X509Certificate
+import javax.net.ssl.SSLContext
 import javax.net.ssl.X509TrustManager
 import kotlin.time.Duration.Companion.seconds
 
 object MirthClient {
-    private val httpClient = HttpClient(CIO) {
+    private val httpClient = HttpClient(OkHttp) {
         // If not a successful response, Ktor will throw Exceptions
         expectSuccess = true
 
@@ -63,17 +65,39 @@ object MirthClient {
             level = LogLevel.ALL
         }
 
+        install(HttpTimeout) {
+            // Just set timeouts to 30s to account for Mirth being weird or busy.
+            requestTimeoutMillis = 30_000
+            socketTimeoutMillis = 30_000
+        }
+
         // Disable SSL
         engine {
-            https {
-                trustManager = object : X509TrustManager {
-                    override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+            val x509TrustManager =
+                object : X509TrustManager {
+                    override fun checkClientTrusted(
+                        chain: Array<out X509Certificate>?,
+                        authType: String?,
+                    ) {
+                    }
 
-                    override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                    override fun checkServerTrusted(
+                        chain: Array<out X509Certificate>?,
+                        authType: String?,
+                    ) {
+                    }
 
                     override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
                 }
-            }
+
+            val sslContext = SSLContext.getInstance("TLS")
+            sslContext.init(null, arrayOf(x509TrustManager), null)
+
+            preconfigured =
+                OkHttpClient.Builder()
+                    .sslSocketFactory(sslContext.socketFactory, x509TrustManager)
+                    .hostnameVerifier { _, _ -> true }
+                    .build()
         }
 
         // Configure the default request

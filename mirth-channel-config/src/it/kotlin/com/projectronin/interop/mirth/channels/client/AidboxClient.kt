@@ -8,7 +8,7 @@ import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.fhir.r4.resource.Resource
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
@@ -25,7 +25,7 @@ import io.ktor.serialization.jackson.jackson
 import kotlinx.coroutines.runBlocking
 
 object AidboxClient {
-    val httpClient = HttpClient(CIO) {
+    val httpClient = HttpClient(OkHttp) {
         // If not a successful response, Ktor will throw Exceptions
         expectSuccess = true
 

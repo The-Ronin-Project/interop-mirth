@@ -3,43 +3,40 @@ apache-kafka = "3.5.0"
 caffeine = "3.1.8"
 clinical-trial = "1.1.1"
 dbrider = "1.41.0"
-ehrda = "1.6.0"
+ehrda = "2.0.0"
 guava = "32.1.3-jre"
 interop-aidbox = "8.1.0"
-interop-backfill = "1.1.2"
-interop-common = "3.13.4"
-interop-datalake = "8.4.2"
-interop-ehr = "12.8.0"
+interop-backfill = "2.0.0"
+interop-common = "4.0.0"
+interop-datalake = "9.0.0"
+interop-ehr = "13.0.0"
 interop-event-internal = "1.2.3"
 interop-event-request = "1.1.0"
-interop-fhir = "8.11.0"
-interop-gradle = "3.4.0"
-interop-kafka = "8.5.2"
-interop-publishers = "9.2.0"
-interop-queue = "2.0.0"
-interop-validation = "3.2.2"
+interop-fhir = "9.0.0"
+interop-gradle = "4.0.0"
+interop-kafka = "9.0.0"
+interop-publishers = "10.0.0"
+interop-queue = "3.0.0"
+interop-validation = "4.0.0"
 jackson = "2.16.0"
 jakarta = "3.1.0"
 jersey = "3.1.4"
 junit-pioneer = "2.2.0"
-kotlin = "1.8.22"
+kotlin = "1.9.20"
 kotlin-logging = "3.0.5"
-# @pin INT-2283
-ktor = "2.3.4"
+ktor = "2.3.7"
 ktorm = "3.6.0"
 mockk = "1.13.8"
 mockserver = "5.15.0"
 mysql = "8.2.0"
 okhttp3 = "4.12.0"
-owasp = "9.0.2"
+owasp = "9.0.3"
 ronin-kafka = "1.1.1"
 ronin-test = "0.2.0"
-shadow = "8.1.1"
-# @pin until can move to JDK 17
-spring-boot = "2.7.13"
-# @pin until Spring Boot 3
-spring-vault = "2.3.2"
-testcontainers = "1.19.2"
+shadow = "8.1.2"
+spring-boot = "3.2.0"
+spring-vault = "3.1.0"
+testcontainers = "1.19.3"
 woodstox = "6.5.1"
 xerces = "2.12.2"
 
@@ -83,16 +80,16 @@ jackson-dataformat-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-d
 jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", version.ref = "jackson" }
 jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 jakarta-ws = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref = "jakarta" }
-jersey-glassfish-client = { module = "org.glassfish.jersey.core:jersey-client", version.ref = "jersey" }
+jersey-bom = { module = "org.glassfish.jersey:jersey-bom", version.ref = "jersey" }
 junit-pioneer = { module = "org.junit-pioneer:junit-pioneer", version.ref = "junit-pioneer" }
 kafka-clients = { module = "org.apache.kafka:kafka-clients", version.ref = "apache-kafka" }
 kotlin-logging = { module = "io.github.microutils:kotlin-logging", version.ref = "kotlin-logging" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
-ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
 ktor-serialization-jackson = { module = "io.ktor:ktor-serialization-jackson", version.ref = "ktor" }
 ktorm-core = { module = "org.ktorm:ktorm-core", version.ref = "ktorm" }
 ktorm-support-mysql = { module = "org.ktorm:ktorm-support-mysql", version.ref = "ktorm" }
@@ -104,6 +101,7 @@ rider-junit = { module = "com.github.database-rider:rider-junit5", version.ref =
 ronin-kafka = { module = "com.projectronin:ronin-kafka", version.ref = "ronin-kafka" }
 ronin-test-data-generator = { module = "com.projectronin.test:ronin-test-data-generator", version.ref = "ronin-test" }
 spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure", version.ref = "spring-boot" }
+spring-boot-parent = { module = "org.springframework.boot:spring-boot-parent", version.ref = "spring-boot" }
 spring-vault-core = { module = "org.springframework.vault:spring-vault-core", version.ref = "spring-vault" }
 testcontainers-mysql = { module = "org.testcontainers:mysql", version.ref = "testcontainers" }
 woodstox-core = { module = "com.fasterxml.woodstox:woodstox-core", version.ref = "woodstox" }
@@ -125,10 +123,10 @@ jackson = [
 ]
 ktor = [
     "ktor-client-auth",
-    "ktor-client-cio",
     "ktor-client-content-negotiation",
     "ktor-client-core",
     "ktor-client-logging",
+    "ktor-client-okhttp",
     "ktor-serialization-jackson",
 ]
 test-mysql = [
@@ -147,4 +145,5 @@ interop-sonarqube = { id = "com.projectronin.interop.gradle.sonarqube", version.
 interop-spring = { id = "com.projectronin.interop.gradle.spring", version.ref = "interop-gradle" }
 interop-version = { id = "com.projectronin.interop.gradle.version", version.ref = "interop-gradle" }
 interop-version-catalog = { id = "com.projectronin.interop.gradle.version-catalog-update", version.ref = "interop-gradle" }
-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+# This should be "com.github.johnrengelman.shadow" but there is an issue with that version that has been fixed in a fork
+shadow = { id = "io.github.goooler.shadow", version.ref = "shadow" }

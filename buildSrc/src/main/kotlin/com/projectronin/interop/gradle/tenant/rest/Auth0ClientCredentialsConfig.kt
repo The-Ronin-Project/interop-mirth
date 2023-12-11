@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
@@ -79,7 +79,7 @@ fun HttpClientConfig<*>.auth0ClientCredentials(block: Auth0ClientCredentialsConf
     config.validateConfig()
 
     val auth0Client =
-        HttpClient(CIO) {
+        HttpClient(OkHttp) {
             install(ContentNegotiation) {
                 jackson {
                     propertyNamingStrategy = PropertyNamingStrategies.SNAKE_CASE

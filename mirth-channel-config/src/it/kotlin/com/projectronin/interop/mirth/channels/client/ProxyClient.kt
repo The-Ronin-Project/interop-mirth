@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.projectronin.interop.common.jackson.JacksonManager
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
@@ -26,7 +26,7 @@ import java.time.format.DateTimeFormatter
 object ProxyClient {
     val logger = KotlinLogging.logger { }
 
-    val httpClient = HttpClient(CIO) {
+    val httpClient = HttpClient(OkHttp) {
         // If not a successful response, Ktor will throw Exceptions
         expectSuccess = true
         install(HttpTimeout) {
@@ -101,23 +101,29 @@ object ProxyClient {
     fun getPatientByNameAndDob(tenantMnemonic: String, familyName: String, givenName: String, dob: String): JsonNode =
         callGraphQLProxy(
             query = this::class.java.getResource("/ProxyPatientSearchQuery.graphql")!!.readText(),
-            variables = mapOf("tenantId" to tenantMnemonic, "familyName" to familyName, "givenName" to givenName, "birthdate" to dob),
+            variables = mapOf(
+                "tenantId" to tenantMnemonic,
+                "familyName" to familyName,
+                "givenName" to givenName,
+                "birthdate" to dob
+            ),
             tenantMnemonic
         )
 
-    private fun callGraphQLProxy(query: String, variables: Map<String, Any?>, tenantMnemonic: String): JsonNode = runBlocking {
-        MockOCIServerClient.setSekiExpectation(tenantMnemonic)
-        httpClient.post(GRAPHQL_URL) {
-            contentType(ContentType.Application.Json)
-            accept(ContentType.Application.Json)
-            setBody(
-                GraphQLPostRequest(
-                    query = query,
-                    variables = variables
+    private fun callGraphQLProxy(query: String, variables: Map<String, Any?>, tenantMnemonic: String): JsonNode =
+        runBlocking {
+            MockOCIServerClient.setSekiExpectation(tenantMnemonic)
+            httpClient.post(GRAPHQL_URL) {
+                contentType(ContentType.Application.Json)
+                accept(ContentType.Application.Json)
+                setBody(
+                    GraphQLPostRequest(
+                        query = query,
+                        variables = variables
+                    )
                 )
-            )
-        }.body()
-    }
+            }.body()
+        }
 }
 
 data class GraphQLPostRequest(

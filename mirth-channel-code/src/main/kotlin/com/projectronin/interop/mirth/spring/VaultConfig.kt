@@ -23,8 +23,8 @@ class VaultConfig : AbstractVaultConfiguration() {
             AppRoleAuthenticationOptions.builder()
                 .appRole("approle-mirth-$context") // not sure what this does. it should do what 'path' does, and yet
                 .path("approle-mirth-$context")
-                .roleId(role)
-                .secretId(secret)
+                .roleId(AppRoleAuthenticationOptions.RoleId.provided(role))
+                .secretId(AppRoleAuthenticationOptions.SecretId.provided(secret))
                 .build()
         return AppRoleAuthentication(options, restOperations())
     }

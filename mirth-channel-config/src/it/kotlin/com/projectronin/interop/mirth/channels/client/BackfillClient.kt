@@ -12,7 +12,7 @@ import com.projectronin.interop.common.http.auth.InteropAuthenticationService
 import com.projectronin.interop.common.http.auth.Token
 import com.projectronin.interop.common.jackson.JacksonManager
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
@@ -20,7 +20,7 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.jackson.jackson
 
 object BackfillClient {
-    private val httpClient = HttpClient(CIO) {
+    private val httpClient = HttpClient(OkHttp) {
         // If not a successful response, Ktor will throw Exceptions
         expectSuccess = true
         install(HttpTimeout) {

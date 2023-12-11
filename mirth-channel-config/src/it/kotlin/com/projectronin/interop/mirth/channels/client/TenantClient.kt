@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName
 import com.projectronin.interop.common.jackson.JacksonManager
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
@@ -25,7 +25,7 @@ import java.time.LocalTime
 import java.time.OffsetDateTime
 
 object TenantClient {
-    val httpClient = HttpClient(CIO) {
+    val httpClient = HttpClient(OkHttp) {
         // If not a successful response, Ktor will throw Exceptions
         expectSuccess = true
         install(HttpTimeout) {
