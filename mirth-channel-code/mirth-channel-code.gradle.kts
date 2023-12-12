@@ -16,8 +16,8 @@ dependencies {
             force(libs.kafka.clients)
             force(libs.woodstox.core)
             force(libs.kotlin.stdlib)
-            force(libs.interop.kafka)
-            force(libs.interop.datalake)
+            force(libs.spring.boot.parent)
+            force(libs.jersey.bom)
         }
     }
     implementation(libs.ehr.data.authority.client)
@@ -43,8 +43,8 @@ dependencies {
 
     implementation(libs.clinical.trial.client)
 
-    implementation(enforcedPlatform(libs.spring.boot.parent))
-    implementation(enforcedPlatform(libs.jersey.bom))
+    implementation(platform(libs.spring.boot.parent))
+    implementation(platform(libs.jersey.bom))
     implementation(libs.spring.vault.core)
     implementation("org.springframework:spring-context")
     implementation(libs.spring.boot.autoconfigure)
