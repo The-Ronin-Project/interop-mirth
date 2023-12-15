@@ -3,11 +3,10 @@ package com.projectronin.interop.mirth.channel
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Patient
-import com.projectronin.interop.fhir.ronin.resource.RoninPatient
-import com.projectronin.interop.fhir.ronin.transform.TransformManager
-import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.mirth.channel.destinations.queue.PatientTenantlessQueueWriter
 import com.projectronin.interop.queue.kafka.KafkaQueueService
+import com.projectronin.interop.rcdm.transform.TransformManager
+import com.projectronin.interop.rcdm.transform.model.TransformResponse
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -27,7 +26,6 @@ class KafkaPatientQueueTest {
             every { mnemonic } returns "testmnemonic"
         }
     private lateinit var mockTransformManager: TransformManager
-    private lateinit var mockRoninPatient: RoninPatient
     private lateinit var channel: KafkaPatientQueue
 
     @AfterEach
@@ -38,7 +36,6 @@ class KafkaPatientQueueTest {
     @BeforeEach
     fun setup() {
         mockTransformManager = mockk()
-        mockRoninPatient = mockk()
         val tenantService =
             mockk<TenantService> {
                 every { getTenantForMnemonic("testmnemonic") } returns mockTenant
@@ -46,7 +43,7 @@ class KafkaPatientQueueTest {
         val queueService = mockk<KafkaQueueService>()
         val queueWriter = mockk<PatientTenantlessQueueWriter>()
 
-        channel = KafkaPatientQueue(tenantService, queueService, queueWriter, mockTransformManager, mockRoninPatient)
+        channel = KafkaPatientQueue(tenantService, queueService, queueWriter, mockTransformManager)
     }
 
     @Test
@@ -67,7 +64,6 @@ class KafkaPatientQueueTest {
         every {
             mockTransformManager.transformResource(
                 mockPatient,
-                mockRoninPatient,
                 mockTenant,
             )
         } returns transformResponse
@@ -83,7 +79,7 @@ class KafkaPatientQueueTest {
         val mockPatient = mockk<Patient>()
         every { JacksonUtil.readJsonObject<Patient>(any(), any()) } returns mockPatient
 
-        every { mockTransformManager.transformResource(mockPatient, mockRoninPatient, mockTenant) } returns null
+        every { mockTransformManager.transformResource(mockPatient, mockTenant) } returns null
 
         assertThrows<ResourcesNotTransformedException> {
             channel.deserializeAndTransform(

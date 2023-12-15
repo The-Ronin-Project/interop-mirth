@@ -17,11 +17,7 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.datatype.primitive.Url
 import com.projectronin.interop.fhir.r4.resource.DocumentReference
 import com.projectronin.interop.fhir.r4.resource.Patient
-import com.projectronin.interop.fhir.ronin.profile.RoninExtension
-import com.projectronin.interop.fhir.ronin.resource.RoninDocumentReference
-import com.projectronin.interop.fhir.ronin.transform.TransformManager
-import com.projectronin.interop.fhir.ronin.transform.TransformResponse
-import com.projectronin.interop.fhir.ronin.util.localize
+import com.projectronin.interop.fhir.util.localizeFhirId
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.PublishResourceWrapper
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
@@ -31,6 +27,9 @@ import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceReq
 import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.rcdm.common.enums.RoninExtension
+import com.projectronin.interop.rcdm.transform.TransformManager
+import com.projectronin.interop.rcdm.transform.model.TransformResponse
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import kotlinx.coroutines.runBlocking
@@ -45,7 +44,6 @@ class DocumentReferencePublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninDocumentReference,
     private val kafkaService: KafkaPublishService,
     private val ehrDataAuthorityClient: EHRDataAuthorityClient,
     private val datalakeService: DatalakePublishService,
@@ -56,7 +54,6 @@ class DocumentReferencePublish(
         ehrFactory,
         transformManager,
         publishService,
-        profileTransformer,
     ) {
     private val ehrdaBinaryUrlFormat = "${ehrDataAuthorityBaseUrl.removeSuffix("/")}/tenants/%s/resources/Binary/%s"
 
@@ -122,7 +119,7 @@ class DocumentReferencePublish(
 
                     val documentsWithLocalizedIds =
                         documents.map {
-                            it.copy(id = Id(it.id!!.value!!.localize(tenant)))
+                            it.copy(id = Id(it.id!!.value!!.localizeFhirId(tenant.mnemonic)))
                         }
 
                     // push each DocumentReference individually so the destination can multi-thread Binary reads
@@ -186,7 +183,7 @@ class DocumentReferencePublish(
     private fun ehrdaBinaryUrl(
         binaryFhirId: String,
         tenant: Tenant,
-    ): String = ehrdaBinaryUrlFormat.format(tenant.mnemonic, binaryFhirId.localize(tenant))
+    ): String = ehrdaBinaryUrlFormat.format(tenant.mnemonic, binaryFhirId.localizeFhirId(tenant.mnemonic))
 
     override fun postTransform(
         tenant: Tenant,
@@ -230,7 +227,7 @@ class DocumentReferencePublish(
                                                                                     datalakeService.getDatalakeFullURL(
                                                                                         datalakeService.getBinaryFilepath(
                                                                                             tenant.mnemonic,
-                                                                                            binaryFHIRID.localize(tenant),
+                                                                                            binaryFHIRID.localizeFhirId(tenant.mnemonic),
                                                                                         ),
                                                                                     ),
                                                                                 ),
@@ -262,7 +259,7 @@ class DocumentReferencePublish(
                             binaryFHIRIDs.map {
                                 val binary = binaryService.getByID(tenant, it)
                                 binary.copy(
-                                    id = binary.id!!.copy(value = it.localize(tenant)),
+                                    id = binary.id!!.copy(value = it.localizeFhirId(tenant.mnemonic)),
                                 )
                             }
                         }.getOrNull() ?: return@mapNotNull null

@@ -9,9 +9,6 @@ import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.Resource
-import com.projectronin.interop.fhir.ronin.resource.base.BaseProfile
-import com.projectronin.interop.fhir.ronin.transform.TransformManager
-import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.kafka.model.PublishResourceWrapper
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
@@ -24,6 +21,8 @@ import com.projectronin.interop.mirth.channel.exceptions.MapVariableMissing
 import com.projectronin.interop.mirth.channel.model.MirthResponse
 import com.projectronin.interop.mirth.channel.util.unlocalize
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.rcdm.transform.TransformManager
+import com.projectronin.interop.rcdm.transform.model.TransformResponse
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import java.util.concurrent.TimeUnit
@@ -33,7 +32,6 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
     private val ehrFactory: EHRFactory,
     private val transformManager: TransformManager,
     private val publishService: PublishService,
-    private val profileTransformer: BaseProfile<T>,
 ) : TenantlessDestinationService() {
     /**
      * If true, we cache and compare the retrieved resources against the cache. By default, this is false, but if a
@@ -134,7 +132,6 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 resources.mapNotNull { resource ->
                     transformManager.transformResource(
                         resource,
-                        profileTransformer,
                         tenant,
                         forceCacheReloadTS = minimumRegistryTime,
                     )

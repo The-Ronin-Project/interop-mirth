@@ -48,7 +48,7 @@ class ProcedurePublishTest {
         mockk<VendorFactory> {
             every { procedureService } returns this@ProcedurePublishTest.procedureService
         }
-    private val procedurePublish = ProcedurePublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val procedurePublish = ProcedurePublish(mockk(), mockk(), mockk(), mockk())
 
     private val appointment1 =
         Appointment(

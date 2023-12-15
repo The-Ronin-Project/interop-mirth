@@ -30,7 +30,7 @@ class AppointmentPublishTest {
         mockk<VendorFactory> {
             every { appointmentService } returns this@AppointmentPublishTest.appointmentService
         }
-    private val appointmentPublish = AppointmentPublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val appointmentPublish = AppointmentPublish(mockk(), mockk(), mockk(), mockk())
 
     private val patient1 = Patient(id = Id("$tenantId-1234"))
     private val patient2 = Patient(id = Id("$tenantId-5678"))

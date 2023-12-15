@@ -37,7 +37,7 @@ class CarePlanPublishTest {
         mockk<VendorFactory> {
             every { carePlanService } returns this@CarePlanPublishTest.carePlanService
         }
-    private val carePlanPublish = CarePlanPublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val carePlanPublish = CarePlanPublish(mockk(), mockk(), mockk(), mockk())
 
     private val patient1 = Patient(id = Id("$tenantId-1234"))
     private val patient2 = Patient(id = Id("$tenantId-5678"))
@@ -79,7 +79,14 @@ class CarePlanPublishTest {
                 carePlan2,
             )
         every { carePlanService.findPatientCarePlans(tenant, "5678", any(), any()) } returns listOf(carePlan3)
-        every { carePlanService.findPatientCarePlans(tenant, "9012", startDate.toLocalDate(), endDate.toLocalDate()) } returns emptyList()
+        every {
+            carePlanService.findPatientCarePlans(
+                tenant,
+                "9012",
+                startDate.toLocalDate(),
+                endDate.toLocalDate(),
+            )
+        } returns emptyList()
 
         val event1 =
             InteropResourcePublishV1(

@@ -33,7 +33,7 @@ class ConditionPublishTest {
         mockk<VendorFactory> {
             every { conditionService } returns this@ConditionPublishTest.conditionService
         }
-    private val conditionPublish = ConditionPublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val conditionPublish = ConditionPublish(mockk(), mockk(), mockk(), mockk())
 
     private val patient1 = Patient(id = Id("$tenantId-1234"))
     private val patient2 = Patient(id = Id("$tenantId-5678"))
@@ -67,7 +67,10 @@ class ConditionPublishTest {
                     CodeSystem.CONDITION_CATEGORY_HEALTH_CONCERN.uri.value,
                     ConditionCategoryCodes.HEALTH_CONCERN.code,
                 ),
-                FHIRSearchToken(CodeSystem.CONDITION_CATEGORY.uri.value, ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code),
+                FHIRSearchToken(
+                    CodeSystem.CONDITION_CATEGORY.uri.value,
+                    ConditionCategoryCodes.ENCOUNTER_DIAGNOSIS.code,
+                ),
             )
 
         val condition1 = mockk<Condition>()

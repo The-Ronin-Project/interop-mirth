@@ -3,7 +3,6 @@ package com.projectronin.interop.mirth.channels
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
-import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.ingredient
@@ -33,12 +32,7 @@ class MedicationLoadTest : BaseChannelTest(
 
         val fakeMedication = medication {
             code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "ok"
-                        code of "yeah"
-                    }
-                )
+                text of "Example medication"
             }
         }
         val fakeMedicationId = MockEHRTestData.add(fakeMedication)
@@ -72,24 +66,14 @@ class MedicationLoadTest : BaseChannelTest(
 
         val fakeMedication = medication {
             code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "ok"
-                        code of "yeah"
-                    }
-                )
+                text of "Example medication"
             }
         }
         val fakeMedicationId = MockEHRTestData.add(fakeMedication)
 
         val fakeMedication2 = medication {
             code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "ok"
-                        code of "yeah"
-                    }
-                )
+                text of "Example medication"
             }
             ingredient of listOf(
                 ingredient {
@@ -121,12 +105,7 @@ class MedicationLoadTest : BaseChannelTest(
 
         val fakeMedication = medication {
             code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "ok"
-                        code of "yeah"
-                    }
-                )
+                text of "Example medication"
             }
         }
         val fakeMedicationId = MockEHRTestData.add(fakeMedication)
@@ -153,12 +132,7 @@ class MedicationLoadTest : BaseChannelTest(
 
         val fakeMedication = medication {
             code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "ok"
-                        code of "yeah"
-                    }
-                )
+                text of "Example medication"
             }
         }
         val fakeMedicationId = MockEHRTestData.add(fakeMedication)

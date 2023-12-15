@@ -35,7 +35,7 @@ class PractitionerPublishTest {
         mockk<VendorFactory> {
             every { practitionerService } returns this@PractitionerPublishTest.practitionerService
         }
-    private val practitionerPublish = PractitionerPublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val practitionerPublish = PractitionerPublish(mockk(), mockk(), mockk(), mockk())
 
     private val appointment1 =
         Appointment(

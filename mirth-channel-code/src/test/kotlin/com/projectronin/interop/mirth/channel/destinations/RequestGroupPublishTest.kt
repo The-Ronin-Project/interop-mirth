@@ -32,7 +32,7 @@ class RequestGroupPublishTest {
         mockk<VendorFactory> {
             every { requestGroupService } returns this@RequestGroupPublishTest.requestGroupService
         }
-    private val requestGroupPublish = RequestGroupPublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val requestGroupPublish = RequestGroupPublish(mockk(), mockk(), mockk(), mockk())
 
     private val carePlan1 =
         CarePlan(

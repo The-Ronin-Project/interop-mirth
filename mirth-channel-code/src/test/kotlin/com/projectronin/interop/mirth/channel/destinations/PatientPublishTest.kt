@@ -19,7 +19,7 @@ class PatientPublishTest {
         mockk<VendorFactory> {
             every { patientService } returns this@PatientPublishTest.patientService
         }
-    private val patientPublish = PatientPublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val patientPublish = PatientPublish(mockk(), mockk(), mockk(), mockk())
 
     @Test
     fun `publish events throw an exception`() {

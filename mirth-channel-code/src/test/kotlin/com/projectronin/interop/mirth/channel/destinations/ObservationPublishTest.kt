@@ -38,7 +38,7 @@ class ObservationPublishTest {
         mockk<VendorFactory> {
             every { observationService } returns this@ObservationPublishTest.observationService
         }
-    private val observationPublish = ObservationPublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val observationPublish = ObservationPublish(mockk(), mockk(), mockk(), mockk())
 
     private val patient1 = Patient(id = Id("$tenantId-1234"))
     private val patient2 = Patient(id = Id("$tenantId-5678"))

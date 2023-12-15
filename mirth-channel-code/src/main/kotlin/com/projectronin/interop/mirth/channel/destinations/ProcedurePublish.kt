@@ -11,8 +11,6 @@ import com.projectronin.interop.fhir.r4.resource.Encounter
 import com.projectronin.interop.fhir.r4.resource.MedicationStatement
 import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.resource.Procedure
-import com.projectronin.interop.fhir.ronin.resource.RoninProcedure
-import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
@@ -21,6 +19,7 @@ import com.projectronin.interop.mirth.channel.base.kafka.request.PublishReferenc
 import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.rcdm.transform.TransformManager
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
@@ -31,13 +30,11 @@ class ProcedurePublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninProcedure,
 ) : KafkaEventResourcePublisher<Procedure>(
         tenantService,
         ehrFactory,
         transformManager,
         publishService,
-        profileTransformer,
     ) {
     override fun convertPublishEventsToRequest(
         events: List<InteropResourcePublishV1>,

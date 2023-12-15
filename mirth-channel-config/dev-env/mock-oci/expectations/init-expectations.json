@@ -95,6 +95,7 @@
           "filename": "EmptyValueSet.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
           "registry_uuid": "5",
+          "registry_entry_type": "value_set",
           "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         },
         {
@@ -106,6 +107,7 @@
           "filename": "EmptyValueSet.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-bodyHeight",
           "registry_uuid": "2",
+          "registry_entry_type": "value_set",
           "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         },
         {
@@ -117,6 +119,7 @@
           "filename": "EmptyValueSet.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-bodyMass",
           "registry_uuid": "2",
+          "registry_entry_type": "value_set",
           "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         },
         {
@@ -128,6 +131,7 @@
           "filename": "EmptyValueSet.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
           "registry_uuid": "3",
+          "registry_entry_type": "value_set",
           "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         },
         {
@@ -139,6 +143,7 @@
           "filename": "EmptyValueSet.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
           "registry_uuid": "4",
+          "registry_entry_type": "value_set",
           "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         },
         {
@@ -150,6 +155,7 @@
           "filename": "BodyWeightValueSet.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-bodyWeight",
           "registry_uuid": "2",
+          "registry_entry_type": "value_set",
           "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         },
         {
@@ -161,6 +167,7 @@
           "filename": "EmptyValueSet.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
           "registry_uuid": "7",
+          "registry_entry_type": "value_set",
           "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         },
         {
@@ -172,6 +179,7 @@
           "filename": "EmptyValueSet.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
           "registry_uuid": "8",
+          "registry_entry_type": "value_set",
           "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         },
         {
@@ -183,6 +191,7 @@
           "filename": "EmptyValueSet.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-empty",
           "registry_uuid": "6",
+          "registry_entry_type": "value_set",
           "value_set_uuid": "4ffae118-778f-4df9-bd73-aece934b521b"
         },
         {
@@ -297,7 +306,7 @@
           "tenant_id": "epicmock",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceDocumentReferenceType",
           "registry_entry_type": "concept_map",
-          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-documentReference",
+          "profile_url": null,
           "version": 2,
           "filename": "RoninDocumentReferenceType.json"
         },
@@ -309,7 +318,7 @@
           "tenant_id": "cernmock",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceDocumentReferenceType",
           "registry_entry_type": "concept_map",
-          "profile_url": "http://projectronin.io/fhir/StructureDefinition/ronin-documentReference",
+          "profile_url": null,
           "version": 2,
           "filename": "RoninDocumentReferenceType.json"
         },
@@ -325,6 +334,30 @@
           "value_set_uuid": "835662e6-5379-4801-ba27-01b4481e33ff",
           "version": 1,
           "filename": "EmptyValueSet.json"
+        },
+        {
+          "registry_uuid": "18",
+          "resource_type": "Medication",
+          "data_element": "Medication.code",
+          "tenant_id": "epicmock",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceMedicationCode",
+          "registry_entry_type": "concept_map",
+          "profile_url": null,
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece694b521c",
+          "version": 1,
+          "filename": "RoninMedicationCode.json"
+        },
+        {
+          "registry_uuid": "18",
+          "resource_type": "Medication",
+          "data_element": "Medication.code",
+          "tenant_id": "cernmock",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceMedicationCode",
+          "registry_entry_type": "concept_map",
+          "profile_url": null,
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece694b521c",
+          "version": 1,
+          "filename": "RoninMedicationCode.json"
         },
         {
           "registry_uuid": "19",
@@ -518,7 +551,7 @@
           "version": 1,
           "filename": "ProcedureCategory.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceProcedureCategory",
-          "registry_uuid": "32",
+          "registry_uuid": "30",
           "concept_map_name": "ProcedureCategoryRonin"
         },
         {
@@ -530,8 +563,32 @@
           "version": 1,
           "filename": "ProcedureCategory.json",
           "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceProcedureCategory",
-          "registry_uuid": "33",
+          "registry_uuid": "31",
           "concept_map_name": "ProcedureCategoryRonin"
+        },
+        {
+          "resource_type": "CarePlan",
+          "data_element": "CarePlan.category",
+          "tenant_id": "cernmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "CarePlanCategory.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceCarePlanCategory",
+          "registry_uuid": "30",
+          "concept_map_name": "CarePlanCategoryRonin"
+        },
+        {
+          "resource_type": "CarePlan",
+          "data_element": "CarePlan.category",
+          "tenant_id": "epicmock",
+          "registry_entry_type": "concept_map",
+          "concept_map_uuid": "4ffae118-778f-4df9-bd73-aece934b521b",
+          "version": 1,
+          "filename": "CarePlanCategory.json",
+          "source_extension_url": "http://projectronin.io/fhir/StructureDefinition/Extension/tenant-sourceCarePlanCategory",
+          "registry_uuid": "31",
+          "concept_map_name": "CarePlanCategoryRonin"
         }
       ]
     },
@@ -949,7 +1006,7 @@
             "targetVersion": "2023",
             "element": [
               {
-                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"34806-0\", \"display\": null, \"system\": \"http://loinc.org\"}]}}",
+                "code": "{\"coding\": [{\"code\": \"34806-0\", \"display\": \"note\", \"system\": \"http://loinc.org\"}], \"text\": \"note\"}",
                 "display": "Oncology note",
                 "target": [
                   {
@@ -972,6 +1029,92 @@
       }
     },
     "id": "GetRoninDocumentReferenceType",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/RoninMedicationCode.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ConceptMap",
+        "title": "Ronin Medication Code",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a3",
+        "name": "MedicationCodeRonin",
+        "url": "http://projectronin.io/fhir/StructureDefinition/ConceptMap/4ffae118-778f-4df9-bd73-aece694b521c",
+        "purpose": "FHIR Interops Concept Map",
+        "publisher": "Project Ronin",
+        "experimental": false,
+        "date": "2022-12-02",
+        "version": 1,
+        "group": [
+          {
+            "source": "http://projectronin.io/fhir/CodeSystem/epicmock/MedicationCode",
+            "sourceVersion": "1.0",
+            "target": "http://www.nlm.nih.gov/research/umls/rxnorm",
+            "targetVersion": "2023",
+            "element": [
+              {
+                "code": "{\"valueCodeableConcept\": {\"text\": \"insulin regular (human) IV additive 100 units [1 units/hr] + sodium chloride 0.9% drip 100 mL\"}}",
+                "display": "insulin regular (human) IV additive 100 units [1 units/hr] + sodium chloride 0.9% drip 100 mL",
+                "target": [
+                  {
+                    "code": "1234",
+                    "display": "insulin regular (human) IV additive 100 units [1 units/hr] + sodium chloride 0.9% drip 100 mL",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              },
+              {
+                "code": "{\"valueCodeableConcept\": {\"text\": \"Example medication\"}}",
+                "display": "Example medication",
+                "target": [
+                  {
+                    "code": "5678",
+                    "display": "Example medication",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              },
+              {
+                "code": "{\"valueCodeableConcept\": {\"coding\":[{\"system\":\"http://www.nlm.nih.gov/research/umls/rxnorm\", \"code\": \"161\", \"display\": \"acetaminophen\"}], \"text\": \"acetaminophen\"}}",
+                "display": "acetaminophen",
+                "target": [
+                  {
+                    "code": "161",
+                    "display": "acetaminophen",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://projectronin.io/fhir/ronin.common-fhir-model.uscore-r4/StructureDefinition/Extension/ronin-ConceptMapSchema",
+            "valueString": "1.0.0"
+          }
+        ]
+      }
+    },
+    "id": "GetRoninMedicationCode",
     "priority": 0,
     "timeToLive": {
       "unlimited": true
@@ -1285,7 +1428,7 @@
       },
       "body": {
         "resourceType": "ConceptMap",
-        "title": "Ronin Procedure Category to FHIR R4 ProcedureCategory",
+        "title": "Ronin Procedure Codes to FHIR R4 ProcedureCategory",
         "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a2",
         "name": "ProcedureCategoryRonin",
         "url": "http://projectronin.io/fhir/StructureDefinition/ConceptMap/4ffae118-778f-4df9-bd73-aece934b521b",
@@ -1306,8 +1449,82 @@
                 "display": "Procedures",
                 "target": [
                   {
-                    "code": "completed",
-                    "display": "completed",
+                    "code": "category",
+                    "display": "category",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://projectronin.io/fhir/ronin.common-fhir-model.uscore-r4/StructureDefinition/Extension/ronin-ConceptMapSchema",
+            "valueString": "1.0.0"
+          }
+        ]
+      }
+    },
+    "id": "GetRoninProcedureCategory",
+    "priority": 0,
+    "timeToLive": {
+      "unlimited": true
+    },
+    "times": {
+      "unlimited": true
+    }
+  },
+  {
+    "httpRequest": {
+      "method": "GET",
+      "path": "/n/.*/b/.*/o/CarePlanCategory.json"
+    },
+    "httpResponse": {
+      "statusCode": 200,
+      "headers": {
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "body": {
+        "resourceType": "ConceptMap",
+        "title": "Ronin CarePlan Category to FHIR R4 CarePlanCategory",
+        "id": "00741f04-67bd-4b40-8ae8-3f16c4ef01a2",
+        "name": "CarePlanCategoryRonin",
+        "url": "http://projectronin.io/fhir/StructureDefinition/ConceptMap/4ffae118-778f-4df9-bd73-aece934b521b",
+        "purpose": "FHIR Interops Concept Map",
+        "publisher": "Project Ronin",
+        "experimental": false,
+        "date": "2022-12-02",
+        "version": 1,
+        "group": [
+          {
+            "source": "http://projectronin.io/fhir/CodeSystem/epicmock/CarePlanCategory",
+            "sourceVersion": "1.0",
+            "target": "http://hl7.org/fhir/ValueSet/procedure-category",
+            "targetVersion": "4.0.1",
+            "element": [
+              {
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"assess-plan\"}]}}",
+                "display": "CarePlan",
+                "target": [
+                  {
+                    "code": "assess-plan",
+                    "display": "assess-plan",
+                    "equivalence": "equivalent",
+                    "comment": null
+                  }
+                ]
+              },
+              {
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"736378000\"}]}}",
+                "display": "CarePlan",
+                "target": [
+                  {
+                    "code": "736378000",
+                    "display": "736378000",
                     "equivalence": "equivalent",
                     "comment": null
                   }

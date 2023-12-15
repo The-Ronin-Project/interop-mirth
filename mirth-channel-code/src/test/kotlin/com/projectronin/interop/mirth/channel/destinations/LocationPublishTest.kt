@@ -40,7 +40,7 @@ class LocationPublishTest {
         mockk<VendorFactory> {
             every { locationService } returns this@LocationPublishTest.locationService
         }
-    private val locationPublish = LocationPublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val locationPublish = LocationPublish(mockk(), mockk(), mockk(), mockk())
 
     private val appointment1 =
         Appointment(

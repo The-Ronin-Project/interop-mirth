@@ -22,13 +22,13 @@ import com.projectronin.interop.fhir.r4.datatype.primitive.Url
 import com.projectronin.interop.fhir.r4.resource.DocumentReference
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.DocumentReferenceStatus
-import com.projectronin.interop.fhir.ronin.profile.RoninExtension
-import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.fhir.util.asCode
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.kafka.model.PublishResourceWrapper
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
+import com.projectronin.interop.rcdm.common.enums.RoninExtension
+import com.projectronin.interop.rcdm.transform.model.TransformResponse
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -74,7 +74,6 @@ class DocumentReferencePublishTest {
         }
     private val documentReferencePublish =
         DocumentReferencePublish(
-            mockk(),
             mockk(),
             mockk(),
             mockk(),
@@ -453,7 +452,10 @@ class DocumentReferencePublishTest {
         val result =
             documentReferencePublish.postTransform(
                 tenant,
-                mapOf(key1 to listOf(TransformResponse(docReference1)), key2 to listOf(TransformResponse(docReference2))),
+                mapOf(
+                    key1 to listOf(TransformResponse(docReference1)),
+                    key2 to listOf(TransformResponse(docReference2)),
+                ),
                 vendorFactory,
             )
 

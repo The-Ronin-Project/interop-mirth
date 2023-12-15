@@ -34,7 +34,7 @@ dependencies {
     itImplementation(libs.interop.commonJackson)
 
     itImplementation(libs.interop.fhir)
-    itImplementation(libs.interop.ehr.fhir.ronin)
+    itImplementation(libs.interop.rcdm.transform)
     itImplementation(libs.interop.ehr.fhir.ronin.generators)
 
     itImplementation(libs.bundles.jackson)

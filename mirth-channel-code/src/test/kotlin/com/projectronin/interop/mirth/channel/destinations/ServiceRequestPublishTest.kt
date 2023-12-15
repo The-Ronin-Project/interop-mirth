@@ -55,7 +55,7 @@ class ServiceRequestPublishTest {
         mockk<VendorFactory> {
             every { serviceRequestService } returns this@ServiceRequestPublishTest.serviceRequestService
         }
-    private val serviceRequestPublish = ServiceRequestPublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val serviceRequestPublish = ServiceRequestPublish(mockk(), mockk(), mockk(), mockk())
 
     private val patient1 = Patient(id = Id("$tenantId-1234"))
     private val patient2 = Patient(id = Id("$tenantId-5678"))

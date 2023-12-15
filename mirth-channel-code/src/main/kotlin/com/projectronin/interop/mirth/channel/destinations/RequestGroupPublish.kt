@@ -8,8 +8,6 @@ import com.projectronin.interop.ehr.factory.EHRFactory
 import com.projectronin.interop.ehr.factory.VendorFactory
 import com.projectronin.interop.fhir.r4.resource.CarePlan
 import com.projectronin.interop.fhir.r4.resource.RequestGroup
-import com.projectronin.interop.fhir.ronin.resource.RoninRequestGroup
-import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
@@ -18,6 +16,7 @@ import com.projectronin.interop.mirth.channel.base.kafka.request.PublishReferenc
 import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.rcdm.transform.TransformManager
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
@@ -28,13 +27,11 @@ class RequestGroupPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninRequestGroup,
 ) : KafkaEventResourcePublisher<RequestGroup>(
         tenantService,
         ehrFactory,
         transformManager,
         publishService,
-        profileTransformer,
     ) {
     override val cacheAndCompareResults: Boolean = true
 

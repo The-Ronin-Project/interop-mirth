@@ -3,13 +3,12 @@ package com.projectronin.interop.mirth.channel
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Condition
-import com.projectronin.interop.fhir.ronin.resource.RoninConditions
-import com.projectronin.interop.fhir.ronin.transform.TransformManager
-import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaQueue
 import com.projectronin.interop.mirth.channel.destinations.queue.ConditionTenantlessQueueWriter
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.queue.kafka.KafkaQueueService
+import com.projectronin.interop.rcdm.transform.TransformManager
+import com.projectronin.interop.rcdm.transform.model.TransformResponse
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -24,7 +23,6 @@ class KafkaConditionQueue(
     queueService: KafkaQueueService,
     conditionQueueWriter: ConditionTenantlessQueueWriter,
     private val transformManager: TransformManager,
-    private val roninCondition: RoninConditions,
 ) :
     KafkaQueue<Condition>(tenantService, queueService, conditionQueueWriter) {
     companion object {
@@ -40,7 +38,7 @@ class KafkaConditionQueue(
         tenant: Tenant,
     ): TransformResponse<Condition> {
         val condition = JacksonUtil.readJsonObject(string, Condition::class)
-        return transformManager.transformResource(condition, roninCondition, tenant)
+        return transformManager.transformResource(condition, tenant)
             ?: throw ResourcesNotTransformedException("Failed to transform Condition for tenant ${tenant.mnemonic}")
     }
 }

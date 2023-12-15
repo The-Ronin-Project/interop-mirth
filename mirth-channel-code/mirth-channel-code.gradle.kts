@@ -35,9 +35,8 @@ dependencies {
     implementation(libs.interop.queue.api)
     implementation(libs.interop.queue.db)
     implementation(libs.interop.queue.kafka)
-    implementation(libs.interop.ehr.fhir.ronin) {
-        exclude(group = "org.yaml", module = "snakeyaml")
-    }
+    implementation(libs.interop.rcdm.common)
+    implementation(libs.interop.rcdm.transform)
     implementation(libs.bundles.interop.kafka.events)
     implementation(libs.interop.ehr.tenant)
 

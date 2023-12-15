@@ -29,7 +29,7 @@ class MedicationStatementPublishTest {
         mockk<VendorFactory> {
             every { medicationStatementService } returns this@MedicationStatementPublishTest.medicationStatementService
         }
-    private val medicationStatementPublish = MedicationStatementPublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val medicationStatementPublish = MedicationStatementPublish(mockk(), mockk(), mockk(), mockk())
 
     private val patient1 = Patient(id = Id("$tenantId-1234"))
     private val patient2 = Patient(id = Id("$tenantId-5678"))

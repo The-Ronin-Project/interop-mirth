@@ -21,10 +21,6 @@ import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.r4.resource.Location
 import com.projectronin.interop.fhir.r4.resource.Organization
 import com.projectronin.interop.fhir.r4.resource.Patient
-import com.projectronin.interop.fhir.ronin.resource.RoninConditions
-import com.projectronin.interop.fhir.ronin.resource.RoninLocation
-import com.projectronin.interop.fhir.ronin.transform.TransformManager
-import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.kafka.model.PublishResourceWrapper
 import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
@@ -38,6 +34,8 @@ import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.exceptions.MapVariableMissing
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.rcdm.transform.TransformManager
+import com.projectronin.interop.rcdm.transform.model.TransformResponse
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import io.mockk.every
@@ -62,7 +60,6 @@ class KafkaEventResourcePublisherTest {
     private lateinit var locationService: LocationService
     private lateinit var transformManager: TransformManager
     private lateinit var publishService: PublishService
-    private lateinit var roninLocation: RoninLocation
     private lateinit var destination: TestLocationPublish
 
     private val runId = "run1"
@@ -99,14 +96,12 @@ class KafkaEventResourcePublisherTest {
         ehrFactory: EHRFactory,
         transformManager: TransformManager,
         publishService: PublishService,
-        profileTransformer: RoninLocation,
         override val cacheAndCompareResults: Boolean = false,
     ) : KafkaEventResourcePublisher<Location>(
             tenantService,
             ehrFactory,
             transformManager,
             publishService,
-            profileTransformer,
         ) {
         override fun convertPublishEventsToRequest(
             events: List<InteropResourcePublishV1>,
@@ -153,14 +148,12 @@ class KafkaEventResourcePublisherTest {
         ehrFactory: EHRFactory,
         transformManager: TransformManager,
         publishService: PublishService,
-        profileTransformer: RoninConditions,
         override val cacheAndCompareResults: Boolean = false,
     ) : KafkaEventResourcePublisher<Condition>(
             tenantService,
             ehrFactory,
             transformManager,
             publishService,
-            profileTransformer,
         ) {
         override fun convertPublishEventsToRequest(
             events: List<InteropResourcePublishV1>,
@@ -224,8 +217,7 @@ class KafkaEventResourcePublisherTest {
         mockkObject(JacksonUtil)
         transformManager = mockk()
         publishService = mockk()
-        roninLocation = mockk()
-        destination = TestLocationPublish(tenantService, ehrFactory, transformManager, publishService, roninLocation)
+        destination = TestLocationPublish(tenantService, ehrFactory, transformManager, publishService)
     }
 
     @AfterEach
@@ -252,7 +244,7 @@ class KafkaEventResourcePublisherTest {
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
         val transformResponse = TransformResponse(transformedLocation1234)
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformResponse
+        every { transformManager.transformResource(location1234, tenant) } returns transformResponse
         every {
             publishService.publishResourceWrappers(
                 tenantId,
@@ -295,7 +287,7 @@ class KafkaEventResourcePublisherTest {
         val embedded1 = mockk<Organization>()
         val embedded2 = mockk<Organization>()
         val transformResponse = TransformResponse(transformedLocation1234, listOf(embedded1, embedded2))
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns transformResponse
+        every { transformManager.transformResource(location1234, tenant) } returns transformResponse
         every {
             publishService.publishResourceWrappers(
                 tenantId,
@@ -381,12 +373,11 @@ class KafkaEventResourcePublisherTest {
 
     @Test
     fun `works with nothing from EHR represented as an empty List in the Map`() {
-        val roninConditions = mockk<RoninConditions>()
         val conditionService = mockk<ConditionService>()
         every { vendorFactory.conditionService } returns conditionService
 
         val destination =
-            TestConditionPublish(tenantService, ehrFactory, transformManager, publishService, roninConditions)
+            TestConditionPublish(tenantService, ehrFactory, transformManager, publishService)
 
         val patient =
             patient {
@@ -439,7 +430,7 @@ class KafkaEventResourcePublisherTest {
 
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
-        every { transformManager.transformResource(location1234, roninLocation, tenant) } returns null
+        every { transformManager.transformResource(location1234, tenant) } returns null
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message = objectMapper.writeValueAsString(listOf(event1))
@@ -536,25 +527,22 @@ class KafkaEventResourcePublisherTest {
                 every { resourceType } returns "Location"
                 every { id } returns null
             }
-        every { transformManager.transformResource(any(), roninLocation, tenant) } returns null
+        every { transformManager.transformResource(any<Location>(), tenant) } returns null
         every {
             transformManager.transformResource(
-                match { it.id?.value == "1" },
-                roninLocation,
+                match<Location> { it.id?.value == "1" },
                 tenant,
             )
         } returns TransformResponse(transformed1)
         every {
             transformManager.transformResource(
-                match { it.id?.value == "2" },
-                roninLocation,
+                match<Location> { it.id?.value == "2" },
                 tenant,
             )
         } returns TransformResponse(transformed2)
         every {
             transformManager.transformResource(
-                match { it.id?.value == "3" },
-                roninLocation,
+                match<Location> { it.id?.value == "3" },
                 tenant,
             )
         } returns TransformResponse(transformed3)
@@ -602,7 +590,7 @@ class KafkaEventResourcePublisherTest {
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
         every {
-            transformManager.transformResource(location1234, roninLocation, tenant)
+            transformManager.transformResource(location1234, tenant)
         } returns TransformResponse(transformedLocation1234)
         every {
             publishService.publishResourceWrappers(
@@ -643,7 +631,7 @@ class KafkaEventResourcePublisherTest {
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
         every {
-            transformManager.transformResource(location1234, roninLocation, tenant)
+            transformManager.transformResource(location1234, tenant)
         } returns TransformResponse(transformedLocation1234)
         every {
             publishService.publishResourceWrappers(
@@ -765,7 +753,7 @@ class KafkaEventResourcePublisherTest {
                     },
             )
 
-        every { transformManager.transformResource(any(), roninLocation, tenant) } returns null
+        every { transformManager.transformResource(any<Location>(), tenant) } returns null
 
         val message = objectMapper.writeValueAsString(listOf(event1))
         val result =
@@ -796,7 +784,7 @@ class KafkaEventResourcePublisherTest {
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
         every {
-            transformManager.transformResource(location1234, roninLocation, tenant)
+            transformManager.transformResource(location1234, tenant)
         } returns TransformResponse(transformedLocation1234)
         every {
             publishService.publishResourceWrappers(
@@ -840,14 +828,14 @@ class KafkaEventResourcePublisherTest {
         assertNull(result2.dataMap[MirthKey.FAILURE_COUNT.code])
         assertNull(result2.dataMap[MirthKey.RESOURCE_COUNT.code])
 
-        verify(exactly = 1) { transformManager.transformResource(any(), roninLocation, tenant) }
+        verify(exactly = 1) { transformManager.transformResource(any<Location>(), tenant) }
         verify(exactly = 1) { publishService.publishResourceWrappers(any(), any(), any(), any()) }
     }
 
     @Test
     fun `publisher ignores already seen responses`() {
         val destination =
-            TestLocationPublish(tenantService, ehrFactory, transformManager, publishService, roninLocation, true)
+            TestLocationPublish(tenantService, ehrFactory, transformManager, publishService, true)
 
         val event1 =
             InteropResourceLoadV1(
@@ -861,7 +849,7 @@ class KafkaEventResourcePublisherTest {
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
         every {
-            transformManager.transformResource(location1234, roninLocation, tenant)
+            transformManager.transformResource(location1234, tenant)
         } returns TransformResponse(transformedLocation1234)
         every {
             publishService.publishResourceWrappers(
@@ -918,14 +906,14 @@ class KafkaEventResourcePublisherTest {
         assertNull(result2.dataMap[MirthKey.FAILURE_COUNT.code])
         assertNull(result2.dataMap[MirthKey.RESOURCE_COUNT.code])
 
-        verify(exactly = 1) { transformManager.transformResource(any(), roninLocation, tenant) }
+        verify(exactly = 1) { transformManager.transformResource(any<Location>(), tenant) }
         verify(exactly = 1) { publishService.publishResourceWrappers(any(), any(), any(), any()) }
     }
 
     @Test
     fun `publisher ignores requests for already seen responses`() {
         val destination =
-            TestLocationPublish(tenantService, ehrFactory, transformManager, publishService, roninLocation, true)
+            TestLocationPublish(tenantService, ehrFactory, transformManager, publishService, true)
 
         val event1 =
             InteropResourceLoadV1(
@@ -939,7 +927,7 @@ class KafkaEventResourcePublisherTest {
         every { locationService.getByIDs(tenant, listOf("1233")) } returns mapOf("1233" to location1234)
 
         every {
-            transformManager.transformResource(location1234, roninLocation, tenant)
+            transformManager.transformResource(location1234, tenant)
         } returns TransformResponse(transformedLocation1234)
         every {
             publishService.publishResourceWrappers(
@@ -995,14 +983,14 @@ class KafkaEventResourcePublisherTest {
         assertNull(result2.dataMap[MirthKey.FAILURE_COUNT.code])
         assertNull(result2.dataMap[MirthKey.RESOURCE_COUNT.code])
 
-        verify(exactly = 1) { transformManager.transformResource(any(), roninLocation, tenant) }
+        verify(exactly = 1) { transformManager.transformResource(any<Location>(), tenant) }
         verify(exactly = 1) { publishService.publishResourceWrappers(any(), any(), any(), any()) }
     }
 
     @Test
     fun `publisher handles inputs that match output`() {
         val destination =
-            TestLocationPublish(tenantService, ehrFactory, transformManager, publishService, roninLocation, true)
+            TestLocationPublish(tenantService, ehrFactory, transformManager, publishService, true)
 
         val event1 =
             InteropResourceLoadV1(
@@ -1016,7 +1004,7 @@ class KafkaEventResourcePublisherTest {
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
         every {
-            transformManager.transformResource(location1234, roninLocation, tenant)
+            transformManager.transformResource(location1234, tenant)
         } returns TransformResponse(transformedLocation1234)
         every {
             publishService.publishResourceWrappers(
@@ -1058,7 +1046,7 @@ class KafkaEventResourcePublisherTest {
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
         every {
-            transformManager.transformResource(location1234, roninLocation, tenant)
+            transformManager.transformResource(location1234, tenant)
         } returns TransformResponse(transformedLocation1234)
         every {
             publishService.publishResourceWrappers(
@@ -1098,18 +1086,17 @@ class KafkaEventResourcePublisherTest {
         assertEquals(1, result2.dataMap[MirthKey.RESOURCE_COUNT.code])
         assertEquals(0, result2.dataMap[MirthKey.FAILURE_COUNT.code])
 
-        verify(exactly = 2) { transformManager.transformResource(any(), roninLocation, tenant) }
+        verify(exactly = 2) { transformManager.transformResource(any<Location>(), tenant) }
         verify(exactly = 2) { publishService.publishResourceWrappers(any(), any(), any(), any()) }
     }
 
     @Test
     fun `publisher works for repeat publish requests if first fails`() {
-        val roninConditions = mockk<RoninConditions>()
         val conditionService = mockk<ConditionService>()
         every { vendorFactory.conditionService } returns conditionService
 
         val destination =
-            TestConditionPublish(tenantService, ehrFactory, transformManager, publishService, roninConditions)
+            TestConditionPublish(tenantService, ehrFactory, transformManager, publishService)
 
         val patient =
             patient {
@@ -1154,10 +1141,10 @@ class KafkaEventResourcePublisherTest {
                 every { id?.value } returns "$tenantId-2"
             }
         every {
-            transformManager.transformResource(condition1, roninConditions, tenant)
+            transformManager.transformResource(condition1, tenant)
         } returns TransformResponse(transformed1)
         every {
-            transformManager.transformResource(condition2, roninConditions, tenant)
+            transformManager.transformResource(condition2, tenant)
         } returns TransformResponse(transformed2)
         every {
             publishService.publishResourceWrappers(
@@ -1197,7 +1184,7 @@ class KafkaEventResourcePublisherTest {
         assertEquals(2, result2.dataMap[MirthKey.RESOURCE_COUNT.code])
         assertEquals(0, result2.dataMap[MirthKey.FAILURE_COUNT.code])
 
-        verify(exactly = 4) { transformManager.transformResource(any(), roninConditions, tenant) }
+        verify(exactly = 4) { transformManager.transformResource(any<Condition>(), tenant) }
         verify(exactly = 2) { publishService.publishResourceWrappers(any(), any(), any(), any()) }
     }
 
@@ -1227,7 +1214,7 @@ class KafkaEventResourcePublisherTest {
             )
 
         every {
-            transformManager.transformResource(location1234, roninLocation, tenant)
+            transformManager.transformResource(location1234, tenant)
         } returns TransformResponse(transformedLocation1234)
         every {
             publishService.publishResourceWrappers(
@@ -1239,7 +1226,7 @@ class KafkaEventResourcePublisherTest {
         } returns true
 
         every {
-            transformManager.transformResource(location5678, roninLocation, tenant)
+            transformManager.transformResource(location5678, tenant)
         } returns TransformResponse(transformedLocation5678)
         every {
             publishService.publishResourceWrappers(
@@ -1294,7 +1281,7 @@ class KafkaEventResourcePublisherTest {
             )
 
         every {
-            transformManager.transformResource(location1234, roninLocation, tenant)
+            transformManager.transformResource(location1234, tenant)
         } returns TransformResponse(transformedLocation1234)
         every {
             publishService.publishResourceWrappers(
@@ -1306,7 +1293,7 @@ class KafkaEventResourcePublisherTest {
         } returns true
 
         every {
-            transformManager.transformResource(location5678, roninLocation, tenant)
+            transformManager.transformResource(location5678, tenant)
         } returns TransformResponse(transformedLocation5678)
         every {
             publishService.publishResourceWrappers(
@@ -1361,7 +1348,7 @@ class KafkaEventResourcePublisherTest {
             )
 
         every {
-            transformManager.transformResource(location1234, roninLocation, tenant)
+            transformManager.transformResource(location1234, tenant)
         } returns TransformResponse(transformedLocation1234)
         every {
             publishService.publishResourceWrappers(
@@ -1373,7 +1360,7 @@ class KafkaEventResourcePublisherTest {
         } returns false
 
         every {
-            transformManager.transformResource(location5678, roninLocation, tenant)
+            transformManager.transformResource(location5678, tenant)
         } returns TransformResponse(transformedLocation5678)
         every {
             publishService.publishResourceWrappers(
@@ -1420,7 +1407,7 @@ class KafkaEventResourcePublisherTest {
         every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
 
         every {
-            transformManager.transformResource(location1234, roninLocation, tenant)
+            transformManager.transformResource(location1234, tenant)
         } returns TransformResponse(transformedLocation1234)
         every {
             publishService.publishResourceWrappers(
@@ -1471,7 +1458,6 @@ class KafkaEventResourcePublisherTest {
         every {
             transformManager.transformResource(
                 location1234,
-                roninLocation,
                 tenant,
                 registryLocalDateTime,
             )

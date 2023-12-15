@@ -10,8 +10,6 @@ import com.projectronin.interop.fhir.r4.datatype.DynamicValueType
 import com.projectronin.interop.fhir.r4.datatype.Reference
 import com.projectronin.interop.fhir.r4.resource.CarePlan
 import com.projectronin.interop.fhir.r4.resource.Patient
-import com.projectronin.interop.fhir.ronin.resource.RoninCarePlan
-import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
@@ -21,6 +19,7 @@ import com.projectronin.interop.mirth.channel.base.kafka.request.PublishReferenc
 import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.rcdm.transform.TransformManager
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
@@ -33,13 +32,11 @@ class CarePlanPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninCarePlan,
 ) : KafkaEventResourcePublisher<CarePlan>(
         tenantService,
         ehrFactory,
         transformManager,
         publishService,
-        profileTransformer,
     ) {
     override val cacheAndCompareResults: Boolean = true
 

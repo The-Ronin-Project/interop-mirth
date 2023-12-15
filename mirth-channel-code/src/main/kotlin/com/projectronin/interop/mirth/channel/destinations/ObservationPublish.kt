@@ -12,8 +12,6 @@ import com.projectronin.interop.fhir.r4.resource.Condition
 import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.valueset.ObservationCategoryCodes
-import com.projectronin.interop.fhir.ronin.resource.RoninObservations
-import com.projectronin.interop.fhir.ronin.transform.TransformManager
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
 import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
@@ -24,6 +22,7 @@ import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResource
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
 import com.projectronin.interop.mirth.channel.util.isForType
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.rcdm.transform.TransformManager
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
@@ -35,13 +34,11 @@ class ObservationPublish(
     publishService: PublishService,
     tenantService: TenantService,
     transformManager: TransformManager,
-    profileTransformer: RoninObservations,
 ) : KafkaEventResourcePublisher<Observation>(
         tenantService,
         ehrFactory,
         transformManager,
         publishService,
-        profileTransformer,
     ) {
     override val cacheAndCompareResults: Boolean = true
 

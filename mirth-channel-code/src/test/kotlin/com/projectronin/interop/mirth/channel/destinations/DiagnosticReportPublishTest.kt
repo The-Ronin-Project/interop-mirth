@@ -30,7 +30,7 @@ class DiagnosticReportPublishTest {
         mockk<VendorFactory> {
             every { diagnosticReportService } returns this@DiagnosticReportPublishTest.diagnosticReportService
         }
-    private val diagnosticReportPublish = DiagnosticReportPublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val diagnosticReportPublish = DiagnosticReportPublish(mockk(), mockk(), mockk(), mockk())
 
     private val patient1 = Patient(id = Id("$tenantId-12345678"))
     private val patient2 = Patient(id = Id("$tenantId-89101112"))
@@ -140,7 +140,8 @@ class DiagnosticReportPublishTest {
         val key2 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-89101112")
         assertEquals(listOf(diagnosticReport3), resourcesByKeys[key2])
 
-        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-87654321", Pair(startDate, endDate))
+        val key3 =
+            ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-87654321", Pair(startDate, endDate))
         assertEquals(emptyList<DiagnosticReport>(), resourcesByKeys[key3])
     }
 }

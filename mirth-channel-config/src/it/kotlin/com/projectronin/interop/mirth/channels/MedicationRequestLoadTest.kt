@@ -398,6 +398,6 @@ class MedicationRequestLoadTest : BaseChannelTest(
 
         val storedMedication =
             AidboxClient.getResource<Medication>(medicationType, "$tenantInUse-$medicationId")
-        assertEquals(medicationCodeableConcept, storedMedication.code)
+        assertEquals(medicationCodeableConcept.coding.first().code, storedMedication.code!!.coding.first().code)
     }
 }

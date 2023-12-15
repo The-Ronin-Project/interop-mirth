@@ -1,23 +1,24 @@
 [versions]
 apache-kafka = "3.5.0"
 caffeine = "3.1.8"
-clinical-trial = "1.1.1"
+clinical-trial = "2.0.0"
 dbrider = "1.41.0"
-ehrda = "2.0.0"
+ehrda = "2.2.0"
 guava = "32.1.3-jre"
 interop-aidbox = "8.1.0"
-interop-backfill = "2.0.0"
-interop-common = "4.0.0"
+interop-backfill = "2.0.1"
+interop-common = "4.1.0"
 interop-datalake = "9.0.0"
-interop-ehr = "13.0.0"
+interop-ehr = "13.1.1"
 interop-event-internal = "1.2.3"
 interop-event-request = "1.1.0"
-interop-fhir = "9.0.0"
+interop-fhir = "9.1.1"
 interop-gradle = "4.0.0"
 interop-kafka = "9.0.0"
 interop-publishers = "10.0.0"
 interop-queue = "3.0.0"
-interop-validation = "4.0.0"
+interop-rcdm = "1.0.0"
+interop-validation = "4.0.1"
 jackson = "2.16.0"
 jakarta = "3.1.0"
 jersey = "3.1.4"
@@ -58,7 +59,6 @@ interop-datalake = { module = "com.projectronin.interop.publish:interop-datalake
 interop-ehr-api = { module = "com.projectronin.interop.ehr:interop-ehr", version.ref = "interop-ehr" }
 interop-ehr-cerner = { module = "com.projectronin.interop.ehr:interop-ehr-cerner", version.ref = "interop-ehr" }
 interop-ehr-epic = { module = "com.projectronin.interop.ehr:interop-ehr-epic", version.ref = "interop-ehr" }
-interop-ehr-fhir-ronin = { module = "com.projectronin.interop.ehr:interop-fhir-ronin", version.ref = "interop-ehr" }
 interop-ehr-fhir-ronin-generators = { module = "com.projectronin.interop.ehr:interop-fhir-ronin-generators", version.ref = "interop-ehr" }
 interop-ehr-liquibase = { module = "com.projectronin.interop.ehr:interop-ehr-liquibase", version.ref = "interop-ehr" }
 interop-ehr-tenant = { module = "com.projectronin.interop.ehr:interop-tenant", version.ref = "interop-ehr" }
@@ -71,6 +71,8 @@ interop-queue-api = { module = "com.projectronin.interop.queue:interop-queue", v
 interop-queue-db = { module = "com.projectronin.interop.queue:interop-queue-db", version.ref = "interop-queue" }
 interop-queue-kafka = { module = "com.projectronin.interop.queue:interop-queue-kafka", version.ref = "interop-queue" }
 interop-queue-liquibase = { module = "com.projectronin.interop.queue:interop-queue-liquibase", version.ref = "interop-queue" }
+interop-rcdm-common = { module = "com.projectronin.interop.rcdm:interop-rcdm-common", version.ref = "interop-rcdm" }
+interop-rcdm-transform = { module = "com.projectronin.interop.rcdm:interop-rcdm-transform", version.ref = "interop-rcdm" }
 interop-validation-client = { module = "com.projectronin.interop.validation:interop-validation-client", version.ref = "interop-validation" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }

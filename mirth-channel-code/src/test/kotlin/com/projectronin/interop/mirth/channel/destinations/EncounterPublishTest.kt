@@ -30,7 +30,7 @@ class EncounterPublishTest {
         mockk<VendorFactory> {
             every { encounterService } returns this@EncounterPublishTest.encounterService
         }
-    private val encounterPublish = EncounterPublish(mockk(), mockk(), mockk(), mockk(), mockk())
+    private val encounterPublish = EncounterPublish(mockk(), mockk(), mockk(), mockk())
 
     private val patient1 = Patient(id = Id("$tenantId-1234"))
     private val patient2 = Patient(id = Id("$tenantId-5678"))
@@ -68,7 +68,14 @@ class EncounterPublishTest {
                 encounter2,
             )
         every { encounterService.findPatientEncounters(tenant, "5678", any(), any()) } returns listOf(encounter3)
-        every { encounterService.findPatientEncounters(tenant, "9012", startDate.toLocalDate(), endDate.toLocalDate()) } returns emptyList()
+        every {
+            encounterService.findPatientEncounters(
+                tenant,
+                "9012",
+                startDate.toLocalDate(),
+                endDate.toLocalDate(),
+            )
+        } returns emptyList()
 
         val event1 =
             InteropResourcePublishV1(

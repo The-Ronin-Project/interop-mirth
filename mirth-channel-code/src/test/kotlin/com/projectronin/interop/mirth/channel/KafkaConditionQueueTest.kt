@@ -3,11 +3,10 @@ package com.projectronin.interop.mirth.channel
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.common.resource.ResourceType
 import com.projectronin.interop.fhir.r4.resource.Condition
-import com.projectronin.interop.fhir.ronin.resource.RoninConditions
-import com.projectronin.interop.fhir.ronin.transform.TransformManager
-import com.projectronin.interop.fhir.ronin.transform.TransformResponse
 import com.projectronin.interop.mirth.channel.destinations.queue.ConditionTenantlessQueueWriter
 import com.projectronin.interop.queue.kafka.KafkaQueueService
+import com.projectronin.interop.rcdm.transform.TransformManager
+import com.projectronin.interop.rcdm.transform.model.TransformResponse
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.exception.ResourcesNotTransformedException
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -27,7 +26,6 @@ class KafkaConditionQueueTest {
             every { mnemonic } returns "testmnemonic"
         }
     private lateinit var mockTransformManager: TransformManager
-    private lateinit var mockRoninCondition: RoninConditions
     private lateinit var channel: KafkaConditionQueue
 
     @AfterEach
@@ -38,7 +36,6 @@ class KafkaConditionQueueTest {
     @BeforeEach
     fun setup() {
         mockTransformManager = mockk()
-        mockRoninCondition = mockk()
         val tenantService =
             mockk<TenantService> {
                 every { getTenantForMnemonic("testmnemonic") } returns mockTenant
@@ -47,7 +44,7 @@ class KafkaConditionQueueTest {
         val queueWriter = mockk<ConditionTenantlessQueueWriter>()
 
         channel =
-            KafkaConditionQueue(tenantService, queueService, queueWriter, mockTransformManager, mockRoninCondition)
+            KafkaConditionQueue(tenantService, queueService, queueWriter, mockTransformManager)
     }
 
     @Test
@@ -68,7 +65,6 @@ class KafkaConditionQueueTest {
         every {
             mockTransformManager.transformResource(
                 mockCondition,
-                mockRoninCondition,
                 mockTenant,
             )
         } returns transformResponse
@@ -84,7 +80,7 @@ class KafkaConditionQueueTest {
         val mockCondition = mockk<Condition>()
         every { JacksonUtil.readJsonObject<Condition>(any(), any()) } returns mockCondition
 
-        every { mockTransformManager.transformResource(mockCondition, mockRoninCondition, mockTenant) } returns null
+        every { mockTransformManager.transformResource(mockCondition, mockTenant) } returns null
 
         assertThrows<ResourcesNotTransformedException> {
             channel.deserializeAndTransform(

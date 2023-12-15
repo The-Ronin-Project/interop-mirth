@@ -22,10 +22,8 @@ import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.mirth.docRefLoadName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-@Disabled // Disable until INT-2131 is fixed
 class DocumentReferenceLoadTest : BaseChannelTest(
     docRefLoadName,
     listOf("DocumentReference"),
@@ -55,6 +53,7 @@ class DocumentReferenceLoadTest : BaseChannelTest(
                 coding of listOf(
                     coding {
                         system of "http://loinc.org"
+                        display of "note"
                         code of "34806-0"
                     }
                 )
