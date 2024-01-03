@@ -10,8 +10,10 @@ import com.projectronin.interop.fhir.r4.resource.Appointment
 import com.projectronin.interop.fhir.r4.resource.Encounter
 import com.projectronin.interop.fhir.r4.resource.MedicationStatement
 import com.projectronin.interop.fhir.r4.resource.Observation
+import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.resource.Procedure
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaEventResourcePublisher
+import com.projectronin.interop.mirth.channel.base.kafka.event.IdBasedPublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.PublishResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
@@ -23,6 +25,8 @@ import com.projectronin.interop.rcdm.transform.TransformManager
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
+import java.time.LocalDate
+import java.time.OffsetDateTime
 
 @Component
 class ProcedurePublish(
@@ -43,6 +47,9 @@ class ProcedurePublish(
     ): PublishResourceRequest<Procedure> {
         // Only events for the same resource type are grouped, so just peek at the first one
         return when (val resourceType = events.first().resourceType) {
+            ResourceType.Patient ->
+                PatientPublishProcedureRequest(events, vendorFactory.procedureService, tenant)
+
             ResourceType.Appointment ->
                 AppointmentPublishProcedureRequest(
                     events,
@@ -88,6 +95,33 @@ class ProcedurePublish(
         tenant: Tenant,
     ): LoadResourceRequest<Procedure> {
         return LoadProcedureRequest(events, vendorFactory.procedureService, tenant)
+    }
+
+    internal class PatientPublishProcedureRequest(
+        publishEvents: List<InteropResourcePublishV1>,
+        override val fhirService: ProcedureService,
+        override val tenant: Tenant,
+    ) : PublishResourceRequest<Procedure>() {
+        override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>> =
+            publishEvents.map { PatientPublishEvent(it, tenant) }
+
+        override fun loadResourcesForIds(
+            requestFhirIds: List<String>,
+            startDate: OffsetDateTime?,
+            endDate: OffsetDateTime?,
+        ): Map<String, List<Procedure>> {
+            return requestFhirIds.associateWith { fhirId ->
+                fhirService.getProcedureByPatient(
+                    tenant,
+                    fhirId,
+                    startDate?.toLocalDate() ?: LocalDate.now().minusMonths(1),
+                    endDate?.toLocalDate() ?: LocalDate.now().plusMonths(1),
+                )
+            }
+        }
+
+        private class PatientPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
+            IdBasedPublishResourceEvent<Patient>(publishEvent, tenant, Patient::class)
     }
 
     internal class AppointmentPublishProcedureRequest(

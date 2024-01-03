@@ -20,6 +20,7 @@ class ProcedureLoad(
     override val channelGroupId = "interop-mirth-procedure_group"
     override val publishedResourcesSubscriptions =
         listOf(
+            ResourceType.Patient,
             ResourceType.Appointment,
             ResourceType.Encounter,
             ResourceType.MedicationStatement,

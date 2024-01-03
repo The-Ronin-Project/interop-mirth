@@ -21,6 +21,7 @@ import com.projectronin.interop.fhir.r4.resource.EncounterLocation
 import com.projectronin.interop.fhir.r4.resource.MedicationStatement
 import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.fhir.r4.resource.Participant
+import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.resource.Procedure
 import com.projectronin.interop.fhir.r4.valueset.AppointmentStatus
 import com.projectronin.interop.fhir.r4.valueset.EncounterStatus
@@ -239,6 +240,21 @@ class ProcedurePublishTest {
             subject = Reference(),
         )
 
+    private val patient1 =
+        Patient(
+            id = Id("$tenantId-7777"),
+        )
+
+    private val patient2 =
+        Patient(
+            id = Id("$tenantId-8888"),
+        )
+
+    private val patient3 =
+        Patient(
+            id = Id("$tenantId-9999"),
+        )
+
     private val metadata =
         mockk<Metadata>(relaxed = true) {
             every { runId } returns "run"
@@ -303,6 +319,18 @@ class ProcedurePublishTest {
             }
         val request = procedurePublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
         assertInstanceOf(ProcedurePublish.ProcedurePublishProcedureRequest::class.java, request)
+    }
+
+    @Test
+    fun `publish events create a PatientPublishProcedureRequest for procedure publish events`() {
+        val publishEvent =
+            mockk<InteropResourcePublishV1>(relaxed = true) {
+                every { resourceType } returns ResourceType.Patient
+                every { resourceJson } returns JacksonManager.objectMapper.writeValueAsString(patient1)
+                every { metadata } returns this@ProcedurePublishTest.metadata
+            }
+        val request = procedurePublish.convertPublishEventsToRequest(listOf(publishEvent), vendorFactory, tenant)
+        assertInstanceOf(ProcedurePublish.PatientPublishProcedureRequest::class.java, request)
     }
 
     @Test
@@ -617,5 +645,89 @@ class ProcedurePublishTest {
 
         val key3 = ResourceRequestKey("run", ResourceType.Procedure, tenant, "$tenantId-9012")
         assertEquals(listOf(mockProcedure3), resourcesByKeys[key3])
+    }
+
+    @Test
+    fun `PatientPublishProcedureRequest supports load resources`() {
+        val mockProcedure1 = mockk<Procedure>()
+        val mockProcedure2 = mockk<Procedure>()
+        val mockProcedure3 = mockk<Procedure>()
+        val mockProcedure4 = mockk<Procedure>()
+        val mockProcedure5 = mockk<Procedure>()
+        val startDate = OffsetDateTime.now()
+        val endDate = OffsetDateTime.now()
+        every {
+            procedureService.getProcedureByPatient(
+                tenant,
+                "7777",
+                startDate.minusMonths(1).toLocalDate(),
+                endDate.plusMonths(1).toLocalDate(),
+            )
+        } returns listOf(mockProcedure1, mockProcedure2, mockProcedure3)
+
+        every {
+            procedureService.getProcedureByPatient(
+                tenant,
+                "8888",
+                startDate.minusMonths(1).toLocalDate(),
+                endDate.plusMonths(1).toLocalDate(),
+            )
+        } returns listOf()
+
+        every {
+            procedureService.getProcedureByPatient(tenant, "9999", startDate.toLocalDate(), endDate.toLocalDate())
+        } returns listOf(mockProcedure4, mockProcedure5)
+
+        val event1 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(patient1),
+                metadata = metadata,
+            )
+        val event2 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(patient2),
+                metadata = metadata,
+            )
+        val event3 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
+                metadata =
+                    Metadata(
+                        runId = "run",
+                        runDateTime = OffsetDateTime.now(),
+                        upstreamReferences = null,
+                        backfillRequest =
+                            Metadata.BackfillRequest(
+                                backfillId = "123",
+                                backfillStartDate = startDate,
+                                backfillEndDate = endDate,
+                            ),
+                    ),
+            )
+        val request =
+            ProcedurePublish.PatientPublishProcedureRequest(
+                listOf(event1, event2, event3),
+                procedureService,
+                tenant,
+            )
+        val resourcesByKeys = request.loadResources(request.requestKeys.toList())
+        assertEquals(3, resourcesByKeys.size)
+
+        println(resourcesByKeys)
+
+        val key1 = ResourceRequestKey("run", ResourceType.Patient, tenant, "7777")
+        assertEquals(listOf(mockProcedure1, mockProcedure2, mockProcedure3), resourcesByKeys[key1])
+
+        val key2 = ResourceRequestKey("run", ResourceType.Patient, tenant, "8888")
+        assertEquals(true, resourcesByKeys[key2]?.isEmpty() ?: false)
+
+        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "9999", Pair(startDate, endDate))
+        assertEquals(listOf(mockProcedure4, mockProcedure5), resourcesByKeys[key3])
     }
 }
