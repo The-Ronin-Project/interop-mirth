@@ -60,7 +60,14 @@ class MedicationRequestPublish(
             startDate: OffsetDateTime?,
             endDate: OffsetDateTime?,
         ): Map<String, List<MedicationRequest>> {
-            return requestFhirIds.associateWith { fhirService.getMedicationRequestByPatient(tenant, it) }
+            return requestFhirIds.associateWith {
+                fhirService.getMedicationRequestByPatient(
+                    tenant,
+                    it,
+                    startDate?.toLocalDate(),
+                    endDate?.toLocalDate(),
+                )
+            }
         }
 
         private class PatientPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :
