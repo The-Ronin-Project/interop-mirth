@@ -37,6 +37,7 @@ import com.projectronin.interop.fhir.generators.resources.medicationStatement
 import com.projectronin.interop.fhir.generators.resources.observation
 import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.generators.resources.practitioner
+import com.projectronin.interop.fhir.generators.resources.procedure
 import com.projectronin.interop.fhir.generators.resources.requestGroup
 import com.projectronin.interop.fhir.generators.resources.serviceRequest
 import com.projectronin.interop.fhir.r4.CodeSystem
@@ -141,6 +142,40 @@ class ValidationTest(
                     generateMetadata(),
                 )
 
+                val procedure =
+                    procedure {
+                        identifier of
+                            listOf(
+                                identifier {
+                                    system of "mockProcedureSystem"
+                                    value of "Procedure/1"
+                                },
+                            )
+                        category of
+                            CodeableConcept(
+                                coding =
+                                    listOf(
+                                        Coding(
+                                            system = Uri("http://projectronin.io/fhir/CodeSystem/ProcedureCategory"),
+                                            code = Code("1"),
+                                        ),
+                                    ),
+                            )
+                        code of
+                            CodeableConcept(
+                                coding =
+                                    listOf(
+                                        Coding(
+                                            system = Uri("http://projectronin.io/fhir/CodeSystem/ProcedureCode"),
+                                            code = Code("1"),
+                                        ),
+                                    ),
+                            )
+                        subject of reference("Patient", patientID)
+                        status of Code("not-done")
+                    }
+                val procedureId = mockEHR.addResourceAndValidate(procedure)
+
                 // Appointment Section
                 if ("Appointment" !in ignoreTypeList) {
                     val practitionerID =
@@ -211,6 +246,7 @@ class ValidationTest(
                         status of "planned"
                         `class` of coding { display of "test" }
                         subject of reference("Patient", patientID)
+                        reasonReference of listOf(reference("Procedure", procedureId))
                         location of listOf(EncounterLocation(location = reference("Location", locationID)))
                     }
                 mockEHR.addResourceAndValidate(encounter1)
