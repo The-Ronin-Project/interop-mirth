@@ -15,7 +15,7 @@ import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.ProxyClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
-import com.projectronin.interop.mirth.channels.client.mirth.kafkaAppointmentQueueChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.KAFKA_APPOINTMENT_QUEUE_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
@@ -24,9 +24,9 @@ import java.time.LocalDate
 import kotlin.random.Random
 
 class KafkaAppointmentQueueTest : BaseChannelTest(
-    kafkaAppointmentQueueChannelName,
+    KAFKA_APPOINTMENT_QUEUE_CHANNEL_NAME,
     listOf("Appointment", "Patient"),
-    listOf("Patient", "Appointment")
+    listOf("Patient", "Appointment"),
 ) {
     private val appointmentType = "Appointment"
     private val patientType = "Patient"
@@ -42,42 +42,48 @@ class KafkaAppointmentQueueTest : BaseChannelTest(
         // the random patient we left in mockEHR / aidbox won't cause problems on future run of test
         val mrn = Random.nextInt(10000, 99999).toString()
 
-        val patient1 = patient {
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of mrn
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-            gender of "male"
-        }
+        val patient1 =
+            patient {
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockPatientInternalSystem"
+                        },
+                        identifier {
+                            system of "mockEHRMRNSystem"
+                            value of mrn
+                        },
+                    )
+                name of
+                    listOf(
+                        name {
+                            use of "usual" // This is required to generate the Epic response.
+                        },
+                    )
+                gender of "male"
+            }
         val patient1Id = MockEHRTestData.add(patient1)
 
         // add appointment to mock EHR
-        val appointment1 = appointment {
-            status of "arrived"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference(patientType, patient1Id)
-                }
-            )
-            start of startDate
-            end of endDate
-            minutesDuration of 60
-        }
+        val appointment1 =
+            appointment {
+                status of "arrived"
+                participant of
+                    listOf(
+                        participant {
+                            status of "accepted"
+                            actor of reference(patientType, patient1Id)
+                        },
+                    )
+                start of startDate
+                end of endDate
+                minutesDuration of 60
+            }
         val appointment1Id = MockEHRTestData.add(appointment1)
-        val aidboxPatient = patient1.copy(
-            identifier = patient1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patient1Id)
-        )
+        val aidboxPatient =
+            patient1.copy(
+                identifier = patient1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patient1Id),
+            )
         AidboxTestData.add(aidboxPatient)
 
         assertEquals(1, getAidboxResourceCount(patientType))
@@ -90,7 +96,7 @@ class KafkaAppointmentQueueTest : BaseChannelTest(
             mrn,
             testTenant,
             LocalDate.now().plusDays(2),
-            LocalDate.now().plusDays(3)
+            LocalDate.now().plusDays(3),
         )
 
         // make sure a message queued in mirth

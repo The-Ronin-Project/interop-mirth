@@ -57,8 +57,8 @@ import kotlin.reflect.full.functions
         SetEnvironmentVariable(key = "BACKFILL_AUTH_AUDIENCE", value = "https://backfill.dev.projectronin.io"),
         SetEnvironmentVariable(key = "BACKFILL_AUTH_CLIENT_ID", value = "id"),
         SetEnvironmentVariable(key = "BACKFILL_AUTH_CLIENT_SECRET", value = "secret"),
-        SetEnvironmentVariable(key = "BACKFILL_AUTH_METHOD", value = "STANDARD")
-    ]
+        SetEnvironmentVariable(key = "BACKFILL_AUTH_METHOD", value = "STANDARD"),
+    ],
 )
 class SpringMirthChannelsIT {
     // This test requires a real DB to be stood up, so the initial test will take about 30s.

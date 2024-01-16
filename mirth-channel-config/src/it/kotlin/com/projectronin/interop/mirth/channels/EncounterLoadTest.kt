@@ -16,8 +16,8 @@ import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
+import com.projectronin.interop.mirth.channels.client.mirth.ENCOUNTER_LOAD_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
-import com.projectronin.interop.mirth.channels.client.mirth.encounterLoadChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -26,9 +26,9 @@ import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDate
 
 class EncounterLoadTest : BaseChannelTest(
-    encounterLoadChannelName,
+    ENCOUNTER_LOAD_CHANNEL_NAME,
     listOf("Patient", "Encounter"),
-    listOf("Patient", "Encounter")
+    listOf("Patient", "Encounter"),
 ) {
     val nowish = LocalDate.now().minusDays(1)
 
@@ -42,60 +42,72 @@ class EncounterLoadTest : BaseChannelTest(
         val patient2 = patient { }
         val patient2Id = MockEHRTestData.add(patient2)
 
-        val roninPatient1 = patient1.copy(
-            id = Id("$tenantInUse-$patient1Id"),
-            identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
-        )
-        val roninPatient2 = patient2.copy(
-            id = Id("$tenantInUse-$patient2Id"),
-            identifier = patient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id)
-        )
-
-        val encounter1 = encounter {
-            subject of reference("Patient", patient1Id)
-            period of period {
-                start of dateTime {
-                    year of nowish.year
-                    month of nowish.monthValue
-                    day of nowish.dayOfMonth
-                }
-            }
-            status of "planned"
-            `class` of coding { display of "test" }
-            type of listOf(
-                codeableConcept {
-                    text of "type"
-                    coding of listOf(
-                        coding {
-                            display of "display"
-                        }
-                    )
-                }
+        val roninPatient1 =
+            patient1.copy(
+                id = Id("$tenantInUse-$patient1Id"),
+                identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id),
             )
-        }
-
-        val encounter2 = encounter {
-            subject of reference("Patient", patient2Id)
-            period of period {
-                start of dateTime {
-                    year of nowish.year
-                    month of nowish.monthValue
-                    day of nowish.dayOfMonth
-                }
-            }
-            status of "planned"
-            `class` of coding { display of "test" }
-            type of listOf(
-                codeableConcept {
-                    text of "type"
-                    coding of listOf(
-                        coding {
-                            display of "display"
-                        }
-                    )
-                }
+        val roninPatient2 =
+            patient2.copy(
+                id = Id("$tenantInUse-$patient2Id"),
+                identifier = patient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id),
             )
-        }
+
+        val encounter1 =
+            encounter {
+                subject of reference("Patient", patient1Id)
+                period of
+                    period {
+                        start of
+                            dateTime {
+                                year of nowish.year
+                                month of nowish.monthValue
+                                day of nowish.dayOfMonth
+                            }
+                    }
+                status of "planned"
+                `class` of coding { display of "test" }
+                type of
+                    listOf(
+                        codeableConcept {
+                            text of "type"
+                            coding of
+                                listOf(
+                                    coding {
+                                        display of "display"
+                                    },
+                                )
+                        },
+                    )
+            }
+
+        val encounter2 =
+            encounter {
+                subject of reference("Patient", patient2Id)
+                period of
+                    period {
+                        start of
+                            dateTime {
+                                year of nowish.year
+                                month of nowish.monthValue
+                                day of nowish.dayOfMonth
+                            }
+                    }
+                status of "planned"
+                `class` of coding { display of "test" }
+                type of
+                    listOf(
+                        codeableConcept {
+                            text of "type"
+                            coding of
+                                listOf(
+                                    coding {
+                                        display of "display"
+                                    },
+                                )
+                        },
+                    )
+            }
         val encounter1ID = MockEHRTestData.add(encounter1)
         val encounter2ID = MockEHRTestData.add(encounter1)
         val encounter3ID = MockEHRTestData.add(encounter1)
@@ -114,7 +126,7 @@ class EncounterLoadTest : BaseChannelTest(
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(roninPatient1, roninPatient2)
+            resources = listOf(roninPatient1, roninPatient2),
         )
         waitForMessage(1)
 
@@ -128,35 +140,40 @@ class EncounterLoadTest : BaseChannelTest(
         val patient1 = patient {}
         val patient1Id = MockEHRTestData.add(patient1)
 
-        val encounter1 = encounter {
-            subject of reference("Patient", patient1Id)
-            period of period {
-                start of dateTime {
-                    year of nowish.year
-                    month of nowish.monthValue
-                    day of nowish.dayOfMonth
-                }
-            }
-            status of "planned"
-            `class` of coding { display of "test" }
-            type of listOf(
-                codeableConcept {
-                    text of "type"
-                    coding of listOf(
-                        coding {
-                            display of "display"
-                        }
+        val encounter1 =
+            encounter {
+                subject of reference("Patient", patient1Id)
+                period of
+                    period {
+                        start of
+                            dateTime {
+                                year of nowish.year
+                                month of nowish.monthValue
+                                day of nowish.dayOfMonth
+                            }
+                    }
+                status of "planned"
+                `class` of coding { display of "test" }
+                type of
+                    listOf(
+                        codeableConcept {
+                            text of "type"
+                            coding of
+                                listOf(
+                                    coding {
+                                        display of "display"
+                                    },
+                                )
+                        },
                     )
-                }
-            )
-        }
+            }
         val encounterId = MockEHRTestData.add(encounter1)
         MockOCIServerClient.createExpectations("Encounter", encounterId, testTenant)
         KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(encounterId),
-            resourceType = ResourceType.Encounter
+            resourceType = ResourceType.Encounter,
         )
 
         waitForMessage(1)
@@ -169,10 +186,10 @@ class EncounterLoadTest : BaseChannelTest(
     @Test
     fun `non-existent request errors`() {
         KafkaClient.testingClient.pushLoadEvent(
-            tenantId = testTenant,
+            tenantId = TEST_TENANT,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.Encounter
+            resourceType = ResourceType.Encounter,
         )
 
         waitForMessage(1)

@@ -26,9 +26,9 @@ import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.ChannelMap
+import com.projectronin.interop.mirth.channels.client.mirth.MEDICATION_LOAD_CHANNEL_NAME
+import com.projectronin.interop.mirth.channels.client.mirth.MEDICATION_STATEMENT_LOAD_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
-import com.projectronin.interop.mirth.channels.client.mirth.medicationLoadChannelName
-import com.projectronin.interop.mirth.channels.client.mirth.medicationStatementLoadChannelName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -37,15 +37,15 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 class MedicationStatementLoadTest : BaseChannelTest(
-    medicationStatementLoadChannelName,
+    MEDICATION_STATEMENT_LOAD_CHANNEL_NAME,
     listOf("Patient", "MedicationStatement", "Medication"),
-    listOf("Patient", "MedicationStatement", "Medication")
+    listOf("Patient", "MedicationStatement", "Medication"),
 ) {
     private val patientType = "Patient"
     private val medicationStatementType = "MedicationStatement"
     private val medicationType = "Medication"
 
-    private val medicationChannelId = ChannelMap.installedDag[medicationLoadChannelName]!!
+    private val medicationChannelId = ChannelMap.installedDag[MEDICATION_LOAD_CHANNEL_NAME]!!
 
     @BeforeEach
     fun setupMedicationChannel() {
@@ -56,48 +56,54 @@ class MedicationStatementLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `check if channel works`(testTenant: String) {
         tenantInUse = testTenant
-        val fakePatient = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
+        val fakePatient =
+            patient {
+                birthDate of
+                    date {
+                        year of 1990
+                        month of 1
+                        day of 3
+                    }
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockPatientInternalSystem"
+                        },
+                        identifier {
+                            system of "mockEHRMRNSystem"
+                            value of "1000000001"
+                        },
+                    )
+                name of
+                    listOf(
+                        name {
+                            use of "usual" // required
+                        },
+                    )
+                gender of "male"
             }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // required
-                }
-            )
-            gender of "male"
-        }
 
         val fakePatientId = MockEHRTestData.add(fakePatient)
         val fakeAidboxPatientId = "$testTenant-$fakePatientId"
-        val fakeAidboxPatient = fakePatient.copy(
-            id = Id(fakeAidboxPatientId),
-            identifier = fakePatient.identifier + tenantIdentifier(testTenant) + fhirIdentifier(fakePatientId)
-        )
+        val fakeAidboxPatient =
+            fakePatient.copy(
+                id = Id(fakeAidboxPatientId),
+                identifier = fakePatient.identifier + tenantIdentifier(testTenant) + fhirIdentifier(fakePatientId),
+            )
         AidboxTestData.add(fakeAidboxPatient)
 
-        val medicationStatement = medicationStatement {
-            subject of reference(patientType, fakePatientId)
-            status of "active"
-            medication of DynamicValues.reference(reference("Medication", "1234"))
-        }
+        val medicationStatement =
+            medicationStatement {
+                subject of reference(patientType, fakePatientId)
+                status of "active"
+                medication of DynamicValues.reference(reference("Medication", "1234"))
+            }
         val medicationStatementId = MockEHRTestData.add(medicationStatement)
         MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId)
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(fakeAidboxPatient)
+            resources = listOf(fakeAidboxPatient),
         )
 
         waitForMessage(1)
@@ -120,26 +126,30 @@ class MedicationStatementLoadTest : BaseChannelTest(
         val fakePatient2 = patient {}
         val patient2Id = MockEHRTestData.add(fakePatient2)
 
-        val roninPatient1 = fakePatient1.copy(
-            id = Id("$tenantInUse-$patient1Id"),
-            identifier = fakePatient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
-        )
-        val roninPatient2 = fakePatient2.copy(
-            id = Id("$tenantInUse-$patient2Id"),
-            identifier = fakePatient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id)
-        )
+        val roninPatient1 =
+            fakePatient1.copy(
+                id = Id("$tenantInUse-$patient1Id"),
+                identifier = fakePatient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id),
+            )
+        val roninPatient2 =
+            fakePatient2.copy(
+                id = Id("$tenantInUse-$patient2Id"),
+                identifier = fakePatient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id),
+            )
 
-        val fakeMedicationStatement1 = medicationStatement {
-            subject of reference(patientType, patient1Id)
-            status of "active"
-            medication of DynamicValues.reference(reference("Medication", "1234"))
-        }
+        val fakeMedicationStatement1 =
+            medicationStatement {
+                subject of reference(patientType, patient1Id)
+                status of "active"
+                medication of DynamicValues.reference(reference("Medication", "1234"))
+            }
 
-        val fakeMedicationStatement2 = medicationStatement {
-            subject of reference(patientType, patient2Id)
-            status of "active"
-            medication of DynamicValues.reference(reference("Medication", "1234"))
-        }
+        val fakeMedicationStatement2 =
+            medicationStatement {
+                subject of reference(patientType, patient2Id)
+                status of "active"
+                medication of DynamicValues.reference(reference("Medication", "1234"))
+            }
 
         val medStatement1ID = MockEHRTestData.add(fakeMedicationStatement1)
         val medStatement2ID = MockEHRTestData.add(fakeMedicationStatement1)
@@ -159,7 +169,7 @@ class MedicationStatementLoadTest : BaseChannelTest(
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(roninPatient1, roninPatient2)
+            resources = listOf(roninPatient1, roninPatient2),
         )
 
         waitForMessage(1)
@@ -179,11 +189,12 @@ class MedicationStatementLoadTest : BaseChannelTest(
         val fakePatient1 = patient {}
         val patient1Id = MockEHRTestData.add(fakePatient1)
 
-        val fakeMedicationStatement1 = medicationStatement {
-            subject of reference(patientType, patient1Id)
-            status of "active"
-            medication of DynamicValues.reference(reference("Medication", "1234"))
-        }
+        val fakeMedicationStatement1 =
+            medicationStatement {
+                subject of reference(patientType, patient1Id)
+                status of "active"
+                medication of DynamicValues.reference(reference("Medication", "1234"))
+            }
         val fakeMedicationStatementId = MockEHRTestData.add(fakeMedicationStatement1)
         MockOCIServerClient.createExpectations("MedicationStatement", fakeMedicationStatementId, testTenant)
 
@@ -191,7 +202,7 @@ class MedicationStatementLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeMedicationStatementId),
-            resourceType = ResourceType.MedicationStatement
+            resourceType = ResourceType.MedicationStatement,
         )
 
         waitForMessage(1)
@@ -206,10 +217,10 @@ class MedicationStatementLoadTest : BaseChannelTest(
     @Test
     fun `non-existent request errors`() {
         KafkaClient.testingClient.pushLoadEvent(
-            tenantId = testTenant,
+            tenantId = TEST_TENANT,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.MedicationStatement
+            resourceType = ResourceType.MedicationStatement,
         )
 
         waitForMessage(1)
@@ -221,52 +232,60 @@ class MedicationStatementLoadTest : BaseChannelTest(
 
     @Test
     fun `channel works for MedicationStatements with contained Medications`() {
-        tenantInUse = testTenant
+        tenantInUse = TEST_TENANT
 
-        val fakePatient = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
+        val fakePatient =
+            patient {
+                birthDate of
+                    date {
+                        year of 1990
+                        month of 1
+                        day of 3
+                    }
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockPatientInternalSystem"
+                        },
+                        identifier {
+                            system of "mockEHRMRNSystem"
+                            value of "1000000001"
+                        },
+                    )
+                name of
+                    listOf(
+                        name {
+                            use of "usual" // required
+                        },
+                    )
+                gender of "male"
             }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // required
-                }
-            )
-            gender of "male"
-        }
 
         val fakePatientId = MockEHRTestData.add(fakePatient)
-        val fakeAidboxPatientId = "$testTenant-$fakePatientId"
-        val fakeAidboxPatient = fakePatient.copy(
-            id = Id(fakeAidboxPatientId),
-            identifier = fakePatient.identifier + tenantIdentifier(testTenant) + fhirIdentifier(fakePatientId)
-        )
+        val fakeAidboxPatientId = "$TEST_TENANT-$fakePatientId"
+        val fakeAidboxPatient =
+            fakePatient.copy(
+                id = Id(fakeAidboxPatientId),
+                identifier = fakePatient.identifier + tenantIdentifier(TEST_TENANT) + fhirIdentifier(fakePatientId),
+            )
         AidboxTestData.add(fakeAidboxPatient)
 
-        val containedMedication = medication {
-            id of Id("13579")
-            code of codeableConcept {
-                text of "insulin regular (human) IV additive 100 units [1 units/hr] + sodium chloride 0.9% drip 100 mL"
+        val containedMedication =
+            medication {
+                id of Id("13579")
+                code of
+                    codeableConcept {
+                        text of "insulin regular (human) IV additive 100 units [1 units/hr] + sodium chloride 0.9% drip 100 mL"
+                    }
             }
-        }
 
-        val medicationStatement = medicationStatement {
-            subject of reference(patientType, fakePatientId)
-            status of "active"
-            medication of DynamicValues.reference(Reference(reference = "#13579".asFHIR()))
-            contained plus containedMedication
-        }
+        val medicationStatement =
+            medicationStatement {
+                subject of reference(patientType, fakePatientId)
+                status of "active"
+                medication of DynamicValues.reference(Reference(reference = "#13579".asFHIR()))
+                contained plus containedMedication
+            }
         val medicationStatementId = MockEHRTestData.add(medicationStatement)
         MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId)
 
@@ -276,7 +295,7 @@ class MedicationStatementLoadTest : BaseChannelTest(
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(fakeAidboxPatient)
+            resources = listOf(fakeAidboxPatient),
         )
 
         waitForMessage(1)
@@ -294,71 +313,79 @@ class MedicationStatementLoadTest : BaseChannelTest(
         val storedMedicationStatement =
             AidboxClient.getResource<MedicationStatement>(
                 medicationStatementType,
-                "$tenantInUse-$medicationStatementId"
+                "$tenantInUse-$medicationStatementId",
             )
         assertEquals(0, storedMedicationStatement.contained.size)
         assertEquals(
             "Medication/$tenantInUse-$medicationId",
-            (storedMedicationStatement.medication?.value as? Reference)?.reference?.value
+            (storedMedicationStatement.medication?.value as? Reference)?.reference?.value,
         )
 
         val storedMedication =
             AidboxClient.getResource<Medication>(medicationType, "$tenantInUse-$medicationId")
         assertEquals(
             "insulin regular (human) IV additive 100 units [1 units/hr] + sodium chloride 0.9% drip 100 mL",
-            storedMedication.code?.text?.value
+            storedMedication.code?.text?.value,
         )
     }
 
     @Test
     fun `channel works for MedicationStatements with codeable concept Medications`() {
-        tenantInUse = testTenant
+        tenantInUse = TEST_TENANT
 
-        val fakePatient = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
+        val fakePatient =
+            patient {
+                birthDate of
+                    date {
+                        year of 1990
+                        month of 1
+                        day of 3
+                    }
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockPatientInternalSystem"
+                        },
+                        identifier {
+                            system of "mockEHRMRNSystem"
+                            value of "1000000001"
+                        },
+                    )
+                name of
+                    listOf(
+                        name {
+                            use of "usual" // required
+                        },
+                    )
+                gender of "male"
             }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // required
-                }
-            )
-            gender of "male"
-        }
 
         val fakePatientId = MockEHRTestData.add(fakePatient)
-        val fakeAidboxPatientId = "$testTenant-$fakePatientId"
-        val fakeAidboxPatient = fakePatient.copy(
-            id = Id(fakeAidboxPatientId),
-            identifier = fakePatient.identifier + tenantIdentifier(testTenant) + fhirIdentifier(fakePatientId)
-        )
+        val fakeAidboxPatientId = "$TEST_TENANT-$fakePatientId"
+        val fakeAidboxPatient =
+            fakePatient.copy(
+                id = Id(fakeAidboxPatientId),
+                identifier = fakePatient.identifier + tenantIdentifier(TEST_TENANT) + fhirIdentifier(fakePatientId),
+            )
         AidboxTestData.add(fakeAidboxPatient)
 
-        val medicationCodeableConcept = codeableConcept {
-            coding plus coding {
-                system of "http://www.nlm.nih.gov/research/umls/rxnorm"
-                code of "161"
-                display of "acetaminophen"
-                userSelected of true
+        val medicationCodeableConcept =
+            codeableConcept {
+                coding plus
+                    coding {
+                        system of "http://www.nlm.nih.gov/research/umls/rxnorm"
+                        code of "161"
+                        display of "acetaminophen"
+                        userSelected of true
+                    }
+                text of "acetaminophen"
             }
-            text of "acetaminophen"
-        }
-        val medicationStatement = medicationStatement {
-            subject of reference(patientType, fakePatientId)
-            status of "active"
-            medication of DynamicValues.codeableConcept(medicationCodeableConcept)
-        }
+        val medicationStatement =
+            medicationStatement {
+                subject of reference(patientType, fakePatientId)
+                status of "active"
+                medication of DynamicValues.codeableConcept(medicationCodeableConcept)
+            }
         val medicationStatementId = MockEHRTestData.add(medicationStatement)
         MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId)
 
@@ -368,7 +395,7 @@ class MedicationStatementLoadTest : BaseChannelTest(
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(fakeAidboxPatient)
+            resources = listOf(fakeAidboxPatient),
         )
 
         waitForMessage(1)
@@ -386,12 +413,12 @@ class MedicationStatementLoadTest : BaseChannelTest(
         val storedMedicationStatement =
             AidboxClient.getResource<MedicationStatement>(
                 medicationStatementType,
-                "$tenantInUse-$medicationStatementId"
+                "$tenantInUse-$medicationStatementId",
             )
         assertEquals(0, storedMedicationStatement.contained.size)
         assertEquals(
             "Medication/$tenantInUse-$medicationId",
-            (storedMedicationStatement.medication?.value as? Reference)?.reference?.value
+            (storedMedicationStatement.medication?.value as? Reference)?.reference?.value,
         )
 
         val storedMedication =

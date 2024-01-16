@@ -25,54 +25,59 @@ import java.time.LocalTime
 import java.time.OffsetDateTime
 
 object TenantClient {
-    val httpClient = HttpClient(OkHttp) {
-        // If not a successful response, Ktor will throw Exceptions
-        expectSuccess = true
-        install(HttpTimeout) {
-            requestTimeoutMillis = 60000
-        }
-        // Setup JSON
-        install(ContentNegotiation) {
-            jackson {
-                JacksonManager.setUpMapper(this)
+    val httpClient =
+        HttpClient(OkHttp) {
+            // If not a successful response, Ktor will throw Exceptions
+            expectSuccess = true
+            install(HttpTimeout) {
+                requestTimeoutMillis = 60000
             }
-        }
-        install(Auth) {
-            bearer {
-                loadTokens {
-                    BearerTokens(
-                        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
-                            "eyJpYXQiOjE2NTY1MTQ3NDUsImlzcyI6IlNla2kiLCJqdGkiOiIycn" +
-                            "VodW9qNWtxcTRuY3U0czQwMDAwOGYiLCJzdWIiOiJiYmI2NWZmNS00" +
-                            "MGQ4LTRlOGItYWQ1Ny1lODVkNzg5YzZkYmEiLCJ0ZW5hbnRpZCI6In" +
-                            "JvbmluIn0.kLu2lKS16U9IQLpU2GyfoqvKGM76VblffZxPTdkfeTQ",
-                        "refresh" // not sure what this does but it's required
-                    )
-                }
-                sendWithoutRequest {
-                    it.url.host == "localhost"
+            // Setup JSON
+            install(ContentNegotiation) {
+                jackson {
+                    JacksonManager.setUpMapper(this)
                 }
             }
+            install(Auth) {
+                bearer {
+                    loadTokens {
+                        BearerTokens(
+                            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+                                "eyJpYXQiOjE2NTY1MTQ3NDUsImlzcyI6IlNla2kiLCJqdGkiOiIycn" +
+                                "VodW9qNWtxcTRuY3U0czQwMDAwOGYiLCJzdWIiOiJiYmI2NWZmNS00" +
+                                "MGQ4LTRlOGItYWQ1Ny1lODVkNzg5YzZkYmEiLCJ0ZW5hbnRpZCI6In" +
+                                "JvbmluIn0.kLu2lKS16U9IQLpU2GyfoqvKGM76VblffZxPTdkfeTQ",
+                            "refresh",
+                        )
+                    }
+                    sendWithoutRequest {
+                        it.url.host == "localhost"
+                    }
+                }
+            }
+            // Enable logging.
+            install(Logging) {
+                level = LogLevel.NONE
+            }
         }
-        // Enable logging.
-        install(Logging) {
-            level = LogLevel.NONE
-        }
-    }
     private const val BASE_URL = "http://localhost:8082"
     private const val TENANT_URL = "$BASE_URL/tenants"
     private const val BASE_TENANT_URL = "$TENANT_URL/%s"
     private const val MIRTH_CONFIG_URL = "$BASE_TENANT_URL/mirth-config"
 
-    fun getMirthConfig(tenantId: String): MirthConfig = runBlocking {
-        MockOCIServerClient.setSekiExpectation(tenantId)
-        val url = MIRTH_CONFIG_URL.format(tenantId)
-        httpClient.get(url) {
-            contentType(ContentType.Application.Json)
-        }.body()
-    }
+    fun getMirthConfig(tenantId: String): MirthConfig =
+        runBlocking {
+            MockOCIServerClient.setSekiExpectation(tenantId)
+            val url = MIRTH_CONFIG_URL.format(tenantId)
+            httpClient.get(url) {
+                contentType(ContentType.Application.Json)
+            }.body()
+        }
 
-    fun putMirthConfig(tenantId: String, mirthConfig: MirthConfig) = runBlocking {
+    fun putMirthConfig(
+        tenantId: String,
+        mirthConfig: MirthConfig,
+    ) = runBlocking {
         MockOCIServerClient.setSekiExpectation(tenantId)
         val url = MIRTH_CONFIG_URL.format(tenantId)
         httpClient.put(url) {
@@ -81,22 +86,24 @@ object TenantClient {
         }
     }
 
-    fun putTenant(tenant: ProxyTenant) = runBlocking {
-        MockOCIServerClient.setSekiExpectation(tenant.mnemonic)
-        val url = BASE_TENANT_URL.format(tenant.mnemonic)
-        httpClient.put(url) {
-            contentType(ContentType.Application.Json)
-            setBody(tenant)
+    fun putTenant(tenant: ProxyTenant) =
+        runBlocking {
+            MockOCIServerClient.setSekiExpectation(tenant.mnemonic)
+            val url = BASE_TENANT_URL.format(tenant.mnemonic)
+            httpClient.put(url) {
+                contentType(ContentType.Application.Json)
+                setBody(tenant)
+            }
         }
-    }
 
-    fun getTenant(tenantId: String): ProxyTenant = runBlocking {
-        MockOCIServerClient.setSekiExpectation(tenantId)
-        val url = BASE_TENANT_URL.format(tenantId)
-        httpClient.get(url) {
-            contentType(ContentType.Application.Json)
-        }.body()
-    }
+    fun getTenant(tenantId: String): ProxyTenant =
+        runBlocking {
+            MockOCIServerClient.setSekiExpectation(tenantId)
+            val url = BASE_TENANT_URL.format(tenantId)
+            httpClient.get(url) {
+                contentType(ContentType.Application.Json)
+            }.body()
+        }
 
     data class ProxyTenant(
         val id: Int,
@@ -105,17 +112,17 @@ object TenantClient {
         val availableStart: LocalTime?,
         val availableEnd: LocalTime?,
         val vendor: Vendor,
-        val timezone: String
+        val timezone: String,
     )
 
     @JsonTypeInfo(
         use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.PROPERTY,
-        property = "type"
+        property = "type",
     )
     @JsonSubTypes(
         JsonSubTypes.Type(value = Epic::class, name = "EPIC"),
-        JsonSubTypes.Type(value = Cerner::class, name = "CERNER")
+        JsonSubTypes.Type(value = Cerner::class, name = "CERNER"),
     )
     interface Vendor {
         val vendorType: VendorType
@@ -124,7 +131,7 @@ object TenantClient {
 
     enum class VendorType {
         EPIC,
-        CERNER
+        CERNER,
     }
 
     @JsonTypeName("EPIC")
@@ -144,7 +151,7 @@ object TenantClient {
         val hsi: String?,
         override val instanceName: String,
         val departmentInternalSystem: String,
-        val orderSystem: String?
+        val orderSystem: String?,
     ) : Vendor {
         override val vendorType: VendorType = VendorType.EPIC
     }
@@ -158,7 +165,7 @@ object TenantClient {
         val messagePractitioner: String,
         val messageTopic: String?,
         val messageCategory: String?,
-        val messagePriority: String?
+        val messagePriority: String?,
     ) : Vendor {
         override val vendorType: VendorType = VendorType.CERNER
     }
@@ -166,6 +173,6 @@ object TenantClient {
     data class MirthConfig(
         val locationIds: List<String>,
         val lastUpdated: OffsetDateTime? = null,
-        val blockedResources: List<String>? = null
+        val blockedResources: List<String>? = null,
     )
 }

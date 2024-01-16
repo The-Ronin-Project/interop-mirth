@@ -12,7 +12,7 @@ import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.r4.resource.PractitionerRole
 import com.projectronin.interop.fhir.r4.resource.Resource
-import com.projectronin.interop.mirth.channels.testTenant
+import com.projectronin.interop.mirth.channels.TEST_TENANT
 import org.mockserver.client.MockServerClient
 import org.mockserver.matchers.Times
 import org.mockserver.model.HttpRequest.request
@@ -36,7 +36,7 @@ object MockOCIServerClient {
             request()
                 .withPath(PUBLISH_PATH)
                 .withMethod("PUT"),
-            VerificationTimes.exactly(numTimes)
+            VerificationTimes.exactly(numTimes),
         )
     }
 
@@ -44,23 +44,30 @@ object MockOCIServerClient {
         client.clear(
             request()
                 .withMethod("PUT")
-                .withPath("/n/.*/b/.*/o/raw_data_response.*")
+                .withPath("/n/.*/b/.*/o/raw_data_response.*"),
         )
         client.`when`(
             request()
                 .withMethod("PUT")
-                .withPath("/n/.*/b/.*/o/raw_data_response.*")
+                .withPath("/n/.*/b/.*/o/raw_data_response.*"),
         ).respond(
-            HttpResponse.response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON)
+            HttpResponse.response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON),
         )
     }
 
-    fun createExpectations(resourceType: String, resourceFhirID: String, tenant: String = testTenant) {
+    fun createExpectations(
+        resourceType: String,
+        resourceFhirID: String,
+        tenant: String = TEST_TENANT,
+    ) {
         val objectName = getR4Name(resourceType, resourceFhirID, tenant)
         setPutExpectation(objectName)
     }
 
-    fun createExpectations(resourceIdsByType: Map<String, List<String>>, tenant: String = testTenant) {
+    fun createExpectations(
+        resourceIdsByType: Map<String, List<String>>,
+        tenant: String = TEST_TENANT,
+    ) {
         resourceIdsByType.entries.forEach { entry ->
             entry.value.forEach { createExpectations(entry.key, it, tenant) }
         }
@@ -70,7 +77,7 @@ object MockOCIServerClient {
 
     fun getAllPublishPutsBody(): List<String> =
         client.retrieveRecordedRequests(
-            request().withPath(PUBLISH_PATH).withMethod("PUT")
+            request().withPath(PUBLISH_PATH).withMethod("PUT"),
         ).map { String(it.body.rawBytes) }
 
     @Deprecated("Purpose unclear and appears unused")
@@ -114,7 +121,11 @@ object MockOCIServerClient {
         }
     }
 
-    private fun getR4Name(resourceType: String, resourceFhirID: String, tenant: String = testTenant): String {
+    private fun getR4Name(
+        resourceType: String,
+        resourceFhirID: String,
+        tenant: String = TEST_TENANT,
+    ): String {
         // Mirth's server clock is in UTC, so match that
         val date = ISO_LOCAL_DATE.withZone(ZoneId.from(UTC)).format(Instant.now()) // lol Java dates, graceful as always
         // .localize requires an actual Tenant object,
@@ -131,9 +142,9 @@ object MockOCIServerClient {
             request()
                 .withMethod("PUT")
                 .withPath(getObjectPath(objectName)),
-            Times.exactly(1)
+            Times.exactly(1),
         ).respond(
-            HttpResponse.response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON)
+            HttpResponse.response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON),
         )
     }
 
@@ -141,17 +152,17 @@ object MockOCIServerClient {
         client.clear(
             request()
                 .withMethod("GET")
-                .withPath("/seki/session/validate")
+                .withPath("/seki/session/validate"),
         )
         val response = AuthResponse(User(tenantId), UserSession("2030-03-14T21:16:05"))
         client.`when`(
             request()
                 .withMethod("GET")
                 .withPath("/seki/session/validate"),
-            Times.exactly(1)
+            Times.exactly(1),
         ).respond(
             HttpResponse.response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON)
-                .withBody(JacksonUtil.writeJsonValue(response))
+                .withBody(JacksonUtil.writeJsonValue(response)),
         )
     }
 
@@ -161,17 +172,17 @@ object MockOCIServerClient {
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class AuthResponse(
     val user: User,
-    val userSession: UserSession
+    val userSession: UserSession,
 )
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class User(
-    val tenantId: String?
+    val tenantId: String?,
 )
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class UserSession(
-    val expiresAt: String?
+    val expiresAt: String?,
 )

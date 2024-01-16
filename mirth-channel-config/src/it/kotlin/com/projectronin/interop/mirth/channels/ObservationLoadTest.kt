@@ -24,7 +24,7 @@ import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
-import com.projectronin.interop.mirth.channels.client.mirth.observationLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.OBSERVATION_LOAD_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
@@ -33,9 +33,9 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 class ObservationLoadTest : BaseChannelTest(
-    observationLoadChannelName,
+    OBSERVATION_LOAD_CHANNEL_NAME,
     listOf("Patient", "Observation", "Condition"),
-    listOf("Patient", "Observation", "Condition")
+    listOf("Patient", "Observation", "Condition"),
 ) {
     val patientType = "Patient"
     val observationType = "Observation"
@@ -52,66 +52,78 @@ class ObservationLoadTest : BaseChannelTest(
         val patient2 = patient {}
         val patient2Id = MockEHRTestData.add(patient2)
 
-        val roninPatient1 = patient1.copy(
-            id = Id("$tenantInUse-$patient1Id"),
-            identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
-        )
-        val roninPatient2 = patient2.copy(
-            id = Id("$tenantInUse-$patient2Id"),
-            identifier = patient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id)
-        )
-
-        val observation1 = observation {
-            subject of reference(patientType, patient1Id)
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri
-                            code of ObservationCategoryCodes.VITAL_SIGNS.code
-                        }
-                    )
-                }
+        val roninPatient1 =
+            patient1.copy(
+                id = Id("$tenantInUse-$patient1Id"),
+                identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id),
             )
-            status of "final"
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of CodeSystem.LOINC.uri
-                        display of "Body Weight"
-                        code of Code("29463-7")
-                    }
-                )
-            }
-            effective of nowDate
-            encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
-        }
-
-        val observation2 = observation {
-            subject of reference(patientType, patient2Id)
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri
-                            code of ObservationCategoryCodes.VITAL_SIGNS.code
-                        }
-                    )
-                }
+        val roninPatient2 =
+            patient2.copy(
+                id = Id("$tenantInUse-$patient2Id"),
+                identifier = patient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id),
             )
-            status of "final"
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of CodeSystem.LOINC.uri
-                        display of "Body Weight"
-                        code of Code("29463-7")
+
+        val observation1 =
+            observation {
+                subject of reference(patientType, patient1Id)
+                category of
+                    listOf(
+                        codeableConcept {
+                            coding of
+                                listOf(
+                                    coding {
+                                        system of CodeSystem.OBSERVATION_CATEGORY.uri
+                                        code of ObservationCategoryCodes.VITAL_SIGNS.code
+                                    },
+                                )
+                        },
+                    )
+                status of "final"
+                code of
+                    codeableConcept {
+                        coding of
+                            listOf(
+                                coding {
+                                    system of CodeSystem.LOINC.uri
+                                    display of "Body Weight"
+                                    code of Code("29463-7")
+                                },
+                            )
                     }
-                )
+                effective of nowDate
+                encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
             }
-            effective of nowDate
-            encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
-        }
+
+        val observation2 =
+            observation {
+                subject of reference(patientType, patient2Id)
+                category of
+                    listOf(
+                        codeableConcept {
+                            coding of
+                                listOf(
+                                    coding {
+                                        system of CodeSystem.OBSERVATION_CATEGORY.uri
+                                        code of ObservationCategoryCodes.VITAL_SIGNS.code
+                                    },
+                                )
+                        },
+                    )
+                status of "final"
+                code of
+                    codeableConcept {
+                        coding of
+                            listOf(
+                                coding {
+                                    system of CodeSystem.LOINC.uri
+                                    display of "Body Weight"
+                                    code of Code("29463-7")
+                                },
+                            )
+                    }
+                effective of nowDate
+                encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
+            }
         val observation1ID = MockEHRTestData.add(observation1)
         val observation2ID = MockEHRTestData.add(observation1)
         val observation3ID = MockEHRTestData.add(observation1)
@@ -127,34 +139,40 @@ class ObservationLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations(observationType, observationConditionID, tenantInUse)
         MockOCIServerClient.createExpectations(observationType, observationPat2ID, tenantInUse)
 
-        val condition = condition {
-            stage of listOf(
-                conditionStage {
-                    assessment of listOf(
-                        reference("Observation", observationConditionID)
+        val condition =
+            condition {
+                stage of
+                    listOf(
+                        conditionStage {
+                            assessment of
+                                listOf(
+                                    reference("Observation", observationConditionID),
+                                )
+                        },
                     )
-                }
-            )
-        }
+            }
         val conditionId = MockEHRTestData.add(condition)
 
-        val roninCondition = condition.copy(
-            id = Id("$tenantInUse-$conditionId"),
-            stage = condition.stage.map { stage ->
-                stage.copy(
-                    assessment = stage.assessment.map { reference ->
-                        reference.copy(
-                            id = FHIRString("$tenantInUse-$observationConditionID")
+        val roninCondition =
+            condition.copy(
+                id = Id("$tenantInUse-$conditionId"),
+                stage =
+                    condition.stage.map { stage ->
+                        stage.copy(
+                            assessment =
+                                stage.assessment.map { reference ->
+                                    reference.copy(
+                                        id = FHIRString("$tenantInUse-$observationConditionID"),
+                                    )
+                                },
                         )
-                    }
-                )
-            }
-        )
+                    },
+            )
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(roninPatient1, roninPatient2, roninCondition)
+            resources = listOf(roninPatient1, roninPatient2, roninCondition),
         )
 
         // 2 because we group the Patients and Conditions into individual messages
@@ -168,37 +186,42 @@ class ObservationLoadTest : BaseChannelTest(
         tenantInUse = testTenant
         val patient1 = patient {}
         val patient1Id = MockEHRTestData.add(patient1)
-        val observation = observation {
-            subject of reference(patientType, patient1Id)
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of CodeSystem.OBSERVATION_CATEGORY.uri
-                            code of ObservationCategoryCodes.VITAL_SIGNS.code
-                        }
+        val observation =
+            observation {
+                subject of reference(patientType, patient1Id)
+                category of
+                    listOf(
+                        codeableConcept {
+                            coding of
+                                listOf(
+                                    coding {
+                                        system of CodeSystem.OBSERVATION_CATEGORY.uri
+                                        code of ObservationCategoryCodes.VITAL_SIGNS.code
+                                    },
+                                )
+                        },
                     )
-                }
-            )
-            status of "final"
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of CodeSystem.LOINC.uri
-                        display of "Body Weight"
-                        code of Code("29463-7")
+                status of "final"
+                code of
+                    codeableConcept {
+                        coding of
+                            listOf(
+                                coding {
+                                    system of CodeSystem.LOINC.uri
+                                    display of "Body Weight"
+                                    code of Code("29463-7")
+                                },
+                            )
                     }
-                )
+                encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
             }
-            encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
-        }
         val observationID = MockEHRTestData.add(observation)
         MockOCIServerClient.createExpectations(observationType, observationID, testTenant)
         KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(observationID),
-            resourceType = ResourceType.Observation
+            resourceType = ResourceType.Observation,
         )
 
         waitForMessage(1)
@@ -209,10 +232,10 @@ class ObservationLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `non-existent request errors`() {
         KafkaClient.testingClient.pushLoadEvent(
-            tenantId = testTenant,
+            tenantId = TEST_TENANT,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.Observation
+            resourceType = ResourceType.Observation,
         )
 
         waitForMessage(1)

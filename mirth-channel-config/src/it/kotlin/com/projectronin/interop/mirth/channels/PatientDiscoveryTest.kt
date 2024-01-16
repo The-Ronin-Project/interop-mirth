@@ -25,8 +25,8 @@ import com.projectronin.interop.mirth.channels.client.TenantClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.ChannelMap
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
-import com.projectronin.interop.mirth.channels.client.mirth.patientDiscoverChannelName
-import com.projectronin.interop.mirth.channels.client.mirth.patientLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.PATIENT_DISCOVERY_CHANNEL_NAME
+import com.projectronin.interop.mirth.channels.client.mirth.PATIENT_LOAD_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -43,9 +43,9 @@ import java.time.OffsetDateTime
 import kotlin.time.Duration.Companion.seconds
 
 class PatientDiscoveryTest : BaseChannelTest(
-    patientDiscoverChannelName,
+    PATIENT_DISCOVERY_CHANNEL_NAME,
     listOf("Location", "Patient", "Appointment"),
-    listOf("Patient", "Appointment", "Location")
+    listOf("Patient", "Appointment", "Location"),
 ) {
     private val patientType = "Patient"
 
@@ -66,103 +66,119 @@ class PatientDiscoveryTest : BaseChannelTest(
     fun `channel works with multiple patients`() {
         tenantsToTest().forEach {
             tenantInUse = it
-            val location = location {
-                identifier of listOf(
-                    identifier {
-                        system of "mockEHRDepartmentInternalSystem"
-                        value of "${it}123"
-                    }
-                )
-            }
+            val location =
+                location {
+                    identifier of
+                        listOf(
+                            identifier {
+                                system of "mockEHRDepartmentInternalSystem"
+                                value of "${it}123"
+                            },
+                        )
+                }
             val locationFhirId = MockEHRTestData.add(location)
-            val patient1 = patient {
-                birthDate of date {
-                    year of 1990
-                    month of 1
-                    day of 3
+            val patient1 =
+                patient {
+                    birthDate of
+                        date {
+                            year of 1990
+                            month of 1
+                            day of 3
+                        }
+                    identifier of
+                        listOf(
+                            identifier {
+                                system of "mockPatientInternalSystem"
+                            },
+                            identifier {
+                                system of "mockEHRMRNSystem"
+                                value of "1000000001"
+                            },
+                        )
+                    name of
+                        listOf(
+                            name {
+                                use of "usual" // This is required to generate the Epic response.
+                            },
+                        )
+                    gender of "male"
                 }
-                identifier of listOf(
-                    identifier {
-                        system of "mockPatientInternalSystem"
-                    },
-                    identifier {
-                        system of "mockEHRMRNSystem"
-                        value of "1000000001"
-                    }
-                )
-                name of listOf(
-                    name {
-                        use of "usual" // This is required to generate the Epic response.
-                    }
-                )
-                gender of "male"
-            }
             val patient1Id = MockEHRTestData.add(patient1)
-            val patient2 = patient {
-                birthDate of date {
-                    year of 1990
-                    month of 1
-                    day of 3
+            val patient2 =
+                patient {
+                    birthDate of
+                        date {
+                            year of 1990
+                            month of 1
+                            day of 3
+                        }
+                    identifier of
+                        listOf(
+                            identifier {
+                                system of "mockPatientInternalSystem"
+                            },
+                            identifier {
+                                system of "mockEHRMRNSystem"
+                                value of "1000000002"
+                            },
+                        )
+                    name of
+                        listOf(
+                            name {
+                                use of "usual" // This is required to generate the Epic response.
+                            },
+                        )
+                    gender of "male"
                 }
-                identifier of listOf(
-                    identifier {
-                        system of "mockPatientInternalSystem"
-                    },
-                    identifier {
-                        system of "mockEHRMRNSystem"
-                        value of "1000000002"
-                    }
-                )
-                name of listOf(
-                    name {
-                        use of "usual" // This is required to generate the Epic response.
-                    }
-                )
-                gender of "male"
-            }
             val patient2Id = MockEHRTestData.add(patient2)
 
-            val appointment1 = appointment {
-                status of "arrived"
-                participant of listOf(
-                    participant {
-                        status of "accepted"
-                        actor of reference(patientType, patient2Id)
-                    },
-                    participant {
-                        status of "accepted"
-                        actor of reference("Location", locationFhirId)
-                    }
-                )
-                start of 2.daysFromNow()
-                end of 3.daysFromNow()
-            }
+            val appointment1 =
+                appointment {
+                    status of "arrived"
+                    participant of
+                        listOf(
+                            participant {
+                                status of "accepted"
+                                actor of reference(patientType, patient2Id)
+                            },
+                            participant {
+                                status of "accepted"
+                                actor of reference("Location", locationFhirId)
+                            },
+                        )
+                    start of 2.daysFromNow()
+                    end of 3.daysFromNow()
+                }
 
-            val appointment2 = appointment {
-                status of "arrived"
-                participant of listOf(
-                    participant {
-                        status of "accepted"
-                        actor of reference(patientType, patient1Id)
-                    },
-                    participant {
-                        status of "accepted"
-                        actor of reference("Location", locationFhirId)
-                    }
-                )
-                start of 2.daysFromNow()
-                end of 3.daysFromNow()
-            }
+            val appointment2 =
+                appointment {
+                    status of "arrived"
+                    participant of
+                        listOf(
+                            participant {
+                                status of "accepted"
+                                actor of reference(patientType, patient1Id)
+                            },
+                            participant {
+                                status of "accepted"
+                                actor of reference("Location", locationFhirId)
+                            },
+                        )
+                    start of 2.daysFromNow()
+                    end of 3.daysFromNow()
+                }
             MockEHRTestData.add(appointment1)
             MockEHRTestData.add(appointment2)
 
-            val aidboxLocation1 = location.copy(
-                identifier = location.identifier + tenantIdentifier(it) + fhirIdentifier(locationFhirId)
-            )
+            val aidboxLocation1 =
+                location.copy(
+                    identifier = location.identifier + tenantIdentifier(it) + fhirIdentifier(locationFhirId),
+                )
             AidboxTestData.add(aidboxLocation1)
 
-            val newTenant = TenantClient.getTenant(it)
-                .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
+            val newTenant =
+                TenantClient.getTenant(it)
+                    .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
             TenantClient.putTenant(newTenant)
             TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
         }
@@ -178,46 +194,54 @@ class PatientDiscoveryTest : BaseChannelTest(
         KafkaClient.testingClient.reset()
         tenantsToTest().forEach {
             tenantInUse = it
-            val location = location {
-                identifier of listOf(
-                    identifier {
-                        system of "mockEHRDepartmentInternalSystem"
-                        value of "123"
-                    }
-                )
-            }
-            val locationFhirId = MockEHRTestData.add(location)
-            val patient = patient {
-                birthDate of date {
-                    year of 1990
-                    month of 1
-                    day of 3
+            val location =
+                location {
+                    identifier of
+                        listOf(
+                            identifier {
+                                system of "mockEHRDepartmentInternalSystem"
+                                value of "123"
+                            },
+                        )
                 }
-                identifier of listOf(
-                    identifier {
-                        system of "mockPatientInternalSystem"
-                    },
-                    identifier {
-                        system of "mockEHRMRNSystem"
-                        value of "1000000001"
-                    }
-                )
-                name of listOf(
-                    name {
-                        use of "usual" // This is required to generate the Epic response.
-                    }
-                )
-                gender of "male"
-            }
+            val locationFhirId = MockEHRTestData.add(location)
+            val patient =
+                patient {
+                    birthDate of
+                        date {
+                            year of 1990
+                            month of 1
+                            day of 3
+                        }
+                    identifier of
+                        listOf(
+                            identifier {
+                                system of "mockPatientInternalSystem"
+                            },
+                            identifier {
+                                system of "mockEHRMRNSystem"
+                                value of "1000000001"
+                            },
+                        )
+                    name of
+                        listOf(
+                            name {
+                                use of "usual" // This is required to generate the Epic response.
+                            },
+                        )
+                    gender of "male"
+                }
             MockEHRTestData.add(patient)
 
-            val aidboxLocation1 = location.copy(
-                identifier = location.identifier + tenantIdentifier(testTenant) + fhirIdentifier(locationFhirId)
-            )
+            val aidboxLocation1 =
+                location.copy(
+                    identifier = location.identifier + tenantIdentifier(TEST_TENANT) + fhirIdentifier(locationFhirId),
+                )
 
             AidboxTestData.add(aidboxLocation1)
-            val newTenant = TenantClient.getTenant(it)
-                .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
+            val newTenant =
+                TenantClient.getTenant(it)
+                    .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
             TenantClient.putTenant(newTenant)
             TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
         }
@@ -231,74 +255,84 @@ class PatientDiscoveryTest : BaseChannelTest(
     fun `channel kicks off dag`() {
         KafkaClient.testingClient.reset()
 
-        val patientChannelId = ChannelMap.installedDag[patientLoadChannelName]!!
+        val patientChannelId = ChannelMap.installedDag[PATIENT_LOAD_CHANNEL_NAME]!!
         MirthClient.clearChannelMessages(patientChannelId)
         tenantsToTest().forEach {
             tenantInUse = it
 
-            val location = location {
-                identifier of listOf(
-                    identifier {
-                        system of "mockEHRDepartmentInternalSystem"
-                        value of "123"
-                    }
-                )
-            }
-            val locationFhirId = MockEHRTestData.add(location)
-            val patient1 = patient {
-                birthDate of date {
-                    year of 1990
-                    month of 1
-                    day of 3
+            val location =
+                location {
+                    identifier of
+                        listOf(
+                            identifier {
+                                system of "mockEHRDepartmentInternalSystem"
+                                value of "123"
+                            },
+                        )
                 }
-                identifier of listOf(
-                    identifier {
-                        system of "mockPatientInternalSystem"
-                    },
-                    identifier {
-                        system of "mockEHRMRNSystem"
-                        value of "1000000001"
-                    }
-                )
-                name of listOf(
-                    name {
-                        use of "usual" // This is required to generate the Epic response.
-                    },
-                    name {
-                        use of "official"
-                    }
-                )
-                gender of "male"
-                telecom of emptyList()
-            }
+            val locationFhirId = MockEHRTestData.add(location)
+            val patient1 =
+                patient {
+                    birthDate of
+                        date {
+                            year of 1990
+                            month of 1
+                            day of 3
+                        }
+                    identifier of
+                        listOf(
+                            identifier {
+                                system of "mockPatientInternalSystem"
+                            },
+                            identifier {
+                                system of "mockEHRMRNSystem"
+                                value of "1000000001"
+                            },
+                        )
+                    name of
+                        listOf(
+                            name {
+                                use of "usual" // This is required to generate the Epic response.
+                            },
+                            name {
+                                use of "official"
+                            },
+                        )
+                    gender of "male"
+                    telecom of emptyList()
+                }
             val patient1Id = MockEHRTestData.add(patient1)
 
-            val appointment1 = appointment {
-                status of "arrived"
-                participant of listOf(
-                    participant {
-                        status of "accepted"
-                        actor of reference(patientType, patient1Id)
-                    },
-                    participant {
-                        status of "accepted"
-                        actor of reference("Location", locationFhirId)
-                    }
-                )
-                start of 2.daysFromNow()
-                end of 3.daysFromNow()
-            }
+            val appointment1 =
+                appointment {
+                    status of "arrived"
+                    participant of
+                        listOf(
+                            participant {
+                                status of "accepted"
+                                actor of reference(patientType, patient1Id)
+                            },
+                            participant {
+                                status of "accepted"
+                                actor of reference("Location", locationFhirId)
+                            },
+                        )
+                    start of 2.daysFromNow()
+                    end of 3.daysFromNow()
+                }
             MockEHRTestData.add(appointment1)
 
-            val aidboxLocation1 = location.copy(
-                identifier = location.identifier + tenantIdentifier(it) + fhirIdentifier(locationFhirId)
-            )
+            val aidboxLocation1 =
+                location.copy(
+                    identifier = location.identifier + tenantIdentifier(it) + fhirIdentifier(locationFhirId),
+                )
 
             AidboxTestData.add(aidboxLocation1)
             TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
             MockOCIServerClient.createExpectations("patient", patient1Id, it)
-            val newTenant = TenantClient.getTenant(it)
-                .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
+            val newTenant =
+                TenantClient.getTenant(it)
+                    .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
             TenantClient.putTenant(newTenant)
             TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf(locationFhirId)))
         }
@@ -312,56 +346,62 @@ class PatientDiscoveryTest : BaseChannelTest(
     @Test
     fun `backfill kicks off dag`() {
         KafkaClient.testingClient.reset()
-        val patientChannelId = ChannelMap.installedDag[patientLoadChannelName]!!
+        val patientChannelId = ChannelMap.installedDag[PATIENT_LOAD_CHANNEL_NAME]!!
         MirthClient.clearChannelMessages(patientChannelId)
         tenantsToTest().forEach {
             tenantInUse = it
-            val patient1 = patient {
-                birthDate of date {
-                    year of 1990
-                    month of 1
-                    day of 3
+            val patient1 =
+                patient {
+                    birthDate of
+                        date {
+                            year of 1990
+                            month of 1
+                            day of 3
+                        }
+                    identifier of
+                        listOf(
+                            identifier {
+                                system of "mockPatientInternalSystem"
+                            },
+                            identifier {
+                                system of "mockEHRMRNSystem"
+                                value of "1000000001"
+                            },
+                        )
+                    name of
+                        listOf(
+                            name {
+                                use of "usual" // This is required to generate the Epic response.
+                            },
+                            name {
+                                use of "official"
+                            },
+                        )
+                    gender of "male"
+                    telecom of emptyList()
                 }
-                identifier of listOf(
-                    identifier {
-                        system of "mockPatientInternalSystem"
-                    },
-                    identifier {
-                        system of "mockEHRMRNSystem"
-                        value of "1000000001"
-                    }
-                )
-                name of listOf(
-                    name {
-                        use of "usual" // This is required to generate the Epic response.
-                    },
-                    name {
-                        use of "official"
-                    }
-                )
-                gender of "male"
-                telecom of emptyList()
-            }
             val patient1Id = MockEHRTestData.add(patient1)
 
             runBlocking {
                 // make a new backfill
-                val backfillId = BackfillClient.backfillClient.postBackfill(
-                    newBackfill = NewBackfill(
-                        tenantInUse,
-                        listOf("123"),
-                        startDate = LocalDate.now().minusYears(1),
-                        endDate = LocalDate.now()
-                    )
-                ).id!!
+                val backfillId =
+                    BackfillClient.backfillClient.postBackfill(
+                        newBackfill =
+                            NewBackfill(
+                                tenantInUse,
+                                listOf("123"),
+                                startDate = LocalDate.now().minusYears(1),
+                                endDate = LocalDate.now(),
+                            ),
+                    ).id!!
                 // complete the undiscovered queues so they don't accidentally resolve the and add the queues
-                val undiscovereEntries = BackfillClient.discoveryQueueClient.getDiscoveryQueueEntries(testTenant)
+                val undiscovereEntries = BackfillClient.discoveryQueueClient.getDiscoveryQueueEntries(TEST_TENANT)
                 undiscovereEntries.forEach {
                     BackfillClient.discoveryQueueClient.updateDiscoveryQueueEntryByID(
                         it.id,
                         UpdateDiscoveryEntry(
-                            DiscoveryQueueStatus.DISCOVERED
-                        )
+                            DiscoveryQueueStatus.DISCOVERED,
+                        ),
                     )
                 }
                 BackfillClient.queueClient.postQueueEntry(backfillId, listOf(NewQueueEntry(backfillId, patient1Id)))
@@ -372,20 +412,21 @@ class PatientDiscoveryTest : BaseChannelTest(
                 TenantClient.MirthConfig(
                     locationIds = listOf("123"),
                     // make it think we just ran the nightly load
-                    lastUpdated = OffsetDateTime.now()
-                )
+                    lastUpdated = OffsetDateTime.now(),
+                ),
             )
             MockOCIServerClient.createExpectations("patient", patient1Id, it)
-            val newTenant = TenantClient.getTenant(it)
-                .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
+            val newTenant =
+                TenantClient.getTenant(it)
+                    .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
             TenantClient.putTenant(newTenant)
             TenantClient.putMirthConfig(
                 it,
                 TenantClient.MirthConfig(
                     locationIds = listOf("123"),
                     // make it think we just ran the nightly load
-                    lastUpdated = OffsetDateTime.now()
-                )
+                    lastUpdated = OffsetDateTime.now(),
+                ),
             )
         }
         MirthClient.deployChannel(testChannelId)
@@ -419,28 +460,32 @@ class PatientDiscoveryTest : BaseChannelTest(
         KafkaClient.testingClient.reset()
         MockOCIServerClient.client.clear(HttpRequest.request().withMethod("GET").withPath("/subjects"))
 
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
+        val patient1 =
+            patient {
+                birthDate of
+                    date {
+                        year of 1990
+                        month of 1
+                        day of 3
+                    }
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockPatientInternalSystem"
+                        },
+                        identifier {
+                            system of "mockEHRMRNSystem"
+                            value of "1000000001"
+                        },
+                    )
+                name of
+                    listOf(
+                        name {
+                            use of "usual" // This is required to generate the Epic response.
+                        },
+                    )
+                gender of "male"
             }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-            gender of "male"
-        }
         val patient1Id = MockEHRTestData.add(patient1)
         val tenantSubjectJson =
             tenantsToTest().toArray().joinToString(",") { """{ "roninFhirId" : "$it-$patient1Id" }""" }
@@ -450,17 +495,18 @@ class PatientDiscoveryTest : BaseChannelTest(
                 .withMethod("GET")
                 .withPath("/subjects")
                 .withQueryStringParameter("activeIdsOnly", "true"),
-            Times.exactly(2)
+            Times.exactly(2),
         ).respond(
             HttpResponse.response().withStatusCode(200).withContentType(MediaType.APPLICATION_JSON)
-                .withBody("[$tenantSubjectJson]")
+                .withBody("[$tenantSubjectJson]"),
         )
 
         tenantsToTest().forEach {
             tenantInUse = it
 
-            val newTenant = TenantClient.getTenant(it)
-                .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
+            val newTenant =
+                TenantClient.getTenant(it)
+                    .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
             TenantClient.putTenant(newTenant)
             TenantClient.putMirthConfig(it, TenantClient.MirthConfig(locationIds = listOf("ClinicalTrialLoadLocation")))
         }
@@ -472,14 +518,17 @@ class PatientDiscoveryTest : BaseChannelTest(
         assertAllConnectorsStatus(messages)
 
         tenantsToTest().forEach { tenant ->
-            val connector = messages.flatMap { it.connectorMessages.entry }.singleOrNull { connector ->
-                connector.connectorMessage.connectorName == "Request Patients" && connector.connectorMessage.metaDataMap?.entry?.any { e ->
-                    e.string == listOf(
-                        "TENANT",
-                        tenant
-                    )
-                } == true
-            }
+            val connector =
+                messages.flatMap { it.connectorMessages.entry }.singleOrNull { connector ->
+                    connector.connectorMessage.connectorName == "Request Patients" && connector.connectorMessage.metaDataMap?.entry?.any {
+                            e ->
+                        e.string ==
+                            listOf(
+                                "TENANT",
+                                tenant,
+                            )
+                    } == true
+                }
 
             assertEquals("[\"Patient/$patient1Id\"]", connector?.connectorMessage?.raw?.content)
         }

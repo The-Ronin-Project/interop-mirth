@@ -18,74 +18,81 @@ import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.TenantClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
-import com.projectronin.interop.mirth.channels.client.mirth.onboardFlagChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.ONBOARD_FLAG_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
 
+@Suppress("ktlint:standard:max-line-length")
 class OnboardFlagTest : BaseChannelTest(
-    onboardFlagChannelName,
+    ONBOARD_FLAG_CHANNEL_NAME,
     listOf("Patient"),
-    listOf("Flag", "Patient")
+    listOf("Flag", "Patient"),
 ) {
-
-    private val onboardTopic = ExternalTopic(
-        systemName = "chokuto",
-        topicName = "oci.us-phoenix-1.chokuto.patient-onboarding-status-publish.v1",
-        dataSchema = "https://github.com/projectronin/contract-event-prodeng-patient-onboarding-status/blob/main/v1/patient-onboarding-status.schema.json"
-    )
+    private val onboardTopic =
+        ExternalTopic(
+            systemName = "chokuto",
+            topicName = "oci.us-phoenix-1.chokuto.patient-onboarding-status-publish.v1",
+            dataSchema = "https://github.com/projectronin/contract-event-prodeng-patient-onboarding-status/blob/main/v1/patient-onboarding-status.schema.json",
+        )
 
     @Test
     fun `onboard flag service - happy path`() {
-        tenantInUse = testTenant
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
+        tenantInUse = TEST_TENANT
+        val patient1 =
+            patient {
+                birthDate of
+                    date {
+                        year of 1990
+                        month of 1
+                        day of 3
+                    }
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockPatientInternalSystem"
+                        },
+                        identifier {
+                            system of "mockEHRMRNSystem"
+                            value of "1000000001"
+                        },
+                    )
+                name of
+                    listOf(
+                        name {
+                            use of "usual" // This is required to generate the Epic response.
+                        },
+                        name {
+                            use of "official"
+                        },
+                    )
+                gender of "male"
+                telecom of emptyList()
             }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                },
-                name {
-                    use of "official"
-                }
-            )
-            gender of "male"
-            telecom of emptyList()
-        }
         val patient1Id = MockEHRTestData.add(patient1)
-        MockOCIServerClient.createExpectations("patient", patient1Id, testTenant)
+        MockOCIServerClient.createExpectations("patient", patient1Id, TEST_TENANT)
         val fakeAidboxPatientId = "$tenantInUse-$patient1Id"
-        val fakeAidboxPatient = patient1.copy(
-            id = Id(fakeAidboxPatientId),
-            identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
-        )
+        val fakeAidboxPatient =
+            patient1.copy(
+                id = Id(fakeAidboxPatientId),
+                identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id),
+            )
         AidboxTestData.add(fakeAidboxPatient)
 
-        val event = KafkaEvent(
-            "patient",
-            "onboarding",
-            KafkaAction.CREATE,
-            "",
-            PatientOnboardingStatus(
-                patient1Id,
-                testTenant,
-                PatientOnboardingStatus.OnboardAction.ONBOARD,
-                LocalDateTime.now().toString()
+        val event =
+            KafkaEvent(
+                "patient",
+                "onboarding",
+                KafkaAction.CREATE,
+                "",
+                PatientOnboardingStatus(
+                    patient1Id,
+                    TEST_TENANT,
+                    PatientOnboardingStatus.OnboardAction.ONBOARD,
+                    LocalDateTime.now().toString(),
+                ),
             )
-        )
 
         KafkaClient.testingClient.client.publishEvents(onboardTopic, listOf(event))
 
@@ -96,59 +103,65 @@ class OnboardFlagTest : BaseChannelTest(
 
     @Test
     fun `onboard flag service - filter works`() {
-        tenantInUse = testTenant
+        tenantInUse = TEST_TENANT
         val oldConfig = TenantClient.getMirthConfig(tenantInUse)
         TenantClient.putMirthConfig(
             tenantInUse,
-            TenantClient.MirthConfig(locationIds = listOf("12345"), blockedResources = listOf("PatientOnboardFlag"))
+            TenantClient.MirthConfig(locationIds = listOf("12345"), blockedResources = listOf("PatientOnboardFlag")),
         )
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
+        val patient1 =
+            patient {
+                birthDate of
+                    date {
+                        year of 1990
+                        month of 1
+                        day of 3
+                    }
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockPatientInternalSystem"
+                        },
+                        identifier {
+                            system of "mockEHRMRNSystem"
+                            value of "1000000001"
+                        },
+                    )
+                name of
+                    listOf(
+                        name {
+                            use of "usual" // This is required to generate the Epic response.
+                        },
+                        name {
+                            use of "official"
+                        },
+                    )
+                gender of "male"
+                telecom of emptyList()
             }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                },
-                name {
-                    use of "official"
-                }
-            )
-            gender of "male"
-            telecom of emptyList()
-        }
         val patient1Id = MockEHRTestData.add(patient1)
-        MockOCIServerClient.createExpectations("patient", patient1Id, testTenant)
+        MockOCIServerClient.createExpectations("patient", patient1Id, TEST_TENANT)
         val fakeAidboxPatientId = "$tenantInUse-$patient1Id"
-        val fakeAidboxPatient = patient1.copy(
-            id = Id(fakeAidboxPatientId),
-            identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
-        )
+        val fakeAidboxPatient =
+            patient1.copy(
+                id = Id(fakeAidboxPatientId),
+                identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id),
+            )
         AidboxTestData.add(fakeAidboxPatient)
 
-        val event = KafkaEvent(
-            "patient",
-            "onboarding",
-            KafkaAction.CREATE,
-            "",
-            PatientOnboardingStatus(
-                patient1Id,
-                testTenant,
-                PatientOnboardingStatus.OnboardAction.ONBOARD,
-                LocalDateTime.now().toString()
+        val event =
+            KafkaEvent(
+                "patient",
+                "onboarding",
+                KafkaAction.CREATE,
+                "",
+                PatientOnboardingStatus(
+                    patient1Id,
+                    TEST_TENANT,
+                    PatientOnboardingStatus.OnboardAction.ONBOARD,
+                    LocalDateTime.now().toString(),
+                ),
             )
-        )
 
         KafkaClient.testingClient.client.publishEvents(onboardTopic, listOf(event))
 

@@ -9,13 +9,13 @@ import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.ProxyClient
-import com.projectronin.interop.mirth.channels.client.mirth.kafkaPractitionerQueueChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.KAFKA_PRACTITIONER_QUEUE_CHANNEL_NAME
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import kotlin.random.Random
 
-class KafkaPractitionerQueueTest : BaseChannelTest(kafkaPractitionerQueueChannelName, listOf("Practitioner")) {
+class KafkaPractitionerQueueTest : BaseChannelTest(KAFKA_PRACTITIONER_QUEUE_CHANNEL_NAME, listOf("Practitioner")) {
     val practitionerType = "Practitioner"
 
     @ParameterizedTest
@@ -23,22 +23,25 @@ class KafkaPractitionerQueueTest : BaseChannelTest(kafkaPractitionerQueueChannel
     fun `practitioners can be queued`(testTenant: String) {
         tenantInUse = testTenant
         val mrn = Random.nextInt(10000, 99999).toString()
-        val practitioner = practitioner {
-            identifier of listOf(
-                identifier {
-                    system of "mockPractitionerInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of mrn
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                }
-            )
-        }
+        val practitioner =
+            practitioner {
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockPractitionerInternalSystem"
+                        },
+                        identifier {
+                            system of "mockEHRMRNSystem"
+                            value of mrn
+                        },
+                    )
+                name of
+                    listOf(
+                        name {
+                            use of "usual" // This is required to generate the Epic response.
+                        },
+                    )
+            }
         val fhirId = MockEHRTestData.add(practitioner)
 
         MockOCIServerClient.createExpectations(practitionerType, fhirId, testTenant)

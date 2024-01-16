@@ -31,11 +31,14 @@ data class ConnectorMessage(
     val status: String,
     val response: Response?,
     val raw: Response?,
-    val metaDataMap: MetaDataMap?
+    val metaDataMap: MetaDataMap?,
 )
 
 class ConnectorMessagesDeserializer : StdDeserializer<ConnectorMessages>(ConnectorMessages::class.java) {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): ConnectorMessages {
+    override fun deserialize(
+        p: JsonParser,
+        ctxt: DeserializationContext,
+    ): ConnectorMessages {
         val node = p.codec.readTree<JsonNode>(p) ?: throw JsonParseException(p, "Unable to parse node")
         val entry = node.get("entry")
         return if (!entry.isArray) {
@@ -54,7 +57,10 @@ data class MetaDataMap(val entry: List<MetaDataMapEntry>)
 data class MetaDataMapEntry(val string: List<String>)
 
 class MetaDataMapEntryDeserializer : StdDeserializer<MetaDataMapEntry>(MetaDataMapEntry::class.java) {
-    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): MetaDataMapEntry {
+    override fun deserialize(
+        p: JsonParser,
+        ctxt: DeserializationContext,
+    ): MetaDataMapEntry {
         val node = p.codec.readTree<JsonNode>(p) ?: throw JsonParseException(p, "Unable to parse node")
         val entry = node.get("string")
         return if (entry.isNull) {

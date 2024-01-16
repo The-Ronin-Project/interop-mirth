@@ -18,7 +18,7 @@ import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
-import com.projectronin.interop.mirth.channels.client.mirth.practitionerLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.PRACTITIONER_LOAD_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -27,12 +27,12 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.OffsetDateTime
 
+@Suppress("ktlint:standard:max-line-length")
 class PractitionerLoadTest : BaseChannelTest(
-    practitionerLoadChannelName,
+    PRACTITIONER_LOAD_CHANNEL_NAME,
     listOf("Appointment", "Practitioner"),
-    listOf("Appointment", "Practitioner")
+    listOf("Appointment", "Practitioner"),
 ) {
-
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `repeat appointments are ignored`(testTenant: String) {
@@ -49,54 +49,64 @@ class PractitionerLoadTest : BaseChannelTest(
         // mock: appointment at the EHR got published to Ronin
         val startDate = 2.daysFromNow()
         val endDate = 3.daysFromNow()
-        val fakeAppointment = appointment {
-            status of "pending"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference("Patient", fakePatientId)
-                },
-                participant {
-                    status of "accepted"
-                    actor of reference("Practitioner", fakePractitionerId)
-                }
-            )
-            minutesDuration of 8
-            start of startDate
-            end of endDate
-        }
+        val fakeAppointment =
+            appointment {
+                status of "pending"
+                participant of
+                    listOf(
+                        participant {
+                            status of "accepted"
+                            actor of reference("Patient", fakePatientId)
+                        },
+                        participant {
+                            status of "accepted"
+                            actor of reference("Practitioner", fakePractitionerId)
+                        },
+                    )
+                minutesDuration of 8
+                start of startDate
+                end of endDate
+            }
         val fakeAppointmentId = MockEHRTestData.add(fakeAppointment)
         val fakeAidboxAppointmentId = "$tenantInUse-$fakeAppointmentId"
-        val fakeAidboxAppointment = fakeAppointment.copy(
-            id = Id(fakeAidboxAppointmentId),
-            identifier = fakeAppointment.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(fakeAppointmentId),
-            participant = fakeAppointment.participant.map { participant ->
-                if (participant.actor?.reference?.value?.contains("Practitioner") == true) {
-                    participant.copy(
-                        actor = participant.actor?.copy(
-                            id = FHIRString("$testTenant-$fakePractitionerId"),
-                            reference = FHIRString("Practitioner/$testTenant-$fakePractitionerId")
-                        )
-                    )
-                } else {
-                    participant
-                }
-            }
-        )
+        val fakeAidboxAppointment =
+            fakeAppointment.copy(
+                id = Id(fakeAidboxAppointmentId),
+                identifier =
+                    fakeAppointment.identifier + tenantIdentifier(tenantInUse) +
+                        fhirIdentifier(
+                            fakeAppointmentId,
+                        ),
+                participant =
+                    fakeAppointment.participant.map { participant ->
+                        if (participant.actor?.reference?.value?.contains("Practitioner") == true) {
+                            participant.copy(
+                                actor =
+                                    participant.actor?.copy(
+                                        id = FHIRString("$testTenant-$fakePractitionerId"),
+                                        reference = FHIRString("Practitioner/$testTenant-$fakePractitionerId"),
+                                    ),
+                            )
+                        } else {
+                            participant
+                        }
+                    },
+            )
         AidboxTestData.add(fakeAidboxAppointment)
 
         // mock: appointment-publish event
         MockOCIServerClient.createExpectations("Appointment", fakeAppointmentId, tenantInUse)
 
-        val metadata = Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now()
-        )
+        val metadata =
+            Metadata(
+                runId = "123456",
+                runDateTime = OffsetDateTime.now(),
+            )
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxAppointment),
-            metadata = metadata
+            metadata = metadata,
         )
 
         waitForMessage(1)
@@ -111,7 +121,7 @@ class PractitionerLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxAppointment),
-            metadata = metadata
+            metadata = metadata,
         )
 
         waitForMessage(2)
@@ -123,7 +133,11 @@ class PractitionerLoadTest : BaseChannelTest(
         // The message IDs are actually in reverse order, so grabbing the first
         val publishResponse =
             messageList2.first().destinationMessages.find { it.connectorName == "Publish Practitioners" }!!.response!!
-        assertTrue(publishResponse.content.contains("<message>All requested resources have already been processed this run: 123456:Practitioner:null:$testTenant:$fakePractitionerId</message>"))
+        assertTrue(
+            publishResponse.content.contains(
+                "<message>All requested resources have already been processed this run: 123456:Practitioner:null:$testTenant:$fakePractitionerId</message>",
+            ),
+        )
     }
 
     @ParameterizedTest
@@ -142,43 +156,49 @@ class PractitionerLoadTest : BaseChannelTest(
 
         val startDate = 2.daysFromNow()
         val endDate = 3.daysFromNow()
-        val fakeAppointment1 = appointment {
-            status of "pending"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference("Practitioner", fakePractitioner1Id)
-                }
-            )
-            minutesDuration of 8
-            start of startDate
-            end of endDate
-        }
-        val fakeAppointment2 = appointment {
-            status of "pending"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference("Practitioner", fakePractitioner2Id)
-                }
-            )
-            minutesDuration of 8
-            start of startDate
-            end of endDate
-        }
+        val fakeAppointment1 =
+            appointment {
+                status of "pending"
+                participant of
+                    listOf(
+                        participant {
+                            status of "accepted"
+                            actor of reference("Practitioner", fakePractitioner1Id)
+                        },
+                    )
+                minutesDuration of 8
+                start of startDate
+                end of endDate
+            }
+        val fakeAppointment2 =
+            appointment {
+                status of "pending"
+                participant of
+                    listOf(
+                        participant {
+                            status of "accepted"
+                            actor of reference("Practitioner", fakePractitioner2Id)
+                        },
+                    )
+                minutesDuration of 8
+                start of startDate
+                end of endDate
+            }
         val appointment1Id = MockEHRTestData.add(fakeAppointment1)
         val appointment2Id = MockEHRTestData.add(fakeAppointment2)
 
         val aidboxAppointment1Id = "$tenantInUse-$appointment1Id"
         val aidboxAppointment2Id = "$tenantInUse-$appointment2Id"
-        val aidboxAppointment1 = fakeAppointment1.copy(
-            id = Id(aidboxAppointment1Id),
-            identifier = fakeAppointment1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appointment1Id)
-        )
-        val aidboxAppointment2 = fakeAppointment2.copy(
-            id = Id(aidboxAppointment2Id),
-            identifier = fakeAppointment2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appointment2Id)
-        )
+        val aidboxAppointment1 =
+            fakeAppointment1.copy(
+                id = Id(aidboxAppointment1Id),
+                identifier = fakeAppointment1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appointment1Id),
+            )
+        val aidboxAppointment2 =
+            fakeAppointment2.copy(
+                id = Id(aidboxAppointment2Id),
+                identifier = fakeAppointment2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appointment2Id),
+            )
         AidboxTestData.add(aidboxAppointment1)
         AidboxTestData.add(aidboxAppointment2)
 
@@ -188,7 +208,7 @@ class PractitionerLoadTest : BaseChannelTest(
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(aidboxAppointment1, aidboxAppointment2)
+            resources = listOf(aidboxAppointment1, aidboxAppointment2),
         )
         waitForMessage(1)
         assertEquals(2, getAidboxResourceCount("Practitioner"))
@@ -207,7 +227,7 @@ class PractitionerLoadTest : BaseChannelTest(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakePractitionerId),
-            resourceType = ResourceType.Practitioner
+            resourceType = ResourceType.Practitioner,
         )
         waitForMessage(1)
 
@@ -220,10 +240,10 @@ class PractitionerLoadTest : BaseChannelTest(
     @Test
     fun `non-existent request errors`() {
         KafkaClient.testingClient.pushLoadEvent(
-            tenantId = testTenant,
+            tenantId = TEST_TENANT,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.Practitioner
+            resourceType = ResourceType.Practitioner,
         )
         waitForMessage(1)
         assertEquals(0, getAidboxResourceCount("Practitioner"))

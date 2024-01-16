@@ -38,7 +38,7 @@ class MDMQueueTest {
     // Personally, I'm sick of misspelling one of these and having my test blow up while developing
     private val documentReference = "DocumentReference"
     private val binary = "Binary"
-    private val testChannelName = "$testTenant-$channelName"
+    private val testChannelName = "$TEST_TENANT-$channelName"
     private val testChannelId = installChannel()
 
     @BeforeEach
@@ -53,17 +53,19 @@ class MDMQueueTest {
         MockEHRTestData.purge()
         AidboxTestData.purge()
     }
+
     private fun clearMessages() {
         MirthClient.clearAllStatistics()
         MirthClient.clearChannelMessages(testChannelId)
     }
+
     private fun installChannel(): String {
         val channelFile = File("channels/$channelName/channel/$channelName.xml")
         val documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder()
         val document = documentBuilder.parse(channelFile)
 
         val channelId = document.getElementsByTagName("id").item(0).firstChild
-        val updatedChannelId = "$testTenant-${channelId.textContent}".substring(0, maxChannelId)
+        val updatedChannelId = "$TEST_TENANT-${channelId.textContent}".substring(0, MAX_CHANNEL_ID)
         channelId.textContent = updatedChannelId
 
         val channelName = document.getElementsByTagName("name").item(0).firstChild
@@ -120,28 +122,40 @@ class MDMQueueTest {
         assertEquals(0, getMockEHRResourceCount(documentReference))
         assertEquals(0, getMockEHRResourceCount(binary))
 
-        val aidboxPractitioner = mockEHRPractitioner.copy(
-            identifier = mockEHRPractitioner.identifier + tenantIdentifier(testTenant) + fhirIdentifier(practitionerId),
-            id = Id("$testTenant-$practitionerId")
-        )
-        val aidboxPatient = mockEHRPatient.copy(
-            identifier = mockEHRPatient.identifier + tenantIdentifier(testTenant) + fhirIdentifier(patientId) +
-                Identifier(type = CodeableConcepts.RONIN_MRN, system = CodeSystem.RONIN_MRN.uri, value = "Hl7ME".asFHIR()),
-            id = Id("$testTenant-$patientId")
-        )
+        val aidboxPractitioner =
+            mockEHRPractitioner.copy(
+                identifier =
+                    mockEHRPractitioner.identifier + tenantIdentifier(TEST_TENANT) +
+                        fhirIdentifier(
+                            practitionerId,
+                        ),
+                id = Id("$TEST_TENANT-$practitionerId"),
+            )
+        val aidboxPatient =
+            mockEHRPatient.copy(
+                identifier =
+                    mockEHRPatient.identifier + tenantIdentifier(TEST_TENANT) + fhirIdentifier(patientId) +
+                        Identifier(
+                            type = CodeableConcepts.RONIN_MRN,
+                            system = CodeSystem.RONIN_MRN.uri,
+                            value = "Hl7ME".asFHIR(),
+                        ),
+                id = Id("$TEST_TENANT-$patientId"),
+            )
         val aidboxPractitionerId = AidboxTestData.add(aidboxPractitioner)
         val aidboxPatientId = AidboxTestData.add(aidboxPatient)
 
-        val noteInput = mapOf(
-            "datetime" to "202206011250",
-            "patientId" to aidboxPatientId,
-            "patientIdType" to "FHIR",
-            "practitionerFhirId" to aidboxPractitionerId,
-            "noteText" to "integration testing\nsecond line",
-            "isAlert" to false,
-            "noteSender" to "PRACTITIONER"
-        )
-        val documentID = ProxyClient.sendNote(noteInput, testTenant)["data"]["sendNote"].asText()
+        val noteInput =
+            mapOf(
+                "datetime" to "202206011250",
+                "patientId" to aidboxPatientId,
+                "patientIdType" to "FHIR",
+                "practitionerFhirId" to aidboxPractitionerId,
+                "noteText" to "integration testing\nsecond line",
+                "isAlert" to false,
+                "noteSender" to "PRACTITIONER",
+            )
+        val documentID = ProxyClient.sendNote(noteInput, TEST_TENANT)["data"]["sendNote"].asText()
         assertNotNull(documentID)
 
         deployAndStartChannel(true)

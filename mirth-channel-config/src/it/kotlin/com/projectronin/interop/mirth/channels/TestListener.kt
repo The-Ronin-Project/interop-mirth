@@ -7,7 +7,10 @@ import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.api.extension.TestWatcher
 
 class TestListener : TestWatcher, AfterTestExecutionCallback {
-    override fun testFailed(context: ExtensionContext, cause: Throwable) {
+    override fun testFailed(
+        context: ExtensionContext,
+        cause: Throwable,
+    ) {
         MockEHRTestData.purge()
         AidboxTestData.purge()
     }

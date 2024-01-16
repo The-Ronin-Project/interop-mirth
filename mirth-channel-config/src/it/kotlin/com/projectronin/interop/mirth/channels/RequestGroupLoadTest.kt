@@ -11,42 +11,45 @@ import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
-import com.projectronin.interop.mirth.channels.client.mirth.requestGroupLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.REQUEST_GROUP_LOAD_CHANNEL_NAME
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class RequestGroupLoadTest : BaseChannelTest(
-    requestGroupLoadChannelName,
+    REQUEST_GROUP_LOAD_CHANNEL_NAME,
     listOf("CarePlan", "RequestGroup"),
-    listOf("CarePlan", "RequestGroup")
+    listOf("CarePlan", "RequestGroup"),
 ) {
     @Test
     fun `channel works`() {
-        tenantInUse = testTenant
+        tenantInUse = TEST_TENANT
 
-        val fakerRequestGroup = requestGroup {
-            intent of Code("plan")
-            status of Code("active")
-            subject of reference("Patient", "123")
-        }
+        val fakerRequestGroup =
+            requestGroup {
+                intent of Code("plan")
+                status of Code("active")
+                subject of reference("Patient", "123")
+            }
         val fakeRequestGroupId = MockEHRTestData.add(fakerRequestGroup)
 
-        val fakeCarePlan = carePlan {
-            id of Id("123") // why isn't this automatically generated?
-            activity of listOf(
-                carePlanActivity {
-                    reference of reference("RequestGroup", fakeRequestGroupId)
-                }
-            )
-            status of Code("active") // generator isn't set up right so we need to override this
-        }
+        val fakeCarePlan =
+            carePlan {
+                id of Id("123") // why isn't this automatically generated?
+                activity of
+                    listOf(
+                        carePlanActivity {
+                            reference of reference("RequestGroup", fakeRequestGroupId)
+                        },
+                    )
+                status of Code("active") // generator isn't set up right so we need to override this
+            }
         MockEHRTestData.add(fakeCarePlan)
         MockOCIServerClient.createExpectations("RequestGroup", fakeRequestGroupId, tenantInUse)
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(fakeCarePlan)
+            resources = listOf(fakeCarePlan),
         )
 
         waitForMessage(1)
@@ -55,21 +58,22 @@ class RequestGroupLoadTest : BaseChannelTest(
 
     @Test
     fun `channel works for ad-hoc requests`() {
-        tenantInUse = testTenant
+        tenantInUse = TEST_TENANT
         // mock: practitioner at the EHR
-        val fakerRequestGroup = requestGroup {
-            intent of Code("plan")
-            status of Code("active")
-            subject of reference("Patient", "123")
-        }
+        val fakerRequestGroup =
+            requestGroup {
+                intent of Code("plan")
+                status of Code("active")
+                subject of reference("Patient", "123")
+            }
         val fakeRequestGroupId = MockEHRTestData.add(fakerRequestGroup)
         MockOCIServerClient.createExpectations("RequestGroup", fakeRequestGroupId, tenantInUse)
 
         KafkaClient.testingClient.pushLoadEvent(
-            tenantId = testTenant,
+            tenantId = TEST_TENANT,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeRequestGroupId),
-            resourceType = ResourceType.RequestGroup
+            resourceType = ResourceType.RequestGroup,
         )
         waitForMessage(1)
         assertEquals(1, getAidboxResourceCount("RequestGroup"))
@@ -82,7 +86,7 @@ class RequestGroupLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("123"),
-            resourceType = ResourceType.RequestGroup
+            resourceType = ResourceType.RequestGroup,
         )
         waitForMessage(1)
         assertEquals(0, getAidboxResourceCount("RequestGroup"))
@@ -91,10 +95,10 @@ class RequestGroupLoadTest : BaseChannelTest(
     @Test
     fun `non-existent request errors`() {
         KafkaClient.testingClient.pushLoadEvent(
-            tenantId = testTenant,
+            tenantId = TEST_TENANT,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.RequestGroup
+            resourceType = ResourceType.RequestGroup,
         )
         waitForMessage(1)
         assertEquals(0, getAidboxResourceCount("RequestGroup"))

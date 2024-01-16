@@ -18,75 +18,85 @@ import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
+import com.projectronin.interop.mirth.channels.client.mirth.DOC_REF_LOAD_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
-import com.projectronin.interop.mirth.channels.client.mirth.docRefLoadName
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class DocumentReferenceLoadTest : BaseChannelTest(
-    docRefLoadName,
+    DOC_REF_LOAD_CHANNEL_NAME,
     listOf("DocumentReference"),
-    listOf("DocumentReference")
+    listOf("DocumentReference"),
 ) {
     @Test
     fun `channel works`() {
-        tenantInUse = testTenant
+        tenantInUse = TEST_TENANT
 
         val fakeBinary = binary { }
         val fakeBinaryID = MockEHRTestData.add(fakeBinary)
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
+        val patient1 =
+            patient {
+                birthDate of
+                    date {
+                        year of 1990
+                        month of 1
+                        day of 3
+                    }
             }
-        }
         val patient1Id = MockEHRTestData.add(patient1)
-        val roninPatient = patient1.copy(
-            id = Id("$tenantInUse-$patient1Id"),
-            identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
-        )
-        val fakeDocumentReference = documentReference {
-            date of 2.daysAgo()
-            type of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "http://loinc.org"
-                        display of "note"
-                        code of "34806-0"
+        val roninPatient =
+            patient1.copy(
+                id = Id("$tenantInUse-$patient1Id"),
+                identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id),
+            )
+        val fakeDocumentReference =
+            documentReference {
+                date of 2.daysAgo()
+                type of
+                    codeableConcept {
+                        coding of
+                            listOf(
+                                coding {
+                                    system of "http://loinc.org"
+                                    display of "note"
+                                    code of "34806-0"
+                                },
+                            )
                     }
-                )
-            }
-            subject of reference("Patient", patient1Id)
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of "http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category"
-                            code of "clinical-note"
-                        }
+                subject of reference("Patient", patient1Id)
+                category of
+                    listOf(
+                        codeableConcept {
+                            coding of
+                                listOf(
+                                    coding {
+                                        system of "http://hl7.org/fhir/us/core/CodeSystem/us-core-documentreference-category"
+                                        code of "clinical-note"
+                                    },
+                                )
+                        },
                     )
-                }
-            )
-            content of listOf(
-                documentReferenceContent {
-                    attachment of attachment {
-                        url of Url("Binary/$fakeBinaryID")
-                    }
-                }
-            )
-        }
+                content of
+                    listOf(
+                        documentReferenceContent {
+                            attachment of
+                                attachment {
+                                    url of Url("Binary/$fakeBinaryID")
+                                }
+                        },
+                    )
+            }
         MockOCIServerClient.createExpectations(
             "DocumentReference",
             MockEHRTestData.add(fakeDocumentReference),
-            tenantInUse
+            tenantInUse,
         )
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(roninPatient)
+            resources = listOf(roninPatient),
         )
 
         waitForMessage(2)
@@ -97,7 +107,7 @@ class DocumentReferenceLoadTest : BaseChannelTest(
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
-            resources = listOf(roninPatient)
+            resources = listOf(roninPatient),
         )
         waitForMessage(4)
         val messageList2 = MirthClient.getChannelMessageIds(testChannelId)

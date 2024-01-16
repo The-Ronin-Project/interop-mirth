@@ -1,4 +1,4 @@
 package com.projectronin.interop.mirth.channels
 
-const val testTenant = "epicmock"
-const val maxChannelId = 36
+const val TEST_TENANT = "epicmock"
+const val MAX_CHANNEL_ID = 36

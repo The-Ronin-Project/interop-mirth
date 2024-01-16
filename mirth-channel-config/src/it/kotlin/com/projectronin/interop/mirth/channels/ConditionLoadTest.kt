@@ -13,7 +13,7 @@ import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
-import com.projectronin.interop.mirth.channels.client.mirth.conditionLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.CONDITION_LOAD_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -21,11 +21,10 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 class ConditionLoadTest : BaseChannelTest(
-    conditionLoadChannelName,
+    CONDITION_LOAD_CHANNEL_NAME,
     listOf("Patient", "Condition"),
-    listOf("Patient", "Condition")
+    listOf("Patient", "Condition"),
 ) {
-
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with multiple patients and conditions`(testTenant: String) {
@@ -39,87 +38,103 @@ class ConditionLoadTest : BaseChannelTest(
         val patient2 = patient {}
         val patient2Id = MockEHRTestData.add(patient2)
 
-        val roninPatient1 = patient1.copy(
-            id = Id("$tenantInUse-$patient1Id"),
-            identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id)
-        )
-        val roninPatient2 = patient2.copy(
-            id = Id("$tenantInUse-$patient2Id"),
-            identifier = patient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id)
-        )
+        val roninPatient1 =
+            patient1.copy(
+                id = Id("$tenantInUse-$patient1Id"),
+                identifier = patient1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient1Id),
+            )
+        val roninPatient2 =
+            patient2.copy(
+                id = Id("$tenantInUse-$patient2Id"),
+                identifier = patient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id),
+            )
 
         // mock: conditions at the EHR
-        val condition1 = condition {
-            clinicalStatus of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "http://terminology.hl7.org/CodeSystem/condition-clinical"
-                        code of "active"
-                        display of "Active"
+        val condition1 =
+            condition {
+                clinicalStatus of
+                    codeableConcept {
+                        coding of
+                            listOf(
+                                coding {
+                                    system of "http://terminology.hl7.org/CodeSystem/condition-clinical"
+                                    code of "active"
+                                    display of "Active"
+                                },
+                            )
+                        text of "Active"
                     }
-                )
-                text of "Active"
-            }
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of "http://terminology.hl7.org/CodeSystem/condition-category"
-                            code of "problem-list-item"
-                            display of "Problem list item"
-                        }
+                category of
+                    listOf(
+                        codeableConcept {
+                            coding of
+                                listOf(
+                                    coding {
+                                        system of "http://terminology.hl7.org/CodeSystem/condition-category"
+                                        code of "problem-list-item"
+                                        display of "Problem list item"
+                                    },
+                                )
+                            text of "Problem List Item"
+                        },
                     )
-                    text of "Problem List Item"
-                }
-            )
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "http://snomed.info/sct"
-                        code of "1023001"
-                        display of "Apnea"
+                code of
+                    codeableConcept {
+                        coding of
+                            listOf(
+                                coding {
+                                    system of "http://snomed.info/sct"
+                                    code of "1023001"
+                                    display of "Apnea"
+                                },
+                            )
+                        text of "Apnea"
                     }
-                )
-                text of "Apnea"
+                subject of reference("Patient", patient1Id)
             }
-            subject of reference("Patient", patient1Id)
-        }
 
-        val condition2 = condition {
-            clinicalStatus of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "http://terminology.hl7.org/CodeSystem/condition-clinical"
-                        code of "active"
-                        display of "Active"
+        val condition2 =
+            condition {
+                clinicalStatus of
+                    codeableConcept {
+                        coding of
+                            listOf(
+                                coding {
+                                    system of "http://terminology.hl7.org/CodeSystem/condition-clinical"
+                                    code of "active"
+                                    display of "Active"
+                                },
+                            )
+                        text of "Active"
                     }
-                )
-                text of "Active"
-            }
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of "http://hl7.org/fhir/us/core/CodeSystem/condition-category"
-                            code of "health-concern"
-                            display of "Health concern"
-                        }
+                category of
+                    listOf(
+                        codeableConcept {
+                            coding of
+                                listOf(
+                                    coding {
+                                        system of "http://hl7.org/fhir/us/core/CodeSystem/condition-category"
+                                        code of "health-concern"
+                                        display of "Health concern"
+                                    },
+                                )
+                            text of "Health Concern"
+                        },
                     )
-                    text of "Health Concern"
-                }
-            )
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "http://snomed.info/sct"
-                        code of "1023001"
-                        display of "Apnea"
+                code of
+                    codeableConcept {
+                        coding of
+                            listOf(
+                                coding {
+                                    system of "http://snomed.info/sct"
+                                    code of "1023001"
+                                    display of "Apnea"
+                                },
+                            )
+                        text of "Apnea"
                     }
-                )
-                text of "Apnea"
+                subject of reference("Patient", patient2Id)
             }
-            subject of reference("Patient", patient2Id)
-        }
         val condition1ID = MockEHRTestData.add(condition1)
         val condition2ID = MockEHRTestData.add(condition1)
         val condition3ID = MockEHRTestData.add(condition1)
@@ -139,7 +154,7 @@ class ConditionLoadTest : BaseChannelTest(
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(roninPatient1, roninPatient2)
+            resources = listOf(roninPatient1, roninPatient2),
         )
 
         waitForMessage(1)
@@ -153,48 +168,55 @@ class ConditionLoadTest : BaseChannelTest(
         val patient1 = patient {}
         val patient1Id = MockEHRTestData.add(patient1)
 
-        val condition1 = condition {
-            clinicalStatus of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "http://terminology.hl7.org/CodeSystem/condition-clinical"
-                        code of "active"
-                        display of "Active"
+        val condition1 =
+            condition {
+                clinicalStatus of
+                    codeableConcept {
+                        coding of
+                            listOf(
+                                coding {
+                                    system of "http://terminology.hl7.org/CodeSystem/condition-clinical"
+                                    code of "active"
+                                    display of "Active"
+                                },
+                            )
+                        text of "Active"
                     }
-                )
-                text of "Active"
-            }
-            category of listOf(
-                codeableConcept {
-                    coding of listOf(
-                        coding {
-                            system of "http://terminology.hl7.org/CodeSystem/condition-category"
-                            code of "problem-list-item"
-                            display of "Problem list item"
-                        }
+                category of
+                    listOf(
+                        codeableConcept {
+                            coding of
+                                listOf(
+                                    coding {
+                                        system of "http://terminology.hl7.org/CodeSystem/condition-category"
+                                        code of "problem-list-item"
+                                        display of "Problem list item"
+                                    },
+                                )
+                            text of "Problem List Item"
+                        },
                     )
-                    text of "Problem List Item"
-                }
-            )
-            code of codeableConcept {
-                coding of listOf(
-                    coding {
-                        system of "http://snomed.info/sct"
-                        code of "1023001"
-                        display of "Apnea"
+                code of
+                    codeableConcept {
+                        coding of
+                            listOf(
+                                coding {
+                                    system of "http://snomed.info/sct"
+                                    code of "1023001"
+                                    display of "Apnea"
+                                },
+                            )
+                        text of "Apnea"
                     }
-                )
-                text of "Apnea"
+                subject of reference("Patient", patient1Id)
             }
-            subject of reference("Patient", patient1Id)
-        }
         val conditionID = MockEHRTestData.add(condition1)
         MockOCIServerClient.createExpectations("Condition", conditionID, testTenant)
         KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(conditionID),
-            resourceType = ResourceType.Condition
+            resourceType = ResourceType.Condition,
         )
 
         waitForMessage(1)
@@ -204,10 +226,10 @@ class ConditionLoadTest : BaseChannelTest(
     @Test
     fun `non-existent request errors`() {
         KafkaClient.testingClient.pushLoadEvent(
-            tenantId = testTenant,
+            tenantId = TEST_TENANT,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
-            resourceType = ResourceType.Condition
+            resourceType = ResourceType.Condition,
         )
 
         waitForMessage(1)

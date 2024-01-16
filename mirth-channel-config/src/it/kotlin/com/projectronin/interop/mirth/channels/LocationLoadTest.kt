@@ -15,7 +15,7 @@ import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
-import com.projectronin.interop.mirth.channels.client.mirth.locationLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.LOCATION_LOAD_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -23,73 +23,82 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 
 class LocationLoadTest : BaseChannelTest(
-    locationLoadChannelName,
+    LOCATION_LOAD_CHANNEL_NAME,
     listOf("Appointment", "Location"),
-    listOf("Appointment", "Location")
+    listOf("Appointment", "Location"),
 ) {
-
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with multiple locations and appointments`(testTenant: String) {
         tenantInUse = testTenant
-        val fakeLocation1 = location {
-            identifier of listOf(
-                identifier {
-                    system of "mockEHRDepartmentInternalSystem"
-                    value of "Location/1"
-                }
-            )
-        }
+        val fakeLocation1 =
+            location {
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockEHRDepartmentInternalSystem"
+                            value of "Location/1"
+                        },
+                    )
+            }
         val locationFhirId1 = MockEHRTestData.add(fakeLocation1)
-        val fakeLocation2 = location {
-            identifier of listOf(
-                identifier {
-                    system of "mockEHRDepartmentInternalSystem"
-                    value of "Location/2"
-                }
-            )
-        }
+        val fakeLocation2 =
+            location {
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockEHRDepartmentInternalSystem"
+                            value of "Location/2"
+                        },
+                    )
+            }
         val locationFhirId2 = MockEHRTestData.add(fakeLocation2)
 
-        val fakeAppointment1 = appointment {
-            status of "arrived"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference("Location", locationFhirId1)
-                }
-            )
-            start of 2.daysFromNow()
-            end of 3.daysFromNow()
-        }
+        val fakeAppointment1 =
+            appointment {
+                status of "arrived"
+                participant of
+                    listOf(
+                        participant {
+                            status of "accepted"
+                            actor of reference("Location", locationFhirId1)
+                        },
+                    )
+                start of 2.daysFromNow()
+                end of 3.daysFromNow()
+            }
         val appt1Id = MockEHRTestData.add(fakeAppointment1)
         val aidboxAppt1Id = "$tenantInUse-$appt1Id"
-        val aidboxAppt1 = fakeAppointment1.copy(
-            id = Id(aidboxAppt1Id),
-            identifier = fakeAppointment1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appt1Id)
-        )
-        AidboxTestData.add(aidboxAppt1)
-        val fakeAppointment2 = appointment {
-            status of "arrived"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference("Location", locationFhirId2)
-                },
-                participant {
-                    status of "accepted"
-                    actor of reference("Location", locationFhirId2) // same location twice
-                }
+        val aidboxAppt1 =
+            fakeAppointment1.copy(
+                id = Id(aidboxAppt1Id),
+                identifier = fakeAppointment1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appt1Id),
             )
-            start of 2.daysFromNow()
-            end of 3.daysFromNow()
-        }
+        AidboxTestData.add(aidboxAppt1)
+        val fakeAppointment2 =
+            appointment {
+                status of "arrived"
+                participant of
+                    listOf(
+                        participant {
+                            status of "accepted"
+                            actor of reference("Location", locationFhirId2)
+                        },
+                        participant {
+                            status of "accepted"
+                            actor of reference("Location", locationFhirId2) // same location twice
+                        },
+                    )
+                start of 2.daysFromNow()
+                end of 3.daysFromNow()
+            }
         val appt2Id = MockEHRTestData.add(fakeAppointment2)
         val aidboxAppt2Id = "$tenantInUse-$appt2Id"
-        val aidboxAppt2 = fakeAppointment2.copy(
-            id = Id(aidboxAppt2Id),
-            identifier = fakeAppointment2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appt2Id)
-        )
+        val aidboxAppt2 =
+            fakeAppointment2.copy(
+                id = Id(aidboxAppt2Id),
+                identifier = fakeAppointment2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appt2Id),
+            )
         AidboxTestData.add(aidboxAppt2)
 
         val location1ID = MockEHRTestData.add(fakeLocation1)
@@ -110,7 +119,7 @@ class LocationLoadTest : BaseChannelTest(
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
-            resources = listOf(aidboxAppt1, aidboxAppt2)
+            resources = listOf(aidboxAppt1, aidboxAppt2),
         )
 
         waitForMessage(1)
@@ -121,39 +130,44 @@ class LocationLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `channel works for ad-hoc requests`(testTenant: String) {
         tenantInUse = testTenant
-        val fakeLocation1 = location {
-            identifier of listOf(
-                identifier {
-                    system of "mockEHRDepartmentInternalSystem"
-                    value of "Location/1"
-                }
-            )
-        }
+        val fakeLocation1 =
+            location {
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockEHRDepartmentInternalSystem"
+                            value of "Location/1"
+                        },
+                    )
+            }
         val locationFhirId1 = MockEHRTestData.add(fakeLocation1)
-        val fakeAppointment1 = appointment {
-            status of "arrived"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference("Location", locationFhirId1)
-                }
-            )
-            start of 2.daysFromNow()
-            end of 3.daysFromNow()
-        }
+        val fakeAppointment1 =
+            appointment {
+                status of "arrived"
+                participant of
+                    listOf(
+                        participant {
+                            status of "accepted"
+                            actor of reference("Location", locationFhirId1)
+                        },
+                    )
+                start of 2.daysFromNow()
+                end of 3.daysFromNow()
+            }
         val appt1Id = MockEHRTestData.add(fakeAppointment1)
         val aidboxAppt1Id = "$tenantInUse-$appt1Id"
-        val aidboxAppt2 = fakeAppointment1.copy(
-            id = Id(aidboxAppt1Id),
-            identifier = fakeAppointment1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appt1Id)
-        )
+        val aidboxAppt2 =
+            fakeAppointment1.copy(
+                id = Id(aidboxAppt1Id),
+                identifier = fakeAppointment1.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(appt1Id),
+            )
         AidboxTestData.add(aidboxAppt2)
         MockOCIServerClient.createExpectations("Location", locationFhirId1, testTenant)
         KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(locationFhirId1),
-            resourceType = ResourceType.Location
+            resourceType = ResourceType.Location,
         )
 
         waitForMessage(1)
@@ -163,10 +177,10 @@ class LocationLoadTest : BaseChannelTest(
     @Test
     fun `non-existent request errors`() {
         KafkaClient.testingClient.pushLoadEvent(
-            tenantId = testTenant,
+            tenantId = TEST_TENANT,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("nothing to see here"),
-            resourceType = ResourceType.Location
+            resourceType = ResourceType.Location,
         )
 
         waitForMessage(1)

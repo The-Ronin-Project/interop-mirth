@@ -21,12 +21,12 @@ import com.projectronin.interop.mirth.channels.client.KafkaClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
+import com.projectronin.interop.mirth.channels.client.mirth.APPOINTMENT_LOAD_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.mirth.ChannelMap
+import com.projectronin.interop.mirth.channels.client.mirth.LOCATION_LOAD_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
-import com.projectronin.interop.mirth.channels.client.mirth.appointmentLoadChannelName
-import com.projectronin.interop.mirth.channels.client.mirth.locationLoadChannelName
-import com.projectronin.interop.mirth.channels.client.mirth.patientLoadChannelName
-import com.projectronin.interop.mirth.channels.client.mirth.practitionerLoadChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.PATIENT_LOAD_CHANNEL_NAME
+import com.projectronin.interop.mirth.channels.client.mirth.PRACTITIONER_LOAD_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -38,11 +38,10 @@ import kotlin.time.Duration.Companion.seconds
 
 // This is a special test case where we're testing the dag and making sure that everything
 class BackfillTest : BaseChannelTest(
-    patientLoadChannelName,
+    PATIENT_LOAD_CHANNEL_NAME,
     listOf("Patient", "Appointment", "Location", "Practitioner"),
-    listOf("Patient", "Appointment", "Location", "Practitioner")
+    listOf("Patient", "Appointment", "Location", "Practitioner"),
 ) {
-
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `backfill test`(testTenant: String) {
@@ -52,176 +51,199 @@ class BackfillTest : BaseChannelTest(
         val locationLoadTopic = KafkaClient.testingClient.loadTopic(ResourceType.Location)
         val practitionerLoadTopic = KafkaClient.testingClient.loadTopic(ResourceType.Practitioner)
 
-        val appointmentChannelID = ChannelMap.installedDag[appointmentLoadChannelName]!!
-        val locationChannelID = ChannelMap.installedDag[practitionerLoadChannelName]!!
-        val practitionerChannelId = ChannelMap.installedDag[locationLoadChannelName]!!
+        val appointmentChannelID = ChannelMap.installedDag[APPOINTMENT_LOAD_CHANNEL_NAME]!!
+        val locationChannelID = ChannelMap.installedDag[PRACTITIONER_LOAD_CHANNEL_NAME]!!
+        val practitionerChannelId = ChannelMap.installedDag[LOCATION_LOAD_CHANNEL_NAME]!!
         MirthClient.clearChannelMessages(appointmentChannelID)
         MirthClient.clearChannelMessages(locationChannelID)
         MirthClient.clearChannelMessages(practitionerChannelId)
 
-        val patient1 = patient {
-            birthDate of date {
-                year of 1990
-                month of 1
-                day of 3
+        val patient1 =
+            patient {
+                birthDate of
+                    date {
+                        year of 1990
+                        month of 1
+                        day of 3
+                    }
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockPatientInternalSystem"
+                        },
+                        identifier {
+                            system of "mockEHRMRNSystem"
+                            value of "1000000001"
+                        },
+                    )
+                name of
+                    listOf(
+                        name {
+                            use of "usual" // This is required to generate the Epic response.
+                        },
+                        name {
+                            use of "official"
+                        },
+                    )
+                gender of "male"
             }
-            identifier of listOf(
-                identifier {
-                    system of "mockPatientInternalSystem"
-                },
-                identifier {
-                    system of "mockEHRMRNSystem"
-                    value of "1000000001"
-                }
-            )
-            name of listOf(
-                name {
-                    use of "usual" // This is required to generate the Epic response.
-                },
-                name {
-                    use of "official"
-                }
-            )
-            gender of "male"
-        }
         val patient1Id = MockEHRTestData.add(patient1)
         MockOCIServerClient.createExpectations("patient", patient1Id, testTenant)
 
-        val fakeLocation1 = location {
-            identifier of listOf(
-                identifier {
-                    system of "mockEHRDepartmentInternalSystem"
-                    value of "Location/1"
-                }
-            )
-        }
+        val fakeLocation1 =
+            location {
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockEHRDepartmentInternalSystem"
+                            value of "Location/1"
+                        },
+                    )
+            }
         val locationFhirId1 = MockEHRTestData.add(fakeLocation1)
 
         MockOCIServerClient.createExpectations("Location", locationFhirId1, testTenant)
 
-        val fakeLocation2 = location {
-            identifier of listOf(
-                identifier {
-                    system of "mockEHRDepartmentInternalSystem"
-                    value of "Location/2"
-                }
-            )
-        }
+        val fakeLocation2 =
+            location {
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockEHRDepartmentInternalSystem"
+                            value of "Location/2"
+                        },
+                    )
+            }
         val locationFhirId2 = MockEHRTestData.add(fakeLocation2)
         MockOCIServerClient.createExpectations("Location", locationFhirId2, testTenant)
 
-        val fakePractitioner = practitioner {
-            identifier of listOf(
-                identifier {
-                    system of "mockEHRProviderSystem"
-                    value of "Provider/1"
-                }
-            )
-        }
+        val fakePractitioner =
+            practitioner {
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockEHRProviderSystem"
+                            value of "Provider/1"
+                        },
+                    )
+            }
         val practitionerId = MockEHRTestData.add(fakePractitioner)
         MockOCIServerClient.createExpectations("Practitioner", practitionerId, testTenant)
         // because we're using the GetProvidersSchedule we actually have to resolve these locations against aidbox
         // so we're techinically doing a little cheating here in our test
-        val aidboxLocation1 = fakeLocation1.copy(
-            identifier = fakeLocation1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(locationFhirId1)
-        )
-        val aidboxLocation2 = fakeLocation2.copy(
-            identifier = fakeLocation2.identifier + tenantIdentifier(testTenant) + fhirIdentifier(locationFhirId2)
-        )
-        val aidboxPractitioner = fakePractitioner.copy(
-            identifier = fakePractitioner.identifier + tenantIdentifier(testTenant) + fhirIdentifier(practitionerId)
-        )
+        val aidboxLocation1 =
+            fakeLocation1.copy(
+                identifier = fakeLocation1.identifier + tenantIdentifier(testTenant) + fhirIdentifier(locationFhirId1),
+            )
+        val aidboxLocation2 =
+            fakeLocation2.copy(
+                identifier = fakeLocation2.identifier + tenantIdentifier(testTenant) + fhirIdentifier(locationFhirId2),
+            )
+        val aidboxPractitioner =
+            fakePractitioner.copy(
+                identifier = fakePractitioner.identifier + tenantIdentifier(testTenant) + fhirIdentifier(practitionerId),
+            )
         AidboxTestData.add(aidboxLocation1)
         AidboxTestData.add(aidboxLocation2)
         AidboxTestData.add(aidboxPractitioner)
 
-        val fakePractitioner2 = practitioner {
-            identifier of listOf(
-                identifier {
-                    system of "mockEHRProviderSystem"
-                    value of "Provider/1"
-                }
-            )
-        }
+        val fakePractitioner2 =
+            practitioner {
+                identifier of
+                    listOf(
+                        identifier {
+                            system of "mockEHRProviderSystem"
+                            value of "Provider/1"
+                        },
+                    )
+            }
         val practitionerId2 = MockEHRTestData.add(fakePractitioner2)
 
-        val fakeAppointment1 = appointment {
-            status of "pending"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference("Patient", patient1Id)
-                },
-                participant {
-                    status of "accepted"
-                    actor of reference("Location", locationFhirId1)
-                },
-                participant {
-                    status of "accepted"
-                    actor of reference("Practitioner", practitionerId)
-                }
-            )
-            minutesDuration of 8
-            start of 20.daysAgo()
-            end of 20.daysAgo()
-        }
+        val fakeAppointment1 =
+            appointment {
+                status of "pending"
+                participant of
+                    listOf(
+                        participant {
+                            status of "accepted"
+                            actor of reference("Patient", patient1Id)
+                        },
+                        participant {
+                            status of "accepted"
+                            actor of reference("Location", locationFhirId1)
+                        },
+                        participant {
+                            status of "accepted"
+                            actor of reference("Practitioner", practitionerId)
+                        },
+                    )
+                minutesDuration of 8
+                start of 20.daysAgo()
+                end of 20.daysAgo()
+            }
 
         // shouldn't be found
-        val fakeAppointment2 = appointment {
-            status of "pending"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference("Patient", patient1Id)
-                }
-            )
-            minutesDuration of 8
-            start of 40.daysFromNow()
-            end of 40.daysFromNow()
-        }
-        val fakeAppointment3 = appointment {
-            status of "pending"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference("Patient", patient1Id)
-                },
-                participant {
-                    status of "accepted"
-                    actor of reference("Location", locationFhirId2)
-                },
-                participant {
-                    status of "accepted"
-                    actor of reference("Practitioner", practitionerId)
-                }
-            )
-            minutesDuration of 8
-            start of 360.daysAgo()
-            end of 360.daysAgo()
-        }
+        val fakeAppointment2 =
+            appointment {
+                status of "pending"
+                participant of
+                    listOf(
+                        participant {
+                            status of "accepted"
+                            actor of reference("Patient", patient1Id)
+                        },
+                    )
+                minutesDuration of 8
+                start of 40.daysFromNow()
+                end of 40.daysFromNow()
+            }
+        val fakeAppointment3 =
+            appointment {
+                status of "pending"
+                participant of
+                    listOf(
+                        participant {
+                            status of "accepted"
+                            actor of reference("Patient", patient1Id)
+                        },
+                        participant {
+                            status of "accepted"
+                            actor of reference("Location", locationFhirId2)
+                        },
+                        participant {
+                            status of "accepted"
+                            actor of reference("Practitioner", practitionerId)
+                        },
+                    )
+                minutesDuration of 8
+                start of 360.daysAgo()
+                end of 360.daysAgo()
+            }
 
         // won't be found
 
-        val fakeAppointment4 = appointment {
-            status of "pending"
-            participant of listOf(
-                participant {
-                    status of "accepted"
-                    actor of reference("Patient", patient1Id)
-                },
-                participant {
-                    status of "accepted"
-                    actor of reference("Location", locationFhirId2)
-                },
-                participant {
-                    status of "accepted"
-                    actor of reference("Practitioner", practitionerId2)
-                }
-            )
-            minutesDuration of 8
-            start of 750.daysAgo()
-            end of 750.daysAgo()
-        }
+        val fakeAppointment4 =
+            appointment {
+                status of "pending"
+                participant of
+                    listOf(
+                        participant {
+                            status of "accepted"
+                            actor of reference("Patient", patient1Id)
+                        },
+                        participant {
+                            status of "accepted"
+                            actor of reference("Location", locationFhirId2)
+                        },
+                        participant {
+                            status of "accepted"
+                            actor of reference("Practitioner", practitionerId2)
+                        },
+                    )
+                minutesDuration of 8
+                start of 750.daysAgo()
+                end of 750.daysAgo()
+            }
         val appt1 = MockEHRTestData.add(fakeAppointment1)
         val appt2 = MockEHRTestData.add(fakeAppointment2)
         val appt3 = MockEHRTestData.add(fakeAppointment3)
@@ -242,12 +264,13 @@ class BackfillTest : BaseChannelTest(
             listOf(patient1Id),
             ResourceType.Patient,
             generateMetadata().copy(
-                backfillRequest = Metadata.BackfillRequest(
-                    backfillId = "123",
-                    backfillStartDate = OffsetDateTime.now().minusYears(2),
-                    backfillEndDate = OffsetDateTime.now()
-                )
-            )
+                backfillRequest =
+                    Metadata.BackfillRequest(
+                        backfillId = "123",
+                        backfillStartDate = OffsetDateTime.now().minusYears(2),
+                        backfillEndDate = OffsetDateTime.now(),
+                    ),
+            ),
         )
         waitForMessage(1)
         waitForMessage(2, channelID = appointmentChannelID)

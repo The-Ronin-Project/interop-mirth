@@ -20,30 +20,32 @@ import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.jackson.jackson
 
 object BackfillClient {
-    private val httpClient = HttpClient(OkHttp) {
-        // If not a successful response, Ktor will throw Exceptions
-        expectSuccess = true
-        install(HttpTimeout) {
-            requestTimeoutMillis = 60000
-        }
-        // Setup JSON
-        install(ContentNegotiation) {
-            jackson {
-                JacksonManager.setUpMapper(this)
+    private val httpClient =
+        HttpClient(OkHttp) {
+            // If not a successful response, Ktor will throw Exceptions
+            expectSuccess = true
+            install(HttpTimeout) {
+                requestTimeoutMillis = 60000
+            }
+            // Setup JSON
+            install(ContentNegotiation) {
+                jackson {
+                    JacksonManager.setUpMapper(this)
+                }
+            }
+
+            // Enable logging.
+            install(Logging) {
+                level = LogLevel.NONE
             }
         }
-
-        // Enable logging.
-        install(Logging) {
-            level = LogLevel.NONE
-        }
-    }
-    private val authConfig = AuthenticationConfig(
-        token = Token("http://localhost:8085/backfill/token"),
-        audience = "https://backfill.dev.projectronin.io",
-        client = Client(id = "id", secret = "secret"),
-        method = AuthMethod.STANDARD
-    )
+    private val authConfig =
+        AuthenticationConfig(
+            token = Token("http://localhost:8085/backfill/token"),
+            audience = "https://backfill.dev.projectronin.io",
+            client = Client(id = "id", secret = "secret"),
+            method = AuthMethod.STANDARD,
+        )
     private val backFillClientConfig = BackfillClientConfig(server = Server("http://localhost:8086"))
     private val authService = InteropAuthenticationService(httpClient, authConfig)
     val backfillClient = BackfillClient(httpClient, backFillClientConfig, authService)

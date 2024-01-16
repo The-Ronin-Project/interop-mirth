@@ -26,91 +26,119 @@ import java.time.format.DateTimeFormatter
 object ProxyClient {
     val logger = KotlinLogging.logger { }
 
-    val httpClient = HttpClient(OkHttp) {
-        // If not a successful response, Ktor will throw Exceptions
-        expectSuccess = true
-        install(HttpTimeout) {
-            requestTimeoutMillis = 60000
-        }
-        // Setup JSON
-        install(ContentNegotiation) {
-            jackson {
-                JacksonManager.setUpMapper(this)
+    val httpClient =
+        HttpClient(OkHttp) {
+            // If not a successful response, Ktor will throw Exceptions
+            expectSuccess = true
+            install(HttpTimeout) {
+                requestTimeoutMillis = 60000
             }
-        }
-        install(Auth) {
-            bearer {
-                loadTokens {
-                    BearerTokens(
-                        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
-                            "eyJpYXQiOjE2NTY1MTQ3NDUsImlzcyI6IlNla2kiLCJqdGkiOiIycn" +
-                            "VodW9qNWtxcTRuY3U0czQwMDAwOGYiLCJzdWIiOiJiYmI2NWZmNS00" +
-                            "MGQ4LTRlOGItYWQ1Ny1lODVkNzg5YzZkYmEiLCJ0ZW5hbnRpZCI6In" +
-                            "JvbmluIn0.kLu2lKS16U9IQLpU2GyfoqvKGM76VblffZxPTdkfeTQ",
-                        "refresh" // not sure what this does but it's required
-                    )
-                }
-                sendWithoutRequest {
-                    it.url.host == "localhost"
+            // Setup JSON
+            install(ContentNegotiation) {
+                jackson {
+                    JacksonManager.setUpMapper(this)
                 }
             }
+            install(Auth) {
+                bearer {
+                    loadTokens {
+                        BearerTokens(
+                            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+                                "eyJpYXQiOjE2NTY1MTQ3NDUsImlzcyI6IlNla2kiLCJqdGkiOiIycn" +
+                                "VodW9qNWtxcTRuY3U0czQwMDAwOGYiLCJzdWIiOiJiYmI2NWZmNS00" +
+                                "MGQ4LTRlOGItYWQ1Ny1lODVkNzg5YzZkYmEiLCJ0ZW5hbnRpZCI6In" +
+                                "JvbmluIn0.kLu2lKS16U9IQLpU2GyfoqvKGM76VblffZxPTdkfeTQ",
+                            "refresh",
+                        )
+                    }
+                    sendWithoutRequest {
+                        it.url.host == "localhost"
+                    }
+                }
+            }
+            // Enable logging.
+            install(Logging) {
+                level = LogLevel.NONE
+            }
         }
-        // Enable logging.
-        install(Logging) {
-            level = LogLevel.NONE
-        }
-    }
 
     private const val BASE_URL = "http://localhost:8082"
 
     private const val GRAPHQL_URL = "$BASE_URL/graphql"
 
-    fun getAppointmentsByMRN(mrn: String, tenantMnemonic: String, startDate: LocalDate, endDate: LocalDate): JsonNode {
+    fun getAppointmentsByMRN(
+        mrn: String,
+        tenantMnemonic: String,
+        startDate: LocalDate,
+        endDate: LocalDate,
+    ): JsonNode {
         val formatter = DateTimeFormatter.ofPattern("MM-dd-yyyy")
         return callGraphQLProxy(
             query = this::class.java.getResource("/ProxyAppointmentsMRNQuery.graphql")!!.readText(),
-            variables = mapOf(
-                "startDate" to startDate.format(formatter),
-                "endDate" to endDate.format(formatter),
-                "mrn" to mrn,
-                "tenantId" to tenantMnemonic
-            ),
-            tenantMnemonic
+            variables =
+                mapOf(
+                    "startDate" to startDate.format(formatter),
+                    "endDate" to endDate.format(formatter),
+                    "mrn" to mrn,
+                    "tenantId" to tenantMnemonic,
+                ),
+            tenantMnemonic,
         )
     }
 
-    fun getPractitionerByFHIRId(fhirId: String, tenantMnemonic: String): JsonNode = callGraphQLProxy(
-        query = this::class.java.getResource("/ProxyPractitionerByIdQuery.graphql")!!.readText(),
-        variables = mapOf("tenantId" to tenantMnemonic, "fhirId" to fhirId),
-        tenantMnemonic
-    )
+    fun getPractitionerByFHIRId(
+        fhirId: String,
+        tenantMnemonic: String,
+    ): JsonNode =
+        callGraphQLProxy(
+            query = this::class.java.getResource("/ProxyPractitionerByIdQuery.graphql")!!.readText(),
+            variables = mapOf("tenantId" to tenantMnemonic, "fhirId" to fhirId),
+            tenantMnemonic,
+        )
 
-    fun sendNote(noteInput: Map<String, Any>, tenantMnemonic: String): JsonNode = callGraphQLProxy(
-        query = this::class.java.getResource("/ProxySendNoteMutation.graphql")!!.readText(),
-        variables = mapOf("noteInput" to noteInput, "tenantId" to tenantMnemonic),
-        tenantMnemonic
-    )
+    fun sendNote(
+        noteInput: Map<String, Any>,
+        tenantMnemonic: String,
+    ): JsonNode =
+        callGraphQLProxy(
+            query = this::class.java.getResource("/ProxySendNoteMutation.graphql")!!.readText(),
+            variables = mapOf("noteInput" to noteInput, "tenantId" to tenantMnemonic),
+            tenantMnemonic,
+        )
 
-    fun getConditionsByPatient(tenantMnemonic: String, patientFhirId: String): JsonNode =
+    fun getConditionsByPatient(
+        tenantMnemonic: String,
+        patientFhirId: String,
+    ): JsonNode =
         callGraphQLProxy(
             query = this::class.java.getResource("/ProxyConditionsQuery.graphql")!!.readText(),
             variables = mapOf("tenantId" to tenantMnemonic, "patientFhirId" to patientFhirId),
-            tenantMnemonic
+            tenantMnemonic,
         )
 
-    fun getPatientByNameAndDob(tenantMnemonic: String, familyName: String, givenName: String, dob: String): JsonNode =
+    fun getPatientByNameAndDob(
+        tenantMnemonic: String,
+        familyName: String,
+        givenName: String,
+        dob: String,
+    ): JsonNode =
         callGraphQLProxy(
             query = this::class.java.getResource("/ProxyPatientSearchQuery.graphql")!!.readText(),
-            variables = mapOf(
-                "tenantId" to tenantMnemonic,
-                "familyName" to familyName,
-                "givenName" to givenName,
-                "birthdate" to dob
-            ),
-            tenantMnemonic
+            variables =
+                mapOf(
+                    "tenantId" to tenantMnemonic,
+                    "familyName" to familyName,
+                    "givenName" to givenName,
+                    "birthdate" to dob,
+                ),
+            tenantMnemonic,
         )
 
-    private fun callGraphQLProxy(query: String, variables: Map<String, Any?>, tenantMnemonic: String): JsonNode =
+    private fun callGraphQLProxy(
+        query: String,
+        variables: Map<String, Any?>,
+        tenantMnemonic: String,
+    ): JsonNode =
         runBlocking {
             MockOCIServerClient.setSekiExpectation(tenantMnemonic)
             httpClient.post(GRAPHQL_URL) {
@@ -119,8 +147,8 @@ object ProxyClient {
                 setBody(
                     GraphQLPostRequest(
                         query = query,
-                        variables = variables
-                    )
+                        variables = variables,
+                    ),
                 )
             }.body()
         }
@@ -129,5 +157,5 @@ object ProxyClient {
 data class GraphQLPostRequest(
     val query: String,
     val operationName: String? = null,
-    val variables: Map<String, Any?>? = null
+    val variables: Map<String, Any?>? = null,
 )

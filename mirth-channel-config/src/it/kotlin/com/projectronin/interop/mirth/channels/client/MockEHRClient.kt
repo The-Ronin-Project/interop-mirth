@@ -22,24 +22,25 @@ import io.ktor.serialization.jackson.jackson
 import kotlinx.coroutines.runBlocking
 
 object MockEHRClient {
-    val httpClient = HttpClient(OkHttp) {
-        // If not a successful response, Ktor will throw Exceptions
-        expectSuccess = true
-        install(HttpTimeout) {
-            requestTimeoutMillis = 60000
-        }
-        // Setup JSON
-        install(ContentNegotiation) {
-            jackson {
-                JacksonManager.setUpMapper(this)
+    val httpClient =
+        HttpClient(OkHttp) {
+            // If not a successful response, Ktor will throw Exceptions
+            expectSuccess = true
+            install(HttpTimeout) {
+                requestTimeoutMillis = 60000
+            }
+            // Setup JSON
+            install(ContentNegotiation) {
+                jackson {
+                    JacksonManager.setUpMapper(this)
+                }
+            }
+
+            // Enable logging.
+            install(Logging) {
+                level = LogLevel.NONE
             }
         }
-
-        // Enable logging.
-        install(Logging) {
-            level = LogLevel.NONE
-        }
-    }
 
     private const val BASE_URL = "http://localhost:8081"
 
@@ -47,38 +48,46 @@ object MockEHRClient {
     const val RESOURCES_FORMAT = "$FHIR_URL/%s"
     private const val RESOURCE_FORMAT = "$RESOURCES_FORMAT/%s"
 
-    inline fun <reified T : Resource<T>> addResource(resource: Resource<T>): String = runBlocking {
-        val resourceUrl = RESOURCES_FORMAT.format(resource.resourceType)
-        val response = httpClient.post(resourceUrl) {
-            contentType(ContentType.Application.FhirJson)
-            accept(ContentType.Application.FhirJson)
-            setBody(resource)
+    inline fun <reified T : Resource<T>> addResource(resource: Resource<T>): String =
+        runBlocking {
+            val resourceUrl = RESOURCES_FORMAT.format(resource.resourceType)
+            val response =
+                httpClient.post(resourceUrl) {
+                    contentType(ContentType.Application.FhirJson)
+                    accept(ContentType.Application.FhirJson)
+                    setBody(resource)
+                }
+            val location = response.headers["Content-Location"]
+            location!!.removePrefix("$resourceUrl/")
         }
-        val location = response.headers["Content-Location"]
-        location!!.removePrefix("$resourceUrl/")
-    }
 
-    fun deleteResource(resourceType: String, id: String) = runBlocking {
+    fun deleteResource(
+        resourceType: String,
+        id: String,
+    ) = runBlocking {
         val url = RESOURCE_FORMAT.format(resourceType, id)
         httpClient.delete(url)
     }
 
-    fun deleteAllResources(resourceType: String) = runBlocking {
-        val resources = getAllResources(resourceType)
-        resources.entry.forEach {
-            val resourceId = it.resource?.id?.value
-            resourceId?.let { deleteResource(resourceType, resourceId) }
+    fun deleteAllResources(resourceType: String) =
+        runBlocking {
+            val resources = getAllResources(resourceType)
+            resources.entry.forEach {
+                val resourceId = it.resource?.id?.value
+                resourceId?.let { deleteResource(resourceType, resourceId) }
+            }
         }
-    }
 
-    fun getAllResources(resourceType: String): Bundle = runBlocking {
-        val url = RESOURCES_FORMAT.format(resourceType)
-        httpClient.get(url) {}.body()
-    }
+    fun getAllResources(resourceType: String): Bundle =
+        runBlocking {
+            val url = RESOURCES_FORMAT.format(resourceType)
+            httpClient.get(url) {}.body()
+        }
 
-    fun getPlainBinary(fhirId: String): String = runBlocking {
-        val url = RESOURCES_FORMAT.format("Binary") + "/$fhirId"
-        httpClient.get(url) {
-        }.body()
-    }
+    fun getPlainBinary(fhirId: String): String =
+        runBlocking {
+            val url = RESOURCES_FORMAT.format("Binary") + "/$fhirId"
+            httpClient.get(url) {
+            }.body()
+        }
 }

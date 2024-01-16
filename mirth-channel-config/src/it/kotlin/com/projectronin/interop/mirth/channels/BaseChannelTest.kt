@@ -28,7 +28,7 @@ import kotlin.time.Duration.Companion.seconds
 abstract class BaseChannelTest(
     private val channelName: String,
     private val aidboxResourceTypes: List<String>,
-    private val mockEHRResourceTypes: List<String> = emptyList()
+    private val mockEHRResourceTypes: List<String> = emptyList(),
 ) {
     var tenantInUse = "NOTSET"
     protected val testChannelId = ChannelMap.installedDag[channelName]!!
@@ -56,7 +56,6 @@ abstract class BaseChannelTest(
     }
 
     companion object {
-
         @JvmStatic
         fun tenantsToTest(): Stream<String> {
             val tenants =
@@ -79,7 +78,7 @@ abstract class BaseChannelTest(
 
     protected fun startChannel(
         waitForMessage: Boolean = false,
-        channelToDeploy: String = testChannelId
+        channelToDeploy: String = testChannelId,
     ) {
         MirthClient.startChannel(channelToDeploy)
 
@@ -92,7 +91,10 @@ abstract class BaseChannelTest(
         return MirthClient.getChannelMessageIds(testChannelId)
     }
 
-    protected fun getAidboxResourceCount(resourceType: String, tenant: String = tenantInUse): Int {
+    protected fun getAidboxResourceCount(
+        resourceType: String,
+        tenant: String = tenantInUse,
+    ): Int {
         val resources = AidboxClient.getAllResourcesForTenant(resourceType, tenant)
         return resources.get("total").asInt()
     }
@@ -111,19 +113,26 @@ abstract class BaseChannelTest(
         }
     }
 
-    protected fun assertAllConnectorsStatus(messageList: List<Message>, status: MirthResponseStatus = MirthResponseStatus.SENT) {
+    protected fun assertAllConnectorsStatus(
+        messageList: List<Message>,
+        status: MirthResponseStatus = MirthResponseStatus.SENT,
+    ) {
         messageList.forEach { connectorMessage ->
             connectorMessage.destinationMessages.forEach {
                 assertEquals(
                     status.name,
                     it.status,
-                    "status for connector ${it.connectorName} was not ${status.name}. Actual status: ${it.status}"
+                    "status for connector ${it.connectorName} was not ${status.name}. Actual status: ${it.status}",
                 )
             }
         }
     }
 
-    protected fun waitForMessage(minimumCount: Int, timeout: Int = 20, channelID: String = testChannelId) {
+    protected fun waitForMessage(
+        minimumCount: Int,
+        timeout: Int = 20,
+        channelID: String = testChannelId,
+    ) {
         runBlocking {
             withTimeout(timeout = timeout.seconds) {
                 MirthClient.waitForMessage(minimumCount, channelID)

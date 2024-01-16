@@ -19,10 +19,10 @@ import com.projectronin.interop.mirth.channels.client.BackfillClient.queueClient
 import com.projectronin.interop.mirth.channels.client.MockEHRTestData
 import com.projectronin.interop.mirth.channels.client.TenantClient
 import com.projectronin.interop.mirth.channels.client.fhirIdentifier
+import com.projectronin.interop.mirth.channels.client.mirth.BACKFILL_DISCOVERY_QUEUE_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.mirth.ChannelMap
 import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
-import com.projectronin.interop.mirth.channels.client.mirth.backfillDiscoveryQueueName
-import com.projectronin.interop.mirth.channels.client.mirth.patientDiscoverChannelName
+import com.projectronin.interop.mirth.channels.client.mirth.PATIENT_DISCOVERY_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -31,11 +31,10 @@ import org.junit.jupiter.api.Test
 import java.time.LocalDate
 
 class BackfillDiscoveryQueueTest : BaseChannelTest(
-    backfillDiscoveryQueueName,
+    BACKFILL_DISCOVERY_QUEUE_CHANNEL_NAME,
     emptyList(),
-    listOf("Patient", "Appointment", "Location")
+    listOf("Patient", "Appointment", "Location"),
 ) {
-
     @BeforeEach
     fun `delete it all`() {
         // failed tests can leave a backfill id, so get all backfill ids and then delete them
@@ -54,68 +53,76 @@ class BackfillDiscoveryQueueTest : BaseChannelTest(
     fun `channel works`() {
         tenantsToTest().forEach {
             tenantInUse = it
-            val location = location {
-                identifier of listOf(
-                    identifier {
-                        system of "mockEHRDepartmentInternalSystem"
-                        value of "${it}123"
-                    }
-                )
-            }
-            val locationFhirId = MockEHRTestData.add(location)
-            val patient1 = patient {
-                birthDate of date {
-                    year of 1990
-                    month of 1
-                    day of 3
+            val location =
+                location {
+                    identifier of
+                        listOf(
+                            identifier {
+                                system of "mockEHRDepartmentInternalSystem"
+                                value of "${it}123"
+                            },
+                        )
                 }
-                identifier of listOf(
-                    identifier {
-                        system of "mockPatientInternalSystem"
-                    },
-                    identifier {
-                        system of "mockEHRMRNSystem"
-                        value of "1000000001"
-                    }
-                )
-                name of listOf(
-                    name {
-                        use of "usual" // This is required to generate the Epic response.
-                    },
-                    name {
-                        use of "official"
-                    }
-                )
-                gender of "male"
-            }
+            val locationFhirId = MockEHRTestData.add(location)
+            val patient1 =
+                patient {
+                    birthDate of
+                        date {
+                            year of 1990
+                            month of 1
+                            day of 3
+                        }
+                    identifier of
+                        listOf(
+                            identifier {
+                                system of "mockPatientInternalSystem"
+                            },
+                            identifier {
+                                system of "mockEHRMRNSystem"
+                                value of "1000000001"
+                            },
+                        )
+                    name of
+                        listOf(
+                            name {
+                                use of "usual" // This is required to generate the Epic response.
+                            },
+                            name {
+                                use of "official"
+                            },
+                        )
+                    gender of "male"
+                }
             val patient1Id = MockEHRTestData.add(patient1)
 
-            val appointment1 = appointment {
-                status of "arrived"
-                participant of listOf(
-                    participant {
-                        status of "accepted"
-                        actor of reference("Patient", patient1Id)
-                    },
-
-                    participant {
-                        status of "accepted"
-                        actor of reference("Location", locationFhirId)
-                    }
-                )
-                start of 2.daysFromNow()
-                end of 3.daysFromNow()
-            }
+            val appointment1 =
+                appointment {
+                    status of "arrived"
+                    participant of
+                        listOf(
+                            participant {
+                                status of "accepted"
+                                actor of reference("Patient", patient1Id)
+                            },
+                            participant {
+                                status of "accepted"
+                                actor of reference("Location", locationFhirId)
+                            },
+                        )
+                    start of 2.daysFromNow()
+                    end of 3.daysFromNow()
+                }
             MockEHRTestData.add(appointment1)
 
-            val aidboxLocation1 = location.copy(
-                identifier = location.identifier + tenantIdentifier(it) + fhirIdentifier(locationFhirId)
-            )
+            val aidboxLocation1 =
+                location.copy(
+                    identifier = location.identifier + tenantIdentifier(it) + fhirIdentifier(locationFhirId),
+                )
             AidboxTestData.add(aidboxLocation1)
 
             runBlocking {
                 backfillClient.postBackfill(
-                    newBackfill = NewBackfill(it, listOf(locationFhirId), LocalDate.now(), LocalDate.now().plusDays(4))
+                    newBackfill = NewBackfill(it, listOf(locationFhirId), LocalDate.now(), LocalDate.now().plusDays(4)),
                 )
             }
             val newTenant = TenantClient.getTenant(it)
@@ -123,7 +130,7 @@ class BackfillDiscoveryQueueTest : BaseChannelTest(
         }
 
         // We need to stop the PatientDiscovery channel here to make sure it doesn't pick up our backfill and thus change the number of queue entries before we can verify.
-        ChannelMap.installedDag[patientDiscoverChannelName]?.let { // If it's not installed, we don't need to stop it.
+        ChannelMap.installedDag[PATIENT_DISCOVERY_CHANNEL_NAME]?.let { // If it's not installed, we don't need to stop it.
             MirthClient.stopChannel(it)
         }
 
