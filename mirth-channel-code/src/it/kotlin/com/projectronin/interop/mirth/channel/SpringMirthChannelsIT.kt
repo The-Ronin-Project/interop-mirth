@@ -46,6 +46,7 @@ import kotlin.reflect.full.functions
         SetEnvironmentVariable(key = "OCI_NAMESPACE", value = "namespace"),
         SetEnvironmentVariable(key = "OCI_CONCEPTMAP_BUCKET_NAME", value = "cm"),
         SetEnvironmentVariable(key = "OCI_PUBLISH_BUCKET_NAME", value = "pub"),
+        SetEnvironmentVariable(key = "OCI_INFX_REGISTRY_FILE", value = "TheNormalizationRegistry.json"),
         SetEnvironmentVariable(key = "OCI_REGION", value = "fake-region"),
         SetEnvironmentVariable(key = "KAFKA_CLOUD_VENDOR", value = "vendor"),
         SetEnvironmentVariable(key = "KAFKA_CLOUD_REGION", value = "region"),
@@ -58,6 +59,18 @@ import kotlin.reflect.full.functions
         SetEnvironmentVariable(key = "BACKFILL_AUTH_CLIENT_ID", value = "id"),
         SetEnvironmentVariable(key = "BACKFILL_AUTH_CLIENT_SECRET", value = "secret"),
         SetEnvironmentVariable(key = "BACKFILL_AUTH_METHOD", value = "STANDARD"),
+        SetEnvironmentVariable(key = "CLINICALTRIAL_URL", value = "http://mock-server:443"),
+        SetEnvironmentVariable(
+            key = "CLINICALTRIAL_AUTH_TOKEN_URL",
+            value = "http://mock-oauth2:8080/clinicaltrial/token",
+        ),
+        SetEnvironmentVariable(
+            key = "CLINICALTRIAL_AUTH_AUDIENCE",
+            value = "https://clinicaltrial.dev.projectronin.io",
+        ),
+        SetEnvironmentVariable(key = "CLINICALTRIAL_AUTH_CLIENT_ID", value = "id"),
+        SetEnvironmentVariable(key = "CLINICALTRIAL_AUTH_CLIENT_SECRET", value = "secret"),
+        SetEnvironmentVariable(key = "CLINICALTRIAL_AUTH_AUTH0", value = "false"),
     ],
 )
 class SpringMirthChannelsIT {

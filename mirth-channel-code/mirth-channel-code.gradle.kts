@@ -62,15 +62,15 @@ dependencies {
     implementation(libs.ktorm.support.mysql)
     implementation(libs.caffeine)
 
-    runtimeOnly(libs.interop.ehr.epic) {
+    implementation(libs.interop.ehr.epic) {
         exclude(group = "org.springframework.boot")
         exclude(group = "org.yaml", module = "snakeyaml")
     }
-    runtimeOnly(libs.interop.ehr.cerner) {
+    implementation(libs.interop.ehr.cerner) {
         exclude(group = "org.springframework.boot")
         exclude(group = "org.yaml", module = "snakeyaml")
     }
-    runtimeOnly(libs.interop.validation.client) {
+    implementation(libs.interop.validation.client) {
         exclude(group = "org.springframework.boot")
         exclude(group = "org.yaml", module = "snakeyaml")
     }
