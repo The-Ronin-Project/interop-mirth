@@ -53,6 +53,7 @@ class CarePlanLoadTest : BaseChannelTest(
                         coding of
                             listOf(
                                 coding {
+                                    system of "http://hl7.org/fhir/us/core/CodeSystem/careplan-category"
                                     code of
                                         if (tenantInUse.contains("cern")) {
                                             "assess-plan"
@@ -375,6 +376,7 @@ class CarePlanLoadTest : BaseChannelTest(
                             coding of
                                 listOf(
                                     coding {
+                                        system of "http://hl7.org/fhir/us/core/CodeSystem/careplan-category"
                                         code of
                                             if (tenantInUse.contains("cern")) {
                                                 "assess-plan"
@@ -422,6 +424,7 @@ class CarePlanLoadTest : BaseChannelTest(
                             coding of
                                 listOf(
                                     coding {
+                                        system of "http://hl7.org/fhir/us/core/CodeSystem/careplan-category"
                                         code of
                                             if (tenantInUse.contains("cern")) {
                                                 "assess-plan"

@@ -274,9 +274,11 @@ class ValidationTest(
                                         coding of
                                             listOf(
                                                 coding {
+                                                    system of "http://hl7.org/fhir/us/core/CodeSystem/careplan-category"
                                                     code of Code("736378000")
                                                 },
                                                 coding {
+                                                    system of "http://hl7.org/fhir/us/core/CodeSystem/careplan-category"
                                                     code of Code("assess-plan")
                                                 },
                                             )

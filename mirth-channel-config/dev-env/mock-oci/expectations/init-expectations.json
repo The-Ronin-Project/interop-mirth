@@ -1503,11 +1503,11 @@
           {
             "source": "http://projectronin.io/fhir/CodeSystem/epicmock/CarePlanCategory",
             "sourceVersion": "1.0",
-            "target": "http://hl7.org/fhir/ValueSet/procedure-category",
+            "target": "http://hl7.org/fhir/ValueSet/careplan-category",
             "targetVersion": "4.0.1",
             "element": [
               {
-                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"assess-plan\"}]}}",
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"system\": \"http://hl7.org/fhir/us/core/CodeSystem/careplan-category\", \"code\": \"assess-plan\"}]}}",
                 "display": "CarePlan",
                 "target": [
                   {
@@ -1519,7 +1519,7 @@
                 ]
               },
               {
-                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"code\": \"736378000\"}]}}",
+                "code": "{\"valueCodeableConcept\": {\"coding\": [{\"system\": \"http://hl7.org/fhir/us/core/CodeSystem/careplan-category\", \"code\": \"736378000\"}]}}",
                 "display": "CarePlan",
                 "target": [
                   {
@@ -1541,7 +1541,7 @@
         ]
       }
     },
-    "id": "GetRoninProcedureCategory",
+    "id": "GetRoninCarePlanCategory",
     "priority": 0,
     "timeToLive": {
       "unlimited": true
