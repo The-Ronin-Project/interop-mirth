@@ -132,6 +132,7 @@ class PatientDiscoveryTest {
                 ehrFactory,
                 tenantConfigurationService,
                 "",
+                1,
                 mockk {},
                 clinicalTrialClient,
             )
@@ -143,6 +144,7 @@ class PatientDiscoveryTest {
                 ehrFactory,
                 tenantConfigurationService,
                 "yes",
+                1,
                 queueClient,
                 clinicalTrialClient,
             )
@@ -456,8 +458,8 @@ class PatientDiscoveryTest {
         val entryId = UUID.fromString("67d28e26-ae11-4afb-968b-0991aa11c80b")
         val backfillId = UUID.fromString("be3eddd1-e31b-4140-8e41-88aeb4b394c8")
         every { tenantConfigurationService.getLocationIDsByTenant(any()) } returns emptyList()
-        coEvery { queueClient.getQueueEntries("ronin") } returns emptyList()
-        coEvery { queueClient.getQueueEntries("blah") } returns
+        coEvery { queueClient.getQueueEntries("ronin", 1) } returns emptyList()
+        coEvery { queueClient.getQueueEntries("blah", 1) } returns
             listOf(
                 QueueEntry(
                     id = entryId,
@@ -482,8 +484,8 @@ class PatientDiscoveryTest {
     @Test
     fun `sourceReader works - backfill - no backfill entries no events`() {
         every { tenantConfigurationService.getLocationIDsByTenant(any()) } returns emptyList()
-        coEvery { queueClient.getQueueEntries("ronin") } returns emptyList()
-        coEvery { queueClient.getQueueEntries("blah") } returns emptyList()
+        coEvery { queueClient.getQueueEntries("ronin", 1) } returns emptyList()
+        coEvery { queueClient.getQueueEntries("blah", 1) } returns emptyList()
 
         val list = backfillVersionChannel.channelSourceReader(emptyMap())
         assertEquals(0, list.size)

@@ -37,6 +37,8 @@ class PatientDiscovery(
     private val tenantConfigurationService: TenantConfigurationService,
     @Value("\${backfill.enabled:no}")
     private val backfillEnabledString: String,
+    @Value("\${backfill.queue.size:1}")
+    private val backfillQueueSize: Int,
     private val backfillQueueClient: QueueClient,
     private val clinicalTrialClient: ClinicalTrialClient,
 ) : TenantlessSourceService() {
@@ -90,7 +92,7 @@ class PatientDiscovery(
             val backfillQueueEntry =
                 tenantsOkToRun
                     .asSequence()
-                    .map { runBlocking { backfillQueueClient.getQueueEntries(it.mnemonic).firstOrNull() } }
+                    .map { runBlocking { backfillQueueClient.getQueueEntries(it.mnemonic, backfillQueueSize).firstOrNull() } }
                     .firstNotNullOfOrNull { it }
 
             backfillQueueEntry?.let { queueEntry ->

@@ -141,7 +141,7 @@ class BackfillDiscoveryQueueTest : BaseChannelTest(
             val entries = runBlocking { discoveryQueueClient.getDiscoveryQueueEntries(it) }
             assertEquals(1, entries.size)
             assertEquals(DiscoveryQueueStatus.DISCOVERED, entries.first().status)
-            val newQueues = runBlocking { queueClient.getQueueEntries(it) }
+            val newQueues = runBlocking { queueClient.getQueueEntries(it, 2) }
             assertEquals(1, newQueues.size)
         }
     }

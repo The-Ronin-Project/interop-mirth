@@ -339,7 +339,6 @@ class PatientDiscoveryTest : BaseChannelTest(
         MirthClient.deployChannel(testChannelId)
         startChannel()
         waitForMessage(1, channelID = patientChannelId)
-
         assertEquals(1, getAidboxResourceCount(patientType))
     }
 
