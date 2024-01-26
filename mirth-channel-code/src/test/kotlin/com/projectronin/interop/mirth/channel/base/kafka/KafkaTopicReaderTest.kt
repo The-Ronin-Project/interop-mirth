@@ -39,6 +39,8 @@ class KafkaTopicReaderTest {
         kafkaLoadService: KafkaLoadService,
         override val tenantConfigService: TenantConfigurationService,
         override val maxEventBatchSize: Int = 20,
+        override val publishEventOverrideBatchSize: Int = 20,
+        override val publishEventOverrideResources: List<ResourceType> = emptyList(),
     ) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, mockk()) {
         override val publishedResourcesSubscriptions = listOf(ResourceType.Patient, ResourceType.Practitioner)
         override val resource = ResourceType.Location
@@ -803,6 +805,150 @@ class KafkaTopicReaderTest {
     }
 
     @Test
+    fun `publish events honor batch size override with matching resource type`() {
+        val configDO =
+            mockk<MirthTenantConfigDO> {
+                every { blockedResources } returns "" // should this be the actual resource name
+                every { locationIds } returns "12345678"
+            }
+        every { tenantConfigService.getConfiguration(any()) } returns configDO
+
+        val metadata1 =
+            mockk<Metadata> {
+                every { runId } returns "run1"
+            }
+
+        val patientEventTenant1Run1 =
+            mockk<InteropResourcePublishV1> {
+                every { tenantId } returns "tenant1"
+                every { resourceType } returns ResourceType.Patient
+                every { metadata } returns metadata1
+            }
+        val patientEvent2Tenant1Run1 =
+            mockk<InteropResourcePublishV1> {
+                every { tenantId } returns "tenant1"
+                every { resourceType } returns ResourceType.Patient
+                every { metadata } returns metadata1
+            }
+        val patientEvent3Tenant1Run1 =
+            mockk<InteropResourcePublishV1> {
+                every { tenantId } returns "tenant1"
+                every { resourceType } returns ResourceType.Patient
+                every { metadata } returns metadata1
+            }
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Patient,
+                DataTrigger.NIGHTLY,
+                "test",
+            )
+        } returns
+            listOf(
+                patientEventTenant1Run1,
+                patientEvent2Tenant1Run1,
+                patientEvent3Tenant1Run1,
+            )
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.NIGHTLY,
+                "test",
+            )
+        } returns emptyList()
+
+        every { JacksonUtil.writeJsonValue(any()) } returns "data"
+
+        val channel =
+            TestChannel(
+                kafkaPublishService,
+                kafkaLoadService,
+                tenantConfigService,
+                3,
+                2,
+                listOf(ResourceType.Patient),
+            )
+        val messages = channel.channelSourceReader(emptyMap())
+        assertEquals(2, messages.size)
+
+        messages.forEach {
+            assertEquals("tenant1", it.dataMap[MirthKey.TENANT_MNEMONIC.code])
+            assertEquals("run1", it.dataMap[MirthKey.EVENT_RUN_ID.code])
+        }
+    }
+
+    @Test
+    fun `publish events ignore batch size override with no matching resource type`() {
+        val configDO =
+            mockk<MirthTenantConfigDO> {
+                every { blockedResources } returns "" // should this be the actual resource name
+                every { locationIds } returns "12345678"
+            }
+        every { tenantConfigService.getConfiguration(any()) } returns configDO
+
+        val metadata1 =
+            mockk<Metadata> {
+                every { runId } returns "run1"
+            }
+
+        val patientEventTenant1Run1 =
+            mockk<InteropResourcePublishV1> {
+                every { tenantId } returns "tenant1"
+                every { resourceType } returns ResourceType.Patient
+                every { metadata } returns metadata1
+            }
+        val patientEvent2Tenant1Run1 =
+            mockk<InteropResourcePublishV1> {
+                every { tenantId } returns "tenant1"
+                every { resourceType } returns ResourceType.Patient
+                every { metadata } returns metadata1
+            }
+        val patientEvent3Tenant1Run1 =
+            mockk<InteropResourcePublishV1> {
+                every { tenantId } returns "tenant1"
+                every { resourceType } returns ResourceType.Patient
+                every { metadata } returns metadata1
+            }
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Patient,
+                DataTrigger.NIGHTLY,
+                "test",
+            )
+        } returns
+            listOf(
+                patientEventTenant1Run1,
+                patientEvent2Tenant1Run1,
+                patientEvent3Tenant1Run1,
+            )
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.NIGHTLY,
+                "test",
+            )
+        } returns emptyList()
+
+        every { JacksonUtil.writeJsonValue(any()) } returns "data"
+
+        val channel =
+            TestChannel(
+                kafkaPublishService,
+                kafkaLoadService,
+                tenantConfigService,
+                1,
+                2,
+                listOf(ResourceType.Practitioner),
+            )
+        val messages = channel.channelSourceReader(emptyMap())
+        assertEquals(3, messages.size)
+
+        messages.forEach {
+            assertEquals("tenant1", it.dataMap[MirthKey.TENANT_MNEMONIC.code])
+            assertEquals("run1", it.dataMap[MirthKey.EVENT_RUN_ID.code])
+        }
+    }
+
+    @Test
     fun `load events are batched into messages by tenant and run id`() {
         val configDO =
             mockk<MirthTenantConfigDO> {
@@ -960,6 +1106,82 @@ class KafkaTopicReaderTest {
         every { JacksonUtil.writeJsonValue(any()) } returns "data"
 
         val channel = TestChannel(kafkaPublishService, kafkaLoadService, tenantConfigService, 2)
+        val messages = channel.channelSourceReader(emptyMap())
+        assertEquals(2, messages.size)
+
+        messages.forEach {
+            assertEquals("tenant1", it.dataMap[MirthKey.TENANT_MNEMONIC.code])
+            assertEquals("run1", it.dataMap[MirthKey.EVENT_RUN_ID.code])
+        }
+    }
+
+    @Test
+    fun `load events ignore max batch size override`() {
+        val configDO =
+            mockk<MirthTenantConfigDO> {
+                every { blockedResources } returns "" // should this be the actual resource name
+                every { locationIds } returns "12345678"
+            }
+        every { tenantConfigService.getConfiguration(any()) } returns configDO
+
+        val metadata1 =
+            mockk<Metadata> {
+                every { runId } returns "run1"
+            }
+        val locationEventTenant1Run1 =
+            mockk<InteropResourceLoadV1> {
+                every { tenantId } returns "tenant1"
+                every { resourceType } returns ResourceType.Location
+                every { metadata } returns metadata1
+            }
+        val locationEvent2Tenant1Run1 =
+            mockk<InteropResourceLoadV1> {
+                every { tenantId } returns "tenant1"
+                every { resourceType } returns ResourceType.Location
+                every { metadata } returns metadata1
+            }
+        val locationEvent3Tenant1Run1 =
+            mockk<InteropResourceLoadV1> {
+                every { tenantId } returns "tenant1"
+                every { resourceType } returns ResourceType.Location
+                every { metadata } returns metadata1
+            }
+
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Patient,
+                DataTrigger.NIGHTLY,
+                "test",
+                false,
+            )
+        } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(
+                ResourceType.Practitioner,
+                DataTrigger.NIGHTLY,
+                "test",
+                false,
+            )
+        } returns emptyList()
+        every {
+            kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test", false)
+        } returns
+            listOf(
+                locationEventTenant1Run1,
+                locationEvent2Tenant1Run1,
+                locationEvent3Tenant1Run1,
+            )
+
+        every { JacksonUtil.writeJsonValue(any()) } returns "data"
+
+        val channel =
+            TestChannel(
+                kafkaPublishService,
+                kafkaLoadService,
+                tenantConfigService,
+                2,
+                1,
+            )
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(2, messages.size)
 

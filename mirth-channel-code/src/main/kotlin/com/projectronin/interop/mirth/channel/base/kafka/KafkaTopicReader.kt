@@ -28,6 +28,9 @@ abstract class KafkaTopicReader(
     open val maxBackfillDays: Int? = null
     open val maxEventBatchSize: Int = 20
 
+    open val publishEventOverrideBatchSize: Int? = 20
+    open val publishEventOverrideResources: List<ResourceType> = emptyList()
+
     override val destinations: Map<String, KafkaEventResourcePublisher<*>> = mapOf("publish" to defaultPublisher)
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
@@ -91,7 +94,8 @@ abstract class KafkaTopicReader(
 
     private fun List<InteropResourcePublishV1>.toPublishMirthMessages(): List<MirthMessage> {
         return this.groupBy { Triple(it.tenantId, it.metadata.runId, it.resourceType) }.flatMap { (key, messages) ->
-            messages.chunked(maxEventBatchSize).map { batch ->
+            val batchSize = getBatchSize(true, messages.first().resourceType)
+            messages.chunked(batchSize).map { batch ->
                 MirthMessage(
                     JacksonUtil.writeJsonValue(batch),
                     mapOf(
@@ -106,7 +110,8 @@ abstract class KafkaTopicReader(
 
     private fun List<InteropResourceLoadV1>.toLoadMirthMessages(): List<MirthMessage> {
         return this.groupBy { Pair(it.tenantId, it.metadata.runId) }.flatMap { (key, messages) ->
-            messages.chunked(maxEventBatchSize).map { batch ->
+            val batchSize = getBatchSize(false)
+            messages.chunked(batchSize).map { batch ->
                 MirthMessage(
                     JacksonUtil.writeJsonValue(batch),
                     mapOf(
@@ -140,5 +145,16 @@ abstract class KafkaTopicReader(
             val modifiedMetadata = oldMetadata.copy(backfillRequest = backfillModified)
             this.copy(metadata = modifiedMetadata)
         }
+    }
+
+    // Determine batch size based on kafka event type and fhir resource
+    private fun getBatchSize(
+        isPublish: Boolean,
+        eventType: ResourceType? = null,
+    ): Int {
+        if (isPublish && publishEventOverrideResources.contains(eventType)) {
+            return publishEventOverrideBatchSize ?: maxEventBatchSize
+        }
+        return maxEventBatchSize
     }
 }
