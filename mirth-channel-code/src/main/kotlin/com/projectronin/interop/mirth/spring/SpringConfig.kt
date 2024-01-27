@@ -2,6 +2,7 @@ package com.projectronin.interop.mirth.spring
 
 import com.projectronin.ehr.dataauthority.client.spring.EHRDataAuthorityClientSpringConfig
 import com.projectronin.interop.aidbox.spring.AidboxSpringConfig
+import com.projectronin.interop.backfill.client.spring.BackfillClientSpringConfig
 import com.projectronin.interop.common.http.spring.HttpSpringConfig
 import com.projectronin.interop.ehr.cerner.spring.CernerSpringConfig
 import com.projectronin.interop.ehr.epic.spring.EpicSpringConfig
@@ -30,7 +31,6 @@ import org.springframework.vault.annotation.VaultPropertySource
 @ComponentScan(
     basePackages = [
         "com.projectronin.interop.mirth",
-        "com.projectronin.interop.backfill.client", // INT-2453
         "com.projectronin.clinical.trial.client", // INT-2452
     ],
 )
@@ -45,6 +45,7 @@ import org.springframework.vault.annotation.VaultPropertySource
     DbQueueSpringConfig::class,
     TransformSpringConfig::class,
     AidboxSpringConfig::class,
+    BackfillClientSpringConfig::class,
 )
 @EnableConfigurationProperties(KafkaConfig::class)
 @VaultPropertySource("interop-mirth-connector/\${ENVIRONMENT}")
