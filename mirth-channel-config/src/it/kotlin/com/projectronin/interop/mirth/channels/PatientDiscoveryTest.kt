@@ -60,6 +60,7 @@ class PatientDiscoveryTest : BaseChannelTest(
                 }
             }
         }
+        KafkaClient.testingClient.reset()
     }
 
     @Test
@@ -191,7 +192,6 @@ class PatientDiscoveryTest : BaseChannelTest(
 
     @Test
     fun `no appointments no events`() {
-        KafkaClient.testingClient.reset()
         tenantsToTest().forEach {
             tenantInUse = it
             val location =
@@ -253,8 +253,6 @@ class PatientDiscoveryTest : BaseChannelTest(
 
     @Test
     fun `channel kicks off dag`() {
-        KafkaClient.testingClient.reset()
-
         val patientChannelId = ChannelMap.installedDag[PATIENT_LOAD_CHANNEL_NAME]!!
         MirthClient.clearChannelMessages(patientChannelId)
         tenantsToTest().forEach {
@@ -344,7 +342,6 @@ class PatientDiscoveryTest : BaseChannelTest(
 
     @Test
     fun `backfill kicks off dag`() {
-        KafkaClient.testingClient.reset()
         val patientChannelId = ChannelMap.installedDag[PATIENT_LOAD_CHANNEL_NAME]!!
         MirthClient.clearChannelMessages(patientChannelId)
         tenantsToTest().forEach {
@@ -456,7 +453,6 @@ class PatientDiscoveryTest : BaseChannelTest(
 
     @Test
     fun `channel works with clinical trial patients`() {
-        KafkaClient.testingClient.reset()
         MockOCIServerClient.client.clear(HttpRequest.request().withMethod("GET").withPath("/subjects"))
 
         val patient1 =

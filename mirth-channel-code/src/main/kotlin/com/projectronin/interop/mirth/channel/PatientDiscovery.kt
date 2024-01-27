@@ -82,12 +82,9 @@ class PatientDiscovery(
         if (nightlyMessages.isNotEmpty()) {
             return nightlyMessages
         } else if (backfillEnabled) {
-            val now = OffsetDateTime.now(ZoneOffset.UTC)
             val tenantsOkToRun =
                 tenantService
                     .getAllTenants()
-                    // we should be in a tenant's window to poll
-                    .filter { AvailableWindow(it).isInWindow(now) }
             // loop through the tenants and take the first tenant we find with a backfill entry
             val backfillQueueEntry =
                 tenantsOkToRun
