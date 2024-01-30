@@ -25,6 +25,7 @@ import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.mirth.PATIENT_DISCOVERY_CHANNEL_NAME
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -36,6 +37,7 @@ class BackfillDiscoveryQueueTest : BaseChannelTest(
     listOf("Patient", "Appointment", "Location"),
 ) {
     @BeforeEach
+    @AfterEach
     fun `delete it all`() {
         // failed tests can leave a backfill id, so get all backfill ids and then delete them
         tenantsToTest().forEach {
