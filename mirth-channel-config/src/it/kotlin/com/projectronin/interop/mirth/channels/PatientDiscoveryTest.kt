@@ -377,6 +377,37 @@ class PatientDiscoveryTest : BaseChannelTest(
                     telecom of emptyList()
                 }
             val patient1Id = MockEHRTestData.add(patient1)
+            val patient2 =
+                patient {
+                    birthDate of
+                        date {
+                            year of 1990
+                            month of 1
+                            day of 3
+                        }
+                    identifier of
+                        listOf(
+                            identifier {
+                                system of "mockPatientInternalSystem"
+                            },
+                            identifier {
+                                system of "mockEHRMRNSystem"
+                                value of "1000000002"
+                            },
+                        )
+                    name of
+                        listOf(
+                            name {
+                                use of "usual" // This is required to generate the Epic response.
+                            },
+                            name {
+                                use of "official"
+                            },
+                        )
+                    gender of "male"
+                    telecom of emptyList()
+                }
+            val patient2Id = MockEHRTestData.add(patient2)
 
             runBlocking {
                 // make a new backfill
@@ -390,7 +421,7 @@ class PatientDiscoveryTest : BaseChannelTest(
                                 endDate = LocalDate.now(),
                             ),
                     ).id!!
-                // complete the undiscovered queues so they don't accidentally resolve the and add the queues
+                // complete the undiscovered queues so they don't accidentally resolve and add to the queues
                 val undiscovereEntries = BackfillClient.discoveryQueueClient.getDiscoveryQueueEntries(TEST_TENANT)
                 undiscovereEntries.forEach {
                     BackfillClient.discoveryQueueClient.updateDiscoveryQueueEntryByID(
@@ -400,7 +431,13 @@ class PatientDiscoveryTest : BaseChannelTest(
                         ),
                     )
                 }
-                BackfillClient.queueClient.postQueueEntry(backfillId, listOf(NewQueueEntry(backfillId, patient1Id)))
+                BackfillClient.queueClient.postQueueEntry(
+                    backfillId,
+                    listOf(
+                        NewQueueEntry(backfillId, patient1Id),
+                        NewQueueEntry(backfillId, patient2Id),
+                    ),
+                )
             }
 
             TenantClient.putMirthConfig(
@@ -412,6 +449,7 @@ class PatientDiscoveryTest : BaseChannelTest(
                 ),
             )
             MockOCIServerClient.createExpectations("patient", patient1Id, it)
+            MockOCIServerClient.createExpectations("patient", patient2Id, it)
             val newTenant =
                 TenantClient.getTenant(it)
                     .copy(availableStart = LocalTime.MIN, availableEnd = LocalTime.MAX)
@@ -428,16 +466,11 @@ class PatientDiscoveryTest : BaseChannelTest(
         MirthClient.deployChannel(testChannelId)
         startChannel()
 
-        waitForMessage(1, channelID = patientChannelId)
+        waitForMessage(2, channelID = patientChannelId)
 
         runBlocking { delay(5.seconds) }
 
-        // we only do one backfill event at a time
-        MirthClient.deployChannel(testChannelId)
-        startChannel()
-        waitForMessage(2, channelID = patientChannelId)
-
-        assertEquals(2, tenantsToTest().mapToInt { getAidboxResourceCount("Patient", it) }.sum())
+        assertEquals(4, tenantsToTest().mapToInt { getAidboxResourceCount("Patient", it) }.sum())
         tenantsToTest().forEach {
             runBlocking {
                 val backfills = BackfillClient.backfillClient.getBackfills(it)
@@ -445,7 +478,7 @@ class PatientDiscoveryTest : BaseChannelTest(
                 assertEquals(BackfillStatus.STARTED, backfills.first().status)
 
                 val queueEntries = BackfillClient.queueClient.getEntriesByBackfillID(backfills.first().id)
-                assertEquals(1, queueEntries.size)
+                assertEquals(2, queueEntries.size)
                 assertEquals(BackfillStatus.STARTED, queueEntries.first().status)
             }
         }

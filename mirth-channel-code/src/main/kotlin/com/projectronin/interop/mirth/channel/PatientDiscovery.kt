@@ -82,19 +82,25 @@ class PatientDiscovery(
         if (nightlyMessages.isNotEmpty()) {
             return nightlyMessages
         } else if (backfillEnabled) {
-            val tenantsOkToRun =
+            val tenants =
                 tenantService
                     .getAllTenants()
-            // loop through the tenants and take the first tenant we find with a backfill entry
-            val backfillQueueEntry =
-                tenantsOkToRun
-                    .asSequence()
-                    .map { runBlocking { backfillQueueClient.getQueueEntries(it.mnemonic, backfillQueueSize).firstOrNull() } }
-                    .firstNotNullOfOrNull { it }
 
-            backfillQueueEntry?.let { queueEntry ->
+            // loop through the tenants and take the first tenant we find with a backfill entry
+            val backfillQueueEntries =
+                tenants
+                    .asSequence()
+                    .map { runBlocking { backfillQueueClient.getQueueEntries(it.mnemonic, backfillQueueSize) } }
+                    .find { it.isNotEmpty() }
+
+            // nothing returned from server for any tenant
+            if (backfillQueueEntries.isNullOrEmpty()) {
+                return emptyList()
+            }
+
+            return backfillQueueEntries.map { queueEntry ->
                 val tenantTimezone =
-                    tenantsOkToRun
+                    tenants
                         .single { it.mnemonic == queueEntry.tenantId }
                         .timezone.rules.getOffset(LocalDateTime.now())
                 val metadata =
@@ -116,21 +122,20 @@ class PatientDiscovery(
                                     ),
                             ),
                     )
-                return listOf(
-                    MirthMessage(
-                        message = JacksonUtil.writeJsonValue(queueEntry),
-                        dataMap =
-                            mapOf(
-                                MirthKey.TENANT_MNEMONIC.code to queueEntry.tenantId,
-                                MirthKey.EVENT_METADATA.code to serialize(metadata),
-                                MirthKey.EVENT_RUN_ID.code to metadata.runId,
-                            ),
-                    ),
+
+                MirthMessage(
+                    message = JacksonUtil.writeJsonValue(queueEntry),
+                    dataMap =
+                        mapOf(
+                            MirthKey.TENANT_MNEMONIC.code to queueEntry.tenantId,
+                            MirthKey.EVENT_METADATA.code to serialize(metadata),
+                            MirthKey.EVENT_RUN_ID.code to metadata.runId,
+                        ),
                 )
             }
         }
 
-        // either didn't find any message or backfill wasn't enabled or backfill didn't find messages
+        // no nightly messages and no backfill enabled
         return emptyList()
     }
 

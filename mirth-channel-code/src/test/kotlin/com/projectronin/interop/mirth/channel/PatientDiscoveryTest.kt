@@ -470,12 +470,19 @@ class PatientDiscoveryTest {
                     patientId = "pattythepatient",
                     status = BackfillStatus.NOT_STARTED,
                 ),
-                // this should be found but discarded because we're only taking one
-                mockk {},
+                QueueEntry(
+                    id = entryId,
+                    backfillId = backfillId,
+                    tenantId = "blah",
+                    startDate = LocalDate.of(2008, 11, 15),
+                    endDate = LocalDate.of(2023, 11, 15),
+                    patientId = "pattythepatient2",
+                    status = BackfillStatus.NOT_STARTED,
+                ),
             )
 
         val list = backfillVersionChannel.channelSourceReader(emptyMap())
-        assertEquals(1, list.size)
+        assertEquals(2, list.size)
         assertEquals(backfillEventString, list.first().message)
         assertEquals("blah", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
         assertNotNull(list.first().dataMap[MirthKey.EVENT_RUN_ID.code])
