@@ -102,6 +102,7 @@ abstract class KafkaTopicReader(
                         MirthKey.TENANT_MNEMONIC.code to key.first,
                         MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!,
                         MirthKey.EVENT_RUN_ID.code to key.second,
+                        MirthKey.EVENT_METADATA_SOURCE.code to key.third,
                     ),
                 )
             }

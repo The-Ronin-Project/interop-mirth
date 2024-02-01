@@ -69,4 +69,9 @@ enum class MirthKey(val code: String) {
      * The ID for the backfill event
      */
     BACKFILL_ID("backfillId"),
+
+    /**
+     *  Type of PatientDiscovery run
+     */
+    DISCOVERY_TYPE("discoveryType"),
 }

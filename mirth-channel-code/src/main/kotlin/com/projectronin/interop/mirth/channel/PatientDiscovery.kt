@@ -53,6 +53,12 @@ class PatientDiscovery(
         fun create() = SpringUtil.applicationContext.getBean(PatientDiscovery::class.java)
     }
 
+    enum class DiscoveryTypes(val code: String) {
+        NIGHTLY("nightly"),
+        BACKFILL("backfill"),
+        NIGHTLY_CLINICAL("nightly_clinical"),
+    }
+
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
         val nightlyMessages =
             tenantService.getMonitoredTenants()
@@ -71,6 +77,7 @@ class PatientDiscovery(
                                         MirthKey.TENANT_MNEMONIC.code to tenant.mnemonic,
                                         MirthKey.EVENT_METADATA.code to serialize(metadata),
                                         MirthKey.EVENT_RUN_ID.code to metadata.runId,
+                                        MirthKey.DISCOVERY_TYPE.code to DiscoveryTypes.NIGHTLY.code,
                                     ),
                             )
                         }
@@ -130,6 +137,8 @@ class PatientDiscovery(
                             MirthKey.TENANT_MNEMONIC.code to queueEntry.tenantId,
                             MirthKey.EVENT_METADATA.code to serialize(metadata),
                             MirthKey.EVENT_RUN_ID.code to metadata.runId,
+                            MirthKey.DISCOVERY_TYPE.code to DiscoveryTypes.BACKFILL.code,
+                            MirthKey.BACKFILL_ID.code to queueEntry.backfillId.toString(),
                         ),
                 )
             }
@@ -154,7 +163,13 @@ class PatientDiscovery(
             runBlocking {
                 backfillQueueClient.updateQueueEntryByID(backfillEntry.id, UpdateQueueEntry(BackfillStatus.STARTED))
             }
-            return MirthMessage(message = JacksonUtil.writeJsonValue(listOf(backfillEntry.patientId)))
+            return MirthMessage(
+                message = JacksonUtil.writeJsonValue(listOf(backfillEntry.patientId)),
+                dataMap =
+                    mapOf(
+                        MirthKey.RESOURCE_COUNT.code to 1,
+                    ),
+            )
         }
 
         val tenant = tenantService.getTenantForMnemonic(tenantMnemonic) ?: throw Exception("No Tenant Found")
@@ -163,7 +178,8 @@ class PatientDiscovery(
         val patientIds = mutableListOf<String>()
 
         // Clinical trial patient discovery
-        if (locations.contains(clinicalTrialLocation)) {
+        val isClinicalTrial = locations.contains(clinicalTrialLocation)
+        if (isClinicalTrial) {
             val clinicalTrialSubjects = runBlocking { clinicalTrialClient.getSubjects(true) }
             val clinicalTrialPatients =
                 clinicalTrialSubjects.filter { it.roninFhirId.startsWith("$tenantMnemonic-") }
@@ -178,8 +194,16 @@ class PatientDiscovery(
             val locationBasedPatients = getPatientIdsFromLocations(locations, tenant)
             patientIds.addAll(locationBasedPatients)
         }
+        val discoveryType = if (isClinicalTrial) DiscoveryTypes.NIGHTLY_CLINICAL.code else DiscoveryTypes.NIGHTLY.code
 
-        return MirthMessage(message = JacksonUtil.writeJsonValue(patientIds))
+        return MirthMessage(
+            message = JacksonUtil.writeJsonValue(patientIds),
+            dataMap =
+                mapOf(
+                    MirthKey.DISCOVERY_TYPE.code to discoveryType,
+                    MirthKey.RESOURCE_COUNT.code to patientIds.size,
+                ),
+        )
     }
 
     private fun getPatientIdsFromLocations(

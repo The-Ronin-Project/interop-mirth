@@ -192,14 +192,24 @@ return;</undeployScript>
         <mappingName>tenantMnemonic</mappingName>
       </metaDataColumn>
       <metaDataColumn>
-        <name>FHIRID</name>
+        <name>TYPE</name>
         <type>STRING</type>
-        <mappingName>locationFhirID</mappingName>
+        <mappingName>discoveryType</mappingName>
       </metaDataColumn>
       <metaDataColumn>
         <name>RUN</name>
         <type>STRING</type>
         <mappingName>kafkaEventRunId</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>PATIENTS</name>
+        <type>STRING</type>
+        <mappingName>resourceCount</mappingName>
+      </metaDataColumn>
+      <metaDataColumn>
+        <name>BACKFILLID</name>
+        <type>STRING</type>
+        <mappingName>backfillID</mappingName>
       </metaDataColumn>
     </metaDataColumns>
     <attachmentProperties version="4.4.0">

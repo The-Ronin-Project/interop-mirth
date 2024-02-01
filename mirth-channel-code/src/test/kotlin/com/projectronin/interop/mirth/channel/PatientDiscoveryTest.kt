@@ -163,6 +163,7 @@ class PatientDiscoveryTest {
         assertEquals("[\"123\",\"456\"]", list.first().message)
         assertEquals("ronin", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
         assertNotNull(list.first().dataMap[MirthKey.EVENT_RUN_ID.code])
+        assertEquals(PatientDiscovery.DiscoveryTypes.NIGHTLY.code, list.first().dataMap[MirthKey.DISCOVERY_TYPE.code])
     }
 
     @Test
@@ -486,6 +487,7 @@ class PatientDiscoveryTest {
         assertEquals(backfillEventString, list.first().message)
         assertEquals("blah", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
         assertNotNull(list.first().dataMap[MirthKey.EVENT_RUN_ID.code])
+        assertEquals(PatientDiscovery.DiscoveryTypes.BACKFILL.code, list.first().dataMap[MirthKey.DISCOVERY_TYPE.code])
     }
 
     @Test
@@ -562,6 +564,8 @@ class PatientDiscoveryTest {
                 emptyMap(),
             )
         assertEquals("[\"Patient/patFhirID\"]", message.message)
+        assertEquals(PatientDiscovery.DiscoveryTypes.NIGHTLY_CLINICAL.code, message.dataMap[MirthKey.DISCOVERY_TYPE.code])
+        assertEquals(1, message.dataMap[MirthKey.RESOURCE_COUNT.code])
     }
 
     @Test
