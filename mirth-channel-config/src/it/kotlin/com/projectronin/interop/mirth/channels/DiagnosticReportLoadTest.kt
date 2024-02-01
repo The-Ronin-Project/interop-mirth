@@ -133,7 +133,7 @@ class DiagnosticReportLoadTest : BaseChannelTest(
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsStatus(messageList)
-        assertEquals(1, messageList.size)
+        assertEquals(2, messageList.size)
         assertEquals(6, getAidboxResourceCount("DiagnosticReport"))
     }
 

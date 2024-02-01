@@ -20,6 +20,7 @@ class EncounterLoad(
     override val channelGroupId = "interop-mirth-encounter_group"
     override val publishedResourcesSubscriptions = listOf(ResourceType.Patient)
     override val resource = ResourceType.Encounter
+    override val publishEventOverrideResources = listOf(ResourceType.Patient)
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(EncounterLoad::class.java)

@@ -21,6 +21,7 @@ class ObservationLoad(
     override val publishedResourcesSubscriptions = listOf(ResourceType.Patient, ResourceType.Condition)
     override val resource = ResourceType.Observation
     override val maxBackfillDays = 30
+    override val publishEventOverrideResources = listOf(ResourceType.Patient)
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(ObservationLoad::class.java)

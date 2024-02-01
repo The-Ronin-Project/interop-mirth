@@ -28,7 +28,7 @@ abstract class KafkaTopicReader(
     open val maxBackfillDays: Int? = null
     open val maxEventBatchSize: Int = 20
 
-    open val publishEventOverrideBatchSize: Int? = 20
+    open val publishEventOverrideBatchSize: Int? = 1
     open val publishEventOverrideResources: List<ResourceType> = emptyList()
 
     override val destinations: Map<String, KafkaEventResourcePublisher<*>> = mapOf("publish" to defaultPublisher)

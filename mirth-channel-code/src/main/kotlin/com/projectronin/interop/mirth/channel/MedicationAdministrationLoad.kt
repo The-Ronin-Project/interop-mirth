@@ -21,6 +21,11 @@ class MedicationAdministrationLoad(
     override val publishedResourcesSubscriptions = listOf(ResourceType.Patient, ResourceType.MedicationRequest)
     override val resource = ResourceType.MedicationAdministration
     override val maxBackfillDays = 30
+    override val publishEventOverrideResources =
+        listOf(
+            ResourceType.Patient,
+            ResourceType.MedicationRequest,
+        )
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(MedicationAdministrationLoad::class.java)

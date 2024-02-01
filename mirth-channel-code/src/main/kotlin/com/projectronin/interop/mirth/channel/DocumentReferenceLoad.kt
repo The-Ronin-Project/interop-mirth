@@ -24,6 +24,11 @@ class DocumentReferenceLoad(
             ResourceType.DocumentReference,
         )
     override val resource = ResourceType.DocumentReference
+    override val publishEventOverrideResources =
+        listOf(
+            ResourceType.Patient,
+            ResourceType.DocumentReference,
+        )
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(DocumentReferenceLoad::class.java)

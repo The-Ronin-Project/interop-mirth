@@ -25,6 +25,7 @@ class CarePlanLoad(
         )
     override val resource = ResourceType.CarePlan
     override val maxBackfillDays = 30
+    override val publishEventOverrideResources = listOf(ResourceType.Patient)
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(CarePlanLoad::class.java)

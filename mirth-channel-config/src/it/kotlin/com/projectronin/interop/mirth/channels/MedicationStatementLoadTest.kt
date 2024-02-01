@@ -175,7 +175,7 @@ class MedicationStatementLoadTest : BaseChannelTest(
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsStatus(messageList)
-        assertEquals(1, messageList.size)
+        assertEquals(2, messageList.size)
         if (!tenantInUse.contains("cern")) {
             assertEquals(7, getAidboxResourceCount(medicationStatementType))
         }

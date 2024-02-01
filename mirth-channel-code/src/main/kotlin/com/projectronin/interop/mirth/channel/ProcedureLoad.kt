@@ -28,6 +28,7 @@ class ProcedureLoad(
             ResourceType.Procedure,
         )
     override val resource = ResourceType.Procedure
+    override val publishEventOverrideResources = listOf(ResourceType.Patient)
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(ProcedureLoad::class.java)

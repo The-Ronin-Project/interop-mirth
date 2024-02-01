@@ -20,6 +20,7 @@ class MedicationStatementLoad(
     override val channelGroupId = "interop-mirth-medication-statement_group"
     override val publishedResourcesSubscriptions = listOf(ResourceType.Patient)
     override val resource = ResourceType.MedicationStatement
+    override val publishEventOverrideResources = listOf(ResourceType.Patient)
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(MedicationStatementLoad::class.java)

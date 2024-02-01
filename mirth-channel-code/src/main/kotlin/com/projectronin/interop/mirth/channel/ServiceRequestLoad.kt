@@ -30,6 +30,7 @@ class ServiceRequestLoad(
             ResourceType.Procedure,
         )
     override val resource = ResourceType.ServiceRequest
+    override val publishEventOverrideResources = listOf(ResourceType.Patient)
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(ServiceRequestLoad::class.java)

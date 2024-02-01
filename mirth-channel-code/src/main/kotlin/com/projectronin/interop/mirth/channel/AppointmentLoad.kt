@@ -21,6 +21,7 @@ class AppointmentLoad(
     override val publishedResourcesSubscriptions = listOf(ResourceType.Patient)
     override val resource = ResourceType.Appointment
     override val maxBackfillDays = 30
+    override val publishEventOverrideResources = listOf(ResourceType.Patient)
 
     companion object {
         fun create() = SpringUtil.applicationContext.getBean(AppointmentLoad::class.java)
