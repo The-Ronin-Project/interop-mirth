@@ -10,7 +10,6 @@ internal class SpringConfigTest {
     fun codeCov() {
         val config = SpringConfig()
         assertNotNull(config.property())
-        assertNotNull(config.threadPoolTaskExecutor(4, 8, "prefix"))
         assertThrows<Exception> { config.queueDatabase("URL", "name", "pass") }
         assertThrows<Exception> { config.ehrDatabase("URL", "name", "pass") }
         assertThrows<Exception> { config.queueDatabase("URL", null, null) }

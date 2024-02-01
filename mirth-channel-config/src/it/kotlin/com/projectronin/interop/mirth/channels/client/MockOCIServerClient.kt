@@ -12,7 +12,6 @@ import com.projectronin.interop.fhir.r4.resource.Patient
 import com.projectronin.interop.fhir.r4.resource.Practitioner
 import com.projectronin.interop.fhir.r4.resource.PractitionerRole
 import com.projectronin.interop.fhir.r4.resource.Resource
-import com.projectronin.interop.mirth.channels.TEST_TENANT
 import org.mockserver.client.MockServerClient
 import org.mockserver.matchers.Times
 import org.mockserver.model.HttpRequest.request
@@ -58,7 +57,7 @@ object MockOCIServerClient {
     fun createExpectations(
         resourceType: String,
         resourceFhirID: String,
-        tenant: String = TEST_TENANT,
+        tenant: String,
     ) {
         val objectName = getR4Name(resourceType, resourceFhirID, tenant)
         setPutExpectation(objectName)
@@ -66,7 +65,7 @@ object MockOCIServerClient {
 
     fun createExpectations(
         resourceIdsByType: Map<String, List<String>>,
-        tenant: String = TEST_TENANT,
+        tenant: String,
     ) {
         resourceIdsByType.entries.forEach { entry ->
             entry.value.forEach { createExpectations(entry.key, it, tenant) }
@@ -124,7 +123,7 @@ object MockOCIServerClient {
     private fun getR4Name(
         resourceType: String,
         resourceFhirID: String,
-        tenant: String = TEST_TENANT,
+        tenant: String,
     ): String {
         // Mirth's server clock is in UTC, so match that
         val date = ISO_LOCAL_DATE.withZone(ZoneId.from(UTC)).format(Instant.now()) // lol Java dates, graceful as always
@@ -132,9 +131,16 @@ object MockOCIServerClient {
         // which would require more overhead than is worth it for this test
         val udpID = "$tenant-$resourceFhirID"
 
+        val baseName =
+            if (resourceType == "Binary") {
+                "ehr/Binary/fhir_tenant_id=$tenant/$udpID.json"
+            } else {
+                "ehr/${resourceType.lowercase()}/fhir_tenant_id=$tenant/_date=$date/$udpID.json"
+            }
+
         // We really should use OCI's ParamEncoder.encode, but that adds a huge demendency on the OCI SDK for one call
         // so this is a hacky version of that
-        return "ehr/${resourceType.lowercase()}/fhir_tenant_id=$tenant/_date=$date/$udpID.json".replace("/", "%2F")
+        return baseName.replace("/", "%2F")
     }
 
     private fun setPutExpectation(objectName: String) {

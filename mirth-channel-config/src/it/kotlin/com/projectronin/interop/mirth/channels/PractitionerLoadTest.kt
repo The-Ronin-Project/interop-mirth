@@ -96,6 +96,7 @@ class PractitionerLoadTest : BaseChannelTest(
 
         // mock: appointment-publish event
         MockOCIServerClient.createExpectations("Appointment", fakeAppointmentId, tenantInUse)
+        MockOCIServerClient.createExpectations("Practitioner", fakePractitionerId, tenantInUse)
 
         val metadata =
             Metadata(

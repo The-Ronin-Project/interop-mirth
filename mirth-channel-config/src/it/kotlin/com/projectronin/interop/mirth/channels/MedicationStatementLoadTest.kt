@@ -99,7 +99,7 @@ class MedicationStatementLoadTest : BaseChannelTest(
                 medication of DynamicValues.reference(reference("Medication", "1234"))
             }
         val medicationStatementId = MockEHRTestData.add(medicationStatement)
-        MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId)
+        MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId, tenantInUse)
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
@@ -287,10 +287,10 @@ class MedicationStatementLoadTest : BaseChannelTest(
                 contained plus containedMedication
             }
         val medicationStatementId = MockEHRTestData.add(medicationStatement)
-        MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId)
+        MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId, tenantInUse)
 
         val medicationId = "contained-$medicationStatementId-13579"
-        MockOCIServerClient.createExpectations(medicationType, medicationId)
+        MockOCIServerClient.createExpectations(medicationType, medicationId, tenantInUse)
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
@@ -387,10 +387,10 @@ class MedicationStatementLoadTest : BaseChannelTest(
                 medication of DynamicValues.codeableConcept(medicationCodeableConcept)
             }
         val medicationStatementId = MockEHRTestData.add(medicationStatement)
-        MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId)
+        MockOCIServerClient.createExpectations(medicationStatementType, medicationStatementId, tenantInUse)
 
         val medicationId = "codeable-$medicationStatementId-161"
-        MockOCIServerClient.createExpectations(medicationType, medicationId)
+        MockOCIServerClient.createExpectations(medicationType, medicationId, tenantInUse)
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,

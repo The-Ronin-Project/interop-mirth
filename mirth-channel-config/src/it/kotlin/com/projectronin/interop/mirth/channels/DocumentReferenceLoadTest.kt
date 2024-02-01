@@ -92,6 +92,12 @@ class DocumentReferenceLoadTest : BaseChannelTest(
             MockEHRTestData.add(fakeDocumentReference),
             tenantInUse,
         )
+        // Binary writes out as "Binary"
+        MockOCIServerClient.createExpectations(
+            "Binary",
+            fakeBinaryID,
+            tenantInUse,
+        )
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,

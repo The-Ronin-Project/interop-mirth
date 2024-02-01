@@ -17,14 +17,12 @@ import org.ktorm.support.mysql.MySqlDialect
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.boot.task.TaskExecutorBuilder
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
 import org.springframework.vault.annotation.VaultPropertySource
 
 @Configuration
@@ -93,15 +91,6 @@ class SpringConfig {
             password = password,
             dialect = MySqlDialect(),
         )
-
-    @Bean
-    fun threadPoolTaskExecutor(
-        @Value("\${task.executor.pool.core:8}") corePoolSize: Int,
-        @Value("\${task.executor.pool.max:8}") maxPoolSize: Int,
-        @Value("\${task.executor.thread-prefix:interop-task-pool}") threadNamePrefix: String,
-    ): ThreadPoolTaskExecutor =
-        TaskExecutorBuilder().corePoolSize(corePoolSize).maxPoolSize(maxPoolSize).threadNamePrefix(threadNamePrefix)
-            .build()
 }
 
 object SpringUtil {

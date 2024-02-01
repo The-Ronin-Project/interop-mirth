@@ -101,7 +101,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
                 medication of DynamicValues.reference(reference(medicationType, "1234"))
             }
         val medicationRequestId = MockEHRTestData.add(medicationRequest)
-        MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId)
+        MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId, tenantInUse)
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
@@ -292,10 +292,10 @@ class MedicationRequestLoadTest : BaseChannelTest(
                 contained plus containedMedication
             }
         val medicationRequestId = MockEHRTestData.add(medicationRequest)
-        MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId)
+        MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId, tenantInUse)
 
         val medicationId = "contained-$medicationRequestId-13579"
-        MockOCIServerClient.createExpectations(medicationType, medicationId)
+        MockOCIServerClient.createExpectations(medicationType, medicationId, tenantInUse)
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
@@ -392,10 +392,10 @@ class MedicationRequestLoadTest : BaseChannelTest(
                 medication of DynamicValues.codeableConcept(medicationCodeableConcept)
             }
         val medicationRequestId = MockEHRTestData.add(medicationRequest)
-        MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId)
+        MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId, tenantInUse)
 
         val medicationId = "codeable-$medicationRequestId-161"
-        MockOCIServerClient.createExpectations(medicationType, medicationId)
+        MockOCIServerClient.createExpectations(medicationType, medicationId, tenantInUse)
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,

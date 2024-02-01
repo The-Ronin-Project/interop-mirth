@@ -120,7 +120,7 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
                     )
             }
         val medicationAdministrationId = MockEHRTestData.add(medicationAdministration)
-        MockOCIServerClient.createExpectations(medicationAdministrationType, medicationAdministrationId)
+        MockOCIServerClient.createExpectations(medicationAdministrationType, medicationAdministrationId, tenantInUse)
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
@@ -263,7 +263,9 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
                 request of reference(medicationRequestType, medicationRequestId)
             }
         val medicationAdministrationId = MockEHRTestData.add(medicationAdministration)
-        MockOCIServerClient.createExpectations(medicationAdministrationType, medicationAdministrationId)
+        MockOCIServerClient.createExpectations(medicationAdministrationType, medicationAdministrationId, tenantInUse)
+        // For Epic, we generate our own ID, so we need a format that will match that.
+        MockOCIServerClient.createExpectations(medicationAdministrationType, "InternalMedReqId-.*", tenantInUse)
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
@@ -303,7 +305,7 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
                     )
             }
         val medicationAdministrationId = MockEHRTestData.add(medicationAdministration)
-        MockOCIServerClient.createExpectations(medicationAdministrationType, medicationAdministrationId)
+        MockOCIServerClient.createExpectations(medicationAdministrationType, medicationAdministrationId, tenantInUse)
 
         KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
@@ -387,10 +389,10 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
                 contained plus containedMedication
             }
         val medicationAdministrationId = MockEHRTestData.add(medicationAdministration)
-        MockOCIServerClient.createExpectations(medicationAdministrationType, medicationAdministrationId)
+        MockOCIServerClient.createExpectations(medicationAdministrationType, medicationAdministrationId, tenantInUse)
 
         val medicationId = "contained-$medicationAdministrationId-13579"
-        MockOCIServerClient.createExpectations(medicationType, medicationId)
+        MockOCIServerClient.createExpectations(medicationType, medicationId, tenantInUse)
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
@@ -495,10 +497,10 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
                 medication of DynamicValues.codeableConcept(medicationCodeableConcept)
             }
         val medicationAdministrationId = MockEHRTestData.add(medicationAdministration)
-        MockOCIServerClient.createExpectations(medicationAdministrationType, medicationAdministrationId)
+        MockOCIServerClient.createExpectations(medicationAdministrationType, medicationAdministrationId, tenantInUse)
 
         val medicationId = "codeable-$medicationAdministrationId-161"
-        MockOCIServerClient.createExpectations(medicationType, medicationId)
+        MockOCIServerClient.createExpectations(medicationType, medicationId, tenantInUse)
 
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
