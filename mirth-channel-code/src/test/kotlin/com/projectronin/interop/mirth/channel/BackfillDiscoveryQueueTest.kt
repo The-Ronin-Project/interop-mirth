@@ -36,11 +36,13 @@ class BackfillDiscoveryQueueTest {
     lateinit var tenant2: Tenant
     lateinit var tenantService: TenantService
     lateinit var vendorFactory: VendorFactory
+    lateinit var ehrFactory: EHRFactory
     lateinit var discoveryQueueClient: DiscoveryQueueClient
     lateinit var channel: BackfillDiscoveryQueue
+    private val writer = mockk<BackfillDiscoveryQueueWriter>()
     val backfillID = UUID.randomUUID()
-    val start = LocalDate.now().minusMonths(10)
-    val end = LocalDate.now()
+    val start = LocalDate.of(2023, 6, 1)
+    val end = LocalDate.of(2023, 12, 31)
     val queueEntry1 =
         DiscoveryQueueEntry(
             UUID.randomUUID(),
@@ -90,11 +92,11 @@ class BackfillDiscoveryQueueTest {
                 every { getTenantForMnemonic("ronin") } returns tenant
                 every { getMonitoredTenants() } returns listOf(tenant, tenant2)
             }
-        val ehrFactory =
+        ehrFactory =
             mockk<EHRFactory> {
                 every { getVendorFactory(tenant) } returns vendorFactory
             }
-        val writer = mockk<BackfillDiscoveryQueueWriter>()
+
         channel =
             BackfillDiscoveryQueue(
                 tenantService,
@@ -113,8 +115,25 @@ class BackfillDiscoveryQueueTest {
     @Test
     fun `sourceReader works`() {
         val list = channel.channelSourceReader(emptyMap())
+        assertEquals(16, list.size)
+        assertEquals(JacksonUtil.writeJsonValue(queueEntry1.copy(endDate = start.plusDays(30))), list.first().message)
+        assertEquals("ronin", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals(backfillID.toString(), list.first().dataMap[MirthKey.BACKFILL_ID.code])
+    }
+
+    @Test
+    fun `sourceReader works with custom max day range`() {
+        val channel =
+            BackfillDiscoveryQueue(
+                tenantService,
+                ehrFactory,
+                discoveryQueueClient,
+                writer,
+                60,
+            )
+        val list = channel.channelSourceReader(emptyMap())
         assertEquals(8, list.size)
-        assertEquals(JacksonUtil.writeJsonValue(queueEntry1.copy(endDate = start.plusDays(90))), list.first().message)
+        assertEquals(JacksonUtil.writeJsonValue(queueEntry1.copy(endDate = start.plusDays(60))), list.first().message)
         assertEquals("ronin", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
         assertEquals(backfillID.toString(), list.first().dataMap[MirthKey.BACKFILL_ID.code])
     }
@@ -125,8 +144,8 @@ class BackfillDiscoveryQueueTest {
             discoveryQueueClient.getDiscoveryQueueEntries("blah", DiscoveryQueueStatus.UNDISCOVERED)
         } throws IllegalArgumentException("oops")
         val list = channel.channelSourceReader(emptyMap())
-        assertEquals(8, list.size)
-        assertEquals(JacksonUtil.writeJsonValue(queueEntry1.copy(endDate = start.plusDays(90))), list.first().message)
+        assertEquals(16, list.size)
+        assertEquals(JacksonUtil.writeJsonValue(queueEntry1.copy(endDate = start.plusDays(30))), list.first().message)
         assertEquals("ronin", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
         assertEquals(backfillID.toString(), list.first().dataMap[MirthKey.BACKFILL_ID.code])
     }

@@ -14,6 +14,7 @@ import com.projectronin.interop.mirth.channel.util.splitDateRange
 import com.projectronin.interop.mirth.spring.SpringUtil
 import com.projectronin.interop.tenant.config.TenantService
 import kotlinx.coroutines.runBlocking
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
@@ -24,6 +25,8 @@ class BackfillDiscoveryQueue(
     private val ehrFactory: EHRFactory,
     private val discoveryQueueClient: DiscoveryQueueClient,
     writer: BackfillDiscoveryQueueWriter,
+    @Value("\${backfill.discovery.window:30}")
+    private val maximumDayRange: Int = 30,
 ) : TenantlessSourceService() {
     override val rootName = "BackfillDiscoveryQueue"
     override val destinations = mapOf("queue" to writer)
@@ -60,7 +63,7 @@ class BackfillDiscoveryQueue(
                                         queue.endDate.atStartOfDay(),
                                         tenantTimezone,
                                     )
-                                val range = splitDateRange(offsetStartDate, offsetEndRangeDate, 90)
+                                val range = splitDateRange(offsetStartDate, offsetEndRangeDate, maximumDayRange)
                                 range.map {
                                     queue.copy(
                                         startDate = it.first.toLocalDate(),
