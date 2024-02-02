@@ -57,7 +57,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
 
         // if the resource request had upstream resources, add a String-representation to the metadata.
         val sourceReferences = resourceLoadRequest.sourceReferences
-        val newMap =
+        val sourceReferenceMap =
             if (sourceReferences.isEmpty()) {
                 emptyMap()
             } else {
@@ -70,7 +70,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 status = MirthResponseStatus.SENT,
                 detailedMessage = "No request keys exist prior to checking the cache",
                 message = "No request keys exist prior to checking the cache",
-                dataMap = newMap,
+                dataMap = sourceReferenceMap,
             )
         }
         val requestKeysToProcess = filterRequestKeys(allRequestKeys)
@@ -84,9 +84,11 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                     )
                 }",
                 message = "Already processed",
-                dataMap = newMap,
+                dataMap = sourceReferenceMap,
             )
         }
+
+        val requestDataMap = sourceReferenceMap + resourceLoadRequest.requestSpecificMirthMetadata
 
         // Now we're going to go and load all the requests we did not have cached
         val (resourcesByKey, previouslyCachedCount) =
@@ -101,7 +103,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                         status = MirthResponseStatus.ERROR,
                         detailedMessage = it.message,
                         message = "Failed EHR Call",
-                        dataMap = newMap,
+                        dataMap = requestDataMap,
                     )
                 },
             )
@@ -110,7 +112,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 status = MirthResponseStatus.SENT,
                 detailedMessage = resourcesByKey.truncateList(),
                 message = "This message is meant only for internal processing.",
-                dataMap = newMap,
+                dataMap = requestDataMap,
             )
         }
         val cachedResourcesCount = allRequestKeys.size - requestKeysToProcess.size + previouslyCachedCount
@@ -122,7 +124,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 status = MirthResponseStatus.SENT,
                 detailedMessage = "No new resources retrieved from EHR.$cachedMessage",
                 message = "No resources",
-                dataMap = newMap,
+                dataMap = requestDataMap,
             )
         }
 
@@ -139,11 +141,15 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
             }
         val totalResourcesCount = resourcesByKey.totalSize()
         if (transformedResourcesByKey.isEmpty()) {
+            logger.error {
+                "Received $totalResourcesCount resources from EHR but transform failed for all for tenant: $tenantMnemonic.\n" +
+                    "Resources received: ${resourcesByKey.ids()}"
+            }
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = resourcesByKey.truncateList(),
                 message = "Failed to transform $totalResourcesCount resource(s)",
-                dataMap = newMap + mapOf(MirthKey.FAILURE_COUNT.code to totalResourcesCount),
+                dataMap = requestDataMap + mapOf(MirthKey.FAILURE_COUNT.code to totalResourcesCount),
             )
         }
         // if some of our uncachedResources failed to transform, we should alert, but publish the ones that worked
@@ -231,7 +237,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                     "Successfully published ${successfullyPublishedTransforms.size}, " +
                         "but failed to publish ${failedPublishTransforms.size} resource(s)",
                 dataMap =
-                    newMap +
+                    requestDataMap +
                         mapOf(
                             MirthKey.FAILURE_COUNT.code to failedPublishTransforms.size,
                             MirthKey.RESOURCE_COUNT.code to successfullyPublishedTransforms.size,
@@ -243,7 +249,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 detailedMessage = successfullyPublishedTransforms.truncateResourceList(),
                 message = "Published ${successfullyPublishedTransforms.size} resource(s).$cachedMessage",
                 dataMap =
-                    newMap +
+                    requestDataMap +
                         mapOf(
                             MirthKey.FAILURE_COUNT.code to (totalResourcesCount - successfullyPublishedTransforms.size),
                             MirthKey.RESOURCE_COUNT.code to successfullyPublishedTransforms.size,

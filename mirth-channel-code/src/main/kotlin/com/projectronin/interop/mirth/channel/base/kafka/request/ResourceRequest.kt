@@ -73,6 +73,11 @@ abstract class ResourceRequest<T : Resource<T>, E> {
     open val skipKafkaPublishing: Boolean = false
 
     /**
+     * Returns metadata specific to the request. This will be included in the dataMap returned to Mirth in all cases where the request is processed.
+     */
+    open val requestSpecificMirthMetadata: Map<String, String> = emptyMap()
+
+    /**
      * Loads the resources for the supplied [requestFhirIds] and returns them keyed by their supplied ID.
      */
     abstract fun loadResourcesForIds(
@@ -106,7 +111,11 @@ abstract class ResourceRequest<T : Resource<T>, E> {
                 val requestsByFhirID = datedRequestKeyGroup.value.associateBy { it.unlocalizedResourceId }
                 logger.debug { "backfillMap $requestsByFhirID " }
                 val resourcesByFhirID =
-                    loadResourcesForIds(requestsByFhirID.keys.toList(), datedRequestKeyGroup.key.first, datedRequestKeyGroup.key.second)
+                    loadResourcesForIds(
+                        requestsByFhirID.keys.toList(),
+                        datedRequestKeyGroup.key.first,
+                        datedRequestKeyGroup.key.second,
+                    )
                 resourcesByFhirID.mapKeys { (fhirId, _) -> requestsByFhirID[fhirId]!! }.toList()
             }.toMap()
         return undatedResourceMap + backfillMap

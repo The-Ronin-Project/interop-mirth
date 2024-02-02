@@ -1520,4 +1520,74 @@ class KafkaEventResourcePublisherTest {
         assertNull(result.dataMap[MirthKey.FAILURE_COUNT.code])
         assertNull(result.dataMap[MirthKey.RESOURCE_COUNT.code])
     }
+
+    @Test
+    fun `includes custom metadata from request`() {
+        val event1 =
+            InteropResourceLoadV1(
+                tenantId = tenantId,
+                resourceFHIRId = "$tenantId-1234",
+                resourceType = ResourceType.Location,
+                dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
+                metadata = metadata,
+            )
+
+        every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
+
+        val transformResponse = TransformResponse(transformedLocation1234)
+        every { transformManager.transformResource(location1234, tenant) } returns transformResponse
+        every {
+            publishService.publishResourceWrappers(
+                tenantId,
+                listOf(PublishResourceWrapper(transformedLocation1234)),
+                any(),
+                DataTrigger.NIGHTLY,
+            )
+        } returns true
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+
+        val destination =
+            object : KafkaEventResourcePublisher<Location>(
+                tenantService,
+                ehrFactory,
+                transformManager,
+                publishService,
+            ) {
+                override fun convertPublishEventsToRequest(
+                    events: List<InteropResourcePublishV1>,
+                    vendorFactory: VendorFactory,
+                    tenant: Tenant,
+                ): PublishResourceRequest<Location> {
+                    TODO()
+                }
+
+                override fun convertLoadEventsToRequest(
+                    events: List<InteropResourceLoadV1>,
+                    vendorFactory: VendorFactory,
+                    tenant: Tenant,
+                ): LoadResourceRequest<Location> {
+                    return object : LoadResourceRequest<Location>(events, tenant) {
+                        override val fhirService: FHIRService<Location> = vendorFactory.locationService
+
+                        override val requestSpecificMirthMetadata: Map<String, String> = mapOf("TEST_DATA" to "works")
+                    }
+                }
+            }
+
+        val message = objectMapper.writeValueAsString(listOf(event1))
+        val result =
+            destination.channelDestinationWriter(
+                tenantId,
+                message,
+                mapOf(MirthKey.KAFKA_EVENT.code to InteropResourceLoadV1::class.simpleName!!),
+                emptyMap(),
+            )
+        assertEquals(MirthResponseStatus.SENT, result.status)
+        assertEquals("we made it", result.detailedMessage)
+        assertEquals("Published 1 resource(s).", result.message)
+        assertNull(result.dataMap[MirthKey.EVENT_METADATA_SOURCE.code])
+        assertEquals(1, result.dataMap[MirthKey.RESOURCE_COUNT.code])
+        assertEquals(0, result.dataMap[MirthKey.FAILURE_COUNT.code])
+        assertEquals("works", result.dataMap["TEST_DATA"])
+    }
 }

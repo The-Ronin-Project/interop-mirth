@@ -26,6 +26,7 @@ import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
 import com.projectronin.interop.mirth.channel.base.kafka.request.LoadResourceRequest
 import com.projectronin.interop.mirth.channel.base.kafka.request.PublishResourceRequest
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
+import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.publishers.PublishService
 import com.projectronin.interop.rcdm.common.enums.RoninExtension
 import com.projectronin.interop.rcdm.transform.TransformManager
@@ -102,36 +103,43 @@ class DocumentReferencePublish(
 
         override val skipAllPublishing = true // prevents anything happening after loadResources is called
 
+        private var documentsLoaded: Int = 0
+        override val requestSpecificMirthMetadata: Map<String, String>
+            get() = mapOf(MirthKey.RESOURCE_COUNT.code to documentsLoaded.toString())
+
         override fun loadResources(requestKeys: List<ResourceRequestKey>): Map<ResourceRequestKey, List<DocumentReference>> {
-            return requestKeys.mapNotNull { key ->
-                val documents =
-                    fhirService.findPatientDocuments(
-                        tenant,
-                        key.unlocalizedResourceId,
-                        LocalDate.now().minusMonths(2),
-                        LocalDate.now(),
-                    )
+            val response =
+                requestKeys.mapNotNull { key ->
+                    val documents =
+                        fhirService.findPatientDocuments(
+                            tenant,
+                            key.unlocalizedResourceId,
+                            LocalDate.now().minusMonths(2),
+                            LocalDate.now(),
+                        )
 
-                if (documents.isEmpty()) {
-                    null
-                } else {
-                    val event = eventsByRequestKey[key]!!
+                    if (documents.isEmpty()) {
+                        null
+                    } else {
+                        val event = eventsByRequestKey[key]!!
 
-                    val documentsWithLocalizedIds =
-                        documents.map {
-                            it.copy(id = Id(it.id!!.value!!.localizeFhirId(tenant.mnemonic)))
-                        }
+                        val documentsWithLocalizedIds =
+                            documents.map {
+                                it.copy(id = Id(it.id!!.value!!.localizeFhirId(tenant.mnemonic)))
+                            }
 
-                    // push each DocumentReference individually so the destination can multi-thread Binary reads
-                    kafkaService.publishResourceWrappers(
-                        tenant.mnemonic,
-                        dataTrigger,
-                        documentsWithLocalizedIds.map { PublishResourceWrapper(it) },
-                        event.getUpdatedMetadata(),
-                    )
-                    key to documents
-                }
-            }.toMap()
+                        // push each DocumentReference individually so the destination can multi-thread Binary reads
+                        kafkaService.publishResourceWrappers(
+                            tenant.mnemonic,
+                            dataTrigger,
+                            documentsWithLocalizedIds.map { PublishResourceWrapper(it) },
+                            event.getUpdatedMetadata(),
+                        )
+                        key to documents
+                    }
+                }.toMap()
+            documentsLoaded = response.values.flatten().size
+            return response
         }
 
         override fun loadResourcesForIds(

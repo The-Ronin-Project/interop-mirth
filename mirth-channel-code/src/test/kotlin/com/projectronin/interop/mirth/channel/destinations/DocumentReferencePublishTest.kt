@@ -27,6 +27,7 @@ import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.kafka.model.PublishResourceWrapper
 import com.projectronin.interop.mirth.channel.base.kafka.request.ResourceRequestKey
+import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.rcdm.common.enums.RoninExtension
 import com.projectronin.interop.rcdm.transform.model.TransformResponse
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -208,6 +209,7 @@ class DocumentReferencePublishTest {
 
         val resourcesByKey = request.loadResources(listOf(key1, key2))
         assertEquals(0, resourcesByKey.size)
+        assertEquals(mapOf(MirthKey.RESOURCE_COUNT.code to "0"), request.requestSpecificMirthMetadata)
     }
 
     @Test
@@ -279,6 +281,8 @@ class DocumentReferencePublishTest {
         assertEquals(2, resourcesByKey.size)
         assertEquals(listOf(docRef1, docRef2), resourcesByKey[key1])
         assertEquals(listOf(docRef3), resourcesByKey[key2])
+
+        assertEquals(mapOf(MirthKey.RESOURCE_COUNT.code to "3"), request.requestSpecificMirthMetadata)
 
         val tenantDocRef1 =
             DocumentReference(
