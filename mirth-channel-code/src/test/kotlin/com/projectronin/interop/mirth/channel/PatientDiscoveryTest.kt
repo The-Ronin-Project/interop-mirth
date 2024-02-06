@@ -133,6 +133,7 @@ class PatientDiscoveryTest {
                 tenantConfigurationService,
                 "",
                 1,
+                1,
                 mockk {},
                 clinicalTrialClient,
             )
@@ -145,6 +146,7 @@ class PatientDiscoveryTest {
                 tenantConfigurationService,
                 "yes",
                 1,
+                2,
                 queueClient,
                 clinicalTrialClient,
             )
@@ -459,8 +461,8 @@ class PatientDiscoveryTest {
         val entryId = UUID.fromString("67d28e26-ae11-4afb-968b-0991aa11c80b")
         val backfillId = UUID.fromString("be3eddd1-e31b-4140-8e41-88aeb4b394c8")
         every { tenantConfigurationService.getLocationIDsByTenant(any()) } returns emptyList()
-        coEvery { queueClient.getQueueEntries("ronin", 1) } returns emptyList()
-        coEvery { queueClient.getQueueEntries("blah", 1) } returns
+        coEvery { queueClient.getQueueEntries("ronin", 2) } returns emptyList()
+        coEvery { queueClient.getQueueEntries("blah", 2) } returns
             listOf(
                 QueueEntry(
                     id = entryId,
@@ -491,10 +493,67 @@ class PatientDiscoveryTest {
     }
 
     @Test
+    fun `sourceReader works - backfill - queue size changes outside of window`() {
+        // create tenants with minimum window size
+        val tenant =
+            mockk<Tenant> {
+                every { mnemonic } returns "blah"
+                every { batchConfig } returns
+                    mockk {
+                        every { availableEnd } returns LocalTime.MIN
+                        every { availableStart } returns LocalTime.MIN
+                    }
+                every { timezone } returns ZoneId.of("Etc/UTC")
+            }
+        tenantService =
+            mockk {
+                every { getMonitoredTenants() } returns listOf(tenant)
+                every { getAllTenants() } returns listOf(tenant)
+            }
+
+        // backfill enabled channel with only possible times out of window
+        val outOfWindowBackfillVersionChannel =
+            PatientDiscovery(
+                tenantService,
+                mockk<PatientDiscoveryWriter>(),
+                mockk(),
+                tenantConfigurationService,
+                "yes",
+                1,
+                2,
+                queueClient,
+                clinicalTrialClient,
+            )
+
+        val entryId = UUID.fromString("67d28e26-ae11-4afb-968b-0991aa11c80b")
+        val backfillId = UUID.fromString("be3eddd1-e31b-4140-8e41-88aeb4b394c8")
+        every { tenantConfigurationService.getLocationIDsByTenant(any()) } returns emptyList()
+        coEvery { queueClient.getQueueEntries("blah", 1) } returns
+            listOf(
+                QueueEntry(
+                    id = entryId,
+                    backfillId = backfillId,
+                    tenantId = "blah",
+                    startDate = LocalDate.of(2008, 11, 15),
+                    endDate = LocalDate.of(2023, 11, 15),
+                    patientId = "pattythepatient",
+                    status = BackfillStatus.NOT_STARTED,
+                ),
+            )
+
+        val list = outOfWindowBackfillVersionChannel.channelSourceReader(emptyMap())
+        assertEquals(1, list.size)
+        assertEquals(backfillEventString, list.first().message)
+        assertEquals("blah", list.first().dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertNotNull(list.first().dataMap[MirthKey.EVENT_RUN_ID.code])
+        assertEquals(PatientDiscovery.DiscoveryTypes.BACKFILL.code, list.first().dataMap[MirthKey.DISCOVERY_TYPE.code])
+    }
+
+    @Test
     fun `sourceReader works - backfill - no backfill entries no events`() {
         every { tenantConfigurationService.getLocationIDsByTenant(any()) } returns emptyList()
-        coEvery { queueClient.getQueueEntries("ronin", 1) } returns emptyList()
-        coEvery { queueClient.getQueueEntries("blah", 1) } returns emptyList()
+        coEvery { queueClient.getQueueEntries("ronin", 2) } returns emptyList()
+        coEvery { queueClient.getQueueEntries("blah", 2) } returns emptyList()
 
         val list = backfillVersionChannel.channelSourceReader(emptyMap())
         assertEquals(0, list.size)

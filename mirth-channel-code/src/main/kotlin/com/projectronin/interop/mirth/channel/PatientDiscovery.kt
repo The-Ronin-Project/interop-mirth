@@ -39,6 +39,8 @@ class PatientDiscovery(
     private val backfillEnabledString: String,
     @Value("\${backfill.queue.size:1}")
     private val backfillQueueSize: Int,
+    @Value("\${backfill.queue.size.nightly:1}")
+    private val backfillQueueSizeDuringWindow: Int,
     private val backfillQueueClient: QueueClient,
     private val clinicalTrialClient: ClinicalTrialClient,
 ) : TenantlessSourceService() {
@@ -92,12 +94,18 @@ class PatientDiscovery(
             val tenants =
                 tenantService
                     .getAllTenants()
-
             // loop through the tenants and take the first tenant we find with a backfill entry
             val backfillQueueEntries =
                 tenants
                     .asSequence()
-                    .map { runBlocking { backfillQueueClient.getQueueEntries(it.mnemonic, backfillQueueSize) } }
+                    .map {
+                        val now = OffsetDateTime.now(ZoneOffset.UTC)
+                        val determinedBackfillQueueSize =
+                            if (AvailableWindow(it).isInWindow(now)) backfillQueueSizeDuringWindow else backfillQueueSize
+                        runBlocking {
+                            backfillQueueClient.getQueueEntries(it.mnemonic, determinedBackfillQueueSize)
+                        }
+                    }
                     .find { it.isNotEmpty() }
 
             // nothing returned from server for any tenant
