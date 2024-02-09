@@ -4,7 +4,10 @@ import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.common.collection.mapListValues
 import com.projectronin.interop.ehr.FHIRService
+import com.projectronin.interop.ehr.ObservationService
+import com.projectronin.interop.ehr.inputs.FHIRSearchToken
 import com.projectronin.interop.fhir.r4.resource.Location
+import com.projectronin.interop.fhir.r4.resource.Observation
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channel.base.kafka.event.ResourceEvent
 import com.projectronin.interop.tenant.config.model.Tenant
@@ -245,23 +248,52 @@ class ResourceRequestTest {
 
     @Test
     fun `backfill logic works`() {
-        val location1 = mockk<Location>()
-        val location2 = mockk<Location>()
-        val location3 = mockk<Location>()
+        val observation1 = mockk<Observation>()
+        val observation2 = mockk<Observation>()
+        val observation3 = mockk<Observation>()
+        val observation4 = mockk<Observation>()
 
-        every { fhirService.getByIDs(tenant, listOf("fhirId1")) } returns mapOf("fhirId1" to location1)
-        every { fhirService.getByIDs(tenant, listOf("fhirId2")) } returns mapOf("fhirId2" to location2)
-        every { fhirService.getByIDs(tenant, listOf("fhirId2", "fhirId3")) } returns
-            mapOf(
-                "fhirId2" to location2,
-                "fhirId3" to location3,
-            )
-
-        val event = mockk<ResourceEvent<InteropResourcePublishV1>>()
-        val request = TestResourceRequest(listOf(event), fhirService, tenant)
         val date1 = OffsetDateTime.of(2023, 10, 24, 12, 0, 0, 0, ZoneOffset.UTC)
         val date2 = OffsetDateTime.of(2023, 10, 25, 12, 0, 0, 0, ZoneOffset.UTC)
         val date3 = OffsetDateTime.of(2023, 10, 26, 12, 0, 0, 0, ZoneOffset.UTC)
+
+        val observationService =
+            mockk<ObservationService> {
+                every { findObservationsByPatientAndCategory(tenant, listOf("fhirId1"), any(), null, null) } returns
+                    listOf(
+                        observation1,
+                    )
+                every {
+                    findObservationsByPatientAndCategory(
+                        tenant,
+                        listOf("fhirId2"),
+                        any(),
+                        date1.toLocalDate(),
+                        date2.toLocalDate(),
+                    )
+                } returns listOf(observation2)
+                every {
+                    findObservationsByPatientAndCategory(
+                        tenant,
+                        listOf("fhirId2"),
+                        any(),
+                        date2.toLocalDate(),
+                        date3.toLocalDate(),
+                    )
+                } returns listOf(observation4)
+                every {
+                    findObservationsByPatientAndCategory(
+                        tenant,
+                        listOf("fhirId3"),
+                        any(),
+                        date1.toLocalDate(),
+                        date2.toLocalDate(),
+                    )
+                } returns listOf(observation3)
+            }
+
+        val event = mockk<ResourceEvent<InteropResourcePublishV1>>()
+        val request = TestBackfillResourceRequest(listOf(event), observationService, tenant)
 
         val key1 =
             mockk<ResourceRequestKey> {
@@ -285,15 +317,143 @@ class ResourceRequestTest {
             }
 
         val resources = request.loadResources(listOf(key1, key2, key3, key4))
-        verify(exactly = 3) { fhirService.getByIDs(tenant, any()) }
-        verify(exactly = 1) { fhirService.getByIDs(tenant, listOf("fhirId1")) }
-        verify(exactly = 1) { fhirService.getByIDs(tenant, listOf("fhirId2")) }
-        verify(exactly = 1) { fhirService.getByIDs(tenant, listOf("fhirId2", "fhirId3")) }
+        verify(exactly = 1) {
+            observationService.findObservationsByPatientAndCategory(
+                tenant,
+                listOf("fhirId1"),
+                any(),
+                null,
+                null,
+            )
+        }
+        verify(exactly = 1) {
+            observationService.findObservationsByPatientAndCategory(
+                tenant,
+                listOf("fhirId2"),
+                any(),
+                date1.toLocalDate(),
+                date2.toLocalDate(),
+            )
+        }
+        verify(exactly = 1) {
+            observationService.findObservationsByPatientAndCategory(
+                tenant,
+                listOf("fhirId2"),
+                any(),
+                date2.toLocalDate(),
+                date3.toLocalDate(),
+            )
+        }
+        verify(exactly = 1) {
+            observationService.findObservationsByPatientAndCategory(
+                tenant,
+                listOf("fhirId3"),
+                any(),
+                date1.toLocalDate(),
+                date2.toLocalDate(),
+            )
+        }
+
         assertEquals(4, resources.size)
-        assertEquals(listOf(location1), resources[key1])
-        assertEquals(listOf(location2), resources[key2])
-        assertEquals(listOf(location3), resources[key3])
-        assertEquals(listOf(location2), resources[key4])
+        assertEquals(listOf(observation1), resources[key1])
+        assertEquals(listOf(observation2), resources[key2])
+        assertEquals(listOf(observation3), resources[key3])
+        assertEquals(listOf(observation4), resources[key4])
+    }
+
+    @Test
+    fun `backfill logic works when no undated items`() {
+        val observation2 = mockk<Observation>()
+        val observation3 = mockk<Observation>()
+        val observation4 = mockk<Observation>()
+
+        val date1 = OffsetDateTime.of(2023, 10, 24, 12, 0, 0, 0, ZoneOffset.UTC)
+        val date2 = OffsetDateTime.of(2023, 10, 25, 12, 0, 0, 0, ZoneOffset.UTC)
+        val date3 = OffsetDateTime.of(2023, 10, 26, 12, 0, 0, 0, ZoneOffset.UTC)
+
+        val observationService =
+            mockk<ObservationService> {
+                every {
+                    findObservationsByPatientAndCategory(
+                        tenant,
+                        listOf("fhirId2"),
+                        any(),
+                        date1.toLocalDate(),
+                        date2.toLocalDate(),
+                    )
+                } returns listOf(observation2)
+                every {
+                    findObservationsByPatientAndCategory(
+                        tenant,
+                        listOf("fhirId2"),
+                        any(),
+                        date2.toLocalDate(),
+                        date3.toLocalDate(),
+                    )
+                } returns listOf(observation4)
+                every {
+                    findObservationsByPatientAndCategory(
+                        tenant,
+                        listOf("fhirId3"),
+                        any(),
+                        date1.toLocalDate(),
+                        date2.toLocalDate(),
+                    )
+                } returns listOf(observation3)
+            }
+
+        val event = mockk<ResourceEvent<InteropResourcePublishV1>>()
+        val request = TestBackfillResourceRequest(listOf(event), observationService, tenant)
+
+        val key2 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId2"
+                every { dateRange } returns Pair(date1, date2)
+            }
+        val key3 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId3"
+                every { dateRange } returns Pair(date1, date2)
+            }
+        val key4 =
+            mockk<ResourceRequestKey> {
+                every { unlocalizedResourceId } returns "fhirId2"
+                every { dateRange } returns Pair(date2, date3)
+            }
+
+        val resources = request.loadResources(listOf(key2, key3, key4))
+        verify(exactly = 1) {
+            observationService.findObservationsByPatientAndCategory(
+                tenant,
+                listOf("fhirId2"),
+                any(),
+                date1.toLocalDate(),
+                date2.toLocalDate(),
+            )
+        }
+        verify(exactly = 1) {
+            observationService.findObservationsByPatientAndCategory(
+                tenant,
+                listOf("fhirId2"),
+                any(),
+                date2.toLocalDate(),
+                date3.toLocalDate(),
+            )
+        }
+        verify(exactly = 1) {
+            observationService.findObservationsByPatientAndCategory(
+                tenant,
+                listOf("fhirId3"),
+                any(),
+                date1.toLocalDate(),
+                date2.toLocalDate(),
+            )
+        }
+
+        assertEquals(3, resources.size)
+        assertEquals(listOf(observation2), resources[key2])
+        assertEquals(listOf(observation3), resources[key3])
+        assertEquals(listOf(observation4), resources[key4])
     }
 
     @Test
@@ -385,6 +545,35 @@ class ResourceRequestTest {
             endDate: OffsetDateTime?,
         ): Map<String, List<Location>> {
             return fhirService.getByIDs(tenant, requestFhirIds).mapListValues()
+        }
+    }
+
+    class TestBackfillResourceRequest(
+        override val sourceEvents: List<ResourceEvent<InteropResourcePublishV1>>,
+        override val fhirService: ObservationService,
+        override val tenant: Tenant,
+    ) : ResourceRequest<Observation, InteropResourcePublishV1>() {
+        override val dataTrigger: DataTrigger
+            get() = TODO("Not yet implemented")
+
+        override fun loadResourcesForIds(
+            requestFhirIds: List<String>,
+            startDate: OffsetDateTime?,
+            endDate: OffsetDateTime?,
+        ): Map<String, List<Observation>> {
+            if (requestFhirIds.isEmpty()) {
+                throw IllegalStateException("Only call when you have IDs")
+            }
+
+            return requestFhirIds.associateWith {
+                fhirService.findObservationsByPatientAndCategory(
+                    tenant,
+                    listOf(it),
+                    listOf(FHIRSearchToken(code = "categorY")),
+                    startDate?.toLocalDate(),
+                    endDate?.toLocalDate(),
+                )
+            }
         }
     }
 }

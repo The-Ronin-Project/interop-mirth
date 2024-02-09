@@ -95,29 +95,38 @@ abstract class ResourceRequest<T : Resource<T>, E> {
         }
         val partition = requestKeys.partition { it.dateRange == null }
         val undatedRequests = partition.first
-        val undatedKeysByFhirID = undatedRequests.associateBy { it.unlocalizedResourceId }
-        logger.debug { "undatedKeysByFhirID $undatedKeysByFhirID " }
-        val undatedResourcesByFhirID = loadResourcesForIds(undatedKeysByFhirID.keys.toList())
-        val undatedResourceMap = undatedResourcesByFhirID.mapKeys { (fhirId, _) -> undatedKeysByFhirID[fhirId]!! }
+        val undatedResourceMap =
+            if (undatedRequests.isEmpty()) {
+                emptyMap()
+            } else {
+                val undatedKeysByFhirID = undatedRequests.associateBy { it.unlocalizedResourceId }
+                logger.debug { "undatedKeysByFhirID $undatedKeysByFhirID " }
+                val undatedResourcesByFhirID = loadResourcesForIds(undatedKeysByFhirID.keys.toList())
+                undatedResourcesByFhirID.mapKeys { (fhirId, _) -> undatedKeysByFhirID[fhirId]!! }
+            }
 
-        // for backfills we can group the request by their date range
-        // for each date range we'll do a version of the undated request but then we need to fold those separate maps back
-        // into one large map that we can add to our initial request
         val backfillRequests = partition.second
-        logger.debug { "backfillRequests $backfillRequests " }
-
         val backfillMap =
-            backfillRequests.groupBy { it.dateRange!! }.flatMap { datedRequestKeyGroup ->
-                val requestsByFhirID = datedRequestKeyGroup.value.associateBy { it.unlocalizedResourceId }
-                logger.debug { "backfillMap $requestsByFhirID " }
-                val resourcesByFhirID =
-                    loadResourcesForIds(
-                        requestsByFhirID.keys.toList(),
-                        datedRequestKeyGroup.key.first,
-                        datedRequestKeyGroup.key.second,
-                    )
-                resourcesByFhirID.mapKeys { (fhirId, _) -> requestsByFhirID[fhirId]!! }.toList()
-            }.toMap()
+            if (backfillRequests.isEmpty()) {
+                emptyMap()
+            } else {
+                logger.debug { "backfillRequests $backfillRequests " }
+
+                // for backfills we can group the request by their date range
+                // for each date range we'll do a version of the undated request but then we need to fold those separate maps back
+                // into one large map that we can add to our initial request
+                backfillRequests.groupBy { it.dateRange!! }.flatMap { datedRequestKeyGroup ->
+                    val requestsByFhirID = datedRequestKeyGroup.value.associateBy { it.unlocalizedResourceId }
+                    logger.debug { "backfillMap $requestsByFhirID " }
+                    val resourcesByFhirID =
+                        loadResourcesForIds(
+                            requestsByFhirID.keys.toList(),
+                            datedRequestKeyGroup.key.first,
+                            datedRequestKeyGroup.key.second,
+                        )
+                    resourcesByFhirID.mapKeys { (fhirId, _) -> requestsByFhirID[fhirId]!! }.toList()
+                }.toMap()
+            }
         return undatedResourceMap + backfillMap
     }
 }

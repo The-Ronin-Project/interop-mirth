@@ -8,8 +8,8 @@ guava = "33.0.0-jre"
 interop-aidbox = "8.1.0"
 interop-backfill = "2.0.5"
 interop-common = "4.1.0"
-interop-datalake = "9.1.0"
-interop-ehr = "13.1.1"
+interop-datalake = "9.2.0"
+interop-ehr = "13.2.0"
 interop-event-internal = "1.2.3"
 interop-event-request = "1.1.0"
 interop-fhir = "9.1.1"
@@ -59,7 +59,7 @@ interop-datalake = { module = "com.projectronin.interop.publish:interop-datalake
 interop-ehr-api = { module = "com.projectronin.interop.ehr:interop-ehr", version.ref = "interop-ehr" }
 interop-ehr-cerner = { module = "com.projectronin.interop.ehr:interop-ehr-cerner", version.ref = "interop-ehr" }
 interop-ehr-epic = { module = "com.projectronin.interop.ehr:interop-ehr-epic", version.ref = "interop-ehr" }
-interop-ehr-fhir-ronin-generators = { module = "com.projectronin.interop.ehr:interop-fhir-ronin-generators", version.ref = "interop-ehr" }
+interop-ehr-fhir-ronin-generators = { module = "com.projectronin.interop.rcdm:interop-fhir-ronin-generators", version.ref = "interop-rcdm" }
 interop-ehr-liquibase = { module = "com.projectronin.interop.ehr:interop-ehr-liquibase", version.ref = "interop-ehr" }
 interop-ehr-tenant = { module = "com.projectronin.interop.ehr:interop-tenant", version.ref = "interop-ehr" }
 interop-fhir = { module = "com.projectronin.interop.fhir:interop-fhir", version.ref = "interop-fhir" }

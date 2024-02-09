@@ -107,21 +107,37 @@ class DocumentReferencePublish(
         override val requestSpecificMirthMetadata: Map<String, String>
             get() = mapOf(MirthKey.RESOURCE_COUNT.code to documentsLoaded.toString())
 
-        override fun loadResources(requestKeys: List<ResourceRequestKey>): Map<ResourceRequestKey, List<DocumentReference>> {
+        override fun loadResourcesForIds(
+            requestFhirIds: List<String>,
+            startDate: OffsetDateTime?,
+            endDate: OffsetDateTime?,
+        ): Map<String, List<DocumentReference>> {
             val response =
-                requestKeys.mapNotNull { key ->
+                requestFhirIds.mapNotNull { fhirId ->
                     val documents =
                         fhirService.findPatientDocuments(
                             tenant,
-                            key.unlocalizedResourceId,
-                            LocalDate.now().minusMonths(2),
-                            LocalDate.now(),
+                            fhirId,
+                            startDate?.toLocalDate() ?: LocalDate.now().minusMonths(2),
+                            endDate?.toLocalDate() ?: LocalDate.now(),
                         )
 
                     if (documents.isEmpty()) {
                         null
                     } else {
-                        val event = eventsByRequestKey[key]!!
+                        val event =
+                            eventsByRequestKey.entries.single {
+                                val key = it.key
+                                if (key.unlocalizedResourceId == fhirId) {
+                                    if (startDate == null) {
+                                        true
+                                    } else {
+                                        key.dateRange == Pair(startDate, endDate)
+                                    }
+                                } else {
+                                    false
+                                }
+                            }.value
 
                         val documentsWithLocalizedIds =
                             documents.map {
@@ -135,20 +151,11 @@ class DocumentReferencePublish(
                             documentsWithLocalizedIds.map { PublishResourceWrapper(it) },
                             event.getUpdatedMetadata(),
                         )
-                        key to documents
+                        fhirId to documents
                     }
                 }.toMap()
-            documentsLoaded = response.values.flatten().size
+            documentsLoaded += response.values.flatten().size
             return response
-        }
-
-        override fun loadResourcesForIds(
-            requestFhirIds: List<String>,
-            startDate: OffsetDateTime?,
-            endDate: OffsetDateTime?,
-        ): Map<String, List<DocumentReference>> {
-            // We overrode the method that used this.
-            TODO("Not yet implemented")
         }
 
         private class PatientPublishEvent(publishEvent: InteropResourcePublishV1, tenant: Tenant) :

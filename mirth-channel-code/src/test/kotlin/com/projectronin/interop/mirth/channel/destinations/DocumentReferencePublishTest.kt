@@ -42,6 +42,8 @@ import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
 
 class DocumentReferencePublishTest {
     private val tenantId = "tenant"
@@ -313,6 +315,146 @@ class DocumentReferencePublishTest {
                 DataTrigger.NIGHTLY,
                 listOf(PublishResourceWrapper(tenantDocRef3)),
                 any(),
+            )
+        }
+    }
+
+    @Test
+    fun `PatientPublishDocumentReferenceRequest handles documents found for backfill`() {
+        val startDate = OffsetDateTime.of(2022, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC)
+        val endDate = OffsetDateTime.of(2022, 2, 1, 0, 0, 0, 0, ZoneOffset.UTC)
+
+        val backfillMetadata =
+            Metadata(
+                runId = "run",
+                runDateTime = OffsetDateTime.now(),
+                backfillRequest =
+                    Metadata.BackfillRequest(
+                        backfillId = "backfill1",
+                        backfillStartDate = startDate,
+                        backfillEndDate = endDate,
+                    ),
+            )
+
+        val docRef1 =
+            DocumentReference(
+                id = Id("docRef1"),
+                status = DocumentReferenceStatus.CURRENT.asCode(),
+            )
+        val docRef2 =
+            DocumentReference(
+                id = Id("docRef2"),
+                status = DocumentReferenceStatus.CURRENT.asCode(),
+            )
+        val docRef3 =
+            DocumentReference(
+                id = Id("docRef3"),
+                status = DocumentReferenceStatus.CURRENT.asCode(),
+            )
+
+        every {
+            documentReferenceService.findPatientDocuments(
+                tenant,
+                "1234",
+                startDate.toLocalDate(),
+                endDate.toLocalDate(),
+            )
+        } returns listOf(docRef1, docRef2)
+        every {
+            documentReferenceService.findPatientDocuments(
+                tenant,
+                "5678",
+                startDate.toLocalDate(),
+                endDate.toLocalDate(),
+            )
+        } returns listOf(docRef3)
+
+        val kafkaService =
+            mockk<KafkaPublishService> {
+                every { publishResourceWrappers(tenantId, DataTrigger.NIGHTLY, any(), any()) } returns mockk()
+            }
+
+        val publishEvent1 =
+            mockk<InteropResourcePublishV1>(relaxed = true) {
+                every { resourceType } returns ResourceType.Patient
+                every { resourceJson } returns JacksonManager.objectMapper.writeValueAsString(patient1)
+                every { dataTrigger } returns InteropResourcePublishV1.DataTrigger.nightly
+                every { metadata } returns backfillMetadata
+            }
+        val publishEvent2 =
+            mockk<InteropResourcePublishV1>(relaxed = true) {
+                every { resourceType } returns ResourceType.Patient
+                every { resourceJson } returns JacksonManager.objectMapper.writeValueAsString(patient2)
+                every { dataTrigger } returns InteropResourcePublishV1.DataTrigger.nightly
+                every { metadata } returns backfillMetadata
+            }
+        val request =
+            DocumentReferencePublish.PatientPublishDocumentReferenceRequest(
+                listOf(publishEvent1, publishEvent2),
+                documentReferenceService,
+                tenant,
+                kafkaService,
+            )
+
+        val key1 =
+            ResourceRequestKey(
+                "run",
+                ResourceType.Patient,
+                tenant,
+                "$tenantId-1234",
+                dateRange = Pair(startDate, endDate),
+            )
+        val key2 =
+            ResourceRequestKey(
+                "run",
+                ResourceType.Patient,
+                tenant,
+                "$tenantId-5678",
+                dateRange = Pair(startDate, endDate),
+            )
+
+        val resourcesByKey = request.loadResources(listOf(key1, key2))
+        assertEquals(2, resourcesByKey.size)
+        assertEquals(listOf(docRef1, docRef2), resourcesByKey[key1])
+        assertEquals(listOf(docRef3), resourcesByKey[key2])
+
+        assertEquals(mapOf(MirthKey.RESOURCE_COUNT.code to "3"), request.requestSpecificMirthMetadata)
+
+        val tenantDocRef1 =
+            DocumentReference(
+                id = Id("$tenantId-docRef1"),
+                status = DocumentReferenceStatus.CURRENT.asCode(),
+            )
+        val tenantDocRef2 =
+            DocumentReference(
+                id = Id("$tenantId-docRef2"),
+                status = DocumentReferenceStatus.CURRENT.asCode(),
+            )
+        val tenantDocRef3 =
+            DocumentReference(
+                id = Id("$tenantId-docRef3"),
+                status = DocumentReferenceStatus.CURRENT.asCode(),
+            )
+        verify(exactly = 1) {
+            kafkaService.publishResourceWrappers(
+                tenantId,
+                DataTrigger.NIGHTLY,
+                listOf(PublishResourceWrapper(tenantDocRef1), PublishResourceWrapper(tenantDocRef2)),
+                withArg {
+                    assertEquals(startDate, it.backfillRequest!!.backfillStartDate)
+                    assertEquals(endDate, it.backfillRequest!!.backfillEndDate)
+                },
+            )
+        }
+        verify(exactly = 1) {
+            kafkaService.publishResourceWrappers(
+                tenantId,
+                DataTrigger.NIGHTLY,
+                listOf(PublishResourceWrapper(tenantDocRef3)),
+                withArg {
+                    assertEquals(startDate, it.backfillRequest!!.backfillStartDate)
+                    assertEquals(endDate, it.backfillRequest!!.backfillEndDate)
+                },
             )
         }
     }
