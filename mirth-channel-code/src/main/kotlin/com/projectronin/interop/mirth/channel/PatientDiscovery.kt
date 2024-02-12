@@ -136,6 +136,7 @@ class PatientDiscovery(
                                         tenantTimezone,
                                     ),
                             ),
+                        targetedResources = queueEntry.allowedResources,
                     )
 
                 MirthMessage(

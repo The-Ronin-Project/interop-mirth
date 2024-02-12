@@ -415,8 +415,8 @@ class PatientDiscoveryTest : BaseChannelTest(
                     BackfillClient.backfillClient.postBackfill(
                         newBackfill =
                             NewBackfill(
-                                tenantInUse,
-                                listOf("123"),
+                                tenantId = tenantInUse,
+                                locationIds = listOf("123"),
                                 startDate = LocalDate.now().minusYears(1),
                                 endDate = LocalDate.now(),
                             ),

@@ -124,7 +124,13 @@ class BackfillDiscoveryQueueTest : BaseChannelTest(
 
             runBlocking {
                 backfillClient.postBackfill(
-                    newBackfill = NewBackfill(it, listOf(locationFhirId), LocalDate.now(), LocalDate.now().plusDays(4)),
+                    newBackfill =
+                        NewBackfill(
+                            tenantId = it,
+                            locationIds = listOf(locationFhirId),
+                            startDate = LocalDate.now(),
+                            endDate = LocalDate.now().plusDays(4),
+                        ),
                 )
             }
             val newTenant = TenantClient.getTenant(it)

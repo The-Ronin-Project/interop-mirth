@@ -71,7 +71,8 @@ class PatientDiscoveryTest {
             "\"start_date\":\"2008-11-15\"," +
             "\"end_date\":\"2023-11-15\"," +
             "\"patient_id\":\"pattythepatient\"," +
-            "\"status\":\"NOT_STARTED\"" +
+            "\"status\":\"NOT_STARTED\"," +
+            "\"allowed_resources\":[\"Patient\"]" +
             "}"
 
     @BeforeEach
@@ -472,6 +473,7 @@ class PatientDiscoveryTest {
                     endDate = LocalDate.of(2023, 11, 15),
                     patientId = "pattythepatient",
                     status = BackfillStatus.NOT_STARTED,
+                    allowedResources = listOf("Patient"),
                 ),
                 QueueEntry(
                     id = entryId,
@@ -538,6 +540,7 @@ class PatientDiscoveryTest {
                     endDate = LocalDate.of(2023, 11, 15),
                     patientId = "pattythepatient",
                     status = BackfillStatus.NOT_STARTED,
+                    allowedResources = listOf("Patient"),
                 ),
             )
 
@@ -750,6 +753,7 @@ class PatientDiscoveryTest {
                                             backfillStartDate = OffsetDateTime.now(),
                                             backfillEndDate = OffsetDateTime.now(),
                                         ),
+                                    targetedResources = emptyList(),
                                 ),
                             ),
                     ),
