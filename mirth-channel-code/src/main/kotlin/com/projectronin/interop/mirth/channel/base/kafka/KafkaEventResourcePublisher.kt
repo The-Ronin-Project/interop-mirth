@@ -152,6 +152,15 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                 dataMap = requestDataMap + mapOf(MirthKey.FAILURE_COUNT.code to totalResourcesCount),
             )
         }
+
+        // filter out failed to transform to remove from cache
+        val failedToTransform =
+            resourcesByKey.filterNot {
+                it.key in transformedResourcesByKey.keys
+            }
+        // clear cache for failed to transform keys and resources
+        clearCache(failedToTransform.keys, failedToTransform.values.flatten(), tenant, resourceLoadRequest)
+
         // if some of our uncachedResources failed to transform, we should alert, but publish the ones that worked
         val totalTransformedResourcesCount = transformedResourcesByKey.totalSize()
         if (totalTransformedResourcesCount != totalResourcesCount) {
@@ -164,10 +173,20 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         }
 
         val postTransformedResourcesByKey = postTransform(tenant, transformedResourcesByKey, vendorFactory)
-        val totalPostTransformedResourcesCount = postTransformedResourcesByKey.totalSize()
-        if (totalPostTransformedResourcesCount != totalTransformedResourcesCount) {
+        // filter out failed post transform to remove from cache, create two list, one of keys and one of resources
+        val (failedPostTransformKey, failedPostTransformResource) =
+            transformedResourcesByKey.filterNot {
+                it.key in postTransformedResourcesByKey
+            }.toList().let {
+                    transformResponse ->
+                transformResponse.map { it.first }.toSet() to transformResponse.flatMap { it.second.map { it.resource } }
+            }
+
+        if (failedPostTransformKey.isNotEmpty()) {
+            // clear cache for failed post transform keys and resources
+            clearCache(failedPostTransformKey, failedPostTransformResource, tenant, resourceLoadRequest)
             logger.error {
-                "Post transform failed for ${totalTransformedResourcesCount - totalPostTransformedResourcesCount} " +
+                "Post transform failed for ${failedPostTransformKey.size} " +
                     "resources for tenant $tenantMnemonic.\n" +
                     "Resources received: ${transformedResourcesByKey.resourceIds()} \n+" +
                     "Resources transformed: ${postTransformedResourcesByKey.resourceIds()}"
@@ -212,24 +231,15 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         val failedPublishEvents = publishResultsByEvent.filterNot { it.second }
         val failedPublishTransforms =
             failedPublishEvents.flatMap { (event, _) -> transformsToPublishByEvent[event] ?: emptyList() }
+
         val failedPublishKeys =
-            failedPublishEvents.flatMap { (event, _) -> event.requestKeys.union(requestKeysToProcess) }
+            failedPublishEvents.flatMap { (event, _) -> event.requestKeys.union(requestKeysToProcess) }.toSet()
+
+        // clear cache - resources and keys that failed to publish
+        val failedResources = failedPublishTransforms.map { it.resource }
+        clearCache(failedPublishKeys, failedResources, tenant, resourceLoadRequest)
 
         if (failedPublishTransforms.isNotEmpty()) {
-            // in the event of a failure to publish we want to invalidate the keys we put in during loadResources
-            // some of these keys were successes, so we're only operating on the failures here. But we do need the successes for informational data
-            val keys =
-                failedPublishTransforms.map { transform ->
-                    val resource = transform.resource
-                    ResourceRequestKey(
-                        resourceLoadRequest.runId,
-                        ResourceType.valueOf(resource.resourceType),
-                        resourceLoadRequest.tenant,
-                        resource.id!!.value!!.unlocalize(tenant),
-                    )
-                } + failedPublishKeys
-            logger.debug { "Invalidating ${keys.size} keys" }
-            processedResourcesCache.invalidateAll(keys)
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
                 detailedMessage = failedPublishTransforms.truncateResourceList(),
@@ -256,6 +266,29 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                         ),
             )
         }
+    }
+
+    /**
+     * Clear out cache for failed to transform resources.
+     */
+    private fun clearCache(
+        failedKeys: Set<ResourceRequestKey>,
+        failedResources: List<T>,
+        tenant: Tenant,
+        resourceLoadRequest: ResourceRequest<T, *>,
+    ) {
+        val keys =
+            failedResources.map { transform ->
+                val resource = transform as Resource<*>
+                ResourceRequestKey(
+                    resourceLoadRequest.runId,
+                    ResourceType.valueOf(resource.resourceType),
+                    resourceLoadRequest.tenant,
+                    resource.id!!.value!!.unlocalize(tenant),
+                )
+            } + failedKeys
+        logger.debug { "Invalidating ${failedResources.size} keys" }
+        processedResourcesCache.invalidateAll(keys)
     }
 
     /**

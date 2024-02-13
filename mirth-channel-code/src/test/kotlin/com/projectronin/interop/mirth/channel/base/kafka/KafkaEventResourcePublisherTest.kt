@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channel.base.kafka
 
+import com.github.benmanes.caffeine.cache.Cache
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.event.interop.internal.v1.Metadata
@@ -53,6 +54,7 @@ import org.junit.jupiter.api.assertThrows
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
+import kotlin.reflect.jvm.isAccessible
 
 class KafkaEventResourcePublisherTest {
     private lateinit var tenantService: TenantService
@@ -91,7 +93,7 @@ class KafkaEventResourcePublisherTest {
             every { id?.value } returns "$tenantId-5678"
         }
 
-    class TestLocationPublish(
+    open class TestLocationPublish(
         tenantService: TenantService,
         ehrFactory: EHRFactory,
         transformManager: TransformManager,
@@ -451,6 +453,7 @@ class KafkaEventResourcePublisherTest {
 
     @Test
     fun `fails some transform, publishes the rest`() {
+        val cacheLeft = getDeclaredField("processedResourcesCache")
         val appointment =
             appointment {
                 id of "1234"
@@ -568,12 +571,14 @@ class KafkaEventResourcePublisherTest {
                 mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
                 emptyMap(),
             )
+
         assertEquals(MirthResponseStatus.SENT, result.status)
         assertEquals("we made it", result.detailedMessage)
         assertEquals("Published 3 resource(s).", result.message)
         assertEquals("Appointment/1234", result.dataMap[MirthKey.EVENT_METADATA_SOURCE.code])
         assertEquals(3, result.dataMap[MirthKey.RESOURCE_COUNT.code])
         assertEquals(2, result.dataMap[MirthKey.FAILURE_COUNT.code])
+        assertEquals(cacheLeft?.asMap()?.size, 3) // 5 total, but 2 failed and were removed from the cache - math
     }
 
     @Test
@@ -1589,5 +1594,53 @@ class KafkaEventResourcePublisherTest {
         assertEquals(1, result.dataMap[MirthKey.RESOURCE_COUNT.code])
         assertEquals(0, result.dataMap[MirthKey.FAILURE_COUNT.code])
         assertEquals("works", result.dataMap["TEST_DATA"])
+    }
+
+    @Test
+    fun `processed cache returns empty after being cleared`() {
+        val cacheLeft = getDeclaredField("processedResourcesCache")
+        val event1 =
+            InteropResourceLoadV1(
+                tenantId = tenantId,
+                resourceFHIRId = "$tenantId-1234",
+                resourceType = ResourceType.Location,
+                dataTrigger = InteropResourceLoadV1.DataTrigger.nightly,
+                metadata = metadata,
+            )
+
+        every { locationService.getByIDs(tenant, listOf("1234")) } returns mapOf("1234" to location1234)
+        val transformResponse = TransformResponse(transformedLocation1234)
+        every { transformManager.transformResource(location1234, tenant) } returns transformResponse
+        every {
+            publishService.publishResourceWrappers(
+                tenantId,
+                listOf(PublishResourceWrapper(transformedLocation1234)),
+                any(),
+                DataTrigger.NIGHTLY,
+            )
+        } returns false
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+        val message = objectMapper.writeValueAsString(listOf(event1))
+        val result =
+            destination.channelDestinationWriter(
+                tenantId,
+                message,
+                mapOf(MirthKey.KAFKA_EVENT.code to InteropResourceLoadV1::class.simpleName!!),
+                emptyMap(),
+            )
+
+        assertEquals(result.dataMap["failureCount"], 1) // we had one failure
+        assertEquals(cacheLeft?.asMap()?.size, 0) // cache was cleared
+    }
+
+    /**
+     * helper to check processedResourcesCache size during testing
+     */
+    private fun getDeclaredField(cache: String): Cache<ResourceRequestKey, Boolean>? {
+        return runCatching {
+            val field = KafkaEventResourcePublisher::class.java.getDeclaredField(cache)
+            field.isAccessible = true
+            field.get(destination) as Cache<ResourceRequestKey, Boolean>
+        }.getOrNull()
     }
 }
