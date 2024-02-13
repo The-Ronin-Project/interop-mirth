@@ -209,7 +209,7 @@ return;</undeployScript>
       <metaDataColumn>
         <name>BACKFILLID</name>
         <type>STRING</type>
-        <mappingName>backfillID</mappingName>
+        <mappingName>backfillId</mappingName>
       </metaDataColumn>
     </metaDataColumns>
     <attachmentProperties version="4.4.0">
