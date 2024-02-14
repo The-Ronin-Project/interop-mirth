@@ -4,6 +4,7 @@ import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.exceptions.MapVariableMissing
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
+import datadog.trace.api.Trace
 import mu.KotlinLogging
 
 /**
@@ -34,6 +35,7 @@ abstract class TenantlessSourceService : MirthSource {
 
     abstract override val destinations: Map<String, TenantlessDestinationService>
 
+    @Trace
     override fun onDeploy(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
@@ -57,6 +59,7 @@ abstract class TenantlessSourceService : MirthSource {
      */
     open fun channelOnDeploy(serviceMap: Map<String, Any>): Map<String, Any> = serviceMap
 
+    @Trace
     override fun sourceReader(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
@@ -81,6 +84,7 @@ abstract class TenantlessSourceService : MirthSource {
      */
     abstract fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage>
 
+    @Trace
     override fun sourceFilter(
         deployedChannelName: String,
         msg: String,
@@ -115,6 +119,7 @@ abstract class TenantlessSourceService : MirthSource {
         return MirthFilterResponse(true)
     }
 
+    @Trace
     override fun sourceTransformer(
         deployedChannelName: String,
         msg: String,

@@ -177,9 +177,9 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         val (failedPostTransformKey, failedPostTransformResource) =
             transformedResourcesByKey.filterNot {
                 it.key in postTransformedResourcesByKey
-            }.toList().let {
-                    transformResponse ->
-                transformResponse.map { it.first }.toSet() to transformResponse.flatMap { it.second.map { it.resource } }
+            }.toList().let { transformResponse ->
+                transformResponse.map { it.first }
+                    .toSet() to transformResponse.flatMap { it.second.map { it.resource } }
             }
 
         if (failedPostTransformKey.isNotEmpty()) {

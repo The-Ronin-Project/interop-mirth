@@ -4,6 +4,7 @@ import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.tenant.config.exception.TenantMissingException
+import datadog.trace.api.Trace
 import mu.KotlinLogging
 
 /**
@@ -94,6 +95,7 @@ abstract class ChannelService {
      * @return a map of values to be used during later channel stages.
      *      Map keys: For conventions and a few reserved values see [BaseService].
      */
+    @Trace
     fun onDeploy(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
@@ -149,6 +151,7 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a map of values.
      */
+    @Trace
     fun onUndeploy(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
@@ -195,6 +198,7 @@ abstract class ChannelService {
      * @return a map of values to be used during later channel stages.
      *      Map keys: For conventions and a few reserved values see [BaseService].
      */
+    @Trace
     fun onPreprocessor(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
@@ -240,6 +244,7 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a map of values.
      */
+    @Trace
     fun onPostprocessor(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
@@ -285,6 +290,7 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a list of Mirth message data to pass to the next channel stage.
      */
+    @Trace
     fun sourceReader(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
@@ -328,6 +334,7 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return true if the message should continue processing, false to stop processing the message.
      */
+    @Trace
     open fun sourceFilter(
         deployedChannelName: String,
         msg: String,
@@ -377,6 +384,7 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a Mirth message to pass to the next channel stage.
      */
+    @Trace
     open fun sourceTransformer(
         deployedChannelName: String,
         msg: String,

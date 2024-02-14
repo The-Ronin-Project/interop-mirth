@@ -4,11 +4,13 @@ import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import datadog.trace.api.Trace
 import mu.KotlinLogging
 
 abstract class TenantlessDestinationService : MirthDestination {
     protected val logger = KotlinLogging.logger(this::class.java.name)
 
+    @Trace
     override fun destinationFilter(
         unusedValue: String,
         msg: String,
@@ -50,6 +52,7 @@ abstract class TenantlessDestinationService : MirthDestination {
         return MirthFilterResponse(true)
     }
 
+    @Trace
     override fun destinationTransformer(
         unusedValue: String,
         msg: String,
@@ -89,6 +92,7 @@ abstract class TenantlessDestinationService : MirthDestination {
         return MirthMessage(msg)
     }
 
+    @Trace
     override fun destinationWriter(
         unusedValue: String,
         msg: String,

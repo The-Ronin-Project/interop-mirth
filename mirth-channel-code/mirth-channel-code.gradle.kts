@@ -75,6 +75,8 @@ dependencies {
         exclude(group = "org.yaml", module = "snakeyaml")
     }
 
+    implementation(libs.dd.trace.api)
+
     testImplementation(libs.mockk)
     testImplementation(libs.interop.commonTestDb)
     testImplementation(libs.interop.ehr.liquibase)
