@@ -15,11 +15,11 @@ fun <T> runInSpan(
 ): T {
     val tracer = GlobalTracer.get()
 
-    val serviceTag = runningClass.simpleName ?: runningClass.java.name
-    val methodTag = method.name
+    val className = runningClass.simpleName ?: runningClass.java.name
+    val methodName = method.name
     val span =
-        tracer.buildSpan("$serviceTag.$methodTag").withTag(DDTags.SERVICE_NAME, serviceTag)
-            .withTag(DDTags.RESOURCE_NAME, methodTag).start()
+        tracer.buildSpan("mirth.channel").withTag(DDTags.SERVICE_NAME, "mirth")
+            .withTag(DDTags.RESOURCE_NAME, "$className.$methodName").start()
     try {
         return tracer.activateSpan(span).use {
             block.invoke()
