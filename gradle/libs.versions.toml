@@ -32,6 +32,7 @@ mockk = "1.13.9"
 mockserver = "5.15.0"
 mysql = "8.3.0"
 okhttp3 = "4.12.0"
+opentracing = "0.33.0"
 owasp = "9.0.9"
 ronin-kafka = "1.1.2"
 ronin-test = "0.2.0"
@@ -101,6 +102,8 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockserver-client-java = { module = "org.mock-server:mockserver-client-java", version.ref = "mockserver" }
 mysql-connector-java = { module = "com.mysql:mysql-connector-j", version.ref = "mysql" }
 okhttp3-mockwebserver = { module = "com.squareup.okhttp3:mockwebserver", version.ref = "okhttp3" }
+opentracing-api = { module = "io.opentracing:opentracing-api", version.ref = "opentracing" }
+opentracing-util = { module = "io.opentracing:opentracing-util", version.ref = "opentracing" }
 rider-junit = { module = "com.github.database-rider:rider-junit5", version.ref = "dbrider" }
 ronin-kafka = { module = "com.projectronin:ronin-kafka", version.ref = "ronin-kafka" }
 ronin-test-data-generator = { module = "com.projectronin.test:ronin-test-data-generator", version.ref = "ronin-test" }
@@ -112,6 +115,11 @@ woodstox-core = { module = "com.fasterxml.woodstox:woodstox-core", version.ref =
 xerces = { module = "xerces:xercesImpl", version.ref = "xerces" }
 
 [bundles]
+datadog = [
+    "dd-trace-api",
+    "opentracing-api",
+    "opentracing-util"
+]
 interop-kafka-events = [
     "event-interop-resource-internal",
     "event-interop-resource-request",

@@ -3,8 +3,8 @@ package com.projectronin.interop.mirth.channel.base
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
+import com.projectronin.interop.mirth.util.runInSpan
 import com.projectronin.interop.tenant.config.exception.TenantMissingException
-import datadog.trace.api.Trace
 import mu.KotlinLogging
 
 /**
@@ -95,19 +95,20 @@ abstract class ChannelService {
      * @return a map of values to be used during later channel stages.
      *      Map keys: For conventions and a few reserved values see [BaseService].
      */
-    @Trace
     fun onDeploy(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
     ): Map<String, Any> {
         require(rootName.length <= 31) { "Channel root name length is over the limit of 31" }
         require(deployedChannelName.length <= 40) { "Deployed channel name length is over the limit of 40" }
-        val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
-        try {
-            return channelOnDeploy(tenantMap[MirthKey.TENANT_MNEMONIC.code] as String, tenantMap)
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during onDeploy: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::onDeploy) {
+            val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
+            try {
+                channelOnDeploy(tenantMap[MirthKey.TENANT_MNEMONIC.code] as String, tenantMap)
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during onDeploy: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -151,18 +152,19 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a map of values.
      */
-    @Trace
     fun onUndeploy(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
     ): Map<String, Any> {
-        val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
-        val tenantMnemonic = tenantMap[MirthKey.TENANT_MNEMONIC.code] as String
-        try {
-            return channelOnUndeploy(tenantMnemonic, tenantMap)
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during onUndeploy: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::onUndeploy) {
+            val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
+            val tenantMnemonic = tenantMap[MirthKey.TENANT_MNEMONIC.code] as String
+            try {
+                channelOnUndeploy(tenantMnemonic, tenantMap)
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during onUndeploy: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -198,17 +200,18 @@ abstract class ChannelService {
      * @return a map of values to be used during later channel stages.
      *      Map keys: For conventions and a few reserved values see [BaseService].
      */
-    @Trace
     fun onPreprocessor(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
     ): Map<String, Any> {
-        val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
-        try {
-            return channelOnPreprocessor(tenantMap[MirthKey.TENANT_MNEMONIC.code] as String, tenantMap)
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during onPreprocessor: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::onPreprocessor) {
+            val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
+            try {
+                channelOnPreprocessor(tenantMap[MirthKey.TENANT_MNEMONIC.code] as String, tenantMap)
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during onPreprocessor: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -244,17 +247,18 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a map of values.
      */
-    @Trace
     fun onPostprocessor(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
     ): Map<String, Any> {
-        val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
-        try {
-            return channelOnPostprocessor(tenantMap[MirthKey.TENANT_MNEMONIC.code] as String, tenantMap)
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during onPostprocessor: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::onPostprocessor) {
+            val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
+            try {
+                channelOnPostprocessor(tenantMap[MirthKey.TENANT_MNEMONIC.code] as String, tenantMap)
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during onPostprocessor: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -290,18 +294,19 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a list of Mirth message data to pass to the next channel stage.
      */
-    @Trace
     fun sourceReader(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
     ): List<MirthMessage> {
-        val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
-        val tenantId = tenantMap[MirthKey.TENANT_MNEMONIC.code] as String
-        try {
-            return channelSourceReader(tenantId, tenantMap).inject(MirthKey.TENANT_MNEMONIC to tenantId)
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during sourceReader: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::sourceReader) {
+            val tenantMap = addTenantToServiceMap(deployedChannelName, serviceMap)
+            val tenantId = tenantMap[MirthKey.TENANT_MNEMONIC.code] as String
+            try {
+                channelSourceReader(tenantId, tenantMap).inject(MirthKey.TENANT_MNEMONIC to tenantId)
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during sourceReader: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -334,19 +339,25 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return true if the message should continue processing, false to stop processing the message.
      */
-    @Trace
     open fun sourceFilter(
         deployedChannelName: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>,
     ): MirthFilterResponse {
-        val tenantMap = addTenantToServiceMap(deployedChannelName, channelMap)
-        try {
-            return channelSourceFilter(tenantMap[MirthKey.TENANT_MNEMONIC.code] as String, msg, sourceMap, tenantMap)
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during sourceFilter: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::sourceFilter) {
+            val tenantMap = addTenantToServiceMap(deployedChannelName, channelMap)
+            try {
+                channelSourceFilter(
+                    tenantMap[MirthKey.TENANT_MNEMONIC.code] as String,
+                    msg,
+                    sourceMap,
+                    tenantMap,
+                )
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during sourceFilter: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -384,24 +395,25 @@ abstract class ChannelService {
      *      Map keys: For conventions and a few reserved values see [BaseService].
      * @return a Mirth message to pass to the next channel stage.
      */
-    @Trace
     open fun sourceTransformer(
         deployedChannelName: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>,
     ): MirthMessage {
-        val tenantMap = addTenantToServiceMap(deployedChannelName, channelMap)
-        try {
-            return channelSourceTransformer(
-                tenantMap[MirthKey.TENANT_MNEMONIC.code] as String,
-                msg,
-                sourceMap,
-                tenantMap,
-            )
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during sourceTransformer: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::sourceTransformer) {
+            val tenantMap = addTenantToServiceMap(deployedChannelName, channelMap)
+            try {
+                channelSourceTransformer(
+                    tenantMap[MirthKey.TENANT_MNEMONIC.code] as String,
+                    msg,
+                    sourceMap,
+                    tenantMap,
+                )
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during sourceTransformer: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -459,7 +471,12 @@ abstract class ChannelService {
             throw TenantMissingException()
         }
         val index = deployedChannelName.indexOf("-$rootName")
-        return if (index > 0) deployedChannelName.substring(0, index).lowercase() else throw TenantMissingException()
+        return if (index > 0) {
+            deployedChannelName.substring(0, index)
+                .lowercase()
+        } else {
+            throw TenantMissingException()
+        }
     }
 
     /**

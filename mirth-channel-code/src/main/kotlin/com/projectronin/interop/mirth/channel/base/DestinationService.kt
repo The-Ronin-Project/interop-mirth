@@ -4,6 +4,7 @@ import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.model.MirthResponse
+import com.projectronin.interop.mirth.util.runInSpan
 import mu.KotlinLogging
 
 /**
@@ -52,16 +53,18 @@ abstract class DestinationService {
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>,
     ): MirthFilterResponse {
-        try {
-            return channelDestinationFilter(
-                sourceMap[MirthKey.TENANT_MNEMONIC.code] as String,
-                msg,
-                sourceMap,
-                channelMap,
-            )
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during destinationFilter: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::destinationFilter) {
+            try {
+                channelDestinationFilter(
+                    sourceMap[MirthKey.TENANT_MNEMONIC.code] as String,
+                    msg,
+                    sourceMap,
+                    channelMap,
+                )
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during destinationFilter: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -109,16 +112,18 @@ abstract class DestinationService {
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>,
     ): MirthMessage {
-        try {
-            return channelDestinationTransformer(
-                sourceMap[MirthKey.TENANT_MNEMONIC.code] as String,
-                msg,
-                sourceMap,
-                channelMap,
-            )
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during destinationTransformer: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::destinationTransformer) {
+            try {
+                channelDestinationTransformer(
+                    sourceMap[MirthKey.TENANT_MNEMONIC.code] as String,
+                    msg,
+                    sourceMap,
+                    channelMap,
+                )
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during destinationTransformer: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -165,16 +170,18 @@ abstract class DestinationService {
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>,
     ): MirthResponse {
-        try {
-            return channelDestinationWriter(
-                sourceMap[MirthKey.TENANT_MNEMONIC.code] as String,
-                msg,
-                sourceMap,
-                channelMap,
-            )
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during destinationWriter: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::destinationWriter) {
+            try {
+                channelDestinationWriter(
+                    sourceMap[MirthKey.TENANT_MNEMONIC.code] as String,
+                    msg,
+                    sourceMap,
+                    channelMap,
+                )
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during destinationWriter: ${e.message}" }
+                throw e
+            }
         }
     }
 

@@ -4,7 +4,7 @@ import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.exceptions.MapVariableMissing
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import datadog.trace.api.Trace
+import com.projectronin.interop.mirth.util.runInSpan
 import mu.KotlinLogging
 
 /**
@@ -35,18 +35,19 @@ abstract class TenantlessSourceService : MirthSource {
 
     abstract override val destinations: Map<String, TenantlessDestinationService>
 
-    @Trace
-    override fun onDeploy(
+    final override fun onDeploy(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
     ): Map<String, Any> {
         require(rootName.length <= 31) { "Channel root name length is over the limit of 31" }
         require(deployedChannelName.length <= 40) { "Deployed channel name length is over the limit of 40" }
-        try {
-            return channelOnDeploy(serviceMap)
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during on deploy: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::onDeploy) {
+            try {
+                channelOnDeploy(serviceMap)
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during on deploy: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -59,18 +60,19 @@ abstract class TenantlessSourceService : MirthSource {
      */
     open fun channelOnDeploy(serviceMap: Map<String, Any>): Map<String, Any> = serviceMap
 
-    @Trace
     override fun sourceReader(
         deployedChannelName: String,
         serviceMap: Map<String, Any>,
     ): List<MirthMessage> {
-        try {
-            val messages = channelSourceReader(serviceMap)
-            messages.checkTenant()
-            return messages
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during sourceReader: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::sourceReader) {
+            try {
+                val messages = channelSourceReader(serviceMap)
+                messages.checkTenant()
+                messages
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during sourceReader: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -84,19 +86,20 @@ abstract class TenantlessSourceService : MirthSource {
      */
     abstract fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage>
 
-    @Trace
     override fun sourceFilter(
         deployedChannelName: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>,
     ): MirthFilterResponse {
-        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
-        try {
-            return channelSourceFilter(tenantMnemonic, msg, sourceMap, channelMap)
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during sourceFilter: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::sourceFilter) {
+            val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
+            try {
+                channelSourceFilter(tenantMnemonic, msg, sourceMap, channelMap)
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during sourceFilter: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -119,24 +122,25 @@ abstract class TenantlessSourceService : MirthSource {
         return MirthFilterResponse(true)
     }
 
-    @Trace
     override fun sourceTransformer(
         deployedChannelName: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>,
     ): MirthMessage {
-        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
-        try {
-            return channelSourceTransformer(
-                tenantMnemonic,
-                msg,
-                sourceMap,
-                channelMap,
-            )
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during sourceTransformer: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::sourceTransformer) {
+            val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
+            try {
+                channelSourceTransformer(
+                    tenantMnemonic,
+                    msg,
+                    sourceMap,
+                    channelMap,
+                )
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during sourceTransformer: ${e.message}" }
+                throw e
+            }
         }
     }
 

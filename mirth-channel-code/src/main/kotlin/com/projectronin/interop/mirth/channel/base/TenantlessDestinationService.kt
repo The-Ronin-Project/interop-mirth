@@ -4,31 +4,32 @@ import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthFilterResponse
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.model.MirthResponse
-import datadog.trace.api.Trace
+import com.projectronin.interop.mirth.util.runInSpan
 import mu.KotlinLogging
 
 abstract class TenantlessDestinationService : MirthDestination {
     protected val logger = KotlinLogging.logger(this::class.java.name)
 
-    @Trace
-    override fun destinationFilter(
+    final override fun destinationFilter(
         unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>,
     ): MirthFilterResponse {
-        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
+        return runInSpan(this::class, ::destinationFilter) {
+            val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
 
-        try {
-            return channelDestinationFilter(
-                tenantMnemonic,
-                msg,
-                sourceMap,
-                channelMap,
-            )
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during destinationFilter: ${e.message}" }
-            throw e
+            try {
+                channelDestinationFilter(
+                    tenantMnemonic,
+                    msg,
+                    sourceMap,
+                    channelMap,
+                )
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during destinationFilter: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -52,24 +53,25 @@ abstract class TenantlessDestinationService : MirthDestination {
         return MirthFilterResponse(true)
     }
 
-    @Trace
-    override fun destinationTransformer(
+    final override fun destinationTransformer(
         unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>,
     ): MirthMessage {
-        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
-        try {
-            return channelDestinationTransformer(
-                tenantMnemonic,
-                msg,
-                sourceMap,
-                channelMap,
-            )
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during destinationTransformer: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::destinationTransformer) {
+            val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
+            try {
+                channelDestinationTransformer(
+                    tenantMnemonic,
+                    msg,
+                    sourceMap,
+                    channelMap,
+                )
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during destinationTransformer: ${e.message}" }
+                throw e
+            }
         }
     }
 
@@ -92,24 +94,25 @@ abstract class TenantlessDestinationService : MirthDestination {
         return MirthMessage(msg)
     }
 
-    @Trace
-    override fun destinationWriter(
+    final override fun destinationWriter(
         unusedValue: String,
         msg: String,
         sourceMap: Map<String, Any>,
         channelMap: Map<String, Any>,
     ): MirthResponse {
-        val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
-        try {
-            return channelDestinationWriter(
-                tenantMnemonic,
-                msg,
-                sourceMap,
-                channelMap,
-            )
-        } catch (e: Throwable) {
-            logger.error(e) { "Exception encountered during destinationWriter: ${e.message}" }
-            throw e
+        return runInSpan(this::class, ::destinationWriter) {
+            val tenantMnemonic = sourceMap[MirthKey.TENANT_MNEMONIC.code]!! as String
+            try {
+                channelDestinationWriter(
+                    tenantMnemonic,
+                    msg,
+                    sourceMap,
+                    channelMap,
+                )
+            } catch (e: Throwable) {
+                logger.error(e) { "Exception encountered during destinationWriter: ${e.message}" }
+                throw e
+            }
         }
     }
 

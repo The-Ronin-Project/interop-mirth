@@ -75,7 +75,7 @@ dependencies {
         exclude(group = "org.yaml", module = "snakeyaml")
     }
 
-    implementation(libs.dd.trace.api)
+    implementation(libs.bundles.datadog)
 
     testImplementation(libs.mockk)
     testImplementation(libs.interop.commonTestDb)
