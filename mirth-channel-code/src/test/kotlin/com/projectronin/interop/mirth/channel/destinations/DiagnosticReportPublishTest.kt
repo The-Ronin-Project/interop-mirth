@@ -17,6 +17,7 @@ import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
 import java.time.OffsetDateTime
 
 class DiagnosticReportPublishTest {
@@ -76,12 +77,16 @@ class DiagnosticReportPublishTest {
             diagnosticReportService.getDiagnosticReportByPatient(
                 tenant,
                 "12345678",
+                LocalDate.now().minusMonths(2),
+                LocalDate.now(),
             )
         } returns listOf(diagnosticReport1, diagnosticReport2)
         every {
             diagnosticReportService.getDiagnosticReportByPatient(
                 tenant,
                 "89101112",
+                LocalDate.now().minusMonths(2),
+                LocalDate.now(),
             )
         } returns listOf(diagnosticReport3)
         every {

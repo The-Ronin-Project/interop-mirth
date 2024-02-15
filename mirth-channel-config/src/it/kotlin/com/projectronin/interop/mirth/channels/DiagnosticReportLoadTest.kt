@@ -1,9 +1,11 @@
 package com.projectronin.interop.mirth.channels
 
 import com.projectronin.event.interop.internal.v1.ResourceType
+import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.reference
+import com.projectronin.interop.fhir.generators.primitives.dateTime
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.diagnosticReport
 import com.projectronin.interop.fhir.generators.resources.patient
@@ -20,6 +22,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.LocalDateTime
 
 class DiagnosticReportLoadTest : BaseChannelTest(
     DIAGNOSTIC_REPORT_LOAD_CHANNEL_NAME,
@@ -50,11 +53,21 @@ class DiagnosticReportLoadTest : BaseChannelTest(
                 identifier = fakePatient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(fakePatient2Id),
             )
 
+        val twoDaysAgo = LocalDateTime.now().minusDays(2)
+
         // MOCK: DX Reports at the EHR
         val fakeDiagnosticReport1 =
             diagnosticReport {
                 subject of reference(patientType, fakePatient1Id)
                 status of "registered"
+                effective of
+                    DynamicValues.dateTime(
+                        dateTime {
+                            year of twoDaysAgo.year
+                            month of twoDaysAgo.month.value
+                            day of twoDaysAgo.dayOfMonth
+                        },
+                    )
                 code of
                     codeableConcept {
                         coding of
@@ -85,6 +98,14 @@ class DiagnosticReportLoadTest : BaseChannelTest(
             diagnosticReport {
                 subject of reference(patientType, fakePatient2Id)
                 status of "registered"
+                effective of
+                    DynamicValues.dateTime(
+                        dateTime {
+                            year of twoDaysAgo.year
+                            month of twoDaysAgo.month.value
+                            day of twoDaysAgo.dayOfMonth
+                        },
+                    )
                 code of
                     codeableConcept {
                         coding of
