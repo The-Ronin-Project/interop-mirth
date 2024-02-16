@@ -46,7 +46,7 @@ import kotlin.reflect.full.functions
         SetEnvironmentVariable(key = "OCI_NAMESPACE", value = "namespace"),
         SetEnvironmentVariable(key = "OCI_CONCEPTMAP_BUCKET_NAME", value = "cm"),
         SetEnvironmentVariable(key = "OCI_PUBLISH_BUCKET_NAME", value = "pub"),
-        SetEnvironmentVariable(key = "OCI_INFX_REGISTRY_FILE", value = "TheNormalizationRegistry.json"),
+        SetEnvironmentVariable(key = "OCI_INFX_REGISTRY_FILE", value = "registry/v4/TheNormalizationRegistry.json"),
         SetEnvironmentVariable(key = "OCI_REGION", value = "fake-region"),
         SetEnvironmentVariable(key = "KAFKA_CLOUD_VENDOR", value = "vendor"),
         SetEnvironmentVariable(key = "KAFKA_CLOUD_REGION", value = "region"),

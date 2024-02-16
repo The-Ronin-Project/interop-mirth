@@ -52,7 +52,7 @@
   {
     "httpRequest": {
       "method": "GET",
-      "path": "/n/namespace/b/infx-bucket/o/TheNormalizationRegistry.json"
+      "path": "/n/namespace/b/infx-bucket/o/registry%2Fv4%2FTheNormalizationRegistry.json"
     },
     "httpResponse": {
       "statusCode": 200,
