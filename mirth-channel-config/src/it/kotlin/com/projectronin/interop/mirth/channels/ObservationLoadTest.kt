@@ -46,6 +46,7 @@ class ObservationLoadTest : BaseChannelTest(
             runDateTime = OffsetDateTime.now(),
             targetedResources = listOf("Patient", "Observation", "Condition"),
         )
+
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with multiple patients, conditions and observations`(testTenant: String) {
