@@ -3,9 +3,6 @@ package com.projectronin.interop.mirth.channel.util
 import com.projectronin.event.interop.internal.v1.InteropResourceLoadV1
 import com.projectronin.event.interop.internal.v1.InteropResourcePublishV1
 import com.projectronin.interop.mirth.service.TenantConfigurationService
-import mu.KotlinLogging
-
-private val logger = KotlinLogging.logger { }
 
 /**
  * Util to filter out events whose resources are allowed/targetResource based on the event metadata
