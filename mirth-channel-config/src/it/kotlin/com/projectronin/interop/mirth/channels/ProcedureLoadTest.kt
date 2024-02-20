@@ -2,9 +2,11 @@ package com.projectronin.interop.mirth.channels
 
 import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
+import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.participant
 import com.projectronin.interop.fhir.generators.datatypes.reference
+import com.projectronin.interop.fhir.generators.primitives.dateTime
 import com.projectronin.interop.fhir.generators.primitives.daysFromNow
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.appointment
@@ -28,6 +30,7 @@ import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 class ProcedureLoadTest : BaseChannelTest(
@@ -46,6 +49,7 @@ class ProcedureLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `channel works with multiple procedures and appointments`(testTenant: String) {
         tenantInUse = testTenant
+        val twoDaysAgo = LocalDateTime.now().minusDays(2)
         val fakeProcedure1 =
             procedure {
                 identifier of
@@ -77,6 +81,14 @@ class ProcedureLoadTest : BaseChannelTest(
                     )
                 subject of reference("Patient")
                 status of Code("not-done")
+                performed of
+                    DynamicValues.dateTime(
+                        dateTime {
+                            year of twoDaysAgo.year
+                            month of twoDaysAgo.month.value
+                            day of twoDaysAgo.dayOfMonth
+                        },
+                    )
             }
         val procedureFhirId1 = MockEHRTestData.add(fakeProcedure1)
         val fakeProcedure2 =
@@ -110,6 +122,14 @@ class ProcedureLoadTest : BaseChannelTest(
                     )
                 subject of reference("Patient")
                 status of Code("not-done")
+                performed of
+                    DynamicValues.dateTime(
+                        dateTime {
+                            year of twoDaysAgo.year
+                            month of twoDaysAgo.month.value
+                            day of twoDaysAgo.dayOfMonth
+                        },
+                    )
             }
         val procedureFhirId2 = MockEHRTestData.add(fakeProcedure2)
 
@@ -144,6 +164,14 @@ class ProcedureLoadTest : BaseChannelTest(
                     )
                 subject of reference("Patient")
                 status of Code("not-done")
+                performed of
+                    DynamicValues.dateTime(
+                        dateTime {
+                            year of twoDaysAgo.year
+                            month of twoDaysAgo.month.value
+                            day of twoDaysAgo.dayOfMonth
+                        },
+                    )
             }
         val procedureFhirId3 = MockEHRTestData.add(fakeProcedure3)
 
@@ -221,6 +249,7 @@ class ProcedureLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `channel works for ad-hoc requests`(testTenant: String) {
         tenantInUse = testTenant
+        val twoDaysAgo = LocalDateTime.now().minusDays(2)
         val fakeProcedure1 =
             procedure {
                 identifier of
@@ -252,6 +281,14 @@ class ProcedureLoadTest : BaseChannelTest(
                     )
                 status of Code("not-done")
                 subject of reference("Patient")
+                performed of
+                    DynamicValues.dateTime(
+                        dateTime {
+                            year of twoDaysAgo.year
+                            month of twoDaysAgo.month.value
+                            day of twoDaysAgo.dayOfMonth
+                        },
+                    )
             }
         val procedureFhirId1 = MockEHRTestData.add(fakeProcedure1)
         val fakeAppointment1 =

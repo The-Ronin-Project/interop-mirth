@@ -6,6 +6,7 @@ import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.reference
+import com.projectronin.interop.fhir.generators.primitives.dateTime
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.condition
 import com.projectronin.interop.fhir.generators.resources.conditionStage
@@ -14,7 +15,6 @@ import com.projectronin.interop.fhir.generators.resources.patient
 import com.projectronin.interop.fhir.r4.CodeSystem
 import com.projectronin.interop.fhir.r4.datatype.Reference
 import com.projectronin.interop.fhir.r4.datatype.primitive.Code
-import com.projectronin.interop.fhir.r4.datatype.primitive.DateTime
 import com.projectronin.interop.fhir.r4.datatype.primitive.FHIRString
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.datatype.primitive.Uri
@@ -30,9 +30,8 @@ import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
 
 class ObservationLoadTest : BaseChannelTest(
     OBSERVATION_LOAD_CHANNEL_NAME,
@@ -41,15 +40,12 @@ class ObservationLoadTest : BaseChannelTest(
 ) {
     val patientType = "Patient"
     val observationType = "Observation"
-    private val nowDate =
-        DynamicValues.dateTime(DateTime(LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))))
     private val fakeMetadata =
         Metadata(
             runId = "123456",
             runDateTime = OffsetDateTime.now(),
             targetedResources = listOf("Patient", "Observation", "Condition"),
         )
-
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with multiple patients, conditions and observations`(testTenant: String) {
@@ -70,7 +66,7 @@ class ObservationLoadTest : BaseChannelTest(
                 id = Id("$tenantInUse-$patient2Id"),
                 identifier = patient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id),
             )
-
+        val twoDaysAgo = LocalDateTime.now().minusDays(2)
         val observation1 =
             observation {
                 subject of reference(patientType, patient1Id)
@@ -98,7 +94,14 @@ class ObservationLoadTest : BaseChannelTest(
                                 },
                             )
                     }
-                effective of nowDate
+                effective of
+                    DynamicValues.dateTime(
+                        dateTime {
+                            year of twoDaysAgo.year
+                            month of twoDaysAgo.month.value
+                            day of twoDaysAgo.dayOfMonth
+                        },
+                    )
                 encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
             }
 
@@ -129,7 +132,14 @@ class ObservationLoadTest : BaseChannelTest(
                                 },
                             )
                     }
-                effective of nowDate
+                effective of
+                    DynamicValues.dateTime(
+                        dateTime {
+                            year of twoDaysAgo.year
+                            month of twoDaysAgo.month.value
+                            day of twoDaysAgo.dayOfMonth
+                        },
+                    )
                 encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
             }
         val observation1ID = MockEHRTestData.add(observation1)
@@ -195,6 +205,7 @@ class ObservationLoadTest : BaseChannelTest(
         tenantInUse = testTenant
         val patient1 = patient {}
         val patient1Id = MockEHRTestData.add(patient1)
+        val twoDaysAgo = LocalDateTime.now().minusDays(2)
         val observation =
             observation {
                 subject of reference(patientType, patient1Id)
@@ -223,6 +234,14 @@ class ObservationLoadTest : BaseChannelTest(
                             )
                     }
                 encounter of Reference(type = Uri("Encounter"), display = "display".asFHIR())
+                effective of
+                    DynamicValues.dateTime(
+                        dateTime {
+                            year of twoDaysAgo.year
+                            month of twoDaysAgo.month.value
+                            day of twoDaysAgo.dayOfMonth
+                        },
+                    )
             }
         val observationID = MockEHRTestData.add(observation)
         MockOCIServerClient.createExpectations(observationType, observationID, testTenant)

@@ -17,6 +17,7 @@ import com.projectronin.interop.rcdm.transform.TransformManager
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
 import org.springframework.stereotype.Component
+import java.time.LocalDate
 import java.time.OffsetDateTime
 
 @Component
@@ -64,8 +65,8 @@ class MedicationRequestPublish(
                 fhirService.getMedicationRequestByPatient(
                     tenant,
                     it,
-                    startDate?.toLocalDate(),
-                    endDate?.toLocalDate(),
+                    startDate = startDate?.toLocalDate() ?: LocalDate.now().minusMonths(2),
+                    endDate = endDate?.toLocalDate() ?: LocalDate.now(),
                 )
             }
         }

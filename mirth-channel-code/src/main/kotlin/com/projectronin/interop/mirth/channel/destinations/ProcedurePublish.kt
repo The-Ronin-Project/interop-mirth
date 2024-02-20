@@ -114,8 +114,8 @@ class ProcedurePublish(
                 fhirService.getProcedureByPatient(
                     tenant,
                     fhirId,
-                    startDate?.toLocalDate() ?: LocalDate.now().minusMonths(1),
-                    endDate?.toLocalDate() ?: LocalDate.now().plusMonths(1),
+                    startDate?.toLocalDate() ?: LocalDate.now().minusMonths(2),
+                    endDate?.toLocalDate() ?: LocalDate.now(),
                 )
             }
         }
