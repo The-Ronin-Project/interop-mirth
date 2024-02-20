@@ -10,8 +10,8 @@ import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
-import com.projectronin.interop.mirth.channel.util.filterBlockedLoadEvents
-import com.projectronin.interop.mirth.channel.util.filterBlockedPublishedEvents
+import com.projectronin.interop.mirth.channel.util.filterAllowedLoadEventsResources
+import com.projectronin.interop.mirth.channel.util.filterAllowedPublishedResources
 import com.projectronin.interop.mirth.channel.util.splitDateRange
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 
@@ -36,15 +36,14 @@ abstract class KafkaTopicReader(
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
         // wrapping retrievePublishedEvents with function to filter out blocked resources
         val nightlyPublishedEvents =
-            filterBlockedPublishedEvents(resource, retrievePublishedEvents(DataTrigger.NIGHTLY), tenantConfigService)
+            filterAllowedPublishedResources(retrievePublishedEvents(DataTrigger.NIGHTLY), tenantConfigService)
         if (nightlyPublishedEvents.isNotEmpty()) {
             return nightlyPublishedEvents.toPublishMirthMessages()
         }
 
         // wrapping retrieveLoadEvents with function to filter out blocked resources
         val loadEvents =
-            filterBlockedLoadEvents(
-                resource,
+            filterAllowedLoadEventsResources(
                 kafkaLoadService.retrieveLoadEvents(
                     resourceType = resource,
                     groupId = channelGroupId,
@@ -58,7 +57,7 @@ abstract class KafkaTopicReader(
         // wrapping retrievePublishedEvents with function to filter out blocked resources
         // adHoc and backfill exist on the same topic, so when we call for ad-hoc we also get backfill events
         val adHocPublishEvents =
-            filterBlockedPublishedEvents(resource, retrievePublishedEvents(DataTrigger.AD_HOC), tenantConfigService)
+            filterAllowedPublishedResources(retrievePublishedEvents(DataTrigger.AD_HOC), tenantConfigService)
         if (adHocPublishEvents.isNotEmpty()) {
             // split the events by trigger, so we can make sure the backfill events are split as needed
             val groupedEvents = adHocPublishEvents.groupBy { it.dataTrigger!! }

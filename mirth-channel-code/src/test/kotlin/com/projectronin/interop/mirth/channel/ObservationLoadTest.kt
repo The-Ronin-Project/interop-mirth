@@ -60,6 +60,7 @@ class ObservationLoadTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
+                every { targetedResources } returns listOf("Patient")
             }
 
         val patientEventTenant1Run1 =
