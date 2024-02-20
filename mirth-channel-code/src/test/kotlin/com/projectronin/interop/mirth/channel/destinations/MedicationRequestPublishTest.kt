@@ -17,6 +17,8 @@ import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
+import java.time.OffsetDateTime
 
 class MedicationRequestPublishTest {
     private val tenantId = "tenant"
@@ -60,16 +62,39 @@ class MedicationRequestPublishTest {
         val medicationRequest1 = mockk<MedicationRequest>()
         val medicationRequest2 = mockk<MedicationRequest>()
         val medicationRequest3 = mockk<MedicationRequest>()
-        every { medicationRequestService.getMedicationRequestByPatient(tenant, "1234") } returns
+        val startDate = OffsetDateTime.now()
+        val endDate = OffsetDateTime.now()
+        every {
+            medicationRequestService.getMedicationRequestByPatient(
+                tenant,
+                "1234",
+                LocalDate.now().minusMonths(2),
+                LocalDate.now(),
+            )
+        } returns
             listOf(
                 medicationRequest1,
                 medicationRequest2,
             )
-        every { medicationRequestService.getMedicationRequestByPatient(tenant, "5678") } returns
+        every {
+            medicationRequestService.getMedicationRequestByPatient(
+                tenant,
+                "5678",
+                LocalDate.now().minusMonths(2),
+                LocalDate.now(),
+            )
+        } returns
             listOf(
                 medicationRequest3,
             )
-        every { medicationRequestService.getMedicationRequestByPatient(tenant, "9012") } returns emptyList()
+        every {
+            medicationRequestService.getMedicationRequestByPatient(
+                tenant,
+                "9012",
+                startDate.toLocalDate(),
+                endDate.toLocalDate(),
+            )
+        } returns emptyList()
 
         val event1 =
             InteropResourcePublishV1(
@@ -90,7 +115,18 @@ class MedicationRequestPublishTest {
                 tenantId = tenantId,
                 resourceType = ResourceType.Patient,
                 resourceJson = JacksonManager.objectMapper.writeValueAsString(patient3),
-                metadata = metadata,
+                metadata =
+                    Metadata(
+                        runId = "run",
+                        runDateTime = OffsetDateTime.now(),
+                        upstreamReferences = null,
+                        backfillRequest =
+                            Metadata.BackfillRequest(
+                                backfillId = "123",
+                                backfillStartDate = startDate,
+                                backfillEndDate = endDate,
+                            ),
+                    ),
             )
         val request =
             MedicationRequestPublish.PatientPublishMedicationRequestRequest(
@@ -107,7 +143,7 @@ class MedicationRequestPublishTest {
         val key2 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-5678")
         assertEquals(listOf(medicationRequest3), resourcesByKeys[key2])
 
-        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-9012")
+        val key3 = ResourceRequestKey("run", ResourceType.Patient, tenant, "$tenantId-9012", Pair(startDate, endDate))
         assertEquals(emptyList<MedicationRequest>(), resourcesByKeys[key3])
     }
 }

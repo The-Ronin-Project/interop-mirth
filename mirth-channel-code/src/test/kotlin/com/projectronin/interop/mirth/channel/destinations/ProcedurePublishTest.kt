@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.LocalDate
 import java.time.OffsetDateTime
 
 class ProcedurePublishTest {
@@ -660,8 +661,8 @@ class ProcedurePublishTest {
             procedureService.getProcedureByPatient(
                 tenant,
                 "7777",
-                startDate.minusMonths(1).toLocalDate(),
-                endDate.plusMonths(1).toLocalDate(),
+                LocalDate.now().minusMonths(2),
+                LocalDate.now(),
             )
         } returns listOf(mockProcedure1, mockProcedure2, mockProcedure3)
 
@@ -669,13 +670,18 @@ class ProcedurePublishTest {
             procedureService.getProcedureByPatient(
                 tenant,
                 "8888",
-                startDate.minusMonths(1).toLocalDate(),
-                endDate.plusMonths(1).toLocalDate(),
+                LocalDate.now().minusMonths(2),
+                LocalDate.now(),
             )
         } returns listOf()
 
         every {
-            procedureService.getProcedureByPatient(tenant, "9999", startDate.toLocalDate(), endDate.toLocalDate())
+            procedureService.getProcedureByPatient(
+                tenant,
+                "9999",
+                startDate.toLocalDate(),
+                endDate.toLocalDate(),
+            )
         } returns listOf(mockProcedure4, mockProcedure5)
 
         val event1 =

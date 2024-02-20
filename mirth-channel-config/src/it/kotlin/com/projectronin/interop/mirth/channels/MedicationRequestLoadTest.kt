@@ -6,13 +6,18 @@ import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
+import com.projectronin.interop.fhir.generators.datatypes.period
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.primitives.date
 import com.projectronin.interop.fhir.generators.primitives.of
 import com.projectronin.interop.fhir.generators.resources.medication
 import com.projectronin.interop.fhir.generators.resources.medicationRequest
 import com.projectronin.interop.fhir.generators.resources.patient
+import com.projectronin.interop.fhir.r4.datatype.Dosage
 import com.projectronin.interop.fhir.r4.datatype.Reference
+import com.projectronin.interop.fhir.r4.datatype.Timing
+import com.projectronin.interop.fhir.r4.datatype.TimingRepeat
+import com.projectronin.interop.fhir.r4.datatype.primitive.DateTime
 import com.projectronin.interop.fhir.r4.datatype.primitive.Id
 import com.projectronin.interop.fhir.r4.datatype.primitive.asFHIR
 import com.projectronin.interop.fhir.r4.resource.Medication
@@ -35,6 +40,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 class MedicationRequestLoadTest : BaseChannelTest(
     MEDICATION_REQUEST_LOAD_CHANNEL_NAME,
@@ -92,6 +100,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
             )
         AidboxTestData.add(fakeAidboxPatient)
 
+        val twoDaysAgo = OffsetDateTime.now(ZoneOffset.UTC).minusDays(2)
         val medicationRequest =
             medicationRequest {
                 subject of reference(patientType, fakePatientId)
@@ -99,6 +108,23 @@ class MedicationRequestLoadTest : BaseChannelTest(
                 intent of "order"
                 status of "active"
                 medication of DynamicValues.reference(reference(medicationType, "1234"))
+                dosageInstruction of
+                    listOf(
+                        Dosage(
+                            timing =
+                                Timing(
+                                    repeat =
+                                        TimingRepeat(
+                                            bounds =
+                                                DynamicValues.period(
+                                                    period {
+                                                        start of DateTime(twoDaysAgo.format(DateTimeFormatter.ISO_DATE_TIME))
+                                                    },
+                                                ),
+                                        ),
+                                ),
+                        ),
+                    )
             }
         val medicationRequestId = MockEHRTestData.add(medicationRequest)
         MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId, tenantInUse)
@@ -137,6 +163,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
                 identifier = fakePatient2.identifier + tenantIdentifier(tenantInUse) + fhirIdentifier(patient2Id),
             )
 
+        val twoDaysAgo = OffsetDateTime.now(ZoneOffset.UTC).minusDays(2)
         val fakeMedicationRequest1 =
             medicationRequest {
                 subject of reference(patientType, patient1Id)
@@ -144,6 +171,23 @@ class MedicationRequestLoadTest : BaseChannelTest(
                 intent of "order"
                 status of "active"
                 medication of DynamicValues.reference(reference(medicationType, "1234"))
+                dosageInstruction of
+                    listOf(
+                        Dosage(
+                            timing =
+                                Timing(
+                                    repeat =
+                                        TimingRepeat(
+                                            bounds =
+                                                DynamicValues.period(
+                                                    period {
+                                                        start of DateTime(twoDaysAgo.format(DateTimeFormatter.ISO_DATE_TIME))
+                                                    },
+                                                ),
+                                        ),
+                                ),
+                        ),
+                    )
             }
 
         val fakeMedicationRequest2 =
@@ -153,6 +197,23 @@ class MedicationRequestLoadTest : BaseChannelTest(
                 intent of "order"
                 status of "active"
                 medication of DynamicValues.reference(reference(medicationType, "1234"))
+                dosageInstruction of
+                    listOf(
+                        Dosage(
+                            timing =
+                                Timing(
+                                    repeat =
+                                        TimingRepeat(
+                                            bounds =
+                                                DynamicValues.period(
+                                                    period {
+                                                        start of DateTime(twoDaysAgo.format(DateTimeFormatter.ISO_DATE_TIME))
+                                                    },
+                                                ),
+                                        ),
+                                ),
+                        ),
+                    )
             }
 
         val medRequest1ID = MockEHRTestData.add(fakeMedicationRequest1)
@@ -282,6 +343,7 @@ class MedicationRequestLoadTest : BaseChannelTest(
                     }
             }
 
+        val twoDaysAgo = OffsetDateTime.now(ZoneOffset.UTC).minusDays(2)
         val medicationRequest =
             medicationRequest {
                 subject of reference(patientType, fakePatientId)
@@ -290,6 +352,23 @@ class MedicationRequestLoadTest : BaseChannelTest(
                 status of "active"
                 medication of DynamicValues.reference(Reference(reference = "#13579".asFHIR()))
                 contained plus containedMedication
+                dosageInstruction of
+                    listOf(
+                        Dosage(
+                            timing =
+                                Timing(
+                                    repeat =
+                                        TimingRepeat(
+                                            bounds =
+                                                DynamicValues.period(
+                                                    period {
+                                                        start of DateTime(twoDaysAgo.format(DateTimeFormatter.ISO_DATE_TIME))
+                                                    },
+                                                ),
+                                        ),
+                                ),
+                        ),
+                    )
             }
         val medicationRequestId = MockEHRTestData.add(medicationRequest)
         MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId, tenantInUse)
@@ -372,6 +451,8 @@ class MedicationRequestLoadTest : BaseChannelTest(
             )
         AidboxTestData.add(fakeAidboxPatient)
 
+        val twoDaysAgo = OffsetDateTime.now(ZoneOffset.UTC).minusDays(2)
+
         val medicationCodeableConcept =
             codeableConcept {
                 coding plus
@@ -390,6 +471,23 @@ class MedicationRequestLoadTest : BaseChannelTest(
                 intent of "order"
                 status of "active"
                 medication of DynamicValues.codeableConcept(medicationCodeableConcept)
+                dosageInstruction of
+                    listOf(
+                        Dosage(
+                            timing =
+                                Timing(
+                                    repeat =
+                                        TimingRepeat(
+                                            bounds =
+                                                DynamicValues.period(
+                                                    period {
+                                                        start of DateTime(twoDaysAgo.format(DateTimeFormatter.ISO_DATE_TIME))
+                                                    },
+                                                ),
+                                        ),
+                                ),
+                        ),
+                    )
             }
         val medicationRequestId = MockEHRTestData.add(medicationRequest)
         MockOCIServerClient.createExpectations(medicationRequestType, medicationRequestId, tenantInUse)

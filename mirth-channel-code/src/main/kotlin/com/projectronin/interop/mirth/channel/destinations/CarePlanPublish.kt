@@ -89,8 +89,8 @@ class CarePlanPublish(
                 fhirService.findPatientCarePlans(
                     tenant,
                     it,
-                    startDate = startDate?.toLocalDate() ?: LocalDate.now().minusMonths(1),
-                    endDate = endDate?.toLocalDate() ?: LocalDate.now().plusMonths(1),
+                    startDate = startDate?.toLocalDate() ?: LocalDate.now().minusMonths(2),
+                    endDate = endDate?.toLocalDate() ?: LocalDate.now(),
                 )
             }
         }

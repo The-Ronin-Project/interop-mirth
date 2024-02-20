@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.OffsetDateTime
 
 class CarePlanLoadTest : BaseChannelTest(
@@ -39,8 +40,7 @@ class CarePlanLoadTest : BaseChannelTest(
     listOf("Patient", "CarePlan", "Location"),
     listOf("Patient", "CarePlan", "Location"),
 ) {
-    val nowish = LocalDate.now().minusDays(1)
-    val laterish = nowish.plusDays(1)
+    val twoDaysAgo = LocalDateTime.now().minusDays(2)
 
     private fun createFakeCarePlan(
         patientId: String,
@@ -70,15 +70,15 @@ class CarePlanLoadTest : BaseChannelTest(
                 period {
                     start of
                         dateTime {
-                            year of nowish.year
-                            month of nowish.monthValue
-                            day of nowish.dayOfMonth
+                            year of twoDaysAgo.year
+                            month of twoDaysAgo.month.value
+                            day of twoDaysAgo.dayOfMonth
                         }
                     end of
                         dateTime {
-                            year of laterish.year
-                            month of laterish.monthValue
-                            day of laterish.dayOfMonth
+                            year of twoDaysAgo.year
+                            month of twoDaysAgo.month.value
+                            day of twoDaysAgo.dayOfMonth
                         }
                 }
         }
@@ -330,6 +330,8 @@ class CarePlanLoadTest : BaseChannelTest(
     @MethodSource("tenantsToTest")
     fun `check if channel works nightly with CarePlan cycle`(testTenant: String) {
         tenantInUse = testTenant
+        val nowish = LocalDate.now().minusDays(1)
+        val laterish = nowish.plusDays(1)
         val fakePatient =
             patient {
                 birthDate of
@@ -441,15 +443,15 @@ class CarePlanLoadTest : BaseChannelTest(
                     period {
                         start of
                             dateTime {
-                                year of nowish.year
-                                month of nowish.monthValue
-                                day of nowish.dayOfMonth
+                                year of twoDaysAgo.year
+                                month of twoDaysAgo.month.value
+                                day of twoDaysAgo.dayOfMonth
                             }
                         end of
                             dateTime {
-                                year of laterish.year
-                                month of laterish.monthValue
-                                day of laterish.dayOfMonth
+                                year of twoDaysAgo.year
+                                month of twoDaysAgo.month.value
+                                day of twoDaysAgo.dayOfMonth
                             }
                     }
                 activity of

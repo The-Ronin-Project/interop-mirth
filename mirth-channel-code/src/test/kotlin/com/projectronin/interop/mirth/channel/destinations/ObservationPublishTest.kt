@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import java.time.LocalDate
 import java.time.OffsetDateTime
 
 class ObservationPublishTest {
@@ -167,6 +168,8 @@ class ObservationPublishTest {
                 tenant,
                 listOf("1234"),
                 categories,
+                LocalDate.now().minusMonths(2),
+                LocalDate.now(),
             )
         } returns
             listOf(
@@ -178,6 +181,8 @@ class ObservationPublishTest {
                 tenant,
                 listOf("5678"),
                 categories,
+                LocalDate.now().minusMonths(2),
+                LocalDate.now(),
             )
         } returns listOf(observation3)
         every {
