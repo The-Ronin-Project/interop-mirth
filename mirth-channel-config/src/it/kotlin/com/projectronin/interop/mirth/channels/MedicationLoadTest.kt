@@ -30,7 +30,7 @@ class MedicationLoadTest : BaseChannelTest(
         Metadata(
             runId = "123456",
             runDateTime = OffsetDateTime.now(),
-            targetedResources = listOf("Patient", "Medication"),
+            targetedResources = listOf("Patient", "Medication", "MedicationRequest", "MedicationStatement"),
         )
 
     @ParameterizedTest

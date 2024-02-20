@@ -16,18 +16,24 @@ fun filterAllowedLoadEventsResources(
     events: List<InteropResourceLoadV1>,
     tenantConfigService: TenantConfigurationService,
 ): List<InteropResourceLoadV1> {
-    // if events is empty, return events, if targeted resources is empty, call blocked resources and return
+    // if events is empty just return it
     if (events.isEmpty()) return events
-    return events.let {
-        when {
-            // if no targeted resources are list look at blocked resources
-            it.first().metadata.targetedResources?.isEmpty() == true -> filterBlockedLoadEvents(events, tenantConfigService)
-            else ->
-                it.filter { event ->
-                    // check if the targeted resources list contains the resource listed in the event
-                    event.metadata.targetedResources?.contains(event.resourceType.toString()) == true
-                }
+    // if targeted resources is empty, call blocked resources and return
+    val allowedResources =
+        if (events.first().metadata.targetedResources?.isEmpty() == true) {
+            filterBlockedLoadEvents(
+                events,
+                tenantConfigService,
+            )
+        } else {
+            events.filter {
+                it.metadata.targetedResources?.contains(it.resourceType.toString()) == true
+            }
         }
+    return if (allowedResources.isNotEmpty()) {
+        allowedResources
+    } else {
+        emptyList()
     }
 }
 
@@ -35,18 +41,24 @@ fun filterAllowedPublishedResources(
     events: List<InteropResourcePublishV1>,
     tenantConfigService: TenantConfigurationService,
 ): List<InteropResourcePublishV1> {
-    // if events is empty, return events, if targeted resources is empty, call blocked resources and return
+    // if events is empty just return it
     if (events.isEmpty()) return events
-    return events.let {
-        when {
-            // if no targeted resources are list look at blocked resources
-            it.first().metadata.targetedResources?.isEmpty() == true -> filterBlockedPublishedEvents(events, tenantConfigService)
-            else ->
-                it.filter { event ->
-                    // check if the targeted resources list contains the resource listed in the event
-                    event.metadata.targetedResources?.contains(event.resourceType.toString()) == true
-                }
+    // if targeted resources is empty, call blocked resources and return
+    val allowedResources =
+        if (events.first().metadata.targetedResources?.isEmpty() == true) {
+            filterBlockedPublishedEvents(
+                events,
+                tenantConfigService,
+            )
+        } else {
+            events.filter {
+                it.metadata.targetedResources?.contains(it.resourceType.toString()) == true
+            }
         }
+    return if (allowedResources.isNotEmpty()) {
+        allowedResources
+    } else {
+        emptyList()
     }
 }
 
