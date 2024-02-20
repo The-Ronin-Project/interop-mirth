@@ -46,7 +46,7 @@ class CarePlanLoadTest : BaseChannelTest(
         Metadata(
             runId = "123456",
             runDateTime = OffsetDateTime.now(),
-            targetedResources = emptyList(),
+            targetedResources = listOf("Patient", "CarePlan", "Location"),
         )
 
     private fun createFakeCarePlan(

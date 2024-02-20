@@ -33,7 +33,7 @@ class LocationLoadTest : BaseChannelTest(
         Metadata(
             runId = "123456",
             runDateTime = OffsetDateTime.now(),
-            targetedResources = emptyList(),
+            targetedResources = listOf("Appointment", "Location"),
         )
 
     @ParameterizedTest

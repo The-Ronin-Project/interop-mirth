@@ -31,7 +31,7 @@ class ConditionLoadTest : BaseChannelTest(
         Metadata(
             runId = "123456",
             runDateTime = OffsetDateTime.now(),
-            targetedResources = emptyList(),
+            targetedResources = listOf("Patient", "Condition"),
         )
 
     @ParameterizedTest
