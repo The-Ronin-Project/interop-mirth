@@ -34,6 +34,13 @@ class AppointmentLoadTest : BaseChannelTest(
     listOf("Patient", "Appointment", "Location"),
     listOf("Patient", "Appointment", "Location"),
 ) {
+    private val fakeMetadata =
+        Metadata(
+            runId = "123456",
+            runDateTime = OffsetDateTime.now(),
+            targetedResources = emptyList(),
+        )
+
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `repeat patients are ignored`(testTenant: String) {
@@ -92,17 +99,11 @@ class AppointmentLoadTest : BaseChannelTest(
             }
         val fakeAppointmentId = MockEHRTestData.add(fakeAppointment)
         MockOCIServerClient.createExpectations("Appointment", fakeAppointmentId, tenantInUse)
-
-        val metadata =
-            Metadata(
-                runId = "123456",
-                runDateTime = OffsetDateTime.now(),
-            )
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
-            metadata = metadata,
+            metadata = fakeMetadata,
         )
 
         waitForMessage(1)
@@ -116,7 +117,7 @@ class AppointmentLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
-            metadata = metadata,
+            metadata = fakeMetadata,
         )
 
         waitForMessage(2)
@@ -259,6 +260,7 @@ class AppointmentLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(fakeAidboxPatient1, fakeAidboxPatient2),
+            metadata = fakeMetadata,
         )
 
         waitForMessage(1)
@@ -328,6 +330,7 @@ class AppointmentLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeAppointmentId),
             resourceType = ResourceType.Appointment,
+            metadata = fakeMetadata,
         )
         waitForMessage(1)
         assertEquals(1, getAidboxResourceCount("Appointment"))
@@ -340,6 +343,7 @@ class AppointmentLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("nothing to see here"),
             resourceType = ResourceType.Appointment,
+            metadata = fakeMetadata,
         )
         waitForMessage(1)
         assertEquals(0, getAidboxResourceCount("Appointment"))
