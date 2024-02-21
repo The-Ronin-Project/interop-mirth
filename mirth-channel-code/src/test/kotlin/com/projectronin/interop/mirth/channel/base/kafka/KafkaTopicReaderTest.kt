@@ -357,6 +357,102 @@ class KafkaTopicReaderTest {
     }
 
     @Test
+    fun `channel looks at targeted and blocked resources, filters out blocked appointment`() {
+        val metadata1 =
+            mockk<Metadata> {
+                every { runId } returns ">9000"
+                every { targetedResources } returns listOf("Patient", "Location")
+            }
+        val metadata2 =
+            mockk<Metadata> {
+                every { runId } returns ">9000"
+                every { targetedResources } returns emptyList()
+            }
+        val mockEvent =
+            mockk<InteropResourcePublishV1> {
+                every { tenantId } returns "mockTenant"
+                every { resourceType } returns ResourceType.Location
+                every { metadata } returns metadata1
+            }
+        val mockEvent2 =
+            mockk<InteropResourcePublishV1> {
+                every { tenantId } returns "mockTenant"
+                every { resourceType } returns ResourceType.Appointment
+                every { metadata } returns metadata2
+            }
+        every {
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
+        } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.NIGHTLY, "test")
+        } returns listOf(mockEvent, mockEvent2)
+        val configDO =
+            mockk<MirthTenantConfigDO> {
+                every { blockedResources } returns "Appointment" // should this be the actual resource name
+                every { locationIds } returns "12345678"
+            }
+        every {
+            tenantConfigService.getConfiguration("mockTenant")
+        } returns configDO
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
+        val messages = channel.channelSourceReader(emptyMap())
+        assertEquals(1, messages.size)
+        val message = messages.first()
+        assertEquals("mockTenant", message.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals(InteropResourcePublishV1::class.simpleName!!, message.dataMap[MirthKey.KAFKA_EVENT.code])
+        assertEquals("mockEvent", message.message)
+    }
+
+    @Test
+    fun `channel looks at targeted and blocked resources, finds nothing returns all events`() {
+        val metadata1 =
+            mockk<Metadata> {
+                every { runId } returns ">9000"
+                every { targetedResources } returns emptyList()
+            }
+        val metadata2 =
+            mockk<Metadata> {
+                every { runId } returns ">9000"
+                every { targetedResources } returns emptyList()
+            }
+        val mockEvent =
+            mockk<InteropResourcePublishV1> {
+                every { tenantId } returns "mockTenant"
+                every { resourceType } returns ResourceType.Location
+                every { metadata } returns metadata1
+            }
+        val mockEvent2 =
+            mockk<InteropResourcePublishV1> {
+                every { tenantId } returns "mockTenant"
+                every { resourceType } returns ResourceType.Appointment
+                every { metadata } returns metadata2
+            }
+        every {
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
+        } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.NIGHTLY, "test")
+        } returns listOf(mockEvent, mockEvent2)
+        val configDO =
+            mockk<MirthTenantConfigDO> {
+                every { blockedResources } returns "" // should this be the actual resource name
+                every { locationIds } returns "12345678"
+            }
+        every {
+            tenantConfigService.getConfiguration("mockTenant")
+        } returns configDO
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent2)) } returns "mockEvent"
+
+        val messages = channel.channelSourceReader(emptyMap())
+        assertEquals(2, messages.size)
+        val message = messages.first()
+        assertEquals("mockTenant", message.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals(InteropResourcePublishV1::class.simpleName!!, message.dataMap[MirthKey.KAFKA_EVENT.code])
+        assertEquals("mockEvent", message.message)
+    }
+
+    @Test
     fun `channel checks for all published nightly events`() {
         val mockEvent =
             mockk<InteropResourcePublishV1> {
