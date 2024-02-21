@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.participant
@@ -22,20 +21,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.OffsetDateTime
 
 class LocationLoadTest : BaseChannelTest(
     LOCATION_LOAD_CHANNEL_NAME,
     listOf("Appointment", "Location"),
     listOf("Appointment", "Location"),
 ) {
-    private val fakeMetadata =
-        Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now(),
-            targetedResources = listOf("Appointment", "Location"),
-        )
-
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with multiple locations and appointments`(testTenant: String) {
@@ -129,7 +120,6 @@ class LocationLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(aidboxAppt1, aidboxAppt2),
-            metadata = fakeMetadata,
         )
 
         waitForMessage(1)
@@ -178,7 +168,6 @@ class LocationLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(locationFhirId1),
             resourceType = ResourceType.Location,
-            metadata = fakeMetadata,
         )
 
         waitForMessage(1)
@@ -192,7 +181,6 @@ class LocationLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("nothing to see here"),
             resourceType = ResourceType.Location,
-            metadata = fakeMetadata,
         )
 
         waitForMessage(1)

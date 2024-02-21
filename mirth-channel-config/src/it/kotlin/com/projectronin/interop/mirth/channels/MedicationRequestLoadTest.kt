@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
@@ -55,13 +54,6 @@ class MedicationRequestLoadTest : BaseChannelTest(
     private val medicationType = "Medication"
 
     private val medicationChannelId = ChannelMap.installedDag[MEDICATION_LOAD_CHANNEL_NAME]!!
-
-    val metadata =
-        Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now(),
-            targetedResources = listOf("Patient", "MedicationRequest", "Medication"),
-        )
 
     @BeforeEach
     fun setupMedicationChannel() {
@@ -140,7 +132,6 @@ class MedicationRequestLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
-            metadata = metadata,
         )
 
         waitForMessage(1)
@@ -239,11 +230,11 @@ class MedicationRequestLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("MedicationRequest", medRequest5ID, tenantInUse)
         MockOCIServerClient.createExpectations("MedicationRequest", medRequest6ID, tenantInUse)
         MockOCIServerClient.createExpectations("MedicationRequest", medRequest7ID, tenantInUse)
+
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(roninPatient1, roninPatient2),
-            metadata = metadata,
         )
 
         waitForMessage(1)
@@ -271,12 +262,12 @@ class MedicationRequestLoadTest : BaseChannelTest(
             }
         val fakeMedicationRequestId = MockEHRTestData.add(fakeMedicationRequest1)
         MockOCIServerClient.createExpectations("MedicationRequest", fakeMedicationRequestId, testTenant)
+
         KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeMedicationRequestId),
             resourceType = ResourceType.MedicationRequest,
-            metadata = metadata,
         )
 
         waitForMessage(1)
@@ -293,7 +284,6 @@ class MedicationRequestLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
             resourceType = ResourceType.MedicationRequest,
-            metadata = metadata,
         )
 
         waitForMessage(1)
@@ -385,11 +375,11 @@ class MedicationRequestLoadTest : BaseChannelTest(
 
         val medicationId = "contained-$medicationRequestId-13579"
         MockOCIServerClient.createExpectations(medicationType, medicationId, tenantInUse)
+
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
-            metadata = metadata,
         )
 
         waitForMessage(1)
@@ -504,11 +494,11 @@ class MedicationRequestLoadTest : BaseChannelTest(
 
         val medicationId = "codeable-$medicationRequestId-161"
         MockOCIServerClient.createExpectations(medicationType, medicationId, tenantInUse)
+
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
-            metadata = metadata,
         )
 
         waitForMessage(1)

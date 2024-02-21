@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
@@ -31,7 +30,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 
 class ObservationLoadTest : BaseChannelTest(
     OBSERVATION_LOAD_CHANNEL_NAME,
@@ -40,12 +38,6 @@ class ObservationLoadTest : BaseChannelTest(
 ) {
     val patientType = "Patient"
     val observationType = "Observation"
-    private val fakeMetadata =
-        Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now(),
-            targetedResources = listOf("Patient", "Observation", "Condition"),
-        )
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -192,7 +184,6 @@ class ObservationLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(roninPatient1, roninPatient2, roninCondition),
-            metadata = fakeMetadata,
         )
 
         // 2 because we group the Patients and Conditions into individual messages
@@ -251,7 +242,6 @@ class ObservationLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(observationID),
             resourceType = ResourceType.Observation,
-            metadata = fakeMetadata,
         )
 
         waitForMessage(1)
@@ -266,7 +256,6 @@ class ObservationLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
             resourceType = ResourceType.Observation,
-            metadata = fakeMetadata,
         )
 
         waitForMessage(1)

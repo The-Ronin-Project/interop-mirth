@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
@@ -19,20 +18,12 @@ import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.OffsetDateTime
 
 class MedicationLoadTest : BaseChannelTest(
     MEDICATION_LOAD_CHANNEL_NAME,
     listOf("Medication"),
     listOf("Medication"),
 ) {
-    val metadata =
-        Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now(),
-            targetedResources = listOf("Patient", "Medication", "MedicationRequest", "MedicationStatement"),
-        )
-
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `check if channel works nightly from medication requests`(testTenant: String) {
@@ -61,7 +52,6 @@ class MedicationLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeMedicationRequest1),
-            metadata = metadata,
         )
 
         waitForMessage(2)
@@ -108,7 +98,6 @@ class MedicationLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeMedication2ID),
             resourceType = ResourceType.Medication,
-            metadata = metadata,
         )
 
         waitForMessage(2)
@@ -133,12 +122,12 @@ class MedicationLoadTest : BaseChannelTest(
             }
         val fakeMedicationId = MockEHRTestData.add(fakeMedication)
         MockOCIServerClient.createExpectations("Medication", fakeMedicationId, testTenant)
+
         KafkaClient.testingClient.pushLoadEvent(
             tenantId = testTenant,
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeMedicationId),
             resourceType = ResourceType.Medication,
-            metadata = metadata,
         )
         waitForMessage(2)
 
@@ -174,7 +163,6 @@ class MedicationLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeMedicationStatement1),
-            metadata = metadata,
         )
 
         waitForMessage(2)

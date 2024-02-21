@@ -84,7 +84,7 @@ class KafkaTopicReaderTest {
         mockMetadata =
             mockk<Metadata> {
                 every { runId } returns ">9000"
-                every { targetedResources } returns listOf("Patient")
+                every { targetedResources } returns emptyList()
             }
 
         mockkObject(JacksonUtil)
@@ -105,16 +105,11 @@ class KafkaTopicReaderTest {
 
     @Test
     fun `channel first reads from published nightly events`() {
-        val mockMeta =
-            mockk<Metadata> {
-                every { runId } returns ">9000"
-                every { targetedResources } returns listOf("Patient", "Location")
-            }
         val mockEvent =
             mockk<InteropResourcePublishV1> {
                 every { tenantId } returns "mockTenant"
                 every { resourceType } returns ResourceType.Location
-                every { metadata } returns mockMeta
+                every { metadata } returns mockMetadata
             }
         val configDO =
             mockk<MirthTenantConfigDO> {
@@ -124,16 +119,6 @@ class KafkaTopicReaderTest {
         every {
             tenantConfigService.getConfiguration("mockTenant")
         } returns configDO
-        every {
-            kafkaLoadService.retrieveLoadEvents(
-                ResourceType.Location, "test",
-            )
-        } returns emptyList()
-        every {
-            kafkaPublishService.retrievePublishEvents(
-                ResourceType.Patient, DataTrigger.AD_HOC, "test",
-            )
-        } returns emptyList()
         every {
             kafkaPublishService.retrievePublishEvents(
                 ResourceType.Patient,
@@ -151,13 +136,6 @@ class KafkaTopicReaderTest {
                 "test",
             )
         } returns emptyList()
-        every {
-            kafkaPublishService.retrievePublishEvents(
-                ResourceType.Practitioner,
-                DataTrigger.AD_HOC,
-                "test",
-            )
-        } returns emptyList()
         every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)
@@ -170,34 +148,29 @@ class KafkaTopicReaderTest {
 
     @Test
     fun `channel filters out blocked resources from published nightly events`() {
-        val mockMeta =
-            mockk<Metadata> {
-                every { runId } returns ">9000"
-                every { targetedResources } returns emptyList()
-            }
         val mockEvent1 =
             mockk<InteropResourcePublishV1> {
                 every { tenantId } returns "mockTenant"
                 every { resourceType } returns ResourceType.Location
-                every { metadata } returns mockMeta
+                every { metadata } returns mockMetadata
             }
         val mockEvent2 =
             mockk<InteropResourcePublishV1> {
                 every { tenantId } returns "mockTenant"
                 every { resourceType } returns ResourceType.Appointment
-                every { metadata } returns mockMeta
+                every { metadata } returns mockMetadata
             }
         val mockEvent3 =
             mockk<InteropResourcePublishV1> {
                 every { tenantId } returns "mockTenant"
                 every { resourceType } returns ResourceType.Location
-                every { metadata } returns mockMeta
+                every { metadata } returns mockMetadata
             }
         val mockEvent4 =
             mockk<InteropResourcePublishV1> {
                 every { tenantId } returns "mockTenant4"
                 every { resourceType } returns ResourceType.Appointment
-                every { metadata } returns mockMeta
+                every { metadata } returns mockMetadata
             }
         val configDO =
             mockk<MirthTenantConfigDO> {
@@ -215,8 +188,6 @@ class KafkaTopicReaderTest {
         every {
             tenantConfigService.getConfiguration("mockTenant4")
         } returns configDO1
-        every { kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.AD_HOC, "test") } returns emptyList()
-        every { kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test") } returns emptyList()
         every {
             kafkaPublishService.retrievePublishEvents(
                 ResourceType.Patient,
@@ -237,13 +208,6 @@ class KafkaTopicReaderTest {
                 "test",
             )
         } returns emptyList()
-        every {
-            kafkaPublishService.retrievePublishEvents(
-                ResourceType.Practitioner,
-                DataTrigger.AD_HOC,
-                "test",
-            )
-        } returns emptyList()
         every { JacksonUtil.writeJsonValue(listOf(mockEvent4)) } returns "mockEvent"
         val messages = channel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)
@@ -253,22 +217,17 @@ class KafkaTopicReaderTest {
 
     @Test
     fun `channel filters out blocked resources from published nightly events - returns only published event messages`() {
-        val mockMeta =
-            mockk<Metadata> {
-                every { runId } returns "run1"
-                every { targetedResources } returns emptyList()
-            }
         val mockEvent1 =
             mockk<InteropResourcePublishV1> {
                 every { tenantId } returns "mockTenant"
                 every { resourceType } returns ResourceType.Location
-                every { metadata } returns mockMeta
+                every { metadata } returns mockMetadata
             }
         val mockEvent2 =
             mockk<InteropResourcePublishV1> {
                 every { tenantId } returns "mockTenant"
                 every { resourceType } returns ResourceType.Appointment
-                every { metadata } returns mockMeta
+                every { metadata } returns mockMetadata
             }
         val configDO =
             mockk<MirthTenantConfigDO> {
@@ -333,20 +292,15 @@ class KafkaTopicReaderTest {
 
     @Test
     fun `channel filters out blocked resources from load events`() {
-        val metadata1 =
-            mockk<Metadata> {
-                every { runId } returns "run1"
-                every { targetedResources } returns emptyList()
-            }
         val mockEvent1 =
             mockk<InteropResourceLoadV1> {
                 every { tenantId } returns "mockTenant"
                 every { resourceType } returns ResourceType.Location
-                every { metadata } returns metadata1
+                every { metadata } returns mockMetadata
             }
         val configDO =
             mockk<MirthTenantConfigDO> {
-                every { blockedResources } returns "Location,Appointment" // should this be the actual resource name
+                every { blockedResources } returns "Location" // should this be the actual resource name
                 every { locationIds } returns "12345678"
             }
         every {
@@ -404,34 +358,18 @@ class KafkaTopicReaderTest {
 
     @Test
     fun `channel checks for all published nightly events`() {
-        val mockMeta =
-            mockk<Metadata> {
-                every { runId } returns ">9000"
-                every { targetedResources } returns listOf("Practitioner", "Location", "Patient")
-            }
         val mockEvent =
             mockk<InteropResourcePublishV1> {
                 every { tenantId } returns "mockTenant"
                 every { resourceType } returns ResourceType.Location
-                every { metadata } returns mockMeta
+                every { metadata } returns mockMetadata
             }
-        every { kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test") } returns emptyList()
         every {
             kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
         } returns emptyList()
         every {
             kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.NIGHTLY, "test")
         } returns listOf(mockEvent)
-        every {
-            kafkaPublishService.retrievePublishEvents(
-                ResourceType.Patient, DataTrigger.AD_HOC, "test",
-            )
-        } returns emptyList()
-        every {
-            kafkaPublishService.retrievePublishEvents(
-                ResourceType.Practitioner, DataTrigger.AD_HOC, "test",
-            )
-        } returns emptyList()
         val configDO =
             mockk<MirthTenantConfigDO> {
                 every { blockedResources } returns "" // should this be the actual resource name
@@ -451,16 +389,11 @@ class KafkaTopicReaderTest {
 
     @Test
     fun `channel checks for load events after nightly events`() {
-        val mockMeta =
-            mockk<Metadata> {
-                every { runId } returns ">9000"
-                every { targetedResources } returns listOf("Patient", "Location", "Practitioner")
-            }
         val mockEvent =
             mockk<InteropResourceLoadV1> {
                 every { tenantId } returns "mockTenant"
                 every { resourceType } returns ResourceType.Location
-                every { metadata } returns mockMeta
+                every { metadata } returns mockMetadata
             }
         every {
             kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
@@ -468,10 +401,6 @@ class KafkaTopicReaderTest {
         every {
             kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.NIGHTLY, "test")
         } returns emptyList()
-        every {
-            kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.AD_HOC, "test")
-        } returns emptyList()
-        every { kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.AD_HOC, "test") } returns emptyList()
         val configDO =
             mockk<MirthTenantConfigDO> {
                 every { blockedResources } returns "" // should this be the actual resource name
@@ -494,16 +423,11 @@ class KafkaTopicReaderTest {
 
     @Test
     fun `channel checks for ad hoc publish events after load events`() {
-        val metaMock =
-            mockk<Metadata> {
-                every { runId } returns ">9000"
-                every { targetedResources } returns listOf("Patient", "Location", "Practitioner")
-            }
         val mockEvent =
             mockk<InteropResourcePublishV1> {
                 every { tenantId } returns "mockTenant"
                 every { resourceType } returns ResourceType.Location
-                every { metadata } returns metaMock
+                every { metadata } returns mockMetadata
                 every { dataTrigger } returns InteropResourcePublishV1.DataTrigger.adhoc
             }
         val configDO =
@@ -545,16 +469,11 @@ class KafkaTopicReaderTest {
 
     @Test
     fun `channel checks for backfill events with ad-hoc`() {
-        val metaMock =
-            mockk<Metadata> {
-                every { runId } returns ">9000"
-                every { targetedResources } returns listOf("Patient", "Location", "Practitioner")
-            }
         val mockEvent =
             mockk<InteropResourcePublishV1> {
                 every { tenantId } returns "mockTenant"
                 every { resourceType } returns ResourceType.Location
-                every { metadata } returns metaMock
+                every { metadata } returns mockMetadata
                 every { dataTrigger } returns InteropResourcePublishV1.DataTrigger.backfill
             }
         val configDO =
@@ -632,16 +551,11 @@ class KafkaTopicReaderTest {
     @Test
     fun `load event only channel works`() {
         val loadChannel = LoadOnlyTestChannel(kafkaPublishService, kafkaLoadService, tenantConfigService)
-        val metaMock =
-            mockk<Metadata> {
-                every { runId } returns ">9000"
-                every { targetedResources } returns listOf("Patient", "Location")
-            }
         val mockEvent =
             mockk<InteropResourceLoadV1> {
                 every { tenantId } returns "mockTenant"
                 every { resourceType } returns ResourceType.Location
-                every { metadata } returns metaMock
+                every { metadata } returns mockMetadata
             }
         val configDO =
             mockk<MirthTenantConfigDO> {
@@ -683,7 +597,6 @@ class KafkaTopicReaderTest {
                     Metadata(
                         runId = "1234",
                         runDateTime = OffsetDateTime.now(),
-                        targetedResources = listOf("Patient", "Location"),
                         backfillRequest =
                             Metadata.BackfillRequest(
                                 backfillId = "123",
@@ -740,12 +653,12 @@ class KafkaTopicReaderTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
-                every { targetedResources } returns listOf("Patient", "Practitioner")
+                every { targetedResources } returns emptyList()
             }
         val metadata2 =
             mockk<Metadata> {
                 every { runId } returns "run2"
-                every { targetedResources } returns listOf("Patient")
+                every { targetedResources } returns emptyList()
             }
 
         val patientEventTenant1Run1 =
@@ -845,7 +758,7 @@ class KafkaTopicReaderTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
-                every { targetedResources } returns listOf("Patient", "Location")
+                every { targetedResources } returns emptyList()
             }
 
         val patientEventTenant1Run1 =
@@ -910,7 +823,7 @@ class KafkaTopicReaderTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
-                every { targetedResources } returns listOf("Patient")
+                every { targetedResources } returns emptyList()
             }
 
         val patientEventTenant1Run1 =
@@ -983,7 +896,7 @@ class KafkaTopicReaderTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
-                every { targetedResources } returns listOf("Patient", "Practitioner")
+                every { targetedResources } returns emptyList()
             }
 
         val patientEventTenant1Run1 =
@@ -1056,12 +969,12 @@ class KafkaTopicReaderTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
-                every { targetedResources } returns listOf("Patient", "Location")
+                every { targetedResources } returns emptyList()
             }
         val metadata2 =
             mockk<Metadata> {
                 every { runId } returns "run2"
-                every { targetedResources } returns listOf("Patient", "Location")
+                every { targetedResources } returns emptyList()
             }
 
         val locationEventTenant1Run1 =
@@ -1156,7 +1069,7 @@ class KafkaTopicReaderTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
-                every { targetedResources } returns listOf("Patient", "Location")
+                every { targetedResources } returns emptyList()
             }
         val locationEventTenant1Run1 =
             mockk<InteropResourceLoadV1> {
@@ -1226,7 +1139,7 @@ class KafkaTopicReaderTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
-                every { targetedResources } returns listOf("Patient", "Location")
+                every { targetedResources } returns emptyList()
             }
         val locationEventTenant1Run1 =
             mockk<InteropResourceLoadV1> {

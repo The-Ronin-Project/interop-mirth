@@ -42,13 +42,6 @@ class CarePlanLoadTest : BaseChannelTest(
 ) {
     val twoDaysAgo = LocalDateTime.now().minusDays(2)
 
-    val metadata =
-        Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now(),
-            targetedResources = listOf("Patient", "CarePlan", "Location"),
-        )
-
     private fun createFakeCarePlan(
         patientId: String,
         tenantInUse: String,
@@ -135,6 +128,11 @@ class CarePlanLoadTest : BaseChannelTest(
         val fakeCarePlanId = MockEHRTestData.add(fakeCarePlan)
         MockOCIServerClient.createExpectations("CarePlan", fakeCarePlanId, tenantInUse)
 
+        val metadata =
+            Metadata(
+                runId = "123456",
+                runDateTime = OffsetDateTime.now(),
+            )
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
@@ -257,7 +255,6 @@ class CarePlanLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(fakeAidboxPatient1, fakeAidboxPatient2),
-            metadata = metadata,
         )
 
         waitForMessage(1)
@@ -312,7 +309,6 @@ class CarePlanLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeCarePlanId),
             resourceType = ResourceType.CarePlan,
-            metadata = metadata,
         )
         waitForMessage(1)
         assertEquals(1, getAidboxResourceCount("CarePlan"))
@@ -325,7 +321,6 @@ class CarePlanLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("nothing to see here"),
             resourceType = ResourceType.CarePlan,
-            metadata = metadata,
         )
         waitForMessage(1)
         assertEquals(0, getAidboxResourceCount("CarePlan"))
@@ -484,7 +479,6 @@ class CarePlanLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
-            metadata = metadata,
         )
 
         // Message for patient, care plan, and the child care plan

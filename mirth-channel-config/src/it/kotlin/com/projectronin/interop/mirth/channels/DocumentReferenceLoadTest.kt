@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.interop.fhir.generators.datatypes.attachment
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
@@ -24,20 +23,12 @@ import com.projectronin.interop.mirth.channels.client.mirth.MirthClient
 import com.projectronin.interop.mirth.channels.client.tenantIdentifier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.time.OffsetDateTime
 
 class DocumentReferenceLoadTest : BaseChannelTest(
     DOC_REF_LOAD_CHANNEL_NAME,
     listOf("DocumentReference"),
     listOf("DocumentReference"),
 ) {
-    val metadata =
-        Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now(),
-            targetedResources = listOf("Patient", "DocumentReference", "Binary"),
-        )
-
     @Test
     fun `channel works`() {
         tenantInUse = TEST_TENANT
@@ -107,11 +98,11 @@ class DocumentReferenceLoadTest : BaseChannelTest(
             fakeBinaryID,
             tenantInUse,
         )
+
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(roninPatient),
-            metadata = metadata,
         )
 
         waitForMessage(2)
@@ -123,7 +114,6 @@ class DocumentReferenceLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(roninPatient),
-            metadata = metadata,
         )
         waitForMessage(4)
         val messageList2 = MirthClient.getChannelMessageIds(testChannelId)

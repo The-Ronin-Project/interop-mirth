@@ -60,7 +60,7 @@ class CarePlanLoadTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
-                every { targetedResources } returns listOf("Patient")
+                every { targetedResources } returns emptyList()
             }
 
         val patientEventTenant1Run1 =

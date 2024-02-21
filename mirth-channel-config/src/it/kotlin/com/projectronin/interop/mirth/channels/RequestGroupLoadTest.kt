@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.reference
 import com.projectronin.interop.fhir.generators.resources.carePlan
@@ -15,20 +14,12 @@ import com.projectronin.interop.mirth.channels.client.MockOCIServerClient
 import com.projectronin.interop.mirth.channels.client.mirth.REQUEST_GROUP_LOAD_CHANNEL_NAME
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.time.OffsetDateTime
 
 class RequestGroupLoadTest : BaseChannelTest(
     REQUEST_GROUP_LOAD_CHANNEL_NAME,
     listOf("CarePlan", "RequestGroup"),
     listOf("CarePlan", "RequestGroup"),
 ) {
-    private val fakeMetadata =
-        Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now(),
-            targetedResources = listOf("CarePlan", "RequestGroup"),
-        )
-
     @Test
     fun `channel works`() {
         tenantInUse = TEST_TENANT
@@ -59,7 +50,6 @@ class RequestGroupLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeCarePlan),
-            metadata = fakeMetadata,
         )
 
         waitForMessage(1)
@@ -84,7 +74,6 @@ class RequestGroupLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeRequestGroupId),
             resourceType = ResourceType.RequestGroup,
-            metadata = fakeMetadata,
         )
         waitForMessage(1)
         assertEquals(1, getAidboxResourceCount("RequestGroup"))
@@ -98,7 +87,6 @@ class RequestGroupLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("123"),
             resourceType = ResourceType.RequestGroup,
-            metadata = fakeMetadata,
         )
         waitForMessage(1)
         assertEquals(0, getAidboxResourceCount("RequestGroup"))
@@ -111,7 +99,6 @@ class RequestGroupLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
             resourceType = ResourceType.RequestGroup,
-            metadata = fakeMetadata,
         )
         waitForMessage(1)
         assertEquals(0, getAidboxResourceCount("RequestGroup"))

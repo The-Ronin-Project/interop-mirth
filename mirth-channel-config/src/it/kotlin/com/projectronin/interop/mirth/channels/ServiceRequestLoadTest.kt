@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.participant
@@ -30,20 +29,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.OffsetDateTime
 
 class ServiceRequestLoadTest : BaseChannelTest(
     SERVICE_REQUEST_LOAD_CHANNEL_NAME,
     listOf("ServiceRequest", "Appointment", "MedicationRequest", "MedicationStatement", "Observation"),
     listOf("ServiceRequest", "Appointment", "MedicationRequest", "MedicationStatement", "Observation"),
 ) {
-    private val fakeMetadata =
-        Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now(),
-            targetedResources = listOf("ServiceRequest", "Appointment", "MedicationRequest", "MedicationStatement", "Observation"),
-        )
-
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with multiple service requests and appointments`(testTenant: String) {
@@ -227,7 +218,6 @@ class ServiceRequestLoadTest : BaseChannelTest(
                     fakeMedicationStatement,
                     fakeObservation,
                 ),
-            metadata = fakeMetadata,
         )
 
         waitForMessage(1)
@@ -300,7 +290,6 @@ class ServiceRequestLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(serviceRequestFhirId1),
             resourceType = ResourceType.ServiceRequest,
-            metadata = fakeMetadata,
         )
 
         waitForMessage(1)
@@ -314,7 +303,6 @@ class ServiceRequestLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("nothing to see here"),
             resourceType = ResourceType.ServiceRequest,
-            metadata = fakeMetadata,
         )
 
         waitForMessage(1)
