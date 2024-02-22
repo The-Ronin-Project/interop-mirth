@@ -102,7 +102,7 @@ class AppointmentLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
-            metadata = metadata1
+            metadata = metadata1,
         )
 
         waitForMessage(1)
