@@ -93,7 +93,7 @@ class AppointmentLoadTest : BaseChannelTest(
         val fakeAppointmentId = MockEHRTestData.add(fakeAppointment)
         MockOCIServerClient.createExpectations("Appointment", fakeAppointmentId, tenantInUse)
 
-        val metadata =
+        val metadata1 =
             Metadata(
                 runId = "123456",
                 runDateTime = OffsetDateTime.now(),
@@ -102,6 +102,7 @@ class AppointmentLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
+            metadata = metadata1
         )
 
         waitForMessage(1)
@@ -115,7 +116,7 @@ class AppointmentLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
-            metadata = metadata,
+            metadata = metadata1,
         )
 
         waitForMessage(2)
