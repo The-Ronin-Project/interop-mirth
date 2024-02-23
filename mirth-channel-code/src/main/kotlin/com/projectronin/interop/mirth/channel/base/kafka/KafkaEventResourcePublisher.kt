@@ -26,6 +26,7 @@ import com.projectronin.interop.rcdm.transform.TransformManager
 import com.projectronin.interop.rcdm.transform.model.TransformResponse
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
+import org.springframework.beans.factory.annotation.Value
 import java.util.concurrent.TimeUnit
 
 abstract class KafkaEventResourcePublisher<T : Resource<T>>(
@@ -33,6 +34,8 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
     private val ehrFactory: EHRFactory,
     private val transformManager: TransformManager,
     private val publishService: PublishService,
+    @Value("\${kafka.truncate.limit:#{100}}")
+    private val truncateLimit: Int = 100,
 ) : TenantlessDestinationService() {
     /**
      * If true, we cache and compare the retrieved resources against the cache. By default, this is false, but if a
@@ -383,21 +386,20 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
     }
 
     private fun Collection<Resource<*>>.truncateList(): String {
-        val list =
-            when {
-                this.size > 5 -> this.map { it.id?.value }
-                else -> this
-            }
-        return JacksonUtil.writeJsonValue(list)
+        if (this.size < truncateLimit) {
+            val list = this.map { it.id?.value }
+            return JacksonUtil.writeJsonValue(list)
+        }
+        return "${this.size} resources"
     }
 
     private fun Collection<TransformResponse<*>>.truncateResourceList(): String {
-        val list =
-            when {
-                this.size > 5 -> this.map { it.resource.id?.value }
-                else -> this
-            }
-        return JacksonUtil.writeJsonValue(list)
+        if (this.size < truncateLimit) {
+            val list =
+                this.map { it.resource.id?.value }
+            return JacksonUtil.writeJsonValue(list)
+        }
+        return "${this.size} resources"
     }
 
     private fun TransformResponse<T>.toResourceWrapper() = PublishResourceWrapper(resource, embeddedResources)
