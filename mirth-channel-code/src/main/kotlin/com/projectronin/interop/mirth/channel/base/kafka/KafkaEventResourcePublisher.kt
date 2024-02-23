@@ -41,7 +41,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
      */
     protected open val cacheAndCompareResults: Boolean = false
     private val processedResourcesCache =
-        Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.DAYS).build<ResourceRequestKey, Boolean>()
+        Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.DAYS).softValues().build<ResourceRequestKey, Boolean>()
 
     override fun channelDestinationWriter(
         tenantMnemonic: String,
