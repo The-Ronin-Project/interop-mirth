@@ -33,6 +33,13 @@ class PractitionerLoadTest : BaseChannelTest(
     listOf("Appointment", "Practitioner"),
     listOf("Appointment", "Practitioner"),
 ) {
+    val metadata1 =
+        Metadata(
+            runId = "123456",
+            runDateTime = OffsetDateTime.now(),
+            targetedResources = emptyList(),
+        )
+
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `repeat appointments are ignored`(testTenant: String) {
@@ -98,16 +105,11 @@ class PractitionerLoadTest : BaseChannelTest(
         MockOCIServerClient.createExpectations("Appointment", fakeAppointmentId, tenantInUse)
         MockOCIServerClient.createExpectations("Practitioner", fakePractitionerId, tenantInUse)
 
-        val metadata =
-            Metadata(
-                runId = "123456",
-                runDateTime = OffsetDateTime.now(),
-            )
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxAppointment),
-            metadata = metadata,
+            metadata = metadata1,
         )
 
         waitForMessage(1)
@@ -122,7 +124,7 @@ class PractitionerLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxAppointment),
-            metadata = metadata,
+            metadata = metadata1,
         )
 
         waitForMessage(2)
@@ -210,6 +212,7 @@ class PractitionerLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(aidboxAppointment1, aidboxAppointment2),
+            metadata = metadata1,
         )
         waitForMessage(1)
         assertEquals(2, getAidboxResourceCount("Practitioner"))
@@ -229,6 +232,7 @@ class PractitionerLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakePractitionerId),
             resourceType = ResourceType.Practitioner,
+            metadata = metadata1,
         )
         waitForMessage(1)
 
@@ -245,6 +249,7 @@ class PractitionerLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
             resourceType = ResourceType.Practitioner,
+            metadata = metadata1,
         )
         waitForMessage(1)
         assertEquals(0, getAidboxResourceCount("Practitioner"))

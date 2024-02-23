@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.identifier
 import com.projectronin.interop.fhir.generators.datatypes.name
@@ -14,12 +15,20 @@ import com.projectronin.interop.mirth.channels.client.mirth.PATIENT_LOAD_CHANNEL
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
+import java.time.OffsetDateTime
 
 class PatientLoadTest : BaseChannelTest(
     PATIENT_LOAD_CHANNEL_NAME,
     listOf("Patient", "Condition", "Appointment", "Observation"),
     listOf("Patient", "Condition", "Appointment", "Observation"),
 ) {
+    val metadata1 =
+        Metadata(
+            runId = "123456",
+            runDateTime = OffsetDateTime.now(),
+            targetedResources = emptyList(),
+        )
+
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with multiple patients`(testTenant: String) {
@@ -95,6 +104,7 @@ class PatientLoadTest : BaseChannelTest(
             DataTrigger.NIGHTLY,
             listOf(patient1Id, patient2Id),
             ResourceType.Patient,
+            metadata = metadata1,
         )
 
         waitForMessage(1)

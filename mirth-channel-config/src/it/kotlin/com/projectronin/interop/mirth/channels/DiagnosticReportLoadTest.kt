@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
@@ -23,6 +24,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 class DiagnosticReportLoadTest : BaseChannelTest(
     DIAGNOSTIC_REPORT_LOAD_CHANNEL_NAME,
@@ -30,6 +32,12 @@ class DiagnosticReportLoadTest : BaseChannelTest(
     listOf("Patient", "DiagnosticReport"),
 ) {
     private val patientType = "Patient"
+    val metadata1 =
+        Metadata(
+            runId = "123456",
+            runDateTime = OffsetDateTime.now(),
+            targetedResources = emptyList(),
+        )
 
     @ParameterizedTest
     @MethodSource("tenantsToTest")
@@ -150,6 +158,7 @@ class DiagnosticReportLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(roninPatient1, roninPatient2),
+            metadata = metadata1,
         )
         waitForMessage(1)
         val messageList = MirthClient.getChannelMessageIds(testChannelId)
@@ -200,6 +209,7 @@ class DiagnosticReportLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(diagnosticReportId),
             resourceType = ResourceType.DiagnosticReport,
+            metadata = metadata1,
         )
         waitForMessage(1)
         assertEquals(1, getAidboxResourceCount("DiagnosticReport"))
@@ -212,6 +222,7 @@ class DiagnosticReportLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("nothing to see here"),
             resourceType = ResourceType.DiagnosticReport,
+            metadata = metadata1,
         )
         waitForMessage(1)
         assertEquals(0, getAidboxResourceCount("DiagnosticReport"))

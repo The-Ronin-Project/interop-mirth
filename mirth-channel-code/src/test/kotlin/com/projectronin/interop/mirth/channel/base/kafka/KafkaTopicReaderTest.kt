@@ -357,11 +357,11 @@ class KafkaTopicReaderTest {
     }
 
     @Test
-    fun `channel looks at targeted and blocked resources, filters out blocked appointment`() {
+    fun `channel looks at targeted and blocked resources, finds 1 blocked that does not apply returns both events`() {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns ">9000"
-                every { targetedResources } returns listOf("Patient", "Location")
+                every { targetedResources } returns emptyList()
             }
         val metadata2 =
             mockk<Metadata> {
@@ -388,15 +388,17 @@ class KafkaTopicReaderTest {
         } returns listOf(mockEvent, mockEvent2)
         val configDO =
             mockk<MirthTenantConfigDO> {
-                every { blockedResources } returns "Appointment" // should this be the actual resource name
+                every { blockedResources } returns "Encounter" // should this be the actual resource name
                 every { locationIds } returns "12345678"
             }
         every {
             tenantConfigService.getConfiguration("mockTenant")
         } returns configDO
         every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent2)) } returns "mockEvent"
+
         val messages = channel.channelSourceReader(emptyMap())
-        assertEquals(1, messages.size)
+        assertEquals(2, messages.size)
         val message = messages.first()
         assertEquals("mockTenant", message.dataMap[MirthKey.TENANT_MNEMONIC.code])
         assertEquals(InteropResourcePublishV1::class.simpleName!!, message.dataMap[MirthKey.KAFKA_EVENT.code])
@@ -693,6 +695,7 @@ class KafkaTopicReaderTest {
                     Metadata(
                         runId = "1234",
                         runDateTime = OffsetDateTime.now(),
+                        targetedResources = emptyList(),
                         backfillRequest =
                             Metadata.BackfillRequest(
                                 backfillId = "123",

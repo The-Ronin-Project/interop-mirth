@@ -1,5 +1,6 @@
 package com.projectronin.interop.mirth.channels
 
+import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
@@ -58,6 +59,12 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
     private val medicationType = "Medication"
 
     private val medicationChannelId = ChannelMap.installedDag[MEDICATION_LOAD_CHANNEL_NAME]!!
+    val metadata1 =
+        Metadata(
+            runId = "123456",
+            runDateTime = OffsetDateTime.now(),
+            targetedResources = emptyList(),
+        )
 
     @BeforeEach
     fun setupMedicationChannel() {
@@ -125,6 +132,7 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
+            metadata = metadata1,
         )
 
         waitForMessage(1)
@@ -270,6 +278,7 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(aidboxMedReq),
+            metadata = metadata1,
         )
 
         waitForMessage(1)
@@ -312,6 +321,7 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(medicationAdministrationId),
             resourceType = ResourceType.MedicationAdministration,
+            metadata = metadata1,
         )
 
         waitForMessage(1)
@@ -398,6 +408,7 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
+            metadata = metadata1,
         )
 
         waitForMessage(1)
@@ -506,6 +517,7 @@ class MedicationAdministrationLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
+            metadata = metadata1,
         )
 
         waitForMessage(1)

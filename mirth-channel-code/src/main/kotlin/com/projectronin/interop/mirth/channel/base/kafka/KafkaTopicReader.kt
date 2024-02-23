@@ -36,7 +36,7 @@ abstract class KafkaTopicReader(
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
         // wrapping retrievePublishedEvents with function to filter out blocked resources
         val nightlyPublishedEvents =
-            filterAllowedPublishedResources(retrievePublishedEvents(DataTrigger.NIGHTLY), tenantConfigService)
+            filterAllowedPublishedResources(resource, retrievePublishedEvents(DataTrigger.NIGHTLY), tenantConfigService)
         if (nightlyPublishedEvents.isNotEmpty()) {
             return nightlyPublishedEvents.toPublishMirthMessages()
         }
@@ -44,6 +44,7 @@ abstract class KafkaTopicReader(
         // wrapping retrieveLoadEvents with function to filter out blocked resources
         val loadEvents =
             filterAllowedLoadEventsResources(
+                resource,
                 kafkaLoadService.retrieveLoadEvents(
                     resourceType = resource,
                     groupId = channelGroupId,
@@ -57,7 +58,7 @@ abstract class KafkaTopicReader(
         // wrapping retrievePublishedEvents with function to filter out blocked resources
         // adHoc and backfill exist on the same topic, so when we call for ad-hoc we also get backfill events
         val adHocPublishEvents =
-            filterAllowedPublishedResources(retrievePublishedEvents(DataTrigger.AD_HOC), tenantConfigService)
+            filterAllowedPublishedResources(resource, retrievePublishedEvents(DataTrigger.AD_HOC), tenantConfigService)
         if (adHocPublishEvents.isNotEmpty()) {
             // split the events by trigger, so we can make sure the backfill events are split as needed
             val groupedEvents = adHocPublishEvents.groupBy { it.dataTrigger!! }
