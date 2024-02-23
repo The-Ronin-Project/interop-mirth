@@ -35,6 +35,7 @@ import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.exceptions.MapVariableMissing
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.publishers.model.PublishResponse
 import com.projectronin.interop.rcdm.transform.TransformManager
 import com.projectronin.interop.rcdm.transform.model.TransformResponse
 import com.projectronin.interop.tenant.config.TenantService
@@ -54,7 +55,6 @@ import org.junit.jupiter.api.assertThrows
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
-import kotlin.reflect.jvm.isAccessible
 
 class KafkaEventResourcePublisherTest {
     private lateinit var tenantService: TenantService
@@ -254,7 +254,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-1234"), listOf())
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message = objectMapper.writeValueAsString(listOf(event1))
@@ -297,7 +297,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-1234"), listOf())
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message = objectMapper.writeValueAsString(listOf(event1))
@@ -519,16 +519,15 @@ class KafkaEventResourcePublisherTest {
                 every { resourceType } returns "Location"
                 every { id?.value } returns "$tenantId-1"
             }
-        // we call these the 'the code-cov boys'
         val transformed2 =
             mockk<Location> {
                 every { resourceType } returns "Location"
-                every { id?.value } returns null
+                every { id?.value } returns "$tenantId-2"
             }
         val transformed3 =
             mockk<Location> {
                 every { resourceType } returns "Location"
-                every { id } returns null
+                every { id?.value } returns "$tenantId-3"
             }
         every { transformManager.transformResource(any<Location>(), tenant) } returns null
         every {
@@ -560,7 +559,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-1", "$tenantId-2", "$tenantId-3"), listOf())
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message = objectMapper.writeValueAsString(listOf(event1))
@@ -604,7 +603,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns false
+        } returns PublishResponse(listOf(), listOf("$tenantId-1234"))
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message = objectMapper.writeValueAsString(listOf(event1))
@@ -798,7 +797,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-1234"), listOf())
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message = objectMapper.writeValueAsString(listOf(event1))
@@ -863,7 +862,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-1234"), listOf())
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message1 = objectMapper.writeValueAsString(listOf(event1))
@@ -941,7 +940,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-1234"), listOf())
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message1 = objectMapper.writeValueAsString(listOf(event1))
@@ -1018,7 +1017,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-1234"), listOf())
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message = objectMapper.writeValueAsString(listOf(event1))
@@ -1060,7 +1059,11 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns false andThen true
+        } returns PublishResponse(listOf(), listOf("$tenantId-1234")) andThen
+            PublishResponse(
+                listOf("$tenantId-1234"),
+                listOf(),
+            )
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message1 = objectMapper.writeValueAsString(listOf(event1))
@@ -1158,7 +1161,11 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns false andThen true
+        } returns
+            PublishResponse(
+                listOf(),
+                listOf("$tenantId-1", "$tenantId-2"),
+            ) andThen PublishResponse(listOf("$tenantId-1", "$tenantId-2"), listOf())
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message1 = objectMapper.writeValueAsString(listOf(event1))
@@ -1191,6 +1198,91 @@ class KafkaEventResourcePublisherTest {
 
         verify(exactly = 4) { transformManager.transformResource(any<Condition>(), tenant) }
         verify(exactly = 2) { publishService.publishResourceWrappers(any(), any(), any(), any()) }
+    }
+
+    @Test
+    fun `publisher works for partial success`() {
+        val conditionService = mockk<ConditionService>()
+        every { vendorFactory.conditionService } returns conditionService
+
+        val destination =
+            TestConditionPublish(tenantService, ehrFactory, transformManager, publishService)
+
+        val patient =
+            patient {
+                id of "$tenantId-1234"
+            }
+        val event1 =
+            InteropResourcePublishV1(
+                tenantId = tenantId,
+                resourceType = ResourceType.Patient,
+                resourceJson = objectMapper.writeValueAsString(patient),
+                dataTrigger = InteropResourcePublishV1.DataTrigger.nightly,
+                metadata = metadata,
+            )
+
+        val condition1 =
+            mockk<Condition> {
+                every { resourceType } returns "Condition"
+                every { id?.value } returns "1"
+            }
+        val condition2 =
+            mockk<Condition> {
+                every { resourceType } returns "Condition"
+                every { id?.value } returns "2"
+            }
+        every {
+            conditionService.findConditions(
+                tenant,
+                "1234",
+                "category-code",
+                "clinical-status",
+            )
+        } returns listOf(condition1, condition2)
+
+        val transformed1 =
+            mockk<Condition> {
+                every { resourceType } returns "Condition"
+                every { id?.value } returns "$tenantId-1"
+            }
+        val transformed2 =
+            mockk<Condition> {
+                every { resourceType } returns "Condition"
+                every { id?.value } returns "$tenantId-2"
+            }
+        every {
+            transformManager.transformResource(condition1, tenant)
+        } returns TransformResponse(transformed1)
+        every {
+            transformManager.transformResource(condition2, tenant)
+        } returns TransformResponse(transformed2)
+        every {
+            publishService.publishResourceWrappers(
+                tenantId,
+                listOf(PublishResourceWrapper(transformed1), PublishResourceWrapper(transformed2)),
+                any(),
+                DataTrigger.NIGHTLY,
+            )
+        } returns PublishResponse(listOf("$tenantId-1"), listOf("$tenantId-2"))
+        every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
+
+        val message1 = objectMapper.writeValueAsString(listOf(event1))
+        val result1 =
+            destination.channelDestinationWriter(
+                tenantId,
+                message1,
+                mapOf(MirthKey.KAFKA_EVENT.code to InteropResourcePublishV1::class.simpleName!!),
+                emptyMap(),
+            )
+        assertEquals(MirthResponseStatus.ERROR, result1.status)
+        assertEquals("we made it", result1.detailedMessage)
+        assertEquals("Successfully published 1, but failed to publish 1 resource(s)", result1.message)
+        assertEquals("Patient/$tenantId-1234", result1.dataMap[MirthKey.EVENT_METADATA_SOURCE.code])
+        assertEquals(1, result1.dataMap[MirthKey.RESOURCE_COUNT.code])
+        assertEquals(1, result1.dataMap[MirthKey.FAILURE_COUNT.code])
+
+        verify(exactly = 2) { transformManager.transformResource(any<Condition>(), tenant) }
+        verify(exactly = 1) { publishService.publishResourceWrappers(any(), any(), any(), any()) }
     }
 
     @Test
@@ -1228,7 +1320,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-1234"), listOf())
 
         every {
             transformManager.transformResource(location5678, tenant)
@@ -1240,7 +1332,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-5678"), listOf())
 
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
@@ -1295,7 +1387,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-1234"), listOf())
 
         every {
             transformManager.transformResource(location5678, tenant)
@@ -1307,7 +1399,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns false
+        } returns PublishResponse(listOf(), listOf("$tenantId-5678"))
 
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
@@ -1362,7 +1454,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns false
+        } returns PublishResponse(listOf(), listOf("$tenantId-1234"))
 
         every {
             transformManager.transformResource(location5678, tenant)
@@ -1374,7 +1466,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns false
+        } returns PublishResponse(listOf(), listOf("$tenantId-5678"))
 
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
@@ -1421,7 +1513,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 null,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-1234"), listOf())
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message = objectMapper.writeValueAsString(listOf(event1))
@@ -1474,7 +1566,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-1234"), listOf())
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val message = objectMapper.writeValueAsString(listOf(event1))
@@ -1548,7 +1640,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns true
+        } returns PublishResponse(listOf("$tenantId-1234"), listOf())
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
 
         val destination =
@@ -1618,7 +1710,7 @@ class KafkaEventResourcePublisherTest {
                 any(),
                 DataTrigger.NIGHTLY,
             )
-        } returns false
+        } returns PublishResponse(listOf(), listOf("$tenantId-1234"))
         every { JacksonUtil.writeJsonValue(any()) } returns "we made it"
         val message = objectMapper.writeValueAsString(listOf(event1))
         val result =
