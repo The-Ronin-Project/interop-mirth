@@ -437,6 +437,42 @@ class KafkaTopicReaderTest {
     }
 
     @Test
+    fun `channel checks for all published nightly - coverage`() {
+        val mockMeta =
+            mockk<Metadata> {
+                every { runId } returns ">9000"
+                every { targetedResources } returns listOf("Location")
+            }
+        val mockEvent =
+            mockk<InteropResourcePublishV1> {
+                every { tenantId } returns "mockTenant"
+                every { resourceType } returns ResourceType.Location
+                every { metadata } returns mockMeta
+            }
+        every {
+            kafkaPublishService.retrievePublishEvents(ResourceType.Patient, DataTrigger.NIGHTLY, "test")
+        } returns emptyList()
+        every {
+            kafkaPublishService.retrievePublishEvents(ResourceType.Practitioner, DataTrigger.NIGHTLY, "test")
+        } returns listOf(mockEvent)
+        val configDO =
+            mockk<MirthTenantConfigDO> {
+                every { blockedResources } returns "Encounter" // should this be the actual resource name
+                every { locationIds } returns "12345678"
+            }
+        every {
+            tenantConfigService.getConfiguration("mockTenant")
+        } returns configDO
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
+        val messages = channel.channelSourceReader(emptyMap())
+        assertEquals(1, messages.size)
+        val message = messages.first()
+        assertEquals("mockTenant", message.dataMap[MirthKey.TENANT_MNEMONIC.code])
+        assertEquals(InteropResourcePublishV1::class.simpleName!!, message.dataMap[MirthKey.KAFKA_EVENT.code])
+        assertEquals("mockEvent", message.message)
+    }
+
+    @Test
     fun `channel checks for load events after nightly events`() {
         val mockEvent =
             mockk<InteropResourceLoadV1> {
@@ -618,6 +654,34 @@ class KafkaTopicReaderTest {
         every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
         val messages = loadChannel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)
+    }
+
+    @Test
+    fun `load event only channel works - coverage`() {
+        val loadChannel = LoadOnlyTestChannel(kafkaPublishService, kafkaLoadService, tenantConfigService)
+        val mockMeta =
+            mockk<Metadata> {
+                every { runId } returns ">9000"
+                every { targetedResources } returns listOf("Appointment")
+            }
+        val mockEvent =
+            mockk<InteropResourceLoadV1> {
+                every { tenantId } returns "mockTenant"
+                every { resourceType } returns ResourceType.Location
+                every { metadata } returns mockMeta
+            }
+        val configDO =
+            mockk<MirthTenantConfigDO> {
+                every { blockedResources } returns "Encounter" // should this be the actual resource name
+                every { locationIds } returns "12345678"
+            }
+        every {
+            tenantConfigService.getConfiguration("mockTenant")
+        } returns configDO
+        every { kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test") } returns listOf(mockEvent)
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
+        val messages = loadChannel.channelSourceReader(emptyMap())
+        assertEquals(0, messages.size)
     }
 
     @Test
