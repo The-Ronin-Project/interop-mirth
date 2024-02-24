@@ -681,7 +681,7 @@ class KafkaTopicReaderTest {
         every { kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test") } returns listOf(mockEvent)
         every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
         val messages = loadChannel.channelSourceReader(emptyMap())
-        assertEquals(0, messages.size)
+        assertEquals(1, messages.size)
     }
 
     @Test
@@ -690,7 +690,7 @@ class KafkaTopicReaderTest {
         val mockMeta =
             mockk<Metadata> {
                 every { runId } returns ">9000"
-                every { targetedResources } returns emptyList()
+                every { targetedResources } returns listOf("Observation")
             }
         val mockEvent =
             mockk<InteropResourceLoadV1> {
@@ -709,7 +709,7 @@ class KafkaTopicReaderTest {
         every { kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test") } returns listOf(mockEvent)
         every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
         val messages = loadChannel.channelSourceReader(emptyMap())
-        assertEquals(0, messages.size)
+        assertEquals(1, messages.size)
     }
 
     @Test

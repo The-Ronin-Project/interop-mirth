@@ -32,7 +32,12 @@ fun filterAllowedLoadEventsResources(
             // we want to allow an event through even if we're blocking if it's in the allowed list
             // an empty allowed list in the future means "all resources are allowed"
             // but it could also mean right now "we're not populating it", so for now we'll check if those are blocked
-            isExplicitlyTargeted || isImplicitlyTargeted && !isBlocked
+            // 1. channelResourceType in targeted,  2. channelResourceType is blocked (toss),  3. both list are empty,
+            // 4. it is not found in either targeted or blockedlist
+            isExplicitlyTargeted ||
+                (isImplicitlyTargeted && !isBlocked) ||
+                isImplicitlyTargeted && blockedResourceList!!.isEmpty() ||
+                (!isExplicitlyTargeted && !isBlocked)
         }
     }.values.flatten()
 }
@@ -59,7 +64,12 @@ fun filterAllowedPublishedResources(
             // we want to allow an event through even if we're blocking if it's in the allowed list
             // an empty allowed list in the future means "all resources are allowed"
             // but it could also mean right now "we're not populating it", so for now we'll check if those are blocked
-            isExplicitlyTargeted || isImplicitlyTargeted && !isBlocked
+            // 1. channelResourceType in targeted,  2. channelResourceType is blocked (toss),  3. both list are empty,
+            // 4. it is not found in either targeted or blockedlist
+            isExplicitlyTargeted ||
+                (isImplicitlyTargeted && !isBlocked) ||
+                isImplicitlyTargeted && blockedResourceList!!.isEmpty() ||
+                (!isExplicitlyTargeted && !isBlocked)
         }
     }.values.flatten()
 }
