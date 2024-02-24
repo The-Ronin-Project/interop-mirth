@@ -662,7 +662,7 @@ class KafkaTopicReaderTest {
         val mockMeta =
             mockk<Metadata> {
                 every { runId } returns ">9000"
-                every { targetedResources } returns listOf("Appointment")
+                every { targetedResources } returns emptyList()
             }
         val mockEvent =
             mockk<InteropResourceLoadV1> {
@@ -710,6 +710,34 @@ class KafkaTopicReaderTest {
         every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
         val messages = loadChannel.channelSourceReader(emptyMap())
         assertEquals(1, messages.size)
+    }
+
+    @Test
+    fun `load event only channel works - cov again`() {
+        val loadChannel = LoadOnlyTestChannel(kafkaPublishService, kafkaLoadService, tenantConfigService)
+        val mockMeta =
+            mockk<Metadata> {
+                every { runId } returns ">9000"
+                every { targetedResources } returns emptyList()
+            }
+        val mockEvent =
+            mockk<InteropResourceLoadV1> {
+                every { tenantId } returns "mockTenant"
+                every { resourceType } returns ResourceType.Location
+                every { metadata } returns mockMeta
+            }
+        val configDO =
+            mockk<MirthTenantConfigDO> {
+                every { blockedResources } returns "Location" // should this be the actual resource name
+                every { locationIds } returns "12345678"
+            }
+        every {
+            tenantConfigService.getConfiguration("mockTenant")
+        } returns configDO
+        every { kafkaLoadService.retrieveLoadEvents(ResourceType.Location, "test") } returns listOf(mockEvent)
+        every { JacksonUtil.writeJsonValue(listOf(mockEvent)) } returns "mockEvent"
+        val messages = loadChannel.channelSourceReader(emptyMap())
+        assertEquals(0, messages.size)
     }
 
     @Test
