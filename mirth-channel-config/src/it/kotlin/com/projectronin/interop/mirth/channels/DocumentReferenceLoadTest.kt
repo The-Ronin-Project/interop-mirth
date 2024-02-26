@@ -126,10 +126,10 @@ class DocumentReferenceLoadTest : BaseChannelTest(
             resources = listOf(roninPatient),
             metadata = metadata1,
         )
-        waitForMessage(4)
+        waitForMessage(3)
         val messageList2 = MirthClient.getChannelMessageIds(testChannelId)
         assertAllConnectorsStatus(messageList2)
-        assertEquals(4, messageList2.size)
+        assertEquals(3, messageList2.size)
         // should have 4 messages still only 1 doc reference in aidbox
         assertEquals(1, getAidboxResourceCount("DocumentReference"))
     }

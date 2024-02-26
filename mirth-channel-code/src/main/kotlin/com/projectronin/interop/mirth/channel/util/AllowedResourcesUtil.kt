@@ -32,7 +32,7 @@ fun filterAllowedLoadEventsResources(
             val isBlocked =
                 blockedResourceList?.isNotEmpty() == true &&
                     channelResourceType.toString() in blockedResourceList
-            // 1. channelResourceType in targeted,  2. channelResourceType is blocked (toss),  3. both list are empty, 4. it is not found in either targeted or blockedlist
+            // 1. channelResourceType in targeted,  2. channelResourceType is blocked (toss),  3. both list are empty, 4. it is not found in either targeted or blocked list
             isExplicitlyTargeted ||
                 (isImplicitlyTargeted && !isBlocked) ||
                 isImplicitlyTargeted && blockedResourceList!!.isEmpty() ||
@@ -64,7 +64,7 @@ fun filterAllowedPublishedResources(
             val isBlocked =
                 blockedResourceList?.isNotEmpty() == true &&
                     channelResourceType.toString() in blockedResourceList
-            // 1. channelResourceType in targeted,  2. channelResourceType is blocked (toss),  3. both list are empty, 4. it is not found in either targeted or blockedlist
+            // 1. channelResourceType in targeted,  2. channelResourceType is blocked (toss),  3. both list are empty, 4. it is not found in either targeted or blocked list
             isExplicitlyTargeted ||
                 (isImplicitlyTargeted && !isBlocked) ||
                 isImplicitlyTargeted && blockedResourceList!!.isEmpty() ||
