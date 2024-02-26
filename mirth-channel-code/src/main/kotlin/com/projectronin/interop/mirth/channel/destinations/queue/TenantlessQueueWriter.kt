@@ -3,6 +3,7 @@ package com.projectronin.interop.mirth.channel.destinations.queue
 import com.projectronin.interop.common.jackson.JacksonManager
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.DomainResource
+import com.projectronin.interop.kafka.model.PublishResourceWrapper
 import com.projectronin.interop.mirth.channel.base.TenantlessDestinationService
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.model.MirthResponse
@@ -25,20 +26,21 @@ abstract class TenantlessQueueWriter<T : DomainResource<T>>(
         channelMap: Map<String, Any>,
     ): MirthResponse {
         val resource = JacksonManager.objectMapper.readValue(msg, type.java)
-        val resourceList = listOf(resource)
+        val resourceList = listOf(PublishResourceWrapper(resource))
         val resourceType = type.simpleName
-        if (!publishService.publishFHIRResources(tenantMnemonic, resourceList, getMetadata(sourceMap))) {
+        if (publishService.publishResourceWrappers(tenantMnemonic, resourceList, getMetadata(sourceMap)).isSuccess) {
             return MirthResponse(
-                status = MirthResponseStatus.ERROR,
+                status = MirthResponseStatus.SENT,
                 detailedMessage = JacksonUtil.writeJsonValue(resourceList),
-                message = "Failed to publish $resourceType(s)",
+                message = "Published ${resourceList.size} $resourceType(s)",
+                dataMap = emptyMap(),
             )
         }
+
         return MirthResponse(
-            status = MirthResponseStatus.SENT,
+            status = MirthResponseStatus.ERROR,
             detailedMessage = JacksonUtil.writeJsonValue(resourceList),
-            message = "Published ${resourceList.size} $resourceType(s)",
-            dataMap = emptyMap(),
+            message = "Failed to publish $resourceType(s)",
         )
     }
 }

@@ -21,10 +21,12 @@ import com.projectronin.interop.mirth.channel.exceptions.MapVariableMissing
 import com.projectronin.interop.mirth.channel.model.MirthResponse
 import com.projectronin.interop.mirth.channel.util.unlocalize
 import com.projectronin.interop.publishers.PublishService
+import com.projectronin.interop.publishers.model.PublishResponse
 import com.projectronin.interop.rcdm.transform.TransformManager
 import com.projectronin.interop.rcdm.transform.model.TransformResponse
 import com.projectronin.interop.tenant.config.TenantService
 import com.projectronin.interop.tenant.config.model.Tenant
+import org.springframework.beans.factory.annotation.Value
 import java.util.concurrent.TimeUnit
 
 abstract class KafkaEventResourcePublisher<T : Resource<T>>(
@@ -32,6 +34,8 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
     private val ehrFactory: EHRFactory,
     private val transformManager: TransformManager,
     private val publishService: PublishService,
+    @Value("\${kafka.truncate.limit:#{100}}")
+    private val truncateLimit: Int = 100,
 ) : TenantlessDestinationService() {
     /**
      * If true, we cache and compare the retrieved resources against the cache. By default, this is false, but if a
@@ -40,7 +44,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
      */
     protected open val cacheAndCompareResults: Boolean = false
     private val processedResourcesCache =
-        Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.DAYS).build<ResourceRequestKey, Boolean>()
+        Caffeine.newBuilder().expireAfterWrite(1, TimeUnit.DAYS).softValues().build<ResourceRequestKey, Boolean>()
 
     override fun channelDestinationWriter(
         tenantMnemonic: String,
@@ -219,30 +223,35 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
                     onSuccess = { event to it },
                     onFailure = {
                         logger.error(it) { "Failed to publish by event" }
-                        event to false
+                        event to
+                            PublishResponse(
+                                successfulIds = emptyList(),
+                                failedIds = transform.map { it.resource.id!!.value!! },
+                            )
                     },
                 )
             }
 
-        val successfullyPublishedTransforms =
-            publishResultsByEvent.filter { it.second }
-                .flatMap { transformsToPublishByEvent[it.first] ?: emptyList() }
+        val transformedResourcesById =
+            postTransformedResourcesByKey.values.flatten().associate { it.resource.id!!.value!! to it.resource }
 
-        val failedPublishEvents = publishResultsByEvent.filterNot { it.second }
+        val successfullyPublishedTransforms =
+            publishResultsByEvent.flatMap { it.second.successfulIds }.map { transformedResourcesById[it]!! }
+
+        val failedPublishEvents = publishResultsByEvent.filterNot { it.second.isSuccess }
         val failedPublishTransforms =
-            failedPublishEvents.flatMap { (event, _) -> transformsToPublishByEvent[event] ?: emptyList() }
+            failedPublishEvents.flatMap { it.second.failedIds }.map { transformedResourcesById[it]!! }
 
         val failedPublishKeys =
             failedPublishEvents.flatMap { (event, _) -> event.requestKeys.union(requestKeysToProcess) }.toSet()
 
         // clear cache - resources and keys that failed to publish
-        val failedResources = failedPublishTransforms.map { it.resource }
-        clearCache(failedPublishKeys, failedResources, tenant, resourceLoadRequest)
+        clearCache(failedPublishKeys, failedPublishTransforms, tenant, resourceLoadRequest)
 
         if (failedPublishTransforms.isNotEmpty()) {
             return MirthResponse(
                 status = MirthResponseStatus.ERROR,
-                detailedMessage = failedPublishTransforms.truncateResourceList(),
+                detailedMessage = failedPublishTransforms.truncateList(),
                 message =
                     "Successfully published ${successfullyPublishedTransforms.size}, " +
                         "but failed to publish ${failedPublishTransforms.size} resource(s)",
@@ -256,7 +265,7 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
         } else {
             return MirthResponse(
                 status = MirthResponseStatus.SENT,
-                detailedMessage = successfullyPublishedTransforms.truncateResourceList(),
+                detailedMessage = successfullyPublishedTransforms.truncateList(),
                 message = "Published ${successfullyPublishedTransforms.size} resource(s).$cachedMessage",
                 dataMap =
                     requestDataMap +
@@ -377,21 +386,20 @@ abstract class KafkaEventResourcePublisher<T : Resource<T>>(
     }
 
     private fun Collection<Resource<*>>.truncateList(): String {
-        val list =
-            when {
-                this.size > 5 -> this.map { it.id?.value }
-                else -> this
-            }
-        return JacksonUtil.writeJsonValue(list)
+        if (this.size < truncateLimit) {
+            val list = this.map { it.id?.value }
+            return JacksonUtil.writeJsonValue(list)
+        }
+        return "${this.size} resources"
     }
 
     private fun Collection<TransformResponse<*>>.truncateResourceList(): String {
-        val list =
-            when {
-                this.size > 5 -> this.map { it.resource.id?.value }
-                else -> this
-            }
-        return JacksonUtil.writeJsonValue(list)
+        if (this.size < truncateLimit) {
+            val list =
+                this.map { it.resource.id?.value }
+            return JacksonUtil.writeJsonValue(list)
+        }
+        return "${this.size} resources"
     }
 
     private fun TransformResponse<T>.toResourceWrapper() = PublishResourceWrapper(resource, embeddedResources)
