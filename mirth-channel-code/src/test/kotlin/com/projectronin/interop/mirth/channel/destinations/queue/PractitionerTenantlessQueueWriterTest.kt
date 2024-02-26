@@ -2,6 +2,7 @@ package com.projectronin.interop.mirth.channel.destinations.queue
 
 import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.fhir.r4.resource.Practitioner
+import com.projectronin.interop.kafka.model.PublishResourceWrapper
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.enums.MirthResponseStatus
 import com.projectronin.interop.mirth.channel.util.generateMetadata
@@ -58,7 +59,16 @@ class PractitionerTenantlessQueueWriterTest {
         val channelMap = mapOf(MirthKey.RESOURCES_TRANSFORMED.code to resourceList)
 
         val metadata = generateMetadata()
-        every { mockPublishService.publishFHIRResources(tenantId, any<List<Practitioner>>(), metadata) } returns true
+        every {
+            mockPublishService.publishResourceWrappers(
+                tenantId,
+                any<List<PublishResourceWrapper>>(),
+                metadata,
+            )
+        } returns
+            mockk {
+                every { isSuccess } returns true
+            }
 
         val response =
             writer.destinationWriter(
