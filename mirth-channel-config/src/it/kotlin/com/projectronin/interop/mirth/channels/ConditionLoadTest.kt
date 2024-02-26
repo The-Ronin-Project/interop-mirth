@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.codeableConcept
 import com.projectronin.interop.fhir.generators.datatypes.coding
@@ -20,20 +19,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
-import java.time.OffsetDateTime
 
 class ConditionLoadTest : BaseChannelTest(
     CONDITION_LOAD_CHANNEL_NAME,
     listOf("Patient", "Condition"),
     listOf("Patient", "Condition"),
 ) {
-    val metadata1 =
-        Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now(),
-            targetedResources = emptyList(),
-        )
-
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with multiple patients and conditions`(testTenant: String) {
@@ -164,7 +155,6 @@ class ConditionLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(roninPatient1, roninPatient2),
-            metadata = metadata1,
         )
 
         waitForMessage(1)
@@ -227,7 +217,6 @@ class ConditionLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(conditionID),
             resourceType = ResourceType.Condition,
-            metadata = metadata1,
         )
 
         waitForMessage(1)
@@ -241,7 +230,6 @@ class ConditionLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("doesn't exists"),
             resourceType = ResourceType.Condition,
-            metadata = metadata1,
         )
 
         waitForMessage(1)

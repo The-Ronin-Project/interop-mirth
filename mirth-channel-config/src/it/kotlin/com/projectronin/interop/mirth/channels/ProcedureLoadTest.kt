@@ -1,6 +1,5 @@
 package com.projectronin.interop.mirth.channels
 
-import com.projectronin.event.interop.internal.v1.Metadata
 import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.fhir.generators.datatypes.DynamicValues
 import com.projectronin.interop.fhir.generators.datatypes.identifier
@@ -31,20 +30,12 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import java.time.LocalDateTime
-import java.time.OffsetDateTime
 
 class ProcedureLoadTest : BaseChannelTest(
     PROCEDURE_LOAD_CHANNEL_NAME,
     listOf("Appointment", "MedicationStatement", "Observation", "Procedure"),
     listOf("Appointment", "MedicationStatement", "Observation", "Procedure"),
 ) {
-    val metadata1 =
-        Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now(),
-            targetedResources = emptyList(),
-        )
-
     @ParameterizedTest
     @MethodSource("tenantsToTest")
     fun `channel works with multiple procedures and appointments`(testTenant: String) {
@@ -238,7 +229,6 @@ class ProcedureLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(fakeAppointment1, fakeAppointment2, fakeMedicationStatement, fakeObservation),
-            metadata = metadata1,
         )
 
         waitForMessage(1)
@@ -319,7 +309,6 @@ class ProcedureLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(procedureFhirId1),
             resourceType = ResourceType.Procedure,
-            metadata = metadata1,
         )
 
         waitForMessage(1)

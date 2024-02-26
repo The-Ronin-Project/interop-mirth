@@ -21,22 +21,25 @@ fun filterAllowedLoadEventsResources(
 ): List<InteropResourceLoadV1> {
     // group by tenant
     val groupedEvents = events.groupBy { it.tenantId }
-    return groupedEvents.mapValues { (_, event) ->
+    return groupedEvents.mapValues { (_, eventByTenant) ->
         // filter based on targeted or blocked
-        event.filter {
+        // grab the resource list here because it's the same by tenant and we can avoid a db call
+        val blockedResourceList = tenantConfigService.getConfiguration(eventByTenant.first().tenantId).blockedResources?.split(",")
+
+        eventByTenant.filter {
+            // we've actually found our resource in the targetedResourceList
             val isExplicitlyTargeted = it.metadata.targetedResources?.contains(channelResourceType.toString()) == true
-            val isImplicitlyTargeted = it.metadata.targetedResources?.isEmpty() == true
-            // get blocked resources from tenant config
-            val blockedResourceList = tenantConfigService.getConfiguration(it.tenantId).blockedResources?.split(",")
-            // check for channelResourceType in the blocked resource list
+
+            // either there is no list or it's empty
+            val isImplicitlyTargeted = it.metadata.targetedResources.isNullOrEmpty()
+
+            // we've deliberately blocked this resource type in our old tenant config
             val isBlocked =
-                blockedResourceList?.isNotEmpty() == true &&
+                !blockedResourceList.isNullOrEmpty() &&
                     channelResourceType.toString() in blockedResourceList
-            // 1. channelResourceType in targeted (keep),  2. channelResourceType is blocked (toss),  3. both list are empty (keep), 4. not in either targeted or blocked list (keep)
+
             isExplicitlyTargeted ||
-                (isImplicitlyTargeted && !isBlocked) ||
-                isImplicitlyTargeted && blockedResourceList!!.isEmpty() ||
-                (!isExplicitlyTargeted && !isBlocked)
+                (isImplicitlyTargeted && !isBlocked)
         }
     }.values.flatten()
 }
@@ -48,22 +51,24 @@ fun filterAllowedPublishedResources(
 ): List<InteropResourcePublishV1> {
     // group by tenant
     val groupedEvents = events.groupBy { it.tenantId }
-    return groupedEvents.mapValues { (_, event) ->
+
+    return groupedEvents.mapValues { (_, eventByTenant) ->
         // filter based on targeted or blocked
-        event.filter {
+        // grab the resource list here because it's the same by tenant and we can avoid a db call
+        val blockedResourceList = tenantConfigService.getConfiguration(eventByTenant.first().tenantId).blockedResources?.split(",")
+
+        eventByTenant.filter {
+            // we've actually found our resource in the targetedResourceList
             val isExplicitlyTargeted = it.metadata.targetedResources?.contains(channelResourceType.toString()) == true
-            val isImplicitlyTargeted = it.metadata.targetedResources?.isEmpty() == true
-            // get blocked resources from tenant config
-            val blockedResourceList = tenantConfigService.getConfiguration(it.tenantId).blockedResources?.split(",")
-            // check for channelResourceType in the blocked resource list
+            // either there is no list or it's empty
+            val isImplicitlyTargeted = it.metadata.targetedResources.isNullOrEmpty()
+
+            // we've deliberately blocked this resource type in our old tenant config
             val isBlocked =
-                blockedResourceList?.isNotEmpty() == true &&
+                !blockedResourceList.isNullOrEmpty() &&
                     channelResourceType.toString() in blockedResourceList
-            // 1. channelResourceType in targeted,  2. channelResourceType is blocked (toss),  3. both list are empty, 4. it is not found in either targeted or blocked list
             isExplicitlyTargeted ||
-                (isImplicitlyTargeted && !isBlocked) ||
-                isImplicitlyTargeted && blockedResourceList!!.isEmpty() ||
-                (!isExplicitlyTargeted && !isBlocked)
+                (isImplicitlyTargeted && !isBlocked)
         }
     }.values.flatten()
 }

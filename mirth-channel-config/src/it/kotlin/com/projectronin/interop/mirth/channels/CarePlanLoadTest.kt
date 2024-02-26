@@ -41,12 +41,6 @@ class CarePlanLoadTest : BaseChannelTest(
     listOf("Patient", "CarePlan", "Location"),
 ) {
     val twoDaysAgo = LocalDateTime.now().minusDays(2)
-    val metadata1 =
-        Metadata(
-            runId = "123456",
-            runDateTime = OffsetDateTime.now(),
-            targetedResources = emptyList(),
-        )
 
     private fun createFakeCarePlan(
         patientId: String,
@@ -134,11 +128,16 @@ class CarePlanLoadTest : BaseChannelTest(
         val fakeCarePlanId = MockEHRTestData.add(fakeCarePlan)
         MockOCIServerClient.createExpectations("CarePlan", fakeCarePlanId, tenantInUse)
 
+        val metadata =
+            Metadata(
+                runId = "123456",
+                runDateTime = OffsetDateTime.now(),
+            )
         KafkaClient.testingClient.pushPublishEvent(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
-            metadata = metadata1,
+            metadata = metadata,
         )
 
         // Care Plan now Listens to itself, so will generate 2 messages per plan.
@@ -150,7 +149,7 @@ class CarePlanLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
-            metadata = metadata1,
+            metadata = metadata,
         )
 
         waitForMessage(3)
@@ -256,7 +255,6 @@ class CarePlanLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.AD_HOC,
             resources = listOf(fakeAidboxPatient1, fakeAidboxPatient2),
-            metadata = metadata1,
         )
 
         waitForMessage(1)
@@ -311,7 +309,6 @@ class CarePlanLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf(fakeCarePlanId),
             resourceType = ResourceType.CarePlan,
-            metadata = metadata1,
         )
         waitForMessage(1)
         assertEquals(1, getAidboxResourceCount("CarePlan"))
@@ -324,7 +321,6 @@ class CarePlanLoadTest : BaseChannelTest(
             trigger = DataTrigger.AD_HOC,
             resourceFHIRIds = listOf("nothing to see here"),
             resourceType = ResourceType.CarePlan,
-            metadata = metadata1,
         )
         waitForMessage(1)
         assertEquals(0, getAidboxResourceCount("CarePlan"))
@@ -483,7 +479,6 @@ class CarePlanLoadTest : BaseChannelTest(
             tenantId = tenantInUse,
             trigger = DataTrigger.NIGHTLY,
             resources = listOf(fakeAidboxPatient),
-            metadata = metadata1,
         )
 
         // Message for patient, care plan, and the child care plan
