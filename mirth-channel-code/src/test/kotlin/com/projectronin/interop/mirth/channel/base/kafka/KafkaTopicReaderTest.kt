@@ -886,7 +886,7 @@ class KafkaTopicReaderTest {
     }
 
     @Test
-    fun `publish events get after checking blocked resource`() {
+    fun `publish events after checking blocked resource`() {
         val configDO =
             mockk<MirthTenantConfigDO> {
                 every { blockedResources } returns "Encounter" // should this be the actual resource name
@@ -948,7 +948,7 @@ class KafkaTopicReaderTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
-                every { targetedResources } returns emptyList()
+                every { targetedResources } returns listOf("Observation")
             }
 
         val patientEventTenant1Run1 =
@@ -1046,7 +1046,7 @@ class KafkaTopicReaderTest {
     fun `publish events get both targeted and blocked resource, both are empty, one returned`() {
         val configDO =
             mockk<MirthTenantConfigDO> {
-                every { blockedResources } returns "Encounter" // unlikely to happen, but for fun
+                every { blockedResources } returns "" // unlikely to happen, but for fun
                 every { locationIds } returns "12345678"
             }
         every { tenantConfigService.getConfiguration(any()) } returns configDO
@@ -1054,7 +1054,7 @@ class KafkaTopicReaderTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
-                every { targetedResources } returns listOf("Observation")
+                every { targetedResources } returns emptyList()
             }
 
         val patientEventTenant1Run1 =
@@ -1096,7 +1096,7 @@ class KafkaTopicReaderTest {
     }
 
     @Test
-    fun `load events get after checking blocked and targeted resource`() {
+    fun `load events get after checking blocked resource`() {
         val configDO =
             mockk<MirthTenantConfigDO> {
                 every { blockedResources } returns "Encounter" // should this be the actual resource name
@@ -1157,7 +1157,7 @@ class KafkaTopicReaderTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
-                every { targetedResources } returns emptyList()
+                every { targetedResources } returns listOf("Observation")
             }
 
         val patientEventTenant1Run1 =
@@ -1251,7 +1251,7 @@ class KafkaTopicReaderTest {
     fun `load events get both targeted and blocked resource, both are empty, one returned`() {
         val configDO =
             mockk<MirthTenantConfigDO> {
-                every { blockedResources } returns "Encounter" // unlikely to happen, but for fun
+                every { blockedResources } returns "" // unlikely to happen, but for fun
                 every { locationIds } returns "12345678"
             }
         every { tenantConfigService.getConfiguration(any()) } returns configDO
@@ -1259,7 +1259,7 @@ class KafkaTopicReaderTest {
         val metadata1 =
             mockk<Metadata> {
                 every { runId } returns "run1"
-                every { targetedResources } returns listOf("Observation")
+                every { targetedResources } returns emptyList()
             }
 
         val patientEventTenant1Run1 =

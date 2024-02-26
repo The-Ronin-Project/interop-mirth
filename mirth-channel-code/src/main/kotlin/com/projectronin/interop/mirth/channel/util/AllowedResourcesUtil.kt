@@ -9,7 +9,7 @@ import com.projectronin.interop.mirth.service.TenantConfigurationService
  * Util to filter out events whose resources are allowed/targetResource based on the event metadata
  * if the targeted resource list is empty, check the blocked resources on the tenant config
  *
- * we want to allow an event through even if we're blocking if it's in the allowed list
+ * we want to allow an event through even if we're blocking, if it's in the allowed list
  * an empty allowed list in the future means "all resources are allowed"
  * but it could also mean right now "we're not populating it", so for now we'll check if those are blocked
  */
@@ -32,7 +32,7 @@ fun filterAllowedLoadEventsResources(
             val isBlocked =
                 blockedResourceList?.isNotEmpty() == true &&
                     channelResourceType.toString() in blockedResourceList
-            // 1. channelResourceType in targeted,  2. channelResourceType is blocked (toss),  3. both list are empty, 4. it is not found in either targeted or blocked list
+            // 1. channelResourceType in targeted (keep),  2. channelResourceType is blocked (toss),  3. both list are empty (keep), 4. not in either targeted or blocked list (keep)
             isExplicitlyTargeted ||
                 (isImplicitlyTargeted && !isBlocked) ||
                 isImplicitlyTargeted && blockedResourceList!!.isEmpty() ||
@@ -41,11 +41,6 @@ fun filterAllowedLoadEventsResources(
     }.values.flatten()
 }
 
-/**
- * we want to allow an event through even if we're blocking if it's in the allowed list
- * an empty allowed list in the future means "all resources are allowed"
- * but it could also mean right now "we're not populating it", so for now we'll check if those are blocked
- */
 fun filterAllowedPublishedResources(
     channelResourceType: ResourceType,
     events: List<InteropResourcePublishV1>,
