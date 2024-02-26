@@ -14,7 +14,6 @@ import com.projectronin.interop.mirth.service.TenantConfigurationService
  * but it could also mean right now "we're not populating it", so for now we'll check if those are blocked
  */
 
-@Suppress("ktlint:standard:max-line-length")
 fun filterAllowedLoadEventsResources(
     channelResourceType: ResourceType,
     events: List<InteropResourceLoadV1>,
