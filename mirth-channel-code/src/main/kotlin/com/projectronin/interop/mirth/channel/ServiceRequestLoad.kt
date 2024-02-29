@@ -4,6 +4,7 @@ import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaTopicReader
+import com.projectronin.interop.mirth.channel.base.kafka.completeness.KafkaDagPublisher
 import com.projectronin.interop.mirth.channel.destinations.ServiceRequestPublish
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.mirth.spring.SpringUtil
@@ -15,7 +16,8 @@ class ServiceRequestLoad(
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
     defaultPublisher: ServiceRequestPublish,
-) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
+    kafkaDagPublisher: KafkaDagPublisher,
+) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher, kafkaDagPublisher) {
     override val rootName = "ServiceRequestLoad"
     override val channelGroupId = "interop-mirth-service-request_group"
     override val publishedResourcesSubscriptions =

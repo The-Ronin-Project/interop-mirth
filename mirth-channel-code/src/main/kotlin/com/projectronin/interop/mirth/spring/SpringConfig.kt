@@ -4,6 +4,7 @@ import com.projectronin.ehr.dataauthority.client.spring.EHRDataAuthorityClientSp
 import com.projectronin.interop.aidbox.spring.AidboxSpringConfig
 import com.projectronin.interop.backfill.client.spring.BackfillClientSpringConfig
 import com.projectronin.interop.common.http.spring.HttpSpringConfig
+import com.projectronin.interop.completeness.topics.CompletenessKafkaTopicConfig
 import com.projectronin.interop.ehr.cerner.spring.CernerSpringConfig
 import com.projectronin.interop.ehr.epic.spring.EpicSpringConfig
 import com.projectronin.interop.kafka.spring.KafkaConfig
@@ -44,6 +45,7 @@ import org.springframework.vault.annotation.VaultPropertySource
     TransformSpringConfig::class,
     AidboxSpringConfig::class,
     BackfillClientSpringConfig::class,
+    CompletenessKafkaTopicConfig::class,
 )
 @EnableConfigurationProperties(KafkaConfig::class)
 @VaultPropertySource("interop-mirth-connector/\${ENVIRONMENT}")

@@ -4,6 +4,7 @@ import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaTopicReader
+import com.projectronin.interop.mirth.channel.base.kafka.completeness.KafkaDagPublisher
 import com.projectronin.interop.mirth.channel.destinations.EncounterPublish
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.mirth.spring.SpringUtil
@@ -15,7 +16,8 @@ class EncounterLoad(
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
     defaultPublisher: EncounterPublish,
-) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
+    kafkaDagPublisher: KafkaDagPublisher,
+) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher, kafkaDagPublisher) {
     override val rootName = "EncounterLoad"
     override val channelGroupId = "interop-mirth-encounter_group"
     override val publishedResourcesSubscriptions = listOf(ResourceType.Patient)

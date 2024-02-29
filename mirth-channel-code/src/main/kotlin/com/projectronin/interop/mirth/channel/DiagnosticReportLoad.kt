@@ -4,6 +4,7 @@ import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaTopicReader
+import com.projectronin.interop.mirth.channel.base.kafka.completeness.KafkaDagPublisher
 import com.projectronin.interop.mirth.channel.destinations.DiagnosticReportPublish
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.mirth.spring.SpringUtil
@@ -15,7 +16,8 @@ class DiagnosticReportLoad(
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
     defaultPublisher: DiagnosticReportPublish,
-) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
+    kafkaDagPublisher: KafkaDagPublisher,
+) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher, kafkaDagPublisher) {
     override val rootName = "DiagnosticReportLoad"
     override val channelGroupId = "interop-mirth-diagnostic-report_group"
     override val publishedResourcesSubscriptions = listOf(ResourceType.Patient)

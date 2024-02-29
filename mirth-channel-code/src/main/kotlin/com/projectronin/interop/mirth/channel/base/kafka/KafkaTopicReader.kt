@@ -9,6 +9,7 @@ import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.DataTrigger
 import com.projectronin.interop.mirth.channel.base.TenantlessSourceService
+import com.projectronin.interop.mirth.channel.base.kafka.completeness.KafkaDagPublisher
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.channel.model.MirthMessage
 import com.projectronin.interop.mirth.channel.util.splitDateRange
@@ -18,6 +19,7 @@ abstract class KafkaTopicReader(
     private val kafkaPublishService: KafkaPublishService,
     private val kafkaLoadService: KafkaLoadService,
     defaultPublisher: KafkaEventResourcePublisher<*>,
+    private val kafkaDagPublisher: KafkaDagPublisher,
 ) : TenantlessSourceService() {
     abstract val publishedResourcesSubscriptions: List<ResourceType>
     abstract val resource: ResourceType
@@ -33,6 +35,13 @@ abstract class KafkaTopicReader(
     open fun List<InteropResourcePublishV1>.filterUnnecessaryEvents(): List<InteropResourcePublishV1> = this
 
     override val destinations: Map<String, KafkaEventResourcePublisher<*>> = mapOf("publish" to defaultPublisher)
+
+    override fun channelOnDeploy(serviceMap: Map<String, Any>): Map<String, Any> {
+        // Publish DAG event to completeness service and call the super onDeploy function
+        val ret = super.channelOnDeploy(serviceMap)
+        kafkaDagPublisher.publishDag(resource, publishedResourcesSubscriptions)
+        return ret
+    }
 
     override fun channelSourceReader(serviceMap: Map<String, Any>): List<MirthMessage> {
         // wrapping retrievePublishedEvents with function to filter out blocked resources

@@ -25,6 +25,7 @@ dependencies {
     implementation(libs.interop.common)
     implementation(libs.interop.commonHttp)
     implementation(libs.interop.commonJackson)
+    implementation(libs.interop.completeness.topics)
     implementation(libs.interop.ehr.api)
     implementation(libs.interop.fhir)
     implementation(libs.interop.publishers)

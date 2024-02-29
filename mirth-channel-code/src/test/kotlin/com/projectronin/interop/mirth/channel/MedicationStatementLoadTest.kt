@@ -7,6 +7,8 @@ import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.DataTrigger
+import com.projectronin.interop.kafka.model.PushResponse
+import com.projectronin.interop.mirth.channel.base.kafka.completeness.KafkaDagPublisher
 import com.projectronin.interop.mirth.channel.destinations.MedicationStatementPublish
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.service.TenantConfigurationService
@@ -15,7 +17,9 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
+import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -25,7 +29,7 @@ class MedicationStatementLoadTest {
 
     @BeforeEach
     fun setup() {
-        channel = MedicationStatementLoad(mockk(), mockk(), mockk(), mockk())
+        channel = MedicationStatementLoad(mockk(), mockk(), mockk(), mockk(), mockk())
     }
 
     @AfterEach
@@ -41,11 +45,41 @@ class MedicationStatementLoadTest {
     }
 
     @Test
+    fun `channel deploy publishes DAG`() {
+        val kafkaDagPublisher: KafkaDagPublisher =
+            mockk {
+                every { publishDag(any(), any()) } returns PushResponse()
+            }
+        val channel =
+            MedicationStatementLoad(
+                mockk(),
+                mockk(),
+                mockk(),
+                mockk(),
+                kafkaDagPublisher,
+            )
+        channel.onDeploy(channel.rootName, emptyMap())
+
+        verify {
+            kafkaDagPublisher.publishDag(
+                withArg { resourceType ->
+                    assertEquals(ResourceType.MedicationStatement, resourceType)
+                },
+                withArg { consumedResources ->
+                    assertEquals(consumedResources.size, 1)
+                    Assertions.assertTrue(consumedResources.contains(ResourceType.Patient))
+                },
+            )
+        }
+    }
+
+    @Test
     fun `publish events honor batch size override with matching resource type`() {
         val kafkaLoadService: KafkaLoadService = mockk()
         val kafkaPublishService: KafkaPublishService = mockk()
         val tenantConfigService: TenantConfigurationService = mockk()
         val medicationStatementPublish: MedicationStatementPublish = mockk()
+        val kafkaDagPublisher: KafkaDagPublisher = mockk()
 
         mockkObject(JacksonUtil)
 
@@ -101,6 +135,7 @@ class MedicationStatementLoadTest {
                 kafkaLoadService,
                 tenantConfigService,
                 medicationStatementPublish,
+                kafkaDagPublisher,
             )
 
         val messages = channel.channelSourceReader(emptyMap())

@@ -9,10 +9,12 @@ guava = "33.0.0-jre"
 interop-aidbox = "8.1.0"
 interop-backfill = "2.1.2"
 interop-common = "4.1.0"
+interop-completeness = "0.0.1"
 interop-datalake = "9.2.1"
 interop-ehr = "13.4.0"
 interop-event-internal = "1.3.0"
 interop-event-request = "1.1.0"
+interop-event-completeness = "1.0.0"
 interop-fhir = "9.1.2"
 interop-gradle = "4.2.1"
 interop-kafka = "9.2.1"
@@ -50,6 +52,7 @@ dd-trace-api = { module = "com.datadoghq:dd-trace-api", version.ref = "datadog" 
 ehr-data-authority-client = { module = "com.projectronin.ehr:ehr-data-authority-client", version.ref = "ehrda" }
 event-interop-resource-internal = { module = "com.projectronin.contract.event:event-interop-resource-internal", version.ref = "interop-event-internal" }
 event-interop-resource-request = { module = "com.projectronin.contract.event:event-interop-resource-request", version.ref = "interop-event-request" }
+event-interop-completeness = { module = "com.projectronin.contract.event:event-interop-completeness-v1", version.ref = "interop-event-completeness" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 # aidbox just used for testing, should be removed eventually
 interop-aidbox = { module = "com.projectronin.interop.publish:interop-aidbox", version.ref = "interop-aidbox" }
@@ -58,6 +61,7 @@ interop-common = { module = "com.projectronin.interop:interop-common", version.r
 interop-commonHttp = { module = "com.projectronin.interop:interop-common-http", version.ref = "interop-common" }
 interop-commonJackson = { module = "com.projectronin.interop:interop-common-jackson", version.ref = "interop-common" }
 interop-commonTestDb = { module = "com.projectronin.interop:interop-common-test-db", version.ref = "interop-common" }
+interop-completeness-topics = { module = "com.projectronin.interop.completeness:interop-completeness-topics", version.ref = "interop-completeness" }
 interop-datalake = { module = "com.projectronin.interop.publish:interop-datalake", version.ref = "interop-datalake" }
 interop-ehr-api = { module = "com.projectronin.interop.ehr:interop-ehr", version.ref = "interop-ehr" }
 interop-ehr-cerner = { module = "com.projectronin.interop.ehr:interop-ehr-cerner", version.ref = "interop-ehr" }
@@ -123,6 +127,7 @@ datadog = [
 interop-kafka-events = [
     "event-interop-resource-internal",
     "event-interop-resource-request",
+    "event-interop-completeness"
 ]
 jackson = [
     "jackson-annotations",

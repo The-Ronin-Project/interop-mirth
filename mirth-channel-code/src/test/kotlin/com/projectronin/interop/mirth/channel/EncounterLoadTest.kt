@@ -7,6 +7,8 @@ import com.projectronin.interop.common.jackson.JacksonUtil
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.kafka.model.DataTrigger
+import com.projectronin.interop.kafka.model.PushResponse
+import com.projectronin.interop.mirth.channel.base.kafka.completeness.KafkaDagPublisher
 import com.projectronin.interop.mirth.channel.destinations.EncounterPublish
 import com.projectronin.interop.mirth.channel.enums.MirthKey
 import com.projectronin.interop.mirth.service.TenantConfigurationService
@@ -15,6 +17,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
+import io.mockk.verify
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -25,7 +28,7 @@ class EncounterLoadTest {
 
     @BeforeEach
     fun setup() {
-        channel = EncounterLoad(mockk(), mockk(), mockk(), mockk())
+        channel = EncounterLoad(mockk(), mockk(), mockk(), mockk(), mockk())
     }
 
     @AfterEach
@@ -41,11 +44,41 @@ class EncounterLoadTest {
     }
 
     @Test
+    fun `channel deploy publishes DAG`() {
+        val kafkaDagPublisher: KafkaDagPublisher =
+            mockk {
+                every { publishDag(any(), any()) } returns PushResponse()
+            }
+        val channel =
+            EncounterLoad(
+                mockk(),
+                mockk(),
+                mockk(),
+                mockk(),
+                kafkaDagPublisher,
+            )
+        channel.onDeploy(channel.rootName, emptyMap())
+
+        verify {
+            kafkaDagPublisher.publishDag(
+                withArg { resourceType ->
+                    Assertions.assertEquals(ResourceType.Encounter, resourceType)
+                },
+                withArg { consumedResources ->
+                    Assertions.assertEquals(consumedResources.size, 1)
+                    Assertions.assertTrue(consumedResources.contains(ResourceType.Patient))
+                },
+            )
+        }
+    }
+
+    @Test
     fun `publish events honor batch size override with matching resource type`() {
         val kafkaLoadService: KafkaLoadService = mockk()
         val kafkaPublishService: KafkaPublishService = mockk()
         val tenantConfigService: TenantConfigurationService = mockk()
         val encounterPublish: EncounterPublish = mockk()
+        val kafkaDagPublisher: KafkaDagPublisher = mockk()
 
         mockkObject(JacksonUtil)
 
@@ -101,6 +134,7 @@ class EncounterLoadTest {
                 kafkaLoadService,
                 tenantConfigService,
                 encounterPublish,
+                kafkaDagPublisher,
             )
 
         val messages = channel.channelSourceReader(emptyMap())

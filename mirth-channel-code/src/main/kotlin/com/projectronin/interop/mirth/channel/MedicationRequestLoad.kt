@@ -4,6 +4,7 @@ import com.projectronin.event.interop.internal.v1.ResourceType
 import com.projectronin.interop.kafka.KafkaLoadService
 import com.projectronin.interop.kafka.KafkaPublishService
 import com.projectronin.interop.mirth.channel.base.kafka.KafkaTopicReader
+import com.projectronin.interop.mirth.channel.base.kafka.completeness.KafkaDagPublisher
 import com.projectronin.interop.mirth.channel.destinations.MedicationRequestPublish
 import com.projectronin.interop.mirth.service.TenantConfigurationService
 import com.projectronin.interop.mirth.spring.SpringUtil
@@ -15,7 +16,8 @@ class MedicationRequestLoad(
     kafkaLoadService: KafkaLoadService,
     override val tenantConfigService: TenantConfigurationService,
     defaultPublisher: MedicationRequestPublish,
-) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher) {
+    kafkaDagPublisher: KafkaDagPublisher,
+) : KafkaTopicReader(kafkaPublishService, kafkaLoadService, defaultPublisher, kafkaDagPublisher) {
     override val rootName = "MedicationRequestLoad"
     override val channelGroupId = "interop-mirth-medication-request_group"
     override val publishedResourcesSubscriptions = listOf(ResourceType.Patient)
